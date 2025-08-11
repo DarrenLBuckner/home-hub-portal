@@ -1,4 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Guyana Home Hub Portal
+
+This is the agent portal for Guyana Home Hub, built with [Next.js](https://nextjs.org) and bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+
+## About
+
+The Guyana Home Hub Portal (portalghh.com) is the backend management system for real estate agents, FSBO sellers, and landlords to manage their property listings. Properties created here sync automatically to the public Guyana Home Hub website (guyanaHomehub.com).
 
 ## Getting Started
 
@@ -34,3 +40,4 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Guyana-Home-Hub-Portal
