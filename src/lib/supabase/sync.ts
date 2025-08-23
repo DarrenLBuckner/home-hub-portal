@@ -32,7 +32,7 @@ export async function syncPropertyToPublic(propertyData: Record<string, unknown>
       latitude: propertyData.latitude,
       longitude: propertyData.longitude,
       status: 'active', // Only sync active properties
-      agent_id: propertyData.created_by,
+  user_id: propertyData.created_by,
       created_at: propertyData.created_at,
       updated_at: new Date().toISOString()
     }

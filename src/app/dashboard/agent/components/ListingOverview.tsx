@@ -1,3 +1,5 @@
+// import UploadArea from './UploadArea';
+
 export default function ListingOverview() {
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
@@ -7,8 +9,10 @@ export default function ListingOverview() {
           Guyana Market
         </span>
       </div>
+
+  {/* Drag-and-drop image upload removed from dashboard */}
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
           <div className="text-3xl font-bold text-blue-700 mb-2">12</div>
           <div className="text-sm font-medium text-blue-600">Active Listings</div>

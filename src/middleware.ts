@@ -28,11 +28,11 @@ export async function middleware(req: NextRequest) {
   const currentPath = req.nextUrl.pathname
 
   // Redirect logic for protected routes
-  if (protectedRoutes.some(route => currentPath.startsWith(route))) {
-    if (!session) {
-      return NextResponse.redirect(new URL('/login', req.url))
-    }
-  }
+  // if (protectedRoutes.some(route => currentPath.startsWith(route))) {
+  //   if (!session) {
+  //     return NextResponse.redirect(new URL('/login', req.url))
+  //   }
+  // }
 
   // Admin route protection
   if (adminRoutes.some(route => currentPath.startsWith(route))) {
