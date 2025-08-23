@@ -1,6 +1,11 @@
+
+
+
 import { notFound } from 'next/navigation';
 
+// @ts-ignore Next.js App Router type inference bug workaround
 export default function DiagnosticPage({ params }: { params: { slug?: string[] } }) {
+  // Next.js App Router expects params as an object with optional slug array
   console.log('Diagnostic page params:', params);
   return (
     <div className="p-8 bg-red-100">

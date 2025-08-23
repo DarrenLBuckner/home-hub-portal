@@ -1,8 +1,11 @@
+
+
 "use client";
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function PayPage() {
-  const params = useSearchParams();
+function PayContent() {
+  const params = useSearchParams()!;
   const userId = params.get("user_id");
   const type = params.get("type");
   const tier = params.get("tier");
@@ -32,5 +35,13 @@ export default function PayPage() {
       </button>
       <div className="mt-4 text-gray-500 text-sm">Payment integration coming soon. You will be able to pay securely once enabled.</div>
     </div>
+  );
+}
+
+export default function PayPage() {
+  return (
+    <Suspense>
+      <PayContent />
+    </Suspense>
   );
 }
