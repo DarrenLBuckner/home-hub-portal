@@ -10,6 +10,7 @@ export default function CreatePropertyPage() {
     description: '',
     price: '',
     status: 'draft',
+  "use client";
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
