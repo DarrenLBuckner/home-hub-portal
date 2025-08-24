@@ -80,6 +80,50 @@ export default function RegistrationPage() {
     <div className="max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-8 mt-10 animate-fade-in">
       <h1 className="text-3xl font-extrabold mb-2 text-teal-600 tracking-tight">Join Portal Home Hub</h1>
       <p className="mb-6 text-gray-600 text-lg">Unlock new opportunities. List, rent, or sell properties with confidence. Registration takes less than 3 minutes!</p>
+
+      {/* Enterprise Agent Plan Selection */}
+      <section className="mb-8">
+        <h2 className="text-xl font-bold mb-4 text-gray-800">Choose Your Agent Plan</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Basic Agent */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 flex flex-col items-center hover:shadow-xl transition-all">
+            <h3 className="text-lg font-bold text-green-700 mb-2">Basic Agent</h3>
+            <div className="text-2xl font-extrabold text-green-700 mb-1">G$6,000<span className="text-base font-normal">/month</span></div>
+            <ul className="mb-4 text-gray-700 text-sm space-y-1">
+              <li>Perfect for new agents getting started</li>
+              <li>5 active listings</li>
+              <li>8 photos per property</li>
+              <li>Basic support</li>
+            </ul>
+            <button className="mt-auto px-5 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition">Select</button>
+          </div>
+          {/* Pro Agent */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 flex flex-col items-center hover:shadow-xl transition-all">
+            <h3 className="text-lg font-bold text-blue-700 mb-2">Pro Agent</h3>
+            <div className="text-2xl font-extrabold text-blue-700 mb-1">G$11,000<span className="text-base font-normal">/month</span></div>
+            <ul className="mb-4 text-gray-700 text-sm space-y-1">
+              <li>Ideal for established agents</li>
+              <li>20 active listings</li>
+              <li>15 photos per property</li>
+              <li>Priority support</li>
+            </ul>
+            <button className="mt-auto px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition">Select</button>
+          </div>
+          {/* Elite Agent */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 flex flex-col items-center hover:shadow-xl transition-all">
+            <h3 className="text-lg font-bold text-yellow-700 mb-2">Elite Agent</h3>
+            <div className="text-2xl font-extrabold text-yellow-700 mb-1">G$25,000<span className="text-base font-normal">/month</span></div>
+            <ul className="mb-4 text-gray-700 text-sm space-y-1">
+              <li>Top-performing agents and teams</li>
+              <li>Unlimited listings*</li>
+              <li>20 photos per property</li>
+              <li>Premium support</li>
+            </ul>
+            <button className="mt-auto px-5 py-2 rounded-lg bg-yellow-500 text-white font-semibold hover:bg-yellow-600 transition">Select</button>
+          </div>
+        </div>
+      </section>
+      {/* End Enterprise Agent Plan Selection */}
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         <div className="flex gap-4">
           <select name="user_type" value={form.user_type} onChange={handleChange} className="border-2 border-teal-600 rounded-lg px-4 py-2 font-semibold bg-teal-50 focus:ring-2 focus:ring-teal-400">
