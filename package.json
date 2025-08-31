@@ -36,5 +36,10 @@
     "supabase": "^1.200.3",
     "tailwindcss": "^4.1.12",
     "typescript": "^5.8.3"
-  }
+  },
+  "description": "This is the agent portal for Guyana Home Hub, built with [Next.js](https://nextjs.org) and bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).",
+  "main": "next.config.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }

@@ -14,10 +14,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  let subject = "Welcome to Guyana Home Hub – Your Application Update";
+  let subject = "Welcome to Portal Home Hub – Your Application Update";
   let body = `
     <div style="font-family: Arial, sans-serif; background: #f8fafc; padding: 32px; border-radius: 12px; color: #222;">
-      <h2 style="color: #14b8a6; margin-bottom: 8px;">Welcome to Guyana Home Hub!</h2>
+  <h2 style="color: #14b8a6; margin-bottom: 8px;">Welcome to Portal Home Hub!</h2>
       <p style="font-size: 18px; margin-bottom: 16px;">Hi ${name},</p>
       <p style="font-size: 16px; margin-bottom: 16px;">
         We're excited to have you join our vibrant Caribbean property community.<br />
@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       ` : ''}
       <p style="font-size: 16px; margin-bottom: 16px;">If you have any questions, reply to this email or contact our support team. We're here to help you succeed!</p>
       <hr style="margin: 24px 0; border: none; border-top: 1px solid #eee;" />
-      <p style="font-size: 14px; color: #888;">Thank you for choosing Guyana Home Hub.<br />
+  <p style="font-size: 14px; color: #888;">Thank you for choosing Portal Home Hub.<br />
       <span style="color: #14b8a6; font-weight: bold;">Your Caribbean Real Estate Partner</span></p>
     </div>
   `;

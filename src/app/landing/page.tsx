@@ -6,7 +6,7 @@ export default function LandingPage() {
   return (
     <main className={styles.container}>
       <header className={styles.header}>
-        <Image src="/globe.svg" alt="Guyana Home Hub Logo" width={64} height={64} />
+  <Image src="/globe.svg" alt="Portal Home Hub Logo" width={64} height={64} />
         <h1 className={styles.title}>Your Home Hub Portal</h1>
         <p className={styles.subtitle}>Connecting agents and sellers to Homehub's real estate market</p>
       </header>

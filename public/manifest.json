@@ -1,0 +1,27 @@
+
+{
+	"name": "Portal Home Hub",
+	"short_name": "Home Hub",
+	"start_url": "/",
+	"display": "standalone",
+	"background_color": "#ffffff",
+	"theme_color": "#0a2540",
+	"description": "Portal Home Hub - Real estate portal for agents, landlords, and FSBO.",
+	"icons": [
+		{
+			"src": "/android-icon-192x192.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "/android-icon-144x144.png",
+			"sizes": "144x144",
+			"type": "image/png"
+		},
+		{
+			"src": "/apple-icon-180x180.png",
+			"sizes": "180x180",
+			"type": "image/png"
+		}
+	]
+}

@@ -1,9 +1,7 @@
-"use client";
-
-import Image from 'next/image';
 import Link from 'next/link';
+import Image from 'next/image';
 
-export default function ConfirmEmailSuccess() {
+export default function LogoutPage() {
   return (
     <div style={{
       minHeight: '100vh',
@@ -25,16 +23,27 @@ export default function ConfirmEmailSuccess() {
         flexDirection: 'column',
         alignItems: 'center',
       }}>
-        {/* Portal Home Hub logo */}
-        <Image src="/portal-logo.svg" alt="Portal Home Hub Logo" width={72} height={72} style={{ marginBottom: '1.2rem' }} />
+  <Image src="/images/PHH Logo.png" alt="Portal Home Hub Logo" width={72} height={72} style={{ marginBottom: '1.2rem' }} />
         <h2 style={{ color: '#0a2240', fontWeight: 700, fontSize: '1.35rem', marginBottom: '1.1rem' }}>
-          Thanks for confirming your email address.
+          You have been logged out
         </h2>
         <p style={{ color: '#1a2a4f', fontSize: '1rem', marginBottom: '1.2rem' }}>
-          Please log in.
+          Thank you for using Portal Home Hub.<br />
+          To access your account again, please log in below.
         </p>
-        <Link href="/login" style={{ color: '#0a5cff', fontWeight: 600, fontSize: '1.08rem', textDecoration: 'underline' }}>
-          Log in
+        <Link href="/login" style={{
+          display: 'inline-block',
+          background: 'linear-gradient(90deg, #14b8a6, #0a2240)',
+          color: '#fff',
+          fontWeight: 'bold',
+          padding: '12px 32px',
+          borderRadius: '8px',
+          textDecoration: 'none',
+          fontSize: '1.1rem',
+          boxShadow: '0 2px 8px rgba(20,184,166,0.12)',
+          marginTop: '1.2rem',
+        }}>
+          Log Back In
         </Link>
       </div>
     </div>

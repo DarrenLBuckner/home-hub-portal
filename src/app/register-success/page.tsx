@@ -1,9 +1,6 @@
-"use client";
-
 import Image from 'next/image';
-import Link from 'next/link';
 
-export default function ConfirmEmailSuccess() {
+export default function RegisterSuccess() {
   return (
     <div style={{
       minHeight: '100vh',
@@ -27,15 +24,14 @@ export default function ConfirmEmailSuccess() {
       }}>
         {/* Portal Home Hub logo */}
         <Image src="/portal-logo.svg" alt="Portal Home Hub Logo" width={72} height={72} style={{ marginBottom: '1.2rem' }} />
+        {/* Professional red house-shaped logo */}
+        <Image src="/red-house-logo.svg" alt="Red House Logo" width={54} height={54} style={{ marginBottom: '1.2rem' }} />
         <h2 style={{ color: '#0a2240', fontWeight: 700, fontSize: '1.35rem', marginBottom: '1.1rem' }}>
-          Thanks for confirming your email address.
+          Thanks for registering with Portal Home Hub!
         </h2>
-        <p style={{ color: '#1a2a4f', fontSize: '1rem', marginBottom: '1.2rem' }}>
-          Please log in.
+        <p style={{ color: '#1a2a4f', fontSize: '1rem', marginBottom: '0.7rem' }}>
+          Please check your email for instructions on how to confirm your account.
         </p>
-        <Link href="/login" style={{ color: '#0a5cff', fontWeight: 600, fontSize: '1.08rem', textDecoration: 'underline' }}>
-          Log in
-        </Link>
       </div>
     </div>
   );

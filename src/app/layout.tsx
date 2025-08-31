@@ -1,6 +1,8 @@
 
+
 import type { Metadata } from "next";
 import "./globals.css";
+import BackendNavBar from '../components/BackendNavBar';
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -10,8 +12,21 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="msapplication-TileColor" content="#ffffff" />
+        <meta name="msapplication-TileImage" content="/ms-icon-144x144.png" />
+        <meta name="theme-color" content="#ffffff" />
+      </head>
       <body className="antialiased">
-        {children}
+        <BackendNavBar />
+        <main>
+          {children}
+        </main>
       </body>
     </html>
   );

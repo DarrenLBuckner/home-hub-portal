@@ -4,20 +4,47 @@ import styles from './landing/landing.module.css';
 
 export default function LandingPage() {
   return (
-    <main className={styles.container}>
-      <header className={styles.header}>
-        <Image src="/globe.svg" alt="Guyana Home Hub Logo" width={64} height={64} />
+    <div className={styles.container}>
+      <div style={{ marginBottom: '2rem' }}>
+  <Image src="/globe.svg" alt="Portal Home Hub Logo" width={64} height={64} />
         <h1 className={styles.title}>Your Home Hub Portal</h1>
         <p className={styles.subtitle}>Connecting agents and sellers to Homehub's real estate market</p>
-      </header>
+      </div>
       <section className={styles.actions}>
-        <Link href="/login" className={styles.button}>Login</Link>
-        <Link href="/register" className={styles.buttonSecondary}>Register</Link>
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '1rem',
+          justifyContent: 'center',
+          marginTop: '2rem',
+        }}>
+          <Link href="/login" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 w-full sm:w-auto text-center text-lg" style={{ minWidth: 220 }}>Login</Link>
+          <Link href="/register" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 w-full sm:w-auto text-center text-lg" style={{ minWidth: 220 }}>Agent Registration</Link>
+          <Link href="/register/landlord" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 w-full sm:w-auto text-center text-lg" style={{ minWidth: 220 }}>Landlord Registration</Link>
+          <Link href="/register/fsbo" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 w-full sm:w-auto text-center text-lg" style={{ minWidth: 220 }}>For Sale By Owner Registration</Link>
+        </div>
       </section>
       <footer className={styles.footer}>
-        <span>© 2025 Caribbean Home Hub</span>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <span>© 2025 Caribbean Home Hub</span>
+          <div style={{ marginTop: '0.5rem' }}>
+            <span style={{ color: 'green', fontWeight: 'bold' }}>For Agents</span>
+            <ul style={{ listStyle: 'none', paddingLeft: 0, margin: 0 }}>
+              <li>
+                <a href="https://portalhomehub.com/register" target="_blank" rel="noopener noreferrer">
+                  Agent Registration (Portal)
+                </a>
+              </li>
+              <li>
+                <a href="https://portalhomehub.com/login" target="_blank" rel="noopener noreferrer">
+                  Agent Login (Portal)
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
       </footer>
-    </main>
+    </div>
   );
 }
 

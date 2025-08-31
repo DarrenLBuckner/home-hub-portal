@@ -52,7 +52,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-6 text-center">Agent Login</h2>
+    <h2 className="text-2xl font-bold mb-6 text-center">Portal Home Hub Login</h2>
         <div className="mb-4">
           <label className="block mb-2 font-semibold">Email</label>
           <input
@@ -106,13 +106,23 @@ export default function LoginPage() {
             Forgot your password?
           </button>
           <a
-            href="https://www.guyanahomehub.com/agent-register"
+            href="https://portalhomehub.com/register"
             className="text-green-700 hover:underline text-sm font-semibold"
             target="_blank"
             rel="noopener noreferrer"
           >
             Register as Agent
           </a>
+           <div className="mt-2 text-center">
+             <a href="/register/landlord" className="text-blue-700 hover:underline font-semibold">
+               Register as Landlord
+             </a>
+           </div>
+           <div className="mt-2 text-center">
+             <a href="/register/fsbo" className="text-orange-700 hover:underline font-semibold">
+               Register as For Sale By Owner
+             </a>
+           </div>
         </div>
       </form>
       {showReset && (

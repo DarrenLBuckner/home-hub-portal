@@ -37,6 +37,7 @@ export default function RegistrationPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  const [redirect, setRedirect] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name as keyof typeof form]: e.target.value });
@@ -64,16 +65,18 @@ export default function RegistrationPage() {
       setError(dbError.message);
       return;
     }
-    setSuccess(true);
+  setSuccess(true);
+  setTimeout(() => setRedirect(true), 500); // short delay for UX
   };
 
   if (success) {
-    return (
-      <div className="max-w-xl mx-auto bg-white rounded-xl shadow-lg p-8 mt-10 text-center animate-fade-in">
-        <h2 className="text-2xl font-bold mb-4 text-yellow-600">Registration Received</h2>
-        <p className="text-lg text-gray-700">Your information has been received and will be reviewed. You will be contacted within 48 hours.</p>
-      </div>
-    );
+    if (redirect) {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/register-success';
+      }
+      return null;
+    }
+    return null;
   }
 
   return (
@@ -128,8 +131,6 @@ export default function RegistrationPage() {
         <div className="flex gap-4">
           <select name="user_type" value={form.user_type} onChange={handleChange} className="border-2 border-teal-600 rounded-lg px-4 py-2 font-semibold bg-teal-50 focus:ring-2 focus:ring-teal-400">
             <option value="agent">Agent</option>
-            <option value="fsbo">FSBO</option>
-            <option value="landlord">Landlord</option>
           </select>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

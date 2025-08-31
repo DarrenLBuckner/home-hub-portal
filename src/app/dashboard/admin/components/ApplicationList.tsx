@@ -31,8 +31,9 @@ export default function ApplicationList() {
 
   const sendStatusEmail = async (app: any, status: string, note?: string) => {
     let paymentLink = "";
+    // Payment page removed; do not generate paymentLink
     if (status === "approved") {
-      paymentLink = `/pay?user_id=${app.user_id}&type=${app.user_type}${app.tier ? `&tier=${app.tier}` : ""}${app.fsbo_days ? `&days=${app.fsbo_days}` : ""}${app.landlord_days ? `&days=${app.landlord_days}` : ""}`;
+      paymentLink = "";
     }
     await fetch("/api/send-status-email", {
       method: "POST",
@@ -42,7 +43,7 @@ export default function ApplicationList() {
         name: `${app.first_name} ${app.last_name}`,
         status,
         note,
-        paymentLink: paymentLink ? `${window.location.origin}${paymentLink}` : undefined,
+  paymentLink: undefined,
       }),
     });
   };
@@ -114,7 +115,7 @@ export default function ApplicationList() {
                 <td className="p-2">
                   {app.status === "approved" ? (
                     <a
-                      href={`/pay?user_id=${app.user_id}&type=${app.user_type}${app.tier ? `&tier=${app.tier}` : ""}${app.fsbo_days ? `&days=${app.fsbo_days}` : ""}${app.landlord_days ? `&days=${app.landlord_days}` : ""}`}
+                      href="#"
                       className="bg-green-500 text-white px-3 py-1 rounded mr-2 hover:bg-green-600 font-bold"
                     >
                       Proceed to Payment
