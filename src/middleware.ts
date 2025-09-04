@@ -1,56 +1,105 @@
 // src/middleware.ts
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
-import type Database from './types/supabase'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient<Database>({ req, res })
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+        },
+      },
+    }
+  )
 
-  // Define protected routes
-  const protectedRoutes = [
-    '/dashboard',
-    '/properties/create',
-    '/profile'
-  ]
+  // Protected routes that require authentication
+  const protectedRoutes = ['/dashboard']
+  const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
-  const adminRoutes = [
-    '/admin',
-    '/admin/users',
-    '/admin/properties'
-  ]
+  if (isProtectedRoute) {
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      // Redirect to login if not authenticated
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/login'
+      redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
 
-  const currentPath = req.nextUrl.pathname
+    // Check user role for specific dashboard routes
+    if (request.nextUrl.pathname.startsWith('/dashboard/')) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_type, subscription_status')
+        .eq('id', user.id)
+        .single()
 
-  // Redirect logic for protected routes
-  // if (protectedRoutes.some(route => currentPath.startsWith(route))) {
-  //   if (!session) {
-  //     return NextResponse.redirect(new URL('/login', req.url))
-  //   }
-  // }
-
-  // Admin route protection
-  if (adminRoutes.some(route => currentPath.startsWith(route))) {
-    if (!session || session.user.user_metadata.role !== 'admin') {
-      return NextResponse.redirect(new URL('/dashboard', req.url))
+      const dashboardType = request.nextUrl.pathname.split('/')[2] // admin, agent, fsbo
+      
+      // Redirect if user type doesn't match dashboard
+      if (profile) {
+        if (dashboardType === 'admin' && profile.user_type !== 'admin') {
+          return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
+        if (dashboardType === 'agent' && profile.user_type !== 'agent') {
+          return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
+        if (dashboardType === 'fsbo' && profile.user_type !== 'fsbo') {
+          return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
+      }
     }
   }
 
-  return res
+  return response
 }
 
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/properties/:path*',
-    '/profile/:path*',
-    '/admin/:path*',
-    '/login',
-    '/register'
-  ]
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }
