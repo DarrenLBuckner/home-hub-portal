@@ -25,13 +25,41 @@ export default function LoginPage() {
       return;
     }
     setLoading(true);
-  const supabase = supabaseBackend;
-    const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
+    
+    const supabase = supabaseBackend;
+    const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+    
     if (loginError) {
       setError(loginError.message);
-    } else {
-      window.location.href = '/dashboard/agent';
+      setLoading(false);
+      return;
+    }
+
+    // Get user profile to determine correct dashboard
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('id', data.user.id)
+        .single();
+
+      setLoading(false);
+      
+      if (profile) {
+        // Redirect to appropriate dashboard based on user type
+        const dashboardRoutes = {
+          admin: '/dashboard/admin',
+          agent: '/dashboard/agent',
+          fsbo: '/dashboard/fsbo',
+          landlord: '/dashboard/landlord'
+        };
+        
+        const redirectUrl = dashboardRoutes[profile.user_type as keyof typeof dashboardRoutes] || '/dashboard/agent';
+        window.location.href = redirectUrl;
+      } else {
+        // Fallback if profile not found
+        window.location.href = '/dashboard/agent';
+      }
     }
   };
 

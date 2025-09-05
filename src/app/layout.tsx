@@ -2,7 +2,7 @@
 
 import type { Metadata } from "next";
 import "./globals.css";
-import BackendNavBar from '../components/BackendNavBar';
+import AuthNavBar from '../components/AuthNavBar';
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -23,7 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#ffffff" />
       </head>
       <body className="antialiased">
-        <BackendNavBar />
+        <AuthNavBar />
         <main>
           {children}
         </main>
