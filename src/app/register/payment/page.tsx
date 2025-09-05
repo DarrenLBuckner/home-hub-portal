@@ -13,9 +13,10 @@ function EnterprisePaymentForm() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [showForm, setShowForm] = useState(true);
-  const [timeoutActive, setTimeoutActive] = useState(false);
-  const [countdown, setCountdown] = useState(0);
-  const [showTimeoutModal, setShowTimeoutModal] = useState(false);
+  // Removed timeout functionality to prevent React errors
+  const [timeoutActive] = useState(false);
+  const [countdown] = useState(0);
+  const [showTimeoutModal] = useState(false);
   const [registrationData, setRegistrationData] = useState<any>(null);
 
   // Load registration data from sessionStorage
@@ -54,36 +55,8 @@ function EnterprisePaymentForm() {
   const amount = planAmounts[plan];
   const email = registrationData.email;
 
-  // Timeout logic: 2 min inactivity, 30s countdown
-  useEffect(() => {
-    if (!showForm || !registrationData) return;
-    
-    let idleTimer: NodeJS.Timeout;
-    let countdownTimer: NodeJS.Timeout;
-    
-    idleTimer = setTimeout(() => {
-      setTimeoutActive(true);
-      setCountdown(30);
-      countdownTimer = setInterval(() => {
-        setCountdown((c) => {
-          if (c <= 1) {
-            clearInterval(countdownTimer);
-            setShowForm(false);
-            setError("");
-            setTimeoutActive(false);
-            setShowTimeoutModal(true);
-            return 0;
-          }
-          return c - 1;
-        });
-      }, 1000);
-    }, 2 * 60 * 1000);
-    
-    return () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      if (countdownTimer) clearInterval(countdownTimer);
-    };
-  }, [showForm, registrationData]);
+  // Timeout logic temporarily disabled to prevent React errors
+  // TODO: Re-implement timeout functionality after fixing React issues
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
