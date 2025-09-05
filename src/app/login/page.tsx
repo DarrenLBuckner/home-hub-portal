@@ -55,6 +55,7 @@ export default function LoginPage() {
         // Redirect to appropriate dashboard based on user type
         const dashboardRoutes = {
           admin: '/dashboard/admin',
+          super_admin: '/dashboard/admin',
           agent: '/dashboard/agent',
           fsbo: '/dashboard/fsbo',
           landlord: '/dashboard/landlord'

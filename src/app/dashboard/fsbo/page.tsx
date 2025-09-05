@@ -6,7 +6,11 @@ import { getActiveCountries } from "@/lib/countries";
 
 export default function FSBODashboard() {
   const [user, setUser] = useState<any>(null);
-  const [subscription, setSubscription] = useState<any>(null);
+  const [subscription, setSubscription] = useState<{
+    status: string;
+    totalProperties: number;
+    activeListings: number;
+  } | null>(null);
   const [properties, setProperties] = useState<any[]>([]);
   const [countryFilter, setCountryFilter] = useState<string>("");
   const [countries, setCountries] = useState<any[]>([]);
@@ -32,10 +36,11 @@ export default function FSBODashboard() {
 
       if (profile) {
         setUser(authUser);
+        // FSBO uses per-property payments, not subscriptions
         setSubscription({
-          status: profile.subscription_status || 'inactive',
-          plan: profile.subscription_plan || 'None',
-          expires: profile.subscription_expires ? new Date(profile.subscription_expires).toLocaleDateString() : 'N/A',
+          status: profile.subscription_status || 'inactive', // This tracks if they've completed registration
+          totalProperties: 0, // Will be updated when we fetch properties
+          activeListings: 0
         });
 
         // Fetch user properties
@@ -45,6 +50,15 @@ export default function FSBODashboard() {
           .eq("user_id", authUser.id);
         
         setProperties(userProperties || []);
+        
+        // Update subscription info with property counts
+        if (userProperties) {
+          setSubscription(prev => prev ? ({
+            ...prev,
+            totalProperties: userProperties.length,
+            activeListings: userProperties.filter(p => p.status === 'approved').length
+          }) : null);
+        }
       }
       
       setLoading(false);
@@ -70,37 +84,50 @@ export default function FSBODashboard() {
       {subscription && (
         <div className="mb-6 p-6 bg-white rounded-xl shadow">
           <div className="font-semibold text-lg mb-2">
-            Subscription Status: 
+            Account Status: 
             <span className={subscription.status === 'active' ? 'text-green-600' : 'text-red-600'}>
-              {subscription.status}
+              {subscription.status === 'active' ? 'Registered' : 'Registration Required'}
             </span>
           </div>
-          <div className="mb-1">Plan: <span className="font-bold text-orange-600">{subscription.plan}</span></div>
-          <div>Expiry Date: <span className="font-bold">{subscription.expires}</span></div>
+          <div className="mb-1">Total Properties: <span className="font-bold text-orange-600">{subscription.totalProperties}</span></div>
+          <div>Active Listings: <span className="font-bold text-green-600">{subscription.activeListings}</span></div>
+          <div className="mt-2 text-sm text-gray-600">
+            Pay per property listing - no monthly subscription required
+          </div>
         </div>
       )}
       
-      {subscription?.status === "active" ? (
-        <Link href="/properties/create">
-          <button className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold text-lg shadow-lg hover:scale-105 transition">Create Property Listing</button>
+      <div className="mb-6">
+        <Link href="/dashboard/fsbo/create-listing">
+          <button className="px-6 py-3 rounded-xl bg-orange-500 text-white font-bold text-lg shadow-lg hover:scale-105 transition">Create New Property Listing</button>
         </Link>
-      ) : (
-        <div className="mb-6 p-4 bg-yellow-100 rounded-xl border border-yellow-300">
-          <p className="text-yellow-800 font-semibold">Your account is not active.</p>
-          <p className="text-yellow-700 text-sm mt-1">Please complete your registration and payment to start listing properties.</p>
-          <Link href="/register/fsbo">
-            <button className="mt-3 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">Complete Registration</button>
-          </Link>
+      </div>
+      
+      {subscription?.status !== "active" && (
+        <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+          <p className="text-blue-800 text-sm">
+            <strong>Note:</strong> If you've just completed payment, your account is ready to create listings.
+          </p>
         </div>
       )}
-      <h2 className="text-xl font-bold mb-4">Your Properties</h2>
-      <label htmlFor="countryFilter">Filter by Country</label>
-      <select name="countryFilter" value={countryFilter} onChange={e => setCountryFilter(e.target.value)}>
-        <option value="">All Countries</option>
-        {countries.map(c => (
-          <option key={c.code} value={c.code}>{c.name}</option>
-        ))}
-      </select>
+      
+      <div id="properties">
+        <h2 className="text-xl font-bold mb-4">Your Properties</h2>
+        <div className="mb-4">
+          <label htmlFor="countryFilter" className="block text-sm font-medium text-gray-700 mb-2">Filter by Country</label>
+          <select 
+            name="countryFilter" 
+            value={countryFilter} 
+            onChange={e => setCountryFilter(e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
+          >
+            <option value="">All Countries</option>
+            {countries.map(c => (
+              <option key={c.code} value={c.code}>{c.name}</option>
+            ))}
+          </select>
+        </div>
+      </div>
       <ul>
         {properties.filter(p => !countryFilter || p.country === countryFilter).map(property => (
           <li key={property.id} className="border p-4 mb-4 rounded-lg">

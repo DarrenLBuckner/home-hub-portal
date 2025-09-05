@@ -6,7 +6,6 @@ import ListingOverview from './components/ListingOverview';
 import UploadArea from './components/UploadArea';
 import MyPropertiesTab from './components/MyPropertiesTab';
 // ...existing code...
-import { createClient } from '@supabase/supabase-js';
 import AgentProfileSettings from './components/AgentProfileSettings';
 import AgentDashboardWelcome from './components/AgentDashboardWelcome';
 
@@ -16,14 +15,14 @@ import AgentDashboardWelcome from './components/AgentDashboardWelcome';
 const agentWhatsapp = "5926001234";
 
 import { useState, useEffect, useRef } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/lib/supabase/client';
 
 export default function AgentPage() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [userId, setUserId] = useState<string | null>(null);
   useEffect(() => {
     const fetchUser = async () => {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data } = await supabase.auth.getUser();
       setUserId(data?.user?.id || null);
     };

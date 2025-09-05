@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-type UserType = "agent" | "landlord" | "fsbo";
+type UserType = "agent" | "landlord" | "fsbo" | "admin" | "super_admin";
 type NavLink = { label: string; href: string; isButton?: boolean; dropdown?: boolean };
 
 interface BackendNavBarProps {
@@ -34,10 +34,27 @@ const navLinks: Record<UserType, NavLink[]> = {
 	],
 	fsbo: [
 		{ label: "Dashboard", href: "/dashboard/fsbo" },
-		{ label: "My Listings", href: "/dashboard/fsbo" },
+		{ label: "My Listings", href: "/dashboard/fsbo#properties" },
 		{ label: "Create Listing", href: "/dashboard/fsbo/create-listing" },
-		{ label: "Profile/Settings", href: "/dashboard/fsbo" },
+		{ label: "Profile/Settings", href: "/dashboard/fsbo/settings" },
 		{ label: "Register", href: "/register", dropdown: true },
+		{ label: "Logout", href: "/logout", isButton: true },
+	],
+	admin: [
+		{ label: "Dashboard", href: "/dashboard/admin" },
+		{ label: "Applications", href: "/dashboard/admin" },
+		{ label: "User Management", href: "/dashboard/admin" },
+		{ label: "Properties", href: "/dashboard/admin" },
+		{ label: "Settings", href: "/dashboard/admin" },
+		{ label: "Logout", href: "/logout", isButton: true },
+	],
+	super_admin: [
+		{ label: "Dashboard", href: "/dashboard/admin" },
+		{ label: "Applications", href: "/dashboard/admin" },
+		{ label: "User Management", href: "/dashboard/admin" },
+		{ label: "Properties", href: "/dashboard/admin" },
+		{ label: "System Settings", href: "/dashboard/admin" },
+		{ label: "Admin Management", href: "/dashboard/admin" },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
 };
@@ -107,7 +124,7 @@ export default function BackendNavBar({ userType = "agent" }: BackendNavBarProps
 												<Link href="/dashboard/agent/create-property" className="block px-4 py-2 hover:bg-blue-100">Agent</Link>
 											</li>
 											<li>
-												<Link href="/register/fsbo" className="block px-4 py-2 hover:bg-blue-100">For Sale By Owner</Link>
+												<Link href="/dashboard/fsbo/create-listing" className="block px-4 py-2 hover:bg-blue-100">For Sale By Owner</Link>
 											</li>
 											<li>
 												<button className="block w-full text-left px-4 py-2 text-gray-400 cursor-not-allowed" disabled>Landlord (Coming Soon)</button>

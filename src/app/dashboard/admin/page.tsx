@@ -1,28 +1,53 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+import { createClient } from "@/lib/supabase/client";
 
 export default function AdminDashboard() {
+  const [user, setUser] = useState<any>(null);
   const [pendingProperties, setPendingProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function fetchPending() {
+    async function checkAuthAndFetchData() {
       setLoading(true);
+      const supabase = createClient();
+      
+      // Check authentication and user type
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        window.location.href = '/login';
+        return;
+      }
+
+      // Check if user is admin or super_admin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('id', authUser.id)
+        .single();
+
+      if (!profile || (profile.user_type !== 'admin' && profile.user_type !== 'super_admin')) {
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      setUser(authUser);
+
+      // Fetch pending properties
       const { data, error } = await supabase.from("properties").select("*, profiles(email)").eq("status", "pending");
       if (error) setError(error.message);
       setPendingProperties(data || []);
       setLoading(false);
     }
-    fetchPending();
+    
+    checkAuthAndFetchData();
   }, []);
 
   async function handleAction(id: string, action: "approve" | "reject") {
     setLoading(true);
+    const supabase = createClient();
     const status = action === "approve" ? "approved" : "rejected";
     const { error } = await supabase.from("properties").update({ status }).eq("id", id);
     if (error) setError(error.message);

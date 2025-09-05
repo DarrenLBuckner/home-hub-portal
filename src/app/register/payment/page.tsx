@@ -73,7 +73,7 @@ function EnterprisePaymentForm() {
       setError(data.error || "Payment setup failed");
       setIsLoading(false);
       setShowForm(false); // Hide card info
-      setShowTimeoutModal(true);
+      // Timeout functionality removed
       return;
     }
     // Confirm card payment
@@ -86,7 +86,7 @@ function EnterprisePaymentForm() {
       setError(result.error.message || "Payment failed. Please contact your bank or try another payment method.");
       setIsLoading(false);
       setShowForm(false); // Hide card info
-      setShowTimeoutModal(true);
+      // Timeout functionality removed
       return;
     }
     
@@ -100,7 +100,7 @@ function EnterprisePaymentForm() {
     setSuccess(true);
     setIsLoading(false);
     setShowForm(false); // Hide card info
-    setShowTimeoutModal(false);
+    // Timeout functionality removed
     
     // Redirect to payment success page after a brief delay
     setTimeout(() => {
@@ -113,9 +113,7 @@ function EnterprisePaymentForm() {
   function handleRetry() {
     setError("");
     setShowForm(true);
-    setTimeoutActive(false);
-    setCountdown(0);
-    setShowTimeoutModal(false);
+    // Timeout functionality removed
   }
 
   // WhatsApp support link

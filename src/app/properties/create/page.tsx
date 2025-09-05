@@ -3,11 +3,7 @@ import React, { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getActiveCountries, getCountryRegions } from "@/lib/countries";
 
-let useSupabaseUser: any = () => ({ id: undefined });
-try {
-  // @ts-ignore
-  useSupabaseUser = require("@supabase/auth-helpers-react").useSupabaseUser;
-} catch {}
+import { createClient } from "@/lib/supabase/client";
 
 const PROPERTY_TYPES = ["House", "Apartment", "Land", "Commercial"];
 const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly"];
@@ -29,7 +25,16 @@ type PropertyForm = {
 };
 
 export default function CreatePropertyPage() {
-  const user = useSupabaseUser();
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    async function getUser() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    }
+    getUser();
+  }, []);
   const router = useRouter();
   const [form, setForm] = useState<PropertyForm>({
     title: "",

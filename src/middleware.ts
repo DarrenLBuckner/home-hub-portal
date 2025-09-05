@@ -82,13 +82,17 @@ export async function middleware(request: NextRequest) {
       
       // Redirect if user type doesn't match dashboard
       if (profile) {
-        if (dashboardType === 'admin' && profile.user_type !== 'admin') {
+        // Super admin can access admin routes, regular admin can only access admin routes
+        if (dashboardType === 'admin' && profile.user_type !== 'admin' && profile.user_type !== 'super_admin') {
           return NextResponse.redirect(new URL('/dashboard', request.url))
         }
         if (dashboardType === 'agent' && profile.user_type !== 'agent') {
           return NextResponse.redirect(new URL('/dashboard', request.url))
         }
         if (dashboardType === 'fsbo' && profile.user_type !== 'fsbo') {
+          return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
+        if (dashboardType === 'landlord' && profile.user_type !== 'landlord') {
           return NextResponse.redirect(new URL('/dashboard', request.url))
         }
       }

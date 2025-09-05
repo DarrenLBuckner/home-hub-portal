@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 import PublicNavBar from "./PublicNavBar";
 import BackendNavBar from "./BackendNavBar";
 
-type UserType = "agent" | "landlord" | "fsbo" | "admin";
+type UserType = "agent" | "landlord" | "fsbo" | "admin" | "super_admin";
 
 export default function AuthNavBar() {
   const [user, setUser] = useState<any>(null);
