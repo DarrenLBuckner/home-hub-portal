@@ -20,12 +20,22 @@ function EnterprisePaymentForm() {
 
   // Load registration data from sessionStorage
   useEffect(() => {
-    const stored = sessionStorage.getItem('fsboRegistration');
-    if (stored) {
-      setRegistrationData(JSON.parse(stored));
-    } else {
-      // Redirect if no registration data
-      window.location.href = '/register/fsbo';
+    try {
+      const stored = sessionStorage.getItem('fsboRegistration');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setRegistrationData(parsed);
+      } else {
+        // Redirect if no registration data
+        if (typeof window !== 'undefined') {
+          window.location.href = '/register/fsbo';
+        }
+      }
+    } catch (error) {
+      console.error('Error loading registration data:', error);
+      if (typeof window !== 'undefined') {
+        window.location.href = '/register/fsbo';
+      }
     }
   }, []);
 
@@ -45,10 +55,12 @@ function EnterprisePaymentForm() {
   const email = registrationData.email;
 
   // Timeout logic: 2 min inactivity, 30s countdown
-  React.useEffect(() => {
-    if (!showForm) return;
+  useEffect(() => {
+    if (!showForm || !registrationData) return;
+    
     let idleTimer: NodeJS.Timeout;
     let countdownTimer: NodeJS.Timeout;
+    
     idleTimer = setTimeout(() => {
       setTimeoutActive(true);
       setCountdown(30);
@@ -56,7 +68,7 @@ function EnterprisePaymentForm() {
         setCountdown((c) => {
           if (c <= 1) {
             clearInterval(countdownTimer);
-            setShowForm(false); // Hide form
+            setShowForm(false);
             setError("");
             setTimeoutActive(false);
             setShowTimeoutModal(true);
@@ -65,12 +77,13 @@ function EnterprisePaymentForm() {
           return c - 1;
         });
       }, 1000);
-    }, 2 * 60 * 1000); // 2 min
+    }, 2 * 60 * 1000);
+    
     return () => {
-      clearTimeout(idleTimer);
-      clearInterval(countdownTimer);
+      if (idleTimer) clearTimeout(idleTimer);
+      if (countdownTimer) clearInterval(countdownTimer);
     };
-  }, [showForm]);
+  }, [showForm, registrationData]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -118,7 +131,9 @@ function EnterprisePaymentForm() {
     
     // Redirect to payment success page after a brief delay
     setTimeout(() => {
-      window.location.href = '/payment-success';
+      if (typeof window !== 'undefined') {
+        window.location.href = '/payment-success';
+      }
     }, 2000);
   }
 
