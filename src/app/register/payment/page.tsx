@@ -4,10 +4,7 @@ import { loadStripe } from "@stripe/stripe-js";
 import { Elements, CardElement, useStripe, useElements } from "@stripe/react-stripe-js";
 
 const stripePublicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLIC_KEY;
-if (!stripePublicKey) {
-  throw new Error("Stripe public key is missing. Please set NEXT_PUBLIC_STRIPE_PUBLIC_KEY in your .env.local and restart the dev server.");
-}
-const stripePromise = loadStripe(stripePublicKey);
+const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
 
 function EnterprisePaymentForm() {
   const stripe = useStripe();
@@ -209,6 +206,30 @@ function EnterprisePaymentForm() {
 }
 
 export default function PaymentPage() {
+  if (!stripePublicKey) {
+    return (
+      <main className="max-w-xl mx-auto py-12 px-4 text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Payment Configuration Error</h1>
+        <p className="text-gray-700">Payment system is not properly configured. Please contact support.</p>
+        <a href="https://wa.me/5927059857?text=Payment%20configuration%20error" className="mt-4 inline-block px-4 py-2 bg-green-500 text-white rounded">
+          Contact Support
+        </a>
+      </main>
+    );
+  }
+
+  if (!stripePromise) {
+    return (
+      <main className="max-w-xl mx-auto py-12 px-4 text-center">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Payment Loading Error</h1>
+        <p className="text-gray-700">Failed to load payment system. Please refresh and try again.</p>
+        <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+          Refresh Page
+        </button>
+      </main>
+    );
+  }
+
   return (
     <main className="max-w-xl mx-auto py-12 px-4">
       <Elements stripe={stripePromise}>
