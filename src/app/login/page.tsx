@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { supabaseBackend } from '../../lib/supabase-backend';
+import { createClient } from '@/lib/supabase/client';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -26,8 +26,10 @@ export default function LoginPage() {
     }
     setLoading(true);
     
-    const supabase = supabaseBackend;
+    const supabase = createClient();
     const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+    
+    console.log('Login attempt result:', { data: !!data.user, error: loginError?.message });
     
     if (loginError) {
       setError(loginError.message);
@@ -37,15 +39,19 @@ export default function LoginPage() {
 
     // Get user profile to determine correct dashboard
     if (data.user) {
-      const { data: profile } = await supabase
+      console.log('User logged in, fetching profile...');
+      
+      const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('user_type')
         .eq('id', data.user.id)
         .single();
 
+      console.log('Profile fetch result:', { profile, profileError });
+      
       setLoading(false);
       
-      if (profile) {
+      if (profile && profile.user_type) {
         // Redirect to appropriate dashboard based on user type
         const dashboardRoutes = {
           admin: '/dashboard/admin',
@@ -55,18 +61,25 @@ export default function LoginPage() {
         };
         
         const redirectUrl = dashboardRoutes[profile.user_type as keyof typeof dashboardRoutes] || '/dashboard/agent';
+        console.log('Redirecting to:', redirectUrl);
+        
+        // Force a page reload to the dashboard to ensure auth state updates
         window.location.href = redirectUrl;
       } else {
         // Fallback if profile not found
+        console.log('Profile not found, redirecting to agent dashboard');
         window.location.href = '/dashboard/agent';
       }
+    } else {
+      setLoading(false);
+      setError('Login failed - no user data received');
     }
   };
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetStatus('');
-  const supabase = supabaseBackend;
+    const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
       redirectTo: `${window.location.origin}/login`,
     });
