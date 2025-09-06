@@ -3,9 +3,43 @@ import React from 'react';
 type SidebarProps = {
   activeSection: string;
   onSectionChange: (section: string) => void;
+  userType?: string | null;
+  isAgent?: boolean;
 };
 
-export default function AgentSidebar({ activeSection, onSectionChange }: SidebarProps) {
+export default function AgentSidebar({ activeSection, onSectionChange, userType, isAgent }: SidebarProps) {
+  const handleSectionChange = (section: string) => {
+    // Allow access to dashboard and settings for all users
+    if (section === 'dashboard' || section === 'settings') {
+      onSectionChange(section);
+      return;
+    }
+    
+    // For agent-only features, show notification if not agent
+    if (!isAgent) {
+      alert('This feature is available for agents only. Contact support to upgrade your account.');
+      return;
+    }
+    
+    onSectionChange(section);
+  };
+
+  // Dynamic dashboard title based on user type
+  const getDashboardTitle = () => {
+    if (userType === 'admin') return 'Admin Portal';
+    if (userType === 'agent') return 'Agent Dashboard';
+    if (userType === 'fsbo') return 'FSBO Portal';
+    if (userType === 'landlord') return 'Landlord Portal';
+    return 'Property Portal'; // Universal fallback
+  };
+
+  const getDashboardSubtitle = () => {
+    if (userType === 'admin') return 'System Management';
+    if (userType === 'agent') return 'Professional Tools';
+    if (userType === 'fsbo') return 'Sell Your Property';
+    if (userType === 'landlord') return 'Rental Management';
+    return 'Property Management'; // Universal fallback
+  };
   return (
     <aside className="w-64 bg-white shadow-sm h-full border-r border-gray-200">
       <div className="p-4 border-b border-gray-100">
@@ -14,47 +48,87 @@ export default function AgentSidebar({ activeSection, onSectionChange }: Sidebar
             <span className="text-green-700 font-bold">GH</span>
           </div>
           <div>
-            <p className="font-semibold text-gray-900">Agent Dashboard</p>
-            <p className="text-xs text-gray-500">Property Management</p>
+            <p className="font-semibold text-gray-900">{getDashboardTitle()}</p>
+            <p className="text-xs text-gray-500">{getDashboardSubtitle()}</p>
           </div>
         </div>
       </div>
       <nav className="p-4">
         <ul className="space-y-1">
           <li>
-            <button className={`flex items-center w-full px-4 py-3 rounded-lg font-medium ${activeSection === 'dashboard' ? 'text-green-700 bg-green-50' : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'}`} onClick={() => onSectionChange('dashboard')}>
-              <span className="mr-3">🏠</span>
-              Dashboard
+            <button className={`flex items-center justify-between w-full px-4 py-3 rounded-lg font-medium ${activeSection === 'dashboard' ? 'text-green-700 bg-green-50' : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'}`} onClick={() => handleSectionChange('dashboard')}>
+              <div className="flex items-center">
+                <span className="mr-3">🏠</span>
+                Dashboard
+              </div>
             </button>
           </li>
           <li>
-            <button className={`flex items-center w-full px-4 py-3 rounded-lg font-medium ${activeSection === 'properties' ? 'text-green-700 bg-green-50' : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'}`} onClick={() => onSectionChange('properties')}>
-              <span className="mr-3">🏘️</span>
-              My Properties
+            <button className={`flex items-center justify-between w-full px-4 py-3 rounded-lg font-medium ${
+              !isAgent 
+                ? 'text-gray-400 bg-gray-50 cursor-not-allowed' 
+                : activeSection === 'properties' 
+                  ? 'text-green-700 bg-green-50' 
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'
+            }`} onClick={() => handleSectionChange('properties')}>
+              <div className="flex items-center">
+                <span className="mr-3">🏘️</span>
+                My Properties
+              </div>
+              {!isAgent && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Agent Only</span>}
             </button>
           </li>
           <li>
-            <button className={`flex items-center w-full px-4 py-3 rounded-lg font-medium ${activeSection === 'listings' ? 'text-green-700 bg-green-50' : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'}`} onClick={() => onSectionChange('listings')}>
-              <span className="mr-3">📋</span>
-              Active Listings
+            <button className={`flex items-center justify-between w-full px-4 py-3 rounded-lg font-medium ${
+              !isAgent 
+                ? 'text-gray-400 bg-gray-50 cursor-not-allowed' 
+                : activeSection === 'listings' 
+                  ? 'text-green-700 bg-green-50' 
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'
+            }`} onClick={() => handleSectionChange('listings')}>
+              <div className="flex items-center">
+                <span className="mr-3">📋</span>
+                Active Listings
+              </div>
+              {!isAgent && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Agent Only</span>}
             </button>
           </li>
           <li>
-            <button className={`flex items-center w-full px-4 py-3 rounded-lg font-medium ${activeSection === 'inquiries' ? 'text-green-700 bg-green-50' : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'}`} onClick={() => onSectionChange('inquiries')}>
-              <span className="mr-3">👥</span>
-              Client Inquiries
+            <button className={`flex items-center justify-between w-full px-4 py-3 rounded-lg font-medium ${
+              !isAgent 
+                ? 'text-gray-400 bg-gray-50 cursor-not-allowed' 
+                : activeSection === 'inquiries' 
+                  ? 'text-green-700 bg-green-50' 
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'
+            }`} onClick={() => handleSectionChange('inquiries')}>
+              <div className="flex items-center">
+                <span className="mr-3">👥</span>
+                Client Inquiries
+              </div>
+              {!isAgent && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Agent Only</span>}
             </button>
           </li>
           <li>
-            <button className={`flex items-center w-full px-4 py-3 rounded-lg font-medium ${activeSection === 'reports' ? 'text-green-700 bg-green-50' : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'}`} onClick={() => onSectionChange('reports')}>
-              <span className="mr-3">📊</span>
-              Sales Reports
+            <button className={`flex items-center justify-between w-full px-4 py-3 rounded-lg font-medium ${
+              !isAgent 
+                ? 'text-gray-400 bg-gray-50 cursor-not-allowed' 
+                : activeSection === 'reports' 
+                  ? 'text-green-700 bg-green-50' 
+                  : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'
+            }`} onClick={() => handleSectionChange('reports')}>
+              <div className="flex items-center">
+                <span className="mr-3">📊</span>
+                Sales Reports
+              </div>
+              {!isAgent && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Agent Only</span>}
             </button>
           </li>
           <li>
-            <button className={`flex items-center w-full px-4 py-3 rounded-lg font-medium ${activeSection === 'settings' ? 'text-green-700 bg-green-50' : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'}`} onClick={() => onSectionChange('settings')}>
-              <span className="mr-3">⚙️</span>
-              Settings
+            <button className={`flex items-center justify-between w-full px-4 py-3 rounded-lg font-medium ${activeSection === 'settings' ? 'text-green-700 bg-green-50' : 'text-gray-700 hover:bg-gray-50 hover:text-green-700'}`} onClick={() => handleSectionChange('settings')}>
+              <div className="flex items-center">
+                <span className="mr-3">⚙️</span>
+                Settings
+              </div>
             </button>
           </li>
         </ul>

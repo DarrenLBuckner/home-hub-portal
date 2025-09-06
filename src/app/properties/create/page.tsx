@@ -2,7 +2,6 @@
 import React, { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getActiveCountries, getCountryRegions } from "@/lib/countries";
-
 import { createClient } from "@/lib/supabase/client";
 
 const PROPERTY_TYPES = ["House", "Apartment", "Land", "Commercial"];
@@ -25,17 +24,8 @@ type PropertyForm = {
 };
 
 export default function CreatePropertyPage() {
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    async function getUser() {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
-    }
-    getUser();
-  }, []);
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
   const [form, setForm] = useState<PropertyForm>({
     title: "",
     description: "",
@@ -65,6 +55,14 @@ export default function CreatePropertyPage() {
 
   useEffect(() => {
     getActiveCountries().then(setCountries);
+    
+    // Get current user
+    const getUser = async () => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
   }, []);
   useEffect(() => {
     if (selectedCountry) {
@@ -157,7 +155,7 @@ export default function CreatePropertyPage() {
         return;
       }
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard/fsbo"), 2000);
+      setTimeout(() => router.push("/dashboard/owner"), 2000);
     } catch (err: any) {
       setError(err?.message || "Failed to submit property. Please try again.");
     }

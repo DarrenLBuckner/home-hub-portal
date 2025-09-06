@@ -54,14 +54,21 @@ export default function LoginPage() {
       if (profile && profile.user_type) {
         // Redirect to appropriate dashboard based on user type
         const dashboardRoutes = {
-          admin: '/dashboard/admin',
-          super_admin: '/dashboard/admin',
+          admin: '/admin-dashboard',
+          super_admin: '/admin-dashboard',
           agent: '/dashboard/agent',
-          fsbo: '/dashboard/fsbo',
+          owner: '/dashboard/owner',
           landlord: '/dashboard/landlord'
         };
         
-        const redirectUrl = dashboardRoutes[profile.user_type as keyof typeof dashboardRoutes] || '/dashboard/agent';
+        const redirectUrl = dashboardRoutes[profile.user_type as keyof typeof dashboardRoutes];
+        
+        if (!redirectUrl) {
+          console.error('Unknown user type:', profile.user_type);
+          setError('Account type not recognized. Please contact support.');
+          return;
+        }
+        
         console.log('Redirecting to:', redirectUrl);
         
         // Force a page reload to the dashboard to ensure auth state updates

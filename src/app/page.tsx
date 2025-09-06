@@ -18,7 +18,6 @@ export default function LandingPage() {
           justifyContent: 'center',
           marginTop: '2rem',
         }}>
-          <Link href="/login" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 w-full sm:w-auto text-center text-lg" style={{ minWidth: 220 }}>Login</Link>
           <Link href="/register" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 w-full sm:w-auto text-center text-lg" style={{ minWidth: 220 }}>Agent Registration</Link>
           <Link href="/register/landlord" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 w-full sm:w-auto text-center text-lg" style={{ minWidth: 220 }}>Landlord Registration</Link>
           <Link href="/register/fsbo" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-semibold py-4 px-6 rounded-xl shadow-lg transition-all duration-200 w-full sm:w-auto text-center text-lg" style={{ minWidth: 220 }}>For Sale By Owner Registration</Link>
@@ -33,11 +32,6 @@ export default function LandingPage() {
               <li>
                 <a href="https://portalhomehub.com/register" target="_blank" rel="noopener noreferrer">
                   Agent Registration (Portal)
-                </a>
-              </li>
-              <li>
-                <a href="https://portalhomehub.com/login" target="_blank" rel="noopener noreferrer">
-                  Agent Login (Portal)
                 </a>
               </li>
             </ul>

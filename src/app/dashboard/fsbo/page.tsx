@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getActiveCountries } from "@/lib/countries";
+import { getActiveCountries } from "../../../lib/countries";
 
 export default function FSBODashboard() {
   const [user, setUser] = useState<any>(null);

@@ -70,33 +70,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl)
     }
 
-    // Check user role for specific dashboard routes
-    if (request.nextUrl.pathname.startsWith('/dashboard/')) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('user_type, subscription_status')
-        .eq('id', user.id)
-        .single()
-
-      const dashboardType = request.nextUrl.pathname.split('/')[2] // admin, agent, fsbo
-      
-      // Redirect if user type doesn't match dashboard
-      if (profile) {
-        // Super admin can access admin routes, regular admin can only access admin routes
-        if (dashboardType === 'admin' && profile.user_type !== 'admin' && profile.user_type !== 'super_admin') {
-          return NextResponse.redirect(new URL('/dashboard', request.url))
-        }
-        if (dashboardType === 'agent' && profile.user_type !== 'agent') {
-          return NextResponse.redirect(new URL('/dashboard', request.url))
-        }
-        if (dashboardType === 'fsbo' && profile.user_type !== 'fsbo') {
-          return NextResponse.redirect(new URL('/dashboard', request.url))
-        }
-        if (dashboardType === 'landlord' && profile.user_type !== 'landlord') {
-          return NextResponse.redirect(new URL('/dashboard', request.url))
-        }
-      }
-    }
+    // For /dashboard routes, just let authenticated users through
+    // The dashboard pages themselves will handle role-based redirects
+    // This prevents middleware redirect loops
   }
 
   return response

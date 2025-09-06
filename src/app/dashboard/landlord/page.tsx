@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { getActiveCountries } from "@/lib/countries";
 
 export default function LandlordDashboard() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [subscription, setSubscription] = useState<{
     status: string;
@@ -20,12 +22,13 @@ export default function LandlordDashboard() {
     async function fetchUserData() {
       const supabase = createClient();
       
-      // Get current user
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) {
-        window.location.href = '/login';
-        return;
-      }
+      try {
+        // Get current user
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser) {
+          router.push('/login');
+          return;
+        }
 
       // Fetch user profile with subscription data
       const { data: profile } = await supabase
@@ -65,14 +68,18 @@ export default function LandlordDashboard() {
             activeListings: userProperties.filter(p => p.status === 'approved').length
           }) : null);
         }
+      } // Missing closing bracket for the profile if block
+      } catch (error) {
+        console.error('Error fetching landlord data:', error);
+        router.push('/login');
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     }
 
     fetchUserData();
     getActiveCountries().then(setCountries);
-  }, []);
+  }, [router]);
 
   if (loading) {
     return (
@@ -84,91 +91,177 @@ export default function LandlordDashboard() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold text-green-700 mb-4">Landlord Dashboard</h1>
-      
-      {subscription && (
-        <div className="mb-6 p-6 bg-white rounded-xl shadow">
-          <div className="font-semibold text-lg mb-2">
-            Account Status: 
-            <span className={subscription.status === 'active' ? 'text-green-600' : 'text-red-600'}>
-              {subscription.status === 'active' ? 'Registered' : 'Registration Required'}
-            </span>
-          </div>
-          <div className="mb-1">Total Properties: <span className="font-bold text-green-600">{subscription.totalProperties}</span></div>
-          <div>Active Listings: <span className="font-bold text-green-600">{subscription.activeListings}</span></div>
-          <div className="mt-2 text-sm text-gray-600">
-            Pay per property listing - no monthly subscription required
+    <main className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
+      {/* Header Section */}
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-8 shadow-xl">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">🏠 Landlord Portal</h1>
+              <p className="text-green-100 text-lg">Manage your rental properties with ease</p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold">{subscription?.totalProperties || 0}</div>
+              <div className="text-green-100 text-sm">Total Properties</div>
+            </div>
           </div>
         </div>
-      )}
-      
-      {subscription?.status === "active" ? (
-        <Link href="/properties/create">
-          <button className="px-6 py-3 rounded-xl bg-green-500 text-white font-bold text-lg shadow-lg hover:scale-105 transition">Create Property Listing</button>
-        </Link>
-      ) : (
-        <div className="mb-6 p-4 bg-yellow-100 rounded-xl border border-yellow-300">
-          <p className="text-yellow-800 font-semibold">Your account is not active.</p>
-          <p className="text-yellow-700 text-sm mt-1">Please complete your registration and payment to start listing properties.</p>
-          <Link href="/register/landlord">
-            <button className="mt-3 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">Complete Registration</button>
-          </Link>
-        </div>
-      )}
-
-      <h2 className="text-xl font-bold mb-4">Your Properties</h2>
-      <div className="mb-4">
-        <label htmlFor="countryFilter" className="block text-sm font-medium text-gray-700 mb-2">Filter by Country</label>
-        <select 
-          name="countryFilter" 
-          value={countryFilter} 
-          onChange={e => setCountryFilter(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          <option value="">All Countries</option>
-          {countries.map(c => (
-            <option key={c.code} value={c.code}>{c.name}</option>
-          ))}
-        </select>
       </div>
 
-      {properties.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <p>No properties listed yet.</p>
-          {subscription?.status === "active" && (
-            <p className="mt-2">Create your first property listing to get started!</p>
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Quick Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Active Listings</p>
+                <p className="text-3xl font-bold text-green-600">{subscription?.activeListings || 0}</p>
+              </div>
+              <div className="text-4xl">🟢</div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Total Properties</p>
+                <p className="text-3xl font-bold text-blue-600">{subscription?.totalProperties || 0}</p>
+              </div>
+              <div className="text-4xl">🏘️</div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-emerald-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm font-medium">Account Status</p>
+                <p className={`text-lg font-bold ${subscription?.status === 'active' ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {subscription?.status === 'active' ? 'Active' : 'Pending'}
+                </p>
+              </div>
+              <div className="text-4xl">{subscription?.status === 'active' ? '✅' : '⏳'}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Action Section */}
+        <div className="bg-white rounded-xl shadow-xl p-8 mb-8">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Rental Property Management</h2>
+            <p className="text-gray-600">Create and manage your rental listings on Guyana Home Hub</p>
+          </div>
+          
+          {subscription?.status === "active" ? (
+            <div className="flex flex-col items-center space-y-4">
+              <Link href="/dashboard/landlord/create-property" className="w-full max-w-md">
+                <button className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2">
+                  <span>🏠</span>
+                  <span>Create New Rental Listing</span>
+                </button>
+              </Link>
+              
+              <div className="text-center text-sm text-gray-500 max-w-md">
+                <p>💡 <strong>Landlord Focus:</strong> Create rental property listings with lease terms, deposits, and rental-specific features</p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+              <div className="text-4xl mb-3">⚠️</div>
+              <h3 className="text-xl font-bold text-yellow-800 mb-2">Account Activation Required</h3>
+              <p className="text-yellow-700 mb-4">Complete your registration and payment to start listing rental properties.</p>
+              <Link href="/register/landlord">
+                <button className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-200">
+                  Complete Registration
+                </button>
+              </Link>
+            </div>
           )}
         </div>
-      ) : (
-        <ul className="space-y-4">
-          {properties.filter(p => !countryFilter || p.country === countryFilter).map(property => (
-            <li key={property.id} className="border border-gray-200 p-4 rounded-lg bg-white shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <span className={`inline-block px-2 py-1 rounded text-xs font-bold ${
-                    property.status === "approved" 
-                      ? "bg-green-100 text-green-700" 
-                      : property.status === "pending" 
-                      ? "bg-yellow-100 text-yellow-700" 
-                      : "bg-red-100 text-red-700"
-                  }`}>
-                    {property.status}
-                  </span>
-                  <span className="ml-3 font-semibold text-lg">{property.title}</span>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-gray-600">({property.country})</div>
-                  <div className="font-bold text-green-600">{property.price} {property.currency}</div>
-                </div>
-              </div>
-              {property.description && (
-                <p className="mt-2 text-gray-600 text-sm">{property.description.substring(0, 100)}...</p>
+
+        {/* Properties Section */}
+        <div className="bg-white rounded-xl shadow-xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+              <span className="mr-2">🏘️</span>
+              Your Rental Properties
+            </h2>
+            
+            {/* Country Filter */}
+            <div className="flex items-center space-x-2">
+              <label htmlFor="countryFilter" className="text-sm font-medium text-gray-700">Filter:</label>
+              <select 
+                name="countryFilter" 
+                value={countryFilter} 
+                onChange={e => setCountryFilter(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              >
+                <option value="">All Countries</option>
+                {countries.map(c => (
+                  <option key={c.code} value={c.code}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {properties.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🏠</div>
+              <h3 className="text-xl font-bold text-gray-600 mb-2">No rental properties yet</h3>
+              <p className="text-gray-500 mb-4">Start building your rental portfolio today!</p>
+              {subscription?.status === "active" && (
+                <Link href="/dashboard/landlord/create-property">
+                  <button className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition">
+                    Create Your First Rental Listing
+                  </button>
+                </Link>
               )}
-            </li>
-          ))}
-        </ul>
-      )}
+            </div>
+          ) : (
+            <div className="grid gap-4">
+              {(properties || []).filter(p => !countryFilter || p.country === countryFilter).map(property => (
+                <div key={property.id} className="border border-gray-200 rounded-xl p-6 bg-gray-50 hover:bg-white hover:shadow-md transition-all duration-200">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${
+                          property.status === "approved" 
+                            ? "bg-green-100 text-green-800 border border-green-200" 
+                            : property.status === "pending" 
+                            ? "bg-yellow-100 text-yellow-800 border border-yellow-200" 
+                            : "bg-red-100 text-red-800 border border-red-200"
+                        }`}>
+                          {property.status.toUpperCase()}
+                        </span>
+                        <span className="text-xs text-gray-500 uppercase font-medium">🏠 RENTAL PROPERTY</span>
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-800 mb-1">{property.title}</h3>
+                      {property.description && (
+                        <p className="text-gray-600 text-sm line-clamp-2">{property.description.substring(0, 120)}...</p>
+                      )}
+                    </div>
+                    <div className="text-right ml-4">
+                      <div className="text-sm text-gray-500 mb-1">📍 {property.country}</div>
+                      <div className="text-lg font-bold text-green-600">{property.price} {property.currency}</div>
+                      <div className="text-xs text-gray-500">per month</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
+                    <div className="flex space-x-4 text-xs text-gray-500">
+                      <span>🛏️ {property.bedrooms || 'N/A'} bed</span>
+                      <span>🚿 {property.bathrooms || 'N/A'} bath</span>
+                      <span>📐 {property.squareFootage || 'N/A'} sqft</span>
+                    </div>
+                    <button className="text-xs text-green-600 font-medium hover:text-green-700 hover:underline">
+                      View Details →
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "../../../lib/supabase/client";
 
 export default function AdminDashboard() {
-  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [pendingProperties, setPendingProperties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -16,36 +14,24 @@ export default function AdminDashboard() {
       setLoading(true);
       const supabase = createClient();
       
-      try {
-        // Check authentication and user type
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (!authUser) {
-          router.push('/login');
-          return;
-        }
+      // Check authentication and user type
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) {
+        window.location.href = '/login';
+        return;
+      }
 
-        // Check if user is admin using admin_users table
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .single();
+      // Check if user is admin or super_admin
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('user_type')
+        .eq('id', authUser.id)
+        .single();
 
-        if (!adminUser) {
-          // Check profiles table to redirect to correct dashboard
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('user_type')
-            .eq('id', authUser.id)
-            .single();
-            
-          const userDashboard = profile?.user_type === 'agent' ? '/dashboard/agent' :
-                               profile?.user_type === 'fsbo' ? '/dashboard/fsbo' :
-                               profile?.user_type === 'landlord' ? '/dashboard/landlord' :
-                               '/login';
-          router.push(userDashboard);
-          return;
-        }
+      if (!profile || (profile.user_type !== 'admin' && profile.user_type !== 'super_admin')) {
+        window.location.href = '/dashboard';
+        return;
+      }
 
       setUser(authUser);
 
@@ -53,16 +39,11 @@ export default function AdminDashboard() {
       const { data, error } = await supabase.from("properties").select("*, profiles(email)").eq("status", "pending");
       if (error) setError(error.message);
       setPendingProperties(data || []);
-      } catch (error) {
-        console.error('Error in admin dashboard:', error);
-        router.push('/login');
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     }
     
     checkAuthAndFetchData();
-  }, [router]);
+  }, []);
 
   async function handleAction(id: string, action: "approve" | "reject") {
     setLoading(true);
@@ -93,7 +74,7 @@ export default function AdminDashboard() {
       {loading && <p>Loading...</p>}
       {error && <p className="text-red-500">{error}</p>}
       <ul>
-        {(pendingProperties || []).map(property => (
+        {pendingProperties.map(property => (
           <li key={property.id} className="border p-4 mb-4 rounded-lg">
             <h2 className="text-xl font-semibold">{property.title}</h2>
             <p>{property.description}</p>
@@ -106,6 +87,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
-import ApplicationList from "./components/ApplicationList";
-
 // Removed duplicate AdminDashboard function

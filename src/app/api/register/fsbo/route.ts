@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         first_name,
         last_name,
         phone,
-        user_type: 'fsbo',
+        user_type: 'owner',
       },
       email_confirm: true,
     });

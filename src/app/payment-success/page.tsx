@@ -39,7 +39,7 @@ export default function PaymentSuccessPage() {
         
         // Auto-redirect after 3 seconds
         const timer = setTimeout(() => {
-          router.push("/dashboard/fsbo");
+          router.push("/dashboard/owner");
         }, 3000);
         return () => clearTimeout(timer);
         
@@ -64,7 +64,7 @@ export default function PaymentSuccessPage() {
       ) : error ? (
         <div className="mb-6">
           <p className="text-red-600 mb-4">{error}</p>
-          <Link href="/dashboard/fsbo">
+          <Link href="/dashboard/owner">
             <button className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg hover:scale-105 transition">Continue to Dashboard</button>
           </Link>
         </div>
@@ -72,7 +72,7 @@ export default function PaymentSuccessPage() {
         <>
           <p className="mb-6 text-lg text-gray-700">Thank you for your payment. Your FSBO account is now active and you can begin listing your property.</p>
           <div className="mb-8">
-            <Link href="/dashboard/fsbo">
+            <Link href="/dashboard/owner">
               <button className="px-6 py-3 rounded-xl bg-blue-600 text-white font-bold text-lg shadow-lg hover:scale-105 transition">Go to Dashboard</button>
             </Link>
           </div>
