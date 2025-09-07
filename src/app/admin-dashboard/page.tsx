@@ -110,18 +110,40 @@ export default function AdminDashboard() {
     const supabase = createClient();
     
     try {
-      // Load pending properties with user info and images
-      const { data: pendingData } = await supabase
+      console.log('🔥 ADMIN DASHBOARD DEBUG - Loading dashboard data...');
+      console.log('Supabase client:', supabase);
+      
+      // Load pending properties with user info and images (use LEFT join for profiles)
+      const { data: pendingData, error: pendingError } = await supabase
         .from('properties')
         .select(`
           *,
-          profiles!inner(first_name, last_name, user_type),
-          property_media!left(media_url, is_primary)
+          profiles(first_name, last_name, user_type),
+          property_media(media_url, is_primary)
         `)
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
 
-      setPendingProperties(pendingData || []);
+      console.log('🔥 PENDING PROPERTIES QUERY RESULT:', pendingData);
+      console.log('🔥 PENDING PROPERTIES QUERY ERROR:', pendingError);
+      console.log('🔥 Data type:', typeof pendingData);
+      console.log('🔥 Is array?', Array.isArray(pendingData));
+      
+      if (pendingError) {
+        console.error('Error loading pending properties:', pendingError);
+        // Try simpler query without joins
+        const { data: simpleData, error: simpleError } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('status', 'pending');
+          
+        console.log('Simple query result:', simpleData);
+        console.log('Simple query error:', simpleError);
+        
+        setPendingProperties(simpleData || []);
+      } else {
+        setPendingProperties(pendingData || []);
+      }
 
       // Load statistics
       const today = new Date().toISOString().split('T')[0];
@@ -200,7 +222,8 @@ export default function AdminDashboard() {
         totalActive: prev.totalActive + 1,
       }));
 
-      // TODO: Send approval email notification
+      // Send approval email notification
+      await sendApprovalEmail(propertyId);
       
     } catch (err: any) {
       setError('Failed to approve property: ' + err.message);
@@ -232,7 +255,8 @@ export default function AdminDashboard() {
         totalRejected: prev.totalRejected + 1,
       }));
 
-      // TODO: Send rejection email notification with reason
+      // Send rejection email notification with reason
+      await sendRejectionEmail(propertyId, reason);
       
       setShowRejectModal(null);
       setRejectReason("");
@@ -243,9 +267,63 @@ export default function AdminDashboard() {
     setProcessingPropertyId(null);
   }
 
+  // Email notification functions with bulletproof error handling
+  async function sendApprovalEmail(propertyId: string) {
+    try {
+      const property = pendingProperties.find(p => p.id === propertyId);
+      if (!property) return;
+
+      const response = await fetch('/api/send-approval-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId,
+          ownerEmail: property.owner_email,
+          propertyTitle: property.title,
+          ownerName: property.profiles?.first_name || 'Property Owner'
+        })
+      });
+
+      if (!response.ok) {
+        console.warn('Approval email failed, but property was still approved');
+      }
+    } catch (error) {
+      console.warn('Email notification failed, but property approval succeeded:', error);
+      // Don't throw - property approval should succeed even if email fails
+    }
+  }
+
+  async function sendRejectionEmail(propertyId: string, reason: string) {
+    try {
+      const property = pendingProperties.find(p => p.id === propertyId);
+      if (!property) return;
+
+      const response = await fetch('/api/send-rejection-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId,
+          ownerEmail: property.owner_email,
+          propertyTitle: property.title,
+          ownerName: property.profiles?.first_name || 'Property Owner',
+          rejectionReason: reason
+        })
+      });
+
+      if (!response.ok) {
+        console.warn('Rejection email failed, but property was still rejected');
+      }
+    } catch (error) {
+      console.warn('Email notification failed, but property rejection succeeded:', error);
+      // Don't throw - property rejection should succeed even if email fails
+    }
+  }
+
   const PropertyCard = ({ property }: { property: Property }) => {
     const primaryImage = property.property_media?.find(img => img.is_primary) || property.property_media?.[0];
     const daysWaiting = Math.floor((Date.now() - new Date(property.created_at).getTime()) / (1000 * 60 * 60 * 24));
+    
+    console.log('Rendering PropertyCard for:', property.id, property.title);
 
     return (
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
@@ -296,7 +374,7 @@ export default function AdminDashboard() {
               <div className="text-right ml-4">
                 <div className="text-lg font-bold text-blue-600">${property.price.toLocaleString()}</div>
                 <div className="text-xs text-gray-500">
-                  by {property.profiles?.first_name} {property.profiles?.last_name}
+                  by {property.profiles?.first_name || 'Unknown'} {property.profiles?.last_name || 'User'}
                 </div>
               </div>
             </div>
@@ -350,7 +428,7 @@ export default function AdminDashboard() {
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+              <h1 className="text-3xl font-bold text-gray-900">🔥 Admin Dashboard - UPDATED 🔥</h1>
               <p className="text-gray-600 mt-1">Property Review & Management</p>
             </div>
             <div className="text-right">
@@ -443,6 +521,7 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">
               Properties Awaiting Approval ({statistics.totalPending})
+              <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded">DEBUG v2.1</span>
             </h2>
             <button 
               onClick={loadDashboardData}
@@ -452,19 +531,38 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          {pendingProperties.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🎉</div>
-              <h3 className="text-xl font-medium text-gray-600 mb-2">All caught up!</h3>
-              <p className="text-gray-500">No properties waiting for review.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {(pendingProperties || []).map(property => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
-          )}
+          {(() => {
+            console.log('🔥 RENDERING PROPERTIES SECTION');
+            console.log('🔥 pendingProperties:', pendingProperties);
+            console.log('🔥 pendingProperties type:', typeof pendingProperties);
+            console.log('🔥 pendingProperties.length:', pendingProperties?.length);
+            console.log('🔥 Array.isArray(pendingProperties):', Array.isArray(pendingProperties));
+            
+            if (!pendingProperties || pendingProperties.length === 0) {
+              console.log('🔥 SHOWING NO PROPERTIES MESSAGE');
+              return (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">🎉</div>
+                  <h3 className="text-xl font-medium text-gray-600 mb-2">All caught up!</h3>
+                  <p className="text-gray-500">No properties waiting for review.</p>
+                  <div className="mt-4 text-xs text-gray-400">
+                    Debug: pendingProperties = {JSON.stringify(pendingProperties)}
+                  </div>
+                </div>
+              );
+            } else {
+              console.log('🔥 SHOWING PROPERTY CARDS');
+              console.log('🔥 Mapping over properties:', pendingProperties.length, 'items');
+              return (
+                <div className="space-y-4">
+                  {pendingProperties.map((property, index) => {
+                    console.log(`🔥 Rendering property ${index}:`, property.id, property.title);
+                    return <PropertyCard key={property.id} property={property} />;
+                  })}
+                </div>
+              );
+            }
+          })()}
         </div>
       </div>
 

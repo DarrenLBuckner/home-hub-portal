@@ -11,6 +11,7 @@ import Step3Location from './components/Step3Location';
 import Step4Photos from './components/Step4Photos';
 import Step5Contact from './components/Step5Contact';
 import Step6Review from './components/Step6Review';
+import DebugSupabase from './debug-supabase';
 
 export default function CreateFSBOProperty() {
   const router = useRouter();
@@ -122,17 +123,37 @@ export default function CreateFSBOProperty() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       
+
+      const propertyData = {
+        title: formData.title,
+        description: formData.description,
+        price: Number(formData.price),
+        property_type: formData.property_type || 'Single Family Home',
+        bedrooms: Number(formData.bedrooms) || 0,
+        bathrooms: Number(formData.bathrooms) || 0,
+        house_size_value: Number(formData.house_size_value) || 1000, // Required field with default
+        house_size_unit: formData.house_size_unit || 'sq ft',
+        land_size_value: formData.land_size_value ? Number(formData.land_size_value) : null,
+        land_size_unit: formData.land_size_unit || 'sq ft',
+        year_built: formData.year_built ? Number(formData.year_built) : null,
+        amenities: formData.amenities || [],
+        region: formData.region || '',
+        city: formData.city || '',
+        neighborhood: formData.neighborhood || null,
+        owner_email: formData.owner_email,
+        owner_whatsapp: formData.owner_whatsapp || '',
+        user_id: user.id,
+        listing_type: 'sale',
+        listed_by_type: 'owner',
+        status: 'draft',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
       // Create property with draft status
       const { data: property, error: propertyError } = await supabase
         .from('properties')
-        .insert({
-          ...formData,
-          user_id: user.id,
-          status: 'draft',
-          listed_by_type: 'owner',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
+        .insert(propertyData)
         .select()
         .single();
         
@@ -183,30 +204,117 @@ export default function CreateFSBOProperty() {
     const supabase = createClient();
     
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      // Get current user with detailed error handling
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.error('Auth error:', authError);
+        setError('Please login to submit a property');
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log('Submitting as user:', user.id);
+      console.log('Form data:', formData);
+      
+
+      // Prepare data with defaults for ALL required fields
+      const propertyData = {
+        title: formData.title || 'Untitled Property',
+        price: Number(formData.price) || 0,
+        property_type: formData.property_type || 'Residential',
+        listing_type: 'sale',
+        status: 'pending',
+        listed_by_type: 'owner',
+        user_id: user.id,
+        
+        // Numeric fields with defaults
+        bedrooms: Number(formData.bedrooms) || 1,
+        bathrooms: Number(formData.bathrooms) || 1,
+        house_size_value: Number(formData.house_size_value) || 1000,
+        house_size_unit: formData.house_size_unit || 'sq ft',
+        land_size_value: Number(formData.land_size_value) || 0,
+        land_size_unit: formData.land_size_unit || 'sq ft',
+        year_built: Number(formData.year_built) || new Date().getFullYear(),
+        
+        // Optional fields
+        description: formData.description || '',
+        region: formData.region || null,
+        city: formData.city || null,
+        neighborhood: formData.neighborhood || null,
+        owner_email: formData.owner_email || null,
+        owner_whatsapp: formData.owner_whatsapp || null,
+        amenities: formData.amenities || [],
+        
+        // Timestamps
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Remove any undefined values
+      Object.keys(propertyData).forEach(key => {
+        if (propertyData[key] === undefined) {
+          delete propertyData[key];
+        }
+      });
+      
+      console.log('Property data to submit:', propertyData);
       
       // Create property with pending status
-      const { data: property, error: propertyError } = await supabase
+      console.log('Inserting into database...');
+      
+      // EMERGENCY BYPASS: Test with minimal data first
+      const testProperty = {
+        title: 'Test Property',
+        price: 100000,
+        user_id: user.id,
+        status: 'pending',
+        listed_by_type: 'owner',
+        listing_type: 'sale'
+      };
+      
+      console.log('Testing minimal insert first:', testProperty);
+      const { data: testData, error: testError } = await supabase
         .from('properties')
-        .insert({
-          ...formData,
-          user_id: user.id,
-          status: 'pending',
-          listed_by_type: 'owner',
-          listing_type: 'sale',
-          price: Number(formData.price),
-          bedrooms: Number(formData.bedrooms),
-          bathrooms: Number(formData.bathrooms),
-          house_size_value: formData.house_size_value ? Number(formData.house_size_value) : null,
-          land_size_value: formData.land_size_value ? Number(formData.land_size_value) : null,
-          year_built: formData.year_built ? Number(formData.year_built) : null
-        })
+        .insert([testProperty])
+        .select();
+      
+      if (testError) {
+        console.error('MINIMAL DATA TEST FAILED:', testError);
+        setError(`Basic insert failed: ${testError.message}`);
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log('Minimal test SUCCESS! Trying full data...');
+      
+      const { data, error } = await supabase
+        .from('properties')
+        .insert([propertyData])
         .select()
         .single();
       
-      if (propertyError) throw propertyError;
+      if (error) {
+        console.error('Detailed submission error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error details:', error.details);
+        console.error('Error hint:', error.hint);
+        console.error('Error message:', error.message);
+        
+        // Show user-friendly message
+        if (error.message.includes('user_id')) {
+          setError('Authentication error. Please login again.');
+        } else if (error.message.includes('property_type')) {
+          setError('Property type issue. Contact support.');
+        } else {
+          setError(`Submission failed: ${error.message}`);
+        }
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log('Success! Property created:', data);
+      const property = data;
       
       // Upload images if any
       if (images.length > 0 && property) {
@@ -238,12 +346,12 @@ export default function CreateFSBOProperty() {
       }
       
       // Success - redirect to dashboard
+      console.log('Property submission complete, redirecting...');
       router.push('/dashboard/owner?success=Property submitted for review');
       
-    } catch (error: any) {
-      console.error('Submission error:', error);
-      setError(`Failed to submit property: ${error.message}`);
-    } finally {
+    } catch (err: any) {
+      console.error('Unexpected error:', err);
+      setError('An unexpected error occurred. Please try again.');
       setIsSubmitting(false);
     }
   };
@@ -253,6 +361,9 @@ export default function CreateFSBOProperty() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8">Create Your FSBO Listing</h1>
+      
+      {/* Debug component - remove after testing */}
+      <DebugSupabase />
       
       {/* Progress bar */}
       <div className="mb-8">
