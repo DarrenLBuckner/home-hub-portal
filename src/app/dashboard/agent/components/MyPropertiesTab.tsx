@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import UploadArea from './UploadArea';
 import PropertyList from './PropertyList';
-import { createClient } from '../../../../lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 // import { createClient } from '@supabase/supabase-js';
 
 // Replace with actual propertyId from context or selection
