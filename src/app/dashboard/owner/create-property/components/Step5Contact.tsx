@@ -17,7 +17,7 @@ export default function Step5Contact({ formData, setFormData }: Step5ContactProp
   useEffect(() => {
     const getUserEmail = async () => {
       try {
-        const { createClient } = await import('@/lib/supabase/client');
+        const { createClient } = await import('@/supabase');
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         

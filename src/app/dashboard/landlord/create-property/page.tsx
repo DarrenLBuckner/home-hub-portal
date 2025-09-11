@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { getActiveCountries, getCountryRegions } from "@/lib/countries";
 import Link from "next/link";
 
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/supabase";
 
 const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Townhouse", "Studio", "Room"];
 const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym"];

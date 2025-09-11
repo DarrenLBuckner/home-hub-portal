@@ -2,7 +2,7 @@
 import React, { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getActiveCountries, getCountryRegions } from "@/lib/countries";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/supabase";
 
 const PROPERTY_TYPES = ["House", "Apartment", "Land", "Commercial"];
 const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly"];

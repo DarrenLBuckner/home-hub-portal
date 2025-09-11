@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/supabase";
 import { getActiveCountries } from "@/lib/countries";
 
 export default function OwnerDashboard() {

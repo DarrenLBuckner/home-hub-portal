@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/supabase';
 
 export default function DebugSupabase() {
   useEffect(() => {

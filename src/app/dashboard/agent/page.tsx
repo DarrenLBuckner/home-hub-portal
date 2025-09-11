@@ -15,7 +15,7 @@ import AgentDashboardWelcome from './components/AgentDashboardWelcome';
 const agentWhatsapp = "5926001234";
 
 import { useState, useEffect, useRef } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/supabase';
 
 export default function AgentPage() {
   const [activeSection, setActiveSection] = useState('dashboard');

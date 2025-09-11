@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/supabase';
 
 // Step components
 import Step1BasicInfo from './components/Step1BasicInfo';

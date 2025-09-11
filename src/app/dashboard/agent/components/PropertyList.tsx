@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/supabase';
 
 const statusColors: { [key: string]: string } = {
   Draft: 'bg-gray-200 text-gray-700',
