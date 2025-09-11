@@ -11,7 +11,7 @@ import Step3Location from './components/Step3Location';
 import Step4Photos from './components/Step4Photos';
 import Step5Contact from './components/Step5Contact';
 import Step6Review from './components/Step6Review';
-import DebugSupabase from './debug-supabase';
+// import DebugSupabase from './debug-supabase';
 
 export default function CreateFSBOProperty() {
   const router = useRouter();
