@@ -8,10 +8,6 @@
   "env": {
     "NEXT_PUBLIC_SUPABASE_URL": "https://opjnizbtppkynxzssijy.supabase.co",
     "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wam5pemJ0cHBreW54enNzaWp5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ0NTI0MzcsImV4cCI6MjA3MDAyODQzN30.QfgLk0i6NQjbIsCNj1x_b5ZCiwDt05KA7rWcTrsiFdU",
-    "SUPABASE_SERVICE_ROLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wam5pemJ0cHBreW54enNzaWp5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDQ1MjQzNywiZXhwIjoyMDcwMDI4NDM3fQ.6HUlGNEBoRHCcO2N8EvJdjg3SmlcicnjYsNGU8VP0Sc",
-   
-   
-    "RESEND_API_KEY": "re_7V4SzwNE_J5y1jHSG8EH1ZHuWr4jiX49c",
     "NODE_ENV": "production"
   }
 }
