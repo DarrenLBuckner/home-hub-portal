@@ -110,8 +110,6 @@ export default function AdminDashboard() {
     const supabase = createClient();
     
     try {
-      console.log('🔥 ADMIN DASHBOARD DEBUG - Loading dashboard data...');
-      console.log('Supabase client:', supabase);
       
       // Load pending properties with user info and images (use LEFT join for profiles)
       const { data: pendingData, error: pendingError } = await supabase
@@ -124,10 +122,6 @@ export default function AdminDashboard() {
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
 
-      console.log('🔥 PENDING PROPERTIES QUERY RESULT:', pendingData);
-      console.log('🔥 PENDING PROPERTIES QUERY ERROR:', pendingError);
-      console.log('🔥 Data type:', typeof pendingData);
-      console.log('🔥 Is array?', Array.isArray(pendingData));
       
       if (pendingError) {
         console.error('Error loading pending properties:', pendingError);
@@ -323,7 +317,6 @@ export default function AdminDashboard() {
     const primaryImage = property.property_media?.find(img => img.is_primary) || property.property_media?.[0];
     const daysWaiting = Math.floor((Date.now() - new Date(property.created_at).getTime()) / (1000 * 60 * 60 * 24));
     
-    console.log('Rendering PropertyCard for:', property.id, property.title);
 
     return (
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
@@ -428,7 +421,7 @@ export default function AdminDashboard() {
         <div className="max-w-6xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">🔥 Admin Dashboard - UPDATED 🔥</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
               <p className="text-gray-600 mt-1">Property Review & Management</p>
             </div>
             <div className="text-right">
@@ -521,7 +514,6 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">
               Properties Awaiting Approval ({statistics.totalPending})
-              <span className="ml-2 text-xs bg-red-100 text-red-600 px-2 py-1 rounded">DEBUG v2.1</span>
             </h2>
             <button 
               onClick={loadDashboardData}
@@ -531,38 +523,19 @@ export default function AdminDashboard() {
             </button>
           </div>
 
-          {(() => {
-            console.log('🔥 RENDERING PROPERTIES SECTION');
-            console.log('🔥 pendingProperties:', pendingProperties);
-            console.log('🔥 pendingProperties type:', typeof pendingProperties);
-            console.log('🔥 pendingProperties.length:', pendingProperties?.length);
-            console.log('🔥 Array.isArray(pendingProperties):', Array.isArray(pendingProperties));
-            
-            if (!pendingProperties || pendingProperties.length === 0) {
-              console.log('🔥 SHOWING NO PROPERTIES MESSAGE');
-              return (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">🎉</div>
-                  <h3 className="text-xl font-medium text-gray-600 mb-2">All caught up!</h3>
-                  <p className="text-gray-500">No properties waiting for review.</p>
-                  <div className="mt-4 text-xs text-gray-400">
-                    Debug: pendingProperties = {JSON.stringify(pendingProperties)}
-                  </div>
-                </div>
-              );
-            } else {
-              console.log('🔥 SHOWING PROPERTY CARDS');
-              console.log('🔥 Mapping over properties:', pendingProperties.length, 'items');
-              return (
-                <div className="space-y-4">
-                  {pendingProperties.map((property, index) => {
-                    console.log(`🔥 Rendering property ${index}:`, property.id, property.title);
-                    return <PropertyCard key={property.id} property={property} />;
-                  })}
-                </div>
-              );
-            }
-          })()}
+          {!pendingProperties || pendingProperties.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🎉</div>
+              <h3 className="text-xl font-medium text-gray-600 mb-2">All caught up!</h3>
+              <p className="text-gray-500">No properties waiting for review.</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingProperties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
