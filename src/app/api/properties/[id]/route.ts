@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createAdminClient } from '@/supabase-admin'
 
 // GET /api/properties/[id] - Get specific property
 export async function GET(

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-type UserType = "agent" | "landlord" | "fsbo";
+type UserType = "agent" | "landlord" | "fsbo" | "admin" | "super_admin";
 type NavLink = { label: string; href: string; isButton?: boolean; dropdown?: boolean };
 
 interface BackendNavBarProps {
@@ -18,26 +18,37 @@ const registerDropdown: NavLink[] = [
 const navLinks: Record<UserType, NavLink[]> = {
 	agent: [
 		{ label: "Dashboard", href: "/dashboard/agent" },
-		{ label: "My Properties", href: "/dashboard/agent" },
-		{ label: "Applications", href: "/dashboard/admin" },
+		{ label: "Applications", href: "/admin-dashboard" },
 		{ label: "Profile/Settings", href: "/dashboard/agent" },
 		{ label: "Register", href: "/register", dropdown: true },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
 	landlord: [
 		{ label: "Dashboard", href: "/dashboard/landlord" },
-		{ label: "My Properties", href: "/dashboard/landlord" },
-		{ label: "Create Property", href: "/dashboard/landlord/create-property" },
 		{ label: "Profile/Settings", href: "/dashboard/landlord" },
 		{ label: "Register", href: "/register", dropdown: true },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
-	fsbo: [
-		{ label: "Dashboard", href: "/dashboard/fsbo" },
-		{ label: "My Listings", href: "/dashboard/fsbo" },
-		{ label: "Create Listing", href: "/dashboard/fsbo/create-listing" },
-		{ label: "Profile/Settings", href: "/dashboard/fsbo" },
+	owner: [
+		{ label: "Dashboard", href: "/dashboard/owner" },
+		{ label: "Profile/Settings", href: "/dashboard/owner/settings" },
 		{ label: "Register", href: "/register", dropdown: true },
+		{ label: "Logout", href: "/logout", isButton: true },
+	],
+	admin: [
+		{ label: "Admin Dashboard", href: "/admin-dashboard" },
+		{ label: "Property Review", href: "/admin-dashboard" },
+		{ label: "User Management", href: "/admin-dashboard/users" },
+		{ label: "Settings", href: "/admin-dashboard/settings" },
+		{ label: "Logout", href: "/logout", isButton: true },
+	],
+	super_admin: [
+		{ label: "Dashboard", href: "/admin-dashboard" },
+		{ label: "Applications", href: "/admin-dashboard" },
+		{ label: "User Management", href: "/admin-dashboard/users" },
+		{ label: "Properties", href: "/admin-dashboard" },
+		{ label: "System Settings", href: "/admin-dashboard/settings" },
+		{ label: "Admin Management", href: "/admin-dashboard/admin" },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
 };
@@ -57,8 +68,7 @@ const consumerSites = [
 export default function BackendNavBar({ userType = "agent" }: BackendNavBarProps) {
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [showSitesDropdown, setShowSitesDropdown] = useState(false);
-		// ...existing code...
-		const [showCreateDropdown, setShowCreateDropdown] = useState(false);
+	const [showCreateDropdown, setShowCreateDropdown] = useState(false);
 		return (
 			<nav className="bg-blue-900 text-white px-4 py-3 flex flex-col sm:flex-row justify-between items-center shadow-md w-full">
 				<Link href="/" className="font-bold text-lg mb-2 sm:mb-0 hover:underline">Portal Home Hub</Link>
@@ -101,22 +111,23 @@ export default function BackendNavBar({ userType = "agent" }: BackendNavBarProps
 							Create Property
 							<svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
 						</button>
-									{showCreateDropdown && (
-										<ul className="absolute left-0 top-full mt-2 bg-white text-blue-900 rounded shadow-lg min-w-[220px] z-20">
-											<li>
-												<Link href="/dashboard/agent/create-property" className="block px-4 py-2 hover:bg-blue-100">Agent</Link>
-											</li>
-											<li>
-												<Link href="/register/fsbo" className="block px-4 py-2 hover:bg-blue-100">For Sale By Owner</Link>
-											</li>
-											<li>
-												<button className="block w-full text-left px-4 py-2 text-gray-400 cursor-not-allowed" disabled>Landlord (Coming Soon)</button>
-											</li>
-										</ul>
-									)}
+						{showCreateDropdown && (
+							<ul className="absolute left-0 top-full mt-2 bg-white text-blue-900 rounded shadow-lg min-w-[220px] z-20">
+								<li>
+									<Link href="/dashboard/agent/create-property" className="block px-4 py-2 hover:bg-blue-100">Agent Property</Link>
+								</li>
+								<li>
+									<Link href="/dashboard/owner/create-property" className="block px-4 py-2 hover:bg-blue-100">Owner Sale Listing</Link>
+								</li>
+								<li>
+									<Link href="/dashboard/landlord/create-property" className="block px-4 py-2 hover:bg-blue-100">Landlord Rental</Link>
+								</li>
+							</ul>
+						)}
 					</li>
+					
 					{/* ...existing nav links... */}
-					{navLinks[userType].map((link: NavLink) =>
+					{(userType && navLinks[userType] ? navLinks[userType] : []).map((link: NavLink) =>
 						link.isButton ? (
 							<li key={link.label}>
 								<button

@@ -2,7 +2,8 @@
 
 import type { Metadata } from "next";
 import "./globals.css";
-import BackendNavBar from '../components/BackendNavBar';
+import AuthNavBar from '../components/AuthNavBar';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -23,10 +24,27 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#ffffff" />
       </head>
       <body className="antialiased">
-        <BackendNavBar />
+        <AuthNavBar />
         <main>
           {children}
         </main>
+        
+        <footer className="bg-gray-100 border-t">
+          {/* Admin access - subtle link at the very bottom */}
+          <div className="border-t border-gray-200 mt-8 pt-4">
+            <div className="max-w-7xl mx-auto px-4 pb-4">
+              <div className="flex justify-between items-center text-xs text-gray-400">
+                <span>© 2024 Portal Home Hub</span>
+                <Link 
+                  href="/admin-login" 
+                  className="hover:text-gray-600 transition-colors"
+                >
+                  Staff Access
+                </Link>
+              </div>
+            </div>
+          </div>
+        </footer>
       </body>
     </html>
   );

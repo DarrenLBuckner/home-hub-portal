@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { createClient } from '../../../../lib/supabase/client';
+import { createClient } from '@/supabase';
 
 const statusColors: { [key: string]: string } = {
   Draft: 'bg-gray-200 text-gray-700',
@@ -65,11 +65,11 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
 
   if (loading) return <div>Loading properties...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
-  if (!properties.length) return <div className="text-gray-500">No properties found for your account.</div>;
+  if (!properties || !properties.length) return <div className="text-gray-500">No properties found for your account.</div>;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      {properties.map((property: any) => {
+      {(properties || []).map((property: any) => {
         const statusClass = statusColors[property.status as string] || 'bg-gray-100 text-gray-700';
         const typeIcon = typeIcons[(property.property_type as string)?.toLowerCase()] || '🏠';
         const imageUrl = property.images && property.images.length > 0 ? property.images[0] : 'https://placehold.co/400x300?text=No+Image';

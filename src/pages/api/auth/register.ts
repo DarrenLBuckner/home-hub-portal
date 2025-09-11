@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient } from '@/supabase-admin';
 import { z } from 'zod';
 
 const userSchema = z.object({

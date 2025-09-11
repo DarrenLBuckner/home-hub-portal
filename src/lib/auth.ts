@@ -1,5 +1,5 @@
 // src/lib/auth.ts
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createAdminClient } from '@/supabase-admin'
 
 export async function verifyUserRole(userId: string, allowedRoles: string[]) {
   const supabase = createAdminClient()

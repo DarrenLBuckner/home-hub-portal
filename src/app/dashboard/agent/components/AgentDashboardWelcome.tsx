@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 
-export default function AgentDashboardWelcome() {
+interface DashboardWelcomeProps {
+  userType?: string | null;
+  isAgent?: boolean;
+}
+
+export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWelcomeProps) {
   const [agentName, setAgentName] = useState('');
   const [stats, setStats] = useState({
     active: 0,
@@ -33,31 +38,114 @@ export default function AgentDashboardWelcome() {
   }, []);
 
   return (
-    <section className="bg-white rounded-xl shadow p-6 mb-6 flex flex-col gap-6">
-      <div>
-        <h1 className="text-2xl font-bold text-primary mb-2">Welcome, {agentName}!</h1>
-        <p className="text-gray-600">Manage your listings and grow your business with Portal Home Hub.</p>
-      </div>
-      <div className="flex gap-6 flex-wrap">
-        <div className="flex-1 min-w-[120px] bg-gray-50 rounded-lg p-4 text-center">
-          <div className="text-lg font-semibold text-primary">{stats.active}</div>
-          <div className="text-xs text-gray-500">Active Listings</div>
-        </div>
-        <div className="flex-1 min-w-[120px] bg-gray-50 rounded-lg p-4 text-center">
-          <div className="text-lg font-semibold text-secondary">{stats.draft}</div>
-          <div className="text-xs text-gray-500">Drafts</div>
-        </div>
-        <div className="flex-1 min-w-[120px] bg-gray-50 rounded-lg p-4 text-center">
-          <div className="text-lg font-semibold text-accent">{stats.sold}</div>
-          <div className="text-xs text-gray-500">Sold</div>
+    <>
+      {/* Enhanced Header Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-xl p-8 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">🏢 Welcome, {agentName}!</h1>
+            <p className="text-blue-100 text-lg">Professional Real Estate Agent Portal - Full Property Management Access</p>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-bold">{stats.active + stats.draft}</div>
+            <div className="text-blue-100 text-sm">Total Properties</div>
+          </div>
         </div>
       </div>
-      <div className="flex gap-4 flex-wrap">
-        <Link href="/dashboard/agent/create-property" className="bg-primary text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-primary-dark transition">Create Property</Link>
-        <Link href="/dashboard/agent/properties" className="bg-secondary text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-secondary-dark transition">Manage Listings</Link>
-        <Link href="/dashboard/agent/inquiries" className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold shadow hover:bg-gray-300 transition">View Inquiries</Link>
-        <Link href="/dashboard/agent/settings" className="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold shadow hover:bg-gray-300 transition">Profile & Settings</Link>
+
+      {/* Enterprise Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium">Active Listings</p>
+              <p className="text-3xl font-bold text-green-600">{stats.active}</p>
+            </div>
+            <div className="text-4xl">🟢</div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium">Draft Properties</p>
+              <p className="text-3xl font-bold text-yellow-600">{stats.draft}</p>
+            </div>
+            <div className="text-4xl">📝</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium">Sold Properties</p>
+              <p className="text-3xl font-bold text-blue-600">{stats.sold}</p>
+            </div>
+            <div className="text-4xl">🎉</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-indigo-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-sm font-medium">Commission Ready</p>
+              <p className="text-3xl font-bold text-indigo-600">{stats.sold}</p>
+            </div>
+            <div className="text-4xl">💰</div>
+          </div>
+        </div>
       </div>
-    </section>
+
+      {/* Professional Action Center */}
+      <section className="bg-white rounded-xl shadow-xl p-8">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Professional Agent Tools</h2>
+          <p className="text-gray-600">Full access to all property types and agent-specific features</p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/dashboard/agent/create-property">
+            <button className="w-full p-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2">
+              <span className="text-2xl">🏠</span>
+              <span>Create Property</span>
+              <span className="text-xs opacity-75">Sales & Rentals</span>
+            </button>
+          </Link>
+          
+          <Link href="/dashboard/agent/properties">
+            <button className="w-full p-4 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2">
+              <span className="text-2xl">📊</span>
+              <span>Manage Listings</span>
+              <span className="text-xs opacity-75">Full Portfolio</span>
+            </button>
+          </Link>
+
+          <Link href="/dashboard/agent/inquiries">
+            <button className="w-full p-4 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2">
+              <span className="text-2xl">💬</span>
+              <span>Inquiries</span>
+              <span className="text-xs opacity-75">Client Communication</span>
+            </button>
+          </Link>
+
+          <Link href="/dashboard/agent/settings">
+            <button className="w-full p-4 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2">
+              <span className="text-2xl">⚙️</span>
+              <span>Settings</span>
+              <span className="text-xs opacity-75">Profile & Preferences</span>
+            </button>
+          </Link>
+        </div>
+
+        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <h3 className="font-bold text-blue-800 mb-2">🎖️ Agent Advantages:</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-700">
+            <div>✅ <strong>Full Access:</strong> Both sale and rental properties</div>
+            <div>💰 <strong>Commission Tracking:</strong> Built-in commission management</div>
+            <div>📈 <strong>Professional Tools:</strong> Advanced analytics and reporting</div>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

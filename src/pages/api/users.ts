@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createAdminClient } from '@/supabase-admin';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const supabase = createAdminClient();
