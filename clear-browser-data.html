@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear Portal Hub Browser Data</title>
+</head>
+<body>
+    <h1>Clear Portal Hub Browser Data</h1>
+    <p>Click the button below to clear all localStorage and sessionStorage for localhost:3000</p>
+    
+    <button onclick="clearAllData()">Clear All Browser Data</button>
+    
+    <div id="status"></div>
+    
+    <script>
+        function clearAllData() {
+            try {
+                // Clear localStorage
+                localStorage.clear();
+                
+                // Clear sessionStorage  
+                sessionStorage.clear();
+                
+                // Clear all cookies for localhost
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                document.getElementById('status').innerHTML = 
+                    '<p style="color: green;">✅ All browser data cleared!</p>' +
+                    '<p>Now go to <a href="http://localhost:3000/login">http://localhost:3000/login</a> and try logging in again.</p>';
+                    
+            } catch (error) {
+                document.getElementById('status').innerHTML = 
+                    '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>

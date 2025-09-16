@@ -1,6 +1,10 @@
-// src/lib/supabase/client.ts
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type Database from '@/types/supabase'
+import { createClient } from '@supabase/supabase-js'
 
-export const createClientSupabaseClient = () => 
-  createClientComponentClient<Database>()
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+// Single shared instance to prevent multiple GoTrueClient instances
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+// Export function for compatibility with existing imports
+export const createClient = () => supabase

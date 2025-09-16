@@ -111,8 +111,8 @@ export default function AgentPage() {
               <div className="max-w-2xl mx-auto text-center py-12">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-8">
                   <div className="text-4xl mb-4">📋</div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Agent Only Feature</h2>
-                  <p className="text-gray-600">Active listing management is available for agents only.</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Professional Feature</h2>
+                  <p className="text-gray-600">Advanced listing management for professional users.</p>
                 </div>
               </div>
             )
@@ -127,8 +127,8 @@ export default function AgentPage() {
               <div className="max-w-2xl mx-auto text-center py-12">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-8">
                   <div className="text-4xl mb-4">👥</div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Agent Only Feature</h2>
-                  <p className="text-gray-600">Client inquiry management is available for agents only.</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Professional Feature</h2>
+                  <p className="text-gray-600">Client inquiry management for professional users.</p>
                 </div>
               </div>
             )
@@ -143,8 +143,8 @@ export default function AgentPage() {
               <div className="max-w-2xl mx-auto text-center py-12">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-8">
                   <div className="text-4xl mb-4">📊</div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Agent Only Feature</h2>
-                  <p className="text-gray-600">Sales reports and analytics are available for agents only.</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Professional Feature</h2>
+                  <p className="text-gray-600">Sales reports and analytics for professional users.</p>
                 </div>
               </div>
             )

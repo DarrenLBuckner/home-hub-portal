@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { createClient } from "@/supabase";
+import { supabase } from "@/supabase";
 import { getActiveCountries } from "@/lib/countries";
 
 export default function OwnerDashboard() {
@@ -18,12 +18,17 @@ export default function OwnerDashboard() {
 
   useEffect(() => {
     async function fetchUserData() {
-      const supabase = createClient();
+      // Using centralized supabase client
       
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser();
+      console.log('Owner dashboard - Auth check:', { authUser: !!authUser, authUserId: authUser?.id });
+      
       if (!authUser) {
-        window.location.href = '/login';
+        console.log('No auth user found, redirecting to login in 3 seconds...');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 3000);
         return;
       }
 
@@ -66,13 +71,18 @@ export default function OwnerDashboard() {
 
     fetchUserData();
     
-    // Safely load countries with error handling
-    getActiveCountries()
-      .then(data => setCountries(data || []))
-      .catch(error => {
-        console.error('Failed to load countries:', error);
+    // Safely load countries with error handling - disable for now
+    async function loadCountries() {
+      try {
+        const data = await getActiveCountries();
+        setCountries(data || []);
+      } catch (error) {
+        console.log('Countries table not found, using empty list');
         setCountries([]);
-      });
+      }
+    }
+    
+    loadCountries();
   }, []);
 
   if (loading) {

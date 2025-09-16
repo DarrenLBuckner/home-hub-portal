@@ -43,8 +43,8 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
       <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl shadow-xl p-8 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold mb-2">🏢 Welcome, {agentName}!</h1>
-            <p className="text-blue-100 text-lg">Professional Real Estate Agent Portal - Full Property Management Access</p>
+            <h1 className="text-4xl font-bold mb-2">🏢 Welcome to Portal Home Hub!</h1>
+            <p className="text-blue-100 text-lg">Your Property Management Dashboard – Manage, Buy, Sell, or Rent with Ease</p>
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold">{stats.active + stats.draft}</div>
@@ -99,7 +99,7 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
       {/* Professional Action Center */}
       <section className="bg-white rounded-xl shadow-xl p-8">
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Professional Agent Tools</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Professional Tools</h2>
           <p className="text-gray-600">Full access to all property types and agent-specific features</p>
         </div>
 

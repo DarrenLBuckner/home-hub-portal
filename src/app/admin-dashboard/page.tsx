@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { createClient } from "@/supabase";
+import { useRouter } from 'next/navigation';
+import { createBrowserClient } from '@supabase/ssr';
 
 interface Property {
   id: string;
@@ -44,6 +45,7 @@ interface Statistics {
 }
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
@@ -71,33 +73,39 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function checkAdminAccess() {
-      const supabase = createClient();
+      const supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
       
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
-        window.location.href = '/login';
+        window.location.href = '/admin-login';
         return;
       }
 
-      // Check if user is admin
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', authUser.id)
+      // Check if user is admin or super_admin in profiles table
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_type, first_name, last_name, email')
+        .eq('id', authUser.id)
         .single();
 
-      if (!adminUser) {
-        window.location.href = '/dashboard';
+      console.log('Admin dashboard profile check:', { profile, profileError });
+
+      if (profileError || !profile || (profile.user_type !== 'admin' && profile.user_type !== 'super_admin')) {
+        console.log('Not authorized as admin. User type:', profile?.user_type);
+        window.location.href = '/login';
         return;
       }
 
       // Update the user state to include admin info
       setUser({ 
         ...authUser, 
-        name: adminUser.name,
-        email: adminUser.email,
-        role: adminUser.role 
+        name: `${profile.first_name} ${profile.last_name}`,
+        email: profile.email,
+        role: profile.user_type 
       });
       await loadDashboardData();
       setLoading(false);
@@ -106,99 +114,189 @@ export default function AdminDashboard() {
     checkAdminAccess();
   }, []);
 
-  async function loadDashboardData() {
-    const supabase = createClient();
+  async function handleLogout() {
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
     
     try {
+      await supabase.auth.signOut();
+      router.push('/admin-login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Force redirect even if logout fails
+      router.push('/admin-login');
+    }
+  }
+
+  async function loadDashboardData() {
+    const adminSupabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    
+    try {
+      // First try simple query without joins to avoid table structure issues
+      console.log('Loading pending properties...');
       
-      // Load pending properties with user info and images (use LEFT join for profiles)
-      const { data: pendingData, error: pendingError } = await supabase
+      const { data: pendingData, error: pendingError } = await adminSupabase
         .from('properties')
-        .select(`
-          *,
-          profiles(first_name, last_name, user_type),
-          property_media(media_url, is_primary)
-        `)
-        .eq('status', 'pending')
+        .select('*')
+        .eq('status', 'available')
         .order('created_at', { ascending: true });
 
-      
       if (pendingError) {
         console.error('Error loading pending properties:', pendingError);
-        // Try simpler query without joins
-        const { data: simpleData, error: simpleError } = await supabase
-          .from('properties')
-          .select('*')
-          .eq('status', 'pending');
-          
-        console.log('Simple query result:', simpleData);
-        console.log('Simple query error:', simpleError);
-        
-        setPendingProperties(simpleData || []);
-      } else {
-        setPendingProperties(pendingData || []);
+        throw pendingError;
+      }
+      
+      console.log('Loaded pending properties:', pendingData?.length || 0);
+      setPendingProperties(pendingData || []);
+
+      // Try to load images separately if property_media table exists
+      if (pendingData && pendingData.length > 0) {
+        try {
+          const propertyIds = pendingData.map(p => p.id);
+          const { data: mediaData, error: mediaError } = await adminSupabase
+            .from('property_media')
+            .select('property_id, media_url, is_primary')
+            .in('property_id', propertyIds);
+            
+          if (!mediaError && mediaData) {
+            console.log('Loaded property media:', mediaData.length);
+          } else if (mediaError) {
+            console.log('Property media table not available:', mediaError.message);
+          }
+        } catch (mediaErr) {
+          console.log('Property media loading failed (table may not exist):', mediaErr);
+        }
       }
 
-      // Load statistics
+      // Load statistics with robust error handling
       const today = new Date().toISOString().split('T')[0];
+      console.log('Loading statistics...');
       
-      // Count pending
-      const { count: totalPending } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'pending');
+      try {
+        // Count pending
+        const { count: totalPending } = await adminSupabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'pending');
+        console.log('Total pending:', totalPending);
 
-      // Count today's submissions
-      const { count: todaySubmissions } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .gte('created_at', today + 'T00:00:00.000Z')
-        .lt('created_at', today + 'T23:59:59.999Z');
+        // Count today's submissions
+        const { count: todaySubmissions } = await adminSupabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .gte('created_at', today + 'T00:00:00.000Z')
+          .lt('created_at', today + 'T23:59:59.999Z');
+        console.log('Today submissions:', todaySubmissions);
 
-      // Count by user type
-      const { data: byUserTypeData } = await supabase
-        .from('properties')
-        .select('listed_by_type')
-        .eq('status', 'pending');
+        // Count by user type for pending properties (handle missing column gracefully)
+        let byUserType = { fsbo: 0, agent: 0, landlord: 0 };
+        try {
+          const { data: byUserTypeData, error: typeError } = await adminSupabase
+            .from('properties')
+            .select('listed_by_type')
+            .eq('status', 'pending');
 
-      const byUserType = {
-        fsbo: byUserTypeData?.filter(p => p.listed_by_type === 'owner').length || 0,
-        agent: byUserTypeData?.filter(p => p.listed_by_type === 'agent').length || 0,
-        landlord: byUserTypeData?.filter(p => p.listed_by_type === 'landlord').length || 0,
-      };
+          if (!typeError && byUserTypeData) {
+            byUserType = {
+              fsbo: byUserTypeData?.filter(p => p.listed_by_type === 'owner' || p.listed_by_type === 'fsbo').length || 0,
+              agent: byUserTypeData?.filter(p => p.listed_by_type === 'agent').length || 0,
+              landlord: byUserTypeData?.filter(p => p.listed_by_type === 'landlord').length || 0,
+            };
+            console.log('By user type:', byUserType);
+          } else {
+            console.log('listed_by_type column not available, using defaults');
+          }
+        } catch (typeErr) {
+          console.log('User type stats failed, using defaults:', typeErr);
+        }
 
-      // Count active properties
-      const { count: totalActive } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active');
+        // Count active properties (try multiple status values)
+        let totalActive = 0;
+        try {
+          const { count: activeCount } = await adminSupabase
+            .from('properties')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'active');
+          
+          const { count: availableCount } = await adminSupabase
+            .from('properties')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'available');
+            
+          const { count: approvedCount } = await adminSupabase
+            .from('properties')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'approved');
 
-      // Count rejected properties
-      const { count: totalRejected } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'rejected');
+          totalActive = (activeCount || 0) + (availableCount || 0) + (approvedCount || 0);
+          console.log('Total active properties:', totalActive, {activeCount, availableCount, approvedCount});
+        } catch (activeErr) {
+          console.log('Active count failed:', activeErr);
+        }
 
-      setStatistics({
-        totalPending: totalPending || 0,
-        todaySubmissions: todaySubmissions || 0,
-        byUserType,
-        totalActive: totalActive || 0,
-        totalRejected: totalRejected || 0,
-      });
+        // Count rejected properties
+        let totalRejected = 0;
+        try {
+          const { count: rejectedCount } = await adminSupabase
+            .from('properties')
+            .select('*', { count: 'exact', head: true })
+            .eq('status', 'rejected');
+          totalRejected = rejectedCount || 0;
+          console.log('Total rejected:', totalRejected);
+        } catch (rejectedErr) {
+          console.log('Rejected count failed:', rejectedErr);
+        }
+
+        setStatistics({
+          totalPending: totalPending || 0,
+          todaySubmissions: todaySubmissions || 0,
+          byUserType,
+          totalActive,
+          totalRejected,
+        });
+        
+      } catch (statsErr) {
+        console.error('Statistics loading failed:', statsErr);
+        // Use defaults if statistics fail
+        setStatistics({
+          totalPending: pendingData?.length || 0,
+          todaySubmissions: 0,
+          byUserType: { fsbo: 0, agent: 0, landlord: 0 },
+          totalActive: 0,
+          totalRejected: 0,
+        });
+      }
 
     } catch (err: any) {
-      setError('Failed to load dashboard data');
-      console.error(err);
+      console.error('Failed to load dashboard data:', err);
+      setError(`Failed to load dashboard data: ${err?.message || 'Unknown error'}`);
+      // Set empty arrays so UI doesn't break
+      setPendingProperties([]);
+      setStats({
+        totalPending: 0,
+        totalToday: 0,
+        totalThisWeek: 0,
+        byUserType: {},
+        totalActive: 0,
+        totalRejected: 0,
+      });
     }
   }
 
   async function approveProperty(propertyId: string) {
     setProcessingPropertyId(propertyId);
-    const supabase = createClient();
+    const adminSupabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     try {
-      const { error } = await supabase
+      const { error } = await adminSupabase
         .from('properties')
         .update({ 
           status: 'active',
@@ -227,10 +325,13 @@ export default function AdminDashboard() {
 
   async function rejectProperty(propertyId: string, reason: string) {
     setProcessingPropertyId(propertyId);
-    const supabase = createClient();
+    const adminSupabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     try {
-      const { error } = await supabase
+      const { error } = await adminSupabase
         .from('properties')
         .update({ 
           status: 'rejected',
@@ -424,9 +525,22 @@ export default function AdminDashboard() {
               <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
               <p className="text-gray-600 mt-1">Property Review & Management</p>
             </div>
-            <div className="text-right">
-              <div className="text-sm text-gray-500">Welcome back,</div>
-              <div className="font-medium">{user?.name}</div>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-sm text-gray-500">Welcome back,</div>
+                <div className="font-medium">{user?.name}</div>
+              </div>
+              <Link href="/admin-dashboard/pricing">
+                <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors">
+                  💰 Pricing
+                </button>
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </div>

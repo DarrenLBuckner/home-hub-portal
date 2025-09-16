@@ -56,7 +56,7 @@ export async function middleware(request: NextRequest) {
   )
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard']
+  const protectedRoutes = ['/dashboard', '/admin-dashboard']
   const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
   if (isProtectedRoute) {

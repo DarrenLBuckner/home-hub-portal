@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from 'react';
-import { createClient } from '@/supabase';
+import { supabase } from "@/supabase";
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -26,10 +26,11 @@ export default function LoginPage() {
     }
     setLoading(true);
     
-    const supabase = createClient();
+    // Use centralized supabase client
     const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
     
     console.log('Login attempt result:', { data: !!data.user, error: loginError?.message });
+    console.log('User details:', data.user);
     
     if (loginError) {
       setError(loginError.message);
@@ -43,39 +44,36 @@ export default function LoginPage() {
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('user_type')
+        .select('user_type, email, first_name, last_name')
         .eq('id', data.user.id)
         .single();
 
       console.log('Profile fetch result:', { profile, profileError });
-      
       setLoading(false);
+      
       
       if (profile && profile.user_type) {
         // Redirect to appropriate dashboard based on user type
-        const dashboardRoutes = {
-          admin: '/admin-dashboard',
-          super_admin: '/admin-dashboard',
-          agent: '/dashboard/agent',
-          owner: '/dashboard/owner',
-          landlord: '/dashboard/landlord'
-        };
-        
-        const redirectUrl = dashboardRoutes[profile.user_type as keyof typeof dashboardRoutes];
-        
-        if (!redirectUrl) {
-          console.error('Unknown user type:', profile.user_type);
-          setError('Account type not recognized. Please contact support.');
-          return;
+        switch(profile.user_type) {
+          case 'admin':
+          case 'super_admin':
+            window.location.href = '/admin-dashboard';
+            break;
+          case 'owner':
+            window.location.href = '/dashboard/owner';
+            break;
+          case 'agent':
+            window.location.href = '/dashboard/agent';
+            break;
+          case 'landlord':
+            window.location.href = '/dashboard/landlord';
+            break;
+          default:
+            setError('Account type not recognized. Please contact support.');
+            return;
         }
-        
-        console.log('Redirecting to:', redirectUrl);
-        
-        // Force a page reload to the dashboard to ensure auth state updates
-        window.location.href = redirectUrl;
       } else {
         // Fallback if profile not found
-        console.log('Profile not found, redirecting to agent dashboard');
         window.location.href = '/dashboard/agent';
       }
     } else {
@@ -87,7 +85,7 @@ export default function LoginPage() {
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setResetStatus('');
-    const supabase = createClient();
+    // Use centralized supabase client
     const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
       redirectTo: `${window.location.origin}/login`,
     });

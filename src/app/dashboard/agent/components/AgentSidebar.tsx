@@ -15,9 +15,9 @@ export default function AgentSidebar({ activeSection, onSectionChange, userType,
       return;
     }
     
-    // For agent-only features, show notification if not agent
+    // For professional features, show notification if not agent
     if (!isAgent) {
-      alert('This feature is available for agents only. Contact support to upgrade your account.');
+      alert('This feature is available for professional users only. Contact support to upgrade your account.');
       return;
     }
     
