@@ -42,6 +42,7 @@ export default function LoginPage() {
     if (data.user) {
       console.log('User logged in, fetching profile...');
       
+      
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('user_type, email, first_name, last_name')
@@ -49,8 +50,19 @@ export default function LoginPage() {
         .single();
 
       console.log('Profile fetch result:', { profile, profileError });
+      console.log('Profile user_type:', profile?.user_type);
+      console.log('Full profile data:', profile);
+      console.log('Profile exists?', !!profile);
+      console.log('Profile user_type exists?', !!profile?.user_type);
+      console.log('Profile user_type value:', JSON.stringify(profile?.user_type));
+      
       setLoading(false);
       
+      if (profileError) {
+        console.error('Profile fetch error:', profileError);
+        setError(`Profile access error: ${profileError.message}. Please contact support.`);
+        return;
+      }
       
       if (profile && profile.user_type) {
         // Redirect to appropriate dashboard based on user type
@@ -66,6 +78,8 @@ export default function LoginPage() {
             window.location.href = '/dashboard/agent';
             break;
           case 'landlord':
+          case 'property_manager':
+            console.log('🏠 LANDLORD LOGIN: Redirecting to /dashboard/landlord');
             window.location.href = '/dashboard/landlord';
             break;
           default:
@@ -73,8 +87,8 @@ export default function LoginPage() {
             return;
         }
       } else {
-        // Fallback if profile not found
-        window.location.href = '/dashboard/agent';
+        setError('Profile not found. Please contact support to complete your account setup.');
+        return;
       }
     } else {
       setLoading(false);

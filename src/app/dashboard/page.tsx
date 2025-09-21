@@ -33,7 +33,7 @@ export default function DashboardPage() {
             super_admin: '/admin-dashboard', // Super admin uses admin dashboard
             agent: '/dashboard/agent',
             owner: '/dashboard/owner',  // Points to renamed directory
-            landlord: '/dashboard/landlord'
+            landlord: '/dashboard/landlord'  // DEBUG: landlord should go here
           };
           
           const redirectUrl = dashboardRoutes[profile.user_type as keyof typeof dashboardRoutes];

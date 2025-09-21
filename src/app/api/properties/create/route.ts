@@ -19,13 +19,32 @@ export async function POST(req: NextRequest) {
     
     const body = await req.json();
     
-    // Validate required fields for new form structure
-    const required = [
-      "title", "description", "price", "property_type", 
-      "bedrooms", "bathrooms", "house_size_value", 
-      "region", "city", "owner_email", "owner_whatsapp",
-      "images"
-    ];
+    // Determine property type based on propertyCategory
+    const isRental = body.propertyCategory === "rental";
+    const isSale = body.propertyCategory === "sale";
+    
+    if (!isRental && !isSale) {
+      return NextResponse.json({ error: "Invalid propertyCategory. Must be 'rental' or 'sale'" }, { status: 400 });
+    }
+    
+    // Validate required fields - different for rental vs sale
+    let required: string[];
+    if (isRental) {
+      // Rental property validation - uses different field names
+      required = [
+        "title", "description", "price", "propertyType", 
+        "bedrooms", "bathrooms", "squareFootage", 
+        "location", "images"
+      ];
+    } else {
+      // FSBO sale property validation
+      required = [
+        "title", "description", "price", "property_type", 
+        "bedrooms", "bathrooms", "house_size_value", 
+        "region", "city", "owner_email", "owner_whatsapp",
+        "images"
+      ];
+    }
     
     for (const field of required) {
       if (!body[field]) {
@@ -33,17 +52,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Validate required system fields
-    if (!body.listing_type || body.listing_type !== 'sale') {
-      return NextResponse.json({ error: "Invalid listing_type" }, { status: 400 });
-    }
-    
-    if (!body.listed_by_type || body.listed_by_type !== 'owner') {
-      return NextResponse.json({ error: "Invalid listed_by_type" }, { status: 400 });
-    }
-
-    // Enforce image limits (20 for FSBO)
-    const maxImages = 20;
+    // Enforce image limits (15 for rental, 20 for FSBO)
+    const maxImages = isRental ? 15 : 20;
     if (body.images.length > maxImages) {
       return NextResponse.json({ error: `Image limit exceeded (${maxImages} allowed)` }, { status: 400 });
     }
@@ -83,43 +93,82 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Prepare property data for database
-    const propertyData = {
-      // Step 1 - Basic Info
-      title: body.title,
-      description: body.description,
-      price: parseInt(body.price),
-      property_type: body.property_type,
-      
-      // Step 2 - Property Details
-      bedrooms: parseInt(body.bedrooms),
-      bathrooms: parseInt(body.bathrooms),
-      house_size_value: parseInt(body.house_size_value),
-      house_size_unit: body.house_size_unit,
-      land_size_value: body.land_size_value ? parseInt(body.land_size_value) : null,
-      land_size_unit: body.land_size_unit,
-      year_built: body.year_built ? parseInt(body.year_built) : null,
-      amenities: body.amenities || [],
-      
-      // Step 3 - Location
-      region: body.region,
-      city: body.city,
-      neighborhood: body.neighborhood || null,
-      
-      // Step 5 - Contact
-      owner_email: body.owner_email,
-      owner_whatsapp: body.owner_whatsapp,
-      
-      // System fields (auto-populated)
-      user_id: userId,
-      listing_type: 'sale',
-      listed_by_type: 'owner',
-      status: body.status || 'pending',
-      
-      // Legacy/additional fields
-      propertyCategory: 'sale',
-      created_at: new Date().toISOString(),
-    };
+    // Prepare property data for database - different structure for rental vs sale
+    let propertyData: any;
+    
+    if (isRental) {
+      // Rental property data structure
+      propertyData = {
+        // Basic Info
+        title: body.title,
+        description: body.description,
+        price: parseInt(body.price),
+        property_type: body.propertyType, // Note: different field name
+        
+        // Property Details
+        bedrooms: parseInt(body.bedrooms),
+        bathrooms: parseInt(body.bathrooms),
+        house_size_value: parseInt(body.squareFootage), // Map squareFootage to house_size_value
+        house_size_unit: 'sqft',
+        amenities: body.features || [], // Map features to amenities
+        
+        // Location - rental uses different structure
+        location: body.location, // Specific address field
+        country: body.country,
+        region: body.region,
+        city: body.region, // Use region as city for rentals
+        
+        // Rental-specific fields
+        rental_type: body.rentalType || 'monthly',
+        currency: body.currency || 'GYD',
+        
+        // System fields
+        user_id: userId,
+        listing_type: 'rent',
+        listed_by_type: 'landlord',
+        status: body.status || 'pending',
+        propertyCategory: 'rental',
+        created_at: new Date().toISOString(),
+      };
+    } else {
+      // FSBO sale property data structure (existing)
+      propertyData = {
+        // Step 1 - Basic Info
+        title: body.title,
+        description: body.description,
+        price: parseInt(body.price),
+        property_type: body.property_type,
+        
+        // Step 2 - Property Details
+        bedrooms: parseInt(body.bedrooms),
+        bathrooms: parseInt(body.bathrooms),
+        house_size_value: parseInt(body.house_size_value),
+        house_size_unit: body.house_size_unit,
+        land_size_value: body.land_size_value ? parseInt(body.land_size_value) : null,
+        land_size_unit: body.land_size_unit,
+        year_built: body.year_built ? parseInt(body.year_built) : null,
+        amenities: body.amenities || [],
+        
+        // Step 3 - Location
+        region: body.region,
+        city: body.city,
+        neighborhood: body.neighborhood || null,
+        
+        // Step 5 - Contact
+        owner_email: body.owner_email,
+        owner_whatsapp: body.owner_whatsapp,
+        
+        // System fields (auto-populated)
+        user_id: userId,
+        listing_type: 'sale',
+        listed_by_type: 'owner',
+        status: body.status || 'pending',
+        
+        // Legacy/additional fields
+        propertyCategory: 'sale',
+        created_at: new Date().toISOString(),
+      };
+    }
 
     // Insert property into properties table
     const { data: propertyResult, error: dbError } = await supabase

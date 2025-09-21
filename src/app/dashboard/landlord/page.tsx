@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/supabase";
+import { supabase } from "@/supabase";
 import { getActiveCountries } from "@/lib/countries";
 
 export default function LandlordDashboard() {
@@ -20,13 +20,14 @@ export default function LandlordDashboard() {
 
   useEffect(() => {
     async function fetchUserData() {
-      const supabase = createClient();
       
       try {
         // Get current user
         const { data: { user: authUser } } = await supabase.auth.getUser();
+        
         if (!authUser) {
-          router.push('/login');
+          // Just show loading - middleware will handle redirect
+          setLoading(false);
           return;
         }
 
@@ -40,7 +41,8 @@ export default function LandlordDashboard() {
       if (profile) {
         // Verify user is a landlord
         if (profile.user_type !== 'landlord') {
-          window.location.href = '/dashboard';
+          // Show error message instead of redirect
+          setLoading(false);
           return;
         }
 
@@ -51,6 +53,7 @@ export default function LandlordDashboard() {
           totalProperties: 0, // Will be updated when we fetch properties
           activeListings: 0
         });
+      }
 
         // Fetch user properties
         const { data: userProperties } = await supabase
@@ -68,18 +71,50 @@ export default function LandlordDashboard() {
             activeListings: userProperties.filter(p => p.status === 'approved').length
           }) : null);
         }
-      } // Missing closing bracket for the profile if block
+        
+        // Set loading to false on successful completion
+        setLoading(false);
       } catch (error) {
         console.error('Error fetching landlord data:', error);
-        router.push('/login');
-      } finally {
         setLoading(false);
       }
     }
 
     fetchUserData();
-    getActiveCountries().then(setCountries);
+    getActiveCountries().then(setCountries).catch(error => {
+      console.error('Error fetching countries:', error);
+      // Set fallback countries if database fetch fails
+      setCountries([
+        { code: 'GY', name: 'Guyana' },
+        { code: 'US', name: 'United States' },
+        { code: 'CA', name: 'Canada' }
+      ]);
+    });
   }, [router]);
+
+  async function handleLogout() {
+    try {
+      console.log('🚪 Logging out landlord...');
+      
+      // Clear authentication state completely
+      await supabase.auth.signOut();
+      
+      // Clear local state
+      setUser(null);
+      setSubscription(null);
+      setProperties([]);
+      
+      // Force page reload to clear any cached state
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if logout fails, clear local state and redirect
+      setUser(null);
+      setSubscription(null);
+      setProperties([]);
+      window.location.href = '/login';
+    }
+  }
 
   if (loading) {
     return (
@@ -99,10 +134,25 @@ export default function LandlordDashboard() {
             <div>
               <h1 className="text-4xl font-bold mb-2">🏠 Landlord Portal</h1>
               <p className="text-green-100 text-lg">Manage your rental properties with ease</p>
+              <p className="text-xs text-green-200">[DEBUG: landlord/page.tsx loaded]</p>
             </div>
-            <div className="text-right">
-              <div className="text-2xl font-bold">{subscription?.totalProperties || 0}</div>
-              <div className="text-green-100 text-sm">Total Properties</div>
+            <div className="flex items-center space-x-6">
+              <div className="text-right">
+                <div className="text-2xl font-bold">{subscription?.totalProperties || 0}</div>
+                <div className="text-green-100 text-sm">Total Properties</div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="text-right">
+                  <div className="text-sm text-green-100">Welcome back,</div>
+                  <div className="font-medium text-white">{user?.email}</div>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </div>

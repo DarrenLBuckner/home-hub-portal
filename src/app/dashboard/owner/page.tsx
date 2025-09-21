@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useRouter } from 'next/navigation';
 import { supabase } from "@/supabase";
 import { getActiveCountries } from "@/lib/countries";
 
 export default function OwnerDashboard() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [subscription, setSubscription] = useState<{
     status: string;
@@ -85,6 +87,30 @@ export default function OwnerDashboard() {
     loadCountries();
   }, []);
 
+  async function handleLogout() {
+    try {
+      console.log('🚪 Logging out user...');
+      
+      // Clear authentication state completely
+      await supabase.auth.signOut();
+      
+      // Clear local state
+      setUser(null);
+      setSubscription(null);
+      setProperties([]);
+      
+      // Force page reload to clear any cached state
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Even if logout fails, clear local state and redirect
+      setUser(null);
+      setSubscription(null);
+      setProperties([]);
+      window.location.href = '/login';
+    }
+  }
+
   if (loading) {
     return (
       <main className="max-w-2xl mx-auto py-12 px-4 text-center">
@@ -95,8 +121,32 @@ export default function OwnerDashboard() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold text-blue-700 mb-4">Owner Dashboard</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-blue-700">Owner Dashboard</h1>
+              <p className="text-gray-600 mt-1">For Sale By Owner Property Management</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <div className="text-right">
+                <div className="text-sm text-gray-500">Welcome back,</div>
+                <div className="font-medium">{user?.email}</div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main className="max-w-2xl mx-auto py-12 px-4">
       
       {subscription && (
         <div className="mb-6 p-6 bg-white rounded-xl shadow">
@@ -158,5 +208,6 @@ export default function OwnerDashboard() {
         ))}
       </ul>
     </main>
+    </div>
   );
 }
