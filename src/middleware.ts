@@ -59,29 +59,21 @@ export async function middleware(request: NextRequest) {
   const protectedRoutes = ['/dashboard']
   const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
-  // TEMPORARILY DISABLED: Middleware auth protection causes login loops
-  // The middleware auth.uid() returns null even for valid sessions
-  // Will implement client-side logout protection instead
-  // if (isProtectedRoute) {
-  //   try {
-  //     const { data: { user } } = await supabase.auth.getUser()
-  //     
-  //     if (!user) {
-  //       console.log('🔒 Middleware: No authenticated user, redirecting to login')
-  //       const redirectUrl = request.nextUrl.clone()
-  //       redirectUrl.pathname = '/login'
-  //       redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
-  //       return NextResponse.redirect(redirectUrl)
-  //     }
-  //     
-  //     console.log('✅ Middleware: User authenticated, allowing access to', request.nextUrl.pathname)
-  //   } catch (error) {
-  //     console.error('❌ Middleware auth check failed:', error)
-  //     const redirectUrl = request.nextUrl.clone()
-  //     redirectUrl.pathname = '/login'
-  //     return NextResponse.redirect(redirectUrl)
-  //   }
-  // }
+  if (isProtectedRoute) {
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      // Redirect to login if not authenticated
+      const redirectUrl = request.nextUrl.clone()
+      redirectUrl.pathname = '/login'
+      redirectUrl.searchParams.set('redirectedFrom', request.nextUrl.pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+
+    // For /dashboard routes, just let authenticated users through
+    // The dashboard pages themselves will handle role-based redirects
+    // This prevents middleware redirect loops
+  }
 
   return response
 }
