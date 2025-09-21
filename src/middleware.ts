@@ -60,9 +60,18 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
   if (isProtectedRoute) {
-    const { data: { user } } = await supabase.auth.getUser()
+    console.log(`🔒 MIDDLEWARE: Checking auth for protected route: ${request.nextUrl.pathname}`)
+    
+    // Get the session from cookies
+    const accessToken = request.cookies.get('sb-opjnizbtppkynxzssijy-auth-token')
+    console.log(`🍪 MIDDLEWARE: Access token exists: ${!!accessToken}`)
+    
+    const { data: { user }, error } = await supabase.auth.getUser()
+    console.log(`👤 MIDDLEWARE: User object:`, user ? `${user.email} (${user.id})` : 'null')
+    console.log(`❌ MIDDLEWARE: Auth error:`, error?.message || 'none')
     
     if (!user) {
+      console.log(`🚫 MIDDLEWARE: No user found, redirecting to login`)
       // Redirect to login if not authenticated
       const redirectUrl = request.nextUrl.clone()
       redirectUrl.pathname = '/login'
@@ -70,6 +79,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(redirectUrl)
     }
 
+    console.log(`✅ MIDDLEWARE: User authenticated, allowing access to ${request.nextUrl.pathname}`)
     // For /dashboard routes, just let authenticated users through
     // The dashboard pages themselves will handle role-based redirects
     // This prevents middleware redirect loops

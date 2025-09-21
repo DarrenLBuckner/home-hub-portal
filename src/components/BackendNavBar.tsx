@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { createClient } from "@/supabase";
 
 type UserType = "agent" | "landlord" | "fsbo" | "admin" | "super_admin";
 type NavLink = { label: string; href: string; isButton?: boolean; dropdown?: boolean };
@@ -69,6 +70,21 @@ export default function BackendNavBar({ userType = "agent" }: BackendNavBarProps
 	const [showDropdown, setShowDropdown] = useState(false);
 	const [showSitesDropdown, setShowSitesDropdown] = useState(false);
 	const [showCreateDropdown, setShowCreateDropdown] = useState(false);
+
+	const handleLogout = async () => {
+		try {
+			const supabase = createClient();
+			const { error } = await supabase.auth.signOut();
+			if (error) {
+				console.error('Error logging out:', error.message);
+			} else {
+				// Redirect to logout page after successful signout
+				window.location.href = '/logout';
+			}
+		} catch (error) {
+			console.error('Logout error:', error);
+		}
+	};
 		return (
 			<nav className="bg-blue-900 text-white px-4 py-3 flex flex-col sm:flex-row justify-between items-center shadow-md w-full">
 				<Link href="/" className="font-bold text-lg mb-2 sm:mb-0 hover:underline">Portal Home Hub</Link>
@@ -132,7 +148,7 @@ export default function BackendNavBar({ userType = "agent" }: BackendNavBarProps
 							<li key={link.label}>
 								<button
 									className="bg-blue-700 px-3 py-1 rounded hover:bg-blue-600"
-									onClick={() => window.location.href = link.href}
+									onClick={link.label === 'Logout' ? handleLogout : () => window.location.href = link.href}
 								>
 									{link.label}
 								</button>

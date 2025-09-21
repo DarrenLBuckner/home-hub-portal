@@ -1,7 +1,19 @@
+"use client";
 import Link from 'next/link';
 import Image from 'next/image';
+import { useEffect } from 'react';
+import { createClient } from '@/supabase';
 
 export default function LogoutPage() {
+  useEffect(() => {
+    // Ensure user is completely signed out when visiting this page
+    const handleSignOut = async () => {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    };
+    
+    handleSignOut();
+  }, []);
   return (
     <div style={{
       minHeight: '100vh',
@@ -29,22 +41,52 @@ export default function LogoutPage() {
         </h2>
         <p style={{ color: '#1a2a4f', fontSize: '1rem', marginBottom: '1.2rem' }}>
           Thank you for using Portal Home Hub.<br />
-          To access your account again, please log in below.
+          Choose how you'd like to log back in.
         </p>
-        <Link href="/login" style={{
-          display: 'inline-block',
-          background: 'linear-gradient(90deg, #14b8a6, #0a2240)',
-          color: '#fff',
-          fontWeight: 'bold',
-          padding: '12px 32px',
-          borderRadius: '8px',
-          textDecoration: 'none',
-          fontSize: '1.1rem',
-          boxShadow: '0 2px 8px rgba(20,184,166,0.12)',
-          marginTop: '1.2rem',
-        }}>
-          Log Back In
-        </Link>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', marginTop: '1.2rem' }}>
+          <Link href="/login" style={{
+            display: 'inline-block',
+            background: 'linear-gradient(90deg, #14b8a6, #0a2240)',
+            color: '#fff',
+            fontWeight: 'bold',
+            padding: '10px 24px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontSize: '1rem',
+            textAlign: 'center',
+            boxShadow: '0 2px 8px rgba(20,184,166,0.12)',
+          }}>
+            Agent / Owner / Landlord Login
+          </Link>
+          <Link href="/admin-login" style={{
+            display: 'inline-block',
+            background: 'linear-gradient(90deg, #6366f1, #3b82f6)',
+            color: '#fff',
+            fontWeight: 'bold',
+            padding: '10px 24px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontSize: '1rem',
+            textAlign: 'center',
+            boxShadow: '0 2px 8px rgba(99,102,241,0.12)',
+          }}>
+            Admin Login
+          </Link>
+          <Link href="/" style={{
+            display: 'inline-block',
+            background: '#f3f4f6',
+            color: '#374151',
+            fontWeight: 'bold',
+            padding: '10px 24px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontSize: '1rem',
+            textAlign: 'center',
+            border: '1px solid #d1d5db',
+          }}>
+            Back to Home
+          </Link>
+        </div>
       </div>
     </div>
   );
