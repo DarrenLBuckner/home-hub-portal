@@ -63,3 +63,13 @@ yarn-error.log*
 # Supabase specific
 supabase/.branches
 supabase/.temp
+
+# Debug and development files that may contain secrets
+debug-*.js
+debug-*.ts
+*.sql
+test-*.js
+test-*.ts
+
+# Talon voice commands
+*.talon

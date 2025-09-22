@@ -126,7 +126,7 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         listing_type: 'rent',
         listed_by_type: 'landlord',
-        status: body.status || 'pending',
+        status: body.status || 'off_market',
         propertyCategory: 'rental',
         created_at: new Date().toISOString(),
       };
@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         listing_type: 'sale',
         listed_by_type: 'owner',
-        status: body.status || 'pending',
+        status: body.status || 'off_market',
         
         // Legacy/additional fields
         propertyCategory: 'sale',

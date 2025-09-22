@@ -8,8 +8,28 @@ export default function LogoutPage() {
   useEffect(() => {
     // Ensure user is completely signed out when visiting this page
     const handleSignOut = async () => {
+      console.log('💨 Logout page: Ensuring complete signout');
       const supabase = createClient();
-      await supabase.auth.signOut();
+      
+      try {
+        // Force signout with global scope
+        await supabase.auth.signOut({ scope: 'global' });
+        console.log('✅ Logout page: Session cleared');
+        
+        // Clear browser storage
+        if (typeof window !== 'undefined') {
+          localStorage.clear();
+          sessionStorage.clear();
+          console.log('🧹 Logout page: Browser storage cleared');
+        }
+      } catch (error) {
+        console.error('❌ Logout page error:', error);
+        // Clear storage even if signout fails
+        if (typeof window !== 'undefined') {
+          localStorage.clear();
+          sessionStorage.clear();
+        }
+      }
     };
     
     handleSignOut();

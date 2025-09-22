@@ -23,10 +23,10 @@ type PropertyForm = {
   status: string;
   images: File[];
   attestation: boolean;
-  rentalType: string;
+  listingType: string;
 };
 
-export default function CreateLandlordProperty() {
+export default function CreateFSBOListing() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -41,20 +41,15 @@ export default function CreateLandlordProperty() {
         return;
       }
 
-      // Check if user is landlord
+      // Check if user is FSBO
       const { data: profile } = await supabase
         .from('profiles')
         .select('user_type, subscription_status')
         .eq('id', authUser.id)
         .single();
 
-      if (!profile || profile.user_type !== 'landlord') {
+      if (!profile || profile.user_type !== 'fsbo') {
         window.location.href = '/dashboard';
-        return;
-      }
-
-      if (profile.subscription_status !== 'active') {
-        window.location.href = '/dashboard/landlord';
         return;
       }
 
@@ -79,7 +74,7 @@ export default function CreateLandlordProperty() {
     status: "pending",
     images: [],
     attestation: false,
-    rentalType: "monthly",
+    listingType: "sale",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -89,7 +84,7 @@ export default function CreateLandlordProperty() {
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
 
-  const imageLimit = 15; // Landlords get more image uploads
+  const imageLimit = 8; // FSBO gets limited image uploads
 
   // Handle location and currency changes
   const handleLocationChange = (field: 'country' | 'region', value: string) => {
@@ -167,7 +162,7 @@ export default function CreateLandlordProperty() {
       data: file,
     }));
 
-    // Store rental property in DB via API
+    // Store property in DB via API
     try {
       const res = await fetch("/api/properties/create", {
         method: "POST",
@@ -180,7 +175,7 @@ export default function CreateLandlordProperty() {
           country: selectedCountry,
           region: selectedRegion,
           currency: currencyCode,
-          propertyCategory: "rental", // Mark as rental property
+          propertyCategory: "sale", // Mark as sale property
         }),
       });
 
@@ -192,7 +187,7 @@ export default function CreateLandlordProperty() {
       }
 
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard/landlord"), 2000);
+      setTimeout(() => router.push("/dashboard/fsbo"), 2000);
     } catch (err: any) {
       setError(err?.message || "Failed to submit property. Please try again.");
     }
@@ -202,7 +197,7 @@ export default function CreateLandlordProperty() {
   if (loading) {
     return (
       <main className="max-w-2xl mx-auto py-12 px-4 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto"></div>
         <p className="mt-4 text-gray-600">Loading...</p>
       </main>
     );
@@ -211,17 +206,17 @@ export default function CreateLandlordProperty() {
   return (
     <main className="max-w-2xl mx-auto py-12 px-4">
       <div className="mb-6">
-        <Link href="/dashboard/landlord" className="text-green-600 hover:underline text-sm">
+        <Link href="/dashboard/fsbo" className="text-orange-600 hover:underline text-sm">
           ← Back to Dashboard
         </Link>
       </div>
 
-      <h1 className="text-3xl font-bold text-green-700 mb-6">Create Rental Property Listing</h1>
+      <h1 className="text-3xl font-bold text-orange-700 mb-6">Create Property Listing (FSBO)</h1>
       
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-        <h2 className="font-semibold text-green-800 mb-2">Landlord Listing</h2>
-        <p className="text-green-700 text-sm">
-          You're creating a rental property listing. This will be marked as a rental property and displayed in the rental section of the website.
+      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+        <h2 className="font-semibold text-orange-800 mb-2">For Sale By Owner</h2>
+        <p className="text-orange-700 text-sm">
+          You're creating a FSBO property listing. This will be marked as for sale and displayed in the sale section of the website.
         </p>
       </div>
 
@@ -229,7 +224,7 @@ export default function CreateLandlordProperty() {
         <input 
           name="title" 
           type="text" 
-          placeholder="Property Title (e.g., 'Modern 2BR Apartment in Georgetown')*" 
+          placeholder="Property Title (e.g., 'Beautiful 3BR House in Georgetown')*" 
           value={form.title} 
           onChange={handleChange} 
           className="w-full border rounded-lg px-4 py-2" 
@@ -238,7 +233,7 @@ export default function CreateLandlordProperty() {
         
         <textarea 
           name="description" 
-          placeholder="Detailed description of your rental property*" 
+          placeholder="Detailed description of your property*" 
           value={form.description} 
           onChange={handleChange} 
           className="w-full border rounded-lg px-4 py-2" 
@@ -256,7 +251,7 @@ export default function CreateLandlordProperty() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">Rent ({currencySymbol})</label>
+            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">Sale Price ({currencySymbol})</label>
             <input 
               type="number" 
               name="price" 
@@ -267,16 +262,15 @@ export default function CreateLandlordProperty() {
             />
           </div>
           <div>
-            <label htmlFor="rentalType" className="block text-sm font-medium text-gray-700 mb-1">Rental Period</label>
+            <label htmlFor="listingType" className="block text-sm font-medium text-gray-700 mb-1">Listing Type</label>
             <select 
-              name="rentalType" 
-              value={form.rentalType} 
+              name="listingType" 
+              value={form.listingType} 
               onChange={handleChange} 
               className="w-full border rounded-lg px-4 py-2"
             >
-              <option value="monthly">Monthly</option>
-              <option value="weekly">Weekly</option>
-              <option value="daily">Daily</option>
+              <option value="sale">For Sale</option>
+              <option value="rent">For Rent</option>
             </select>
           </div>
         </div>
@@ -352,7 +346,7 @@ export default function CreateLandlordProperty() {
           onImagesChange={handleImagesChange}
           maxImages={imageLimit}
           title="Property Images"
-          description="Upload high-quality photos of your rental property"
+          description="Upload high-quality photos of your property for sale"
         />
         
         <label className="flex items-center gap-2 mt-4">
@@ -364,7 +358,7 @@ export default function CreateLandlordProperty() {
             required 
           />
           <span className="text-sm font-semibold text-red-700">
-            By submitting this listing, I confirm under penalty of perjury that I am the legal owner of this property or have the legal authority to list it for rental.
+            By submitting this listing, I confirm under penalty of perjury that I am the legal owner of this property or have the legal authority to list it for sale.
           </span>
         </label>
         
@@ -374,9 +368,9 @@ export default function CreateLandlordProperty() {
         <button 
           type="submit" 
           disabled={isSubmitting} 
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg shadow-lg hover:scale-105 transition-all duration-200"
+          className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-lg shadow-lg hover:scale-105 transition-all duration-200"
         >
-          {isSubmitting ? "Submitting..." : "Submit Rental Listing"}
+          {isSubmitting ? "Submitting..." : "Submit Property Listing"}
         </button>
       </form>
     </main>

@@ -11,6 +11,23 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
     }));
   };
 
+  // Get currency information from formData (set in Step3)
+  const getCurrencySymbol = (currency: string) => {
+    const currencyMap: Record<string, string> = {
+      'GYD': 'GY$',
+      'TTD': 'TT$', 
+      'JMD': 'J$',
+      'BBD': 'Bds$',
+      'GHS': 'GH₵',
+      'NGN': '₦',
+      'KES': 'KSh'
+    };
+    return currencyMap[currency] || 'GY$';
+  };
+
+  const currencyCode = formData.currency || 'GYD';
+  const currencySymbol = getCurrencySymbol(currencyCode);
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
@@ -97,7 +114,7 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Asking Price (GYD) *
+          Asking Price ({currencySymbol}) *
         </label>
         <input
           type="number"
@@ -109,10 +126,15 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
         />
         <p className="text-sm text-gray-500 mt-1">
           {formData.price && !isNaN(Number(formData.price)) 
-            ? `${Number(formData.price).toLocaleString()} GYD`
-            : 'Enter the asking price for your property'
+            ? `${Number(formData.price).toLocaleString()} ${currencyCode}`
+            : `Enter the asking price for your property${formData.currency ? ` in ${currencyCode}` : ''}`
           }
         </p>
+        {!formData.currency && (
+          <p className="text-sm text-blue-600 mt-1">
+            💡 Select your country in Step 3 to see the appropriate currency
+          </p>
+        )}
       </div>
 
       <div>

@@ -63,7 +63,7 @@ export default function OwnerDashboard() {
           setSubscription(prev => prev ? ({
             ...prev,
             totalProperties: userProperties.length,
-            activeListings: userProperties.filter(p => p.status === 'approved').length
+            activeListings: userProperties.filter(p => p.status === 'available').length
           }) : null);
         }
       }
@@ -198,7 +198,7 @@ export default function OwnerDashboard() {
       <ul>
         {properties.filter(p => !countryFilter || p.country === countryFilter).map(property => (
           <li key={property.id} className="border p-4 mb-4 rounded-lg">
-            <span className={`px-2 py-1 rounded text-xs font-bold ${property.status === "approved" ? "bg-green-100 text-green-700" : property.status === "pending" ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700"}`}>
+            <span className={`px-2 py-1 rounded text-xs font-bold ${property.status === "available" ? "bg-green-100 text-green-700" : property.status === "pending" ? "bg-blue-100 text-blue-700" : property.status === "off_market" ? "bg-yellow-100 text-yellow-700" : "bg-purple-100 text-purple-700"}`}>
               {property.status || 'Unknown'}
             </span>
             <span className="ml-2 font-semibold">{property.title || 'Untitled Property'}</span>

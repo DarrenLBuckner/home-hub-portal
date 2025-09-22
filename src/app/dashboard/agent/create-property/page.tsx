@@ -3,92 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
+import EnhancedImageUpload from "@/components/EnhancedImageUpload";
+import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 
-// Drag-and-drop image upload helper
-import { useRef } from "react";
-function DragDropUpload({ images, setImages, mainImageIdx, setMainImageIdx }: {
-  images: File[];
-  setImages: (files: File[]) => void;
-  mainImageIdx: number;
-  setMainImageIdx: (idx: number) => void;
-}) {
-  const [dragActive, setDragActive] = useState(false);
-  const dragItem = useRef<number | null>(null);
-  const dragOverItem = useRef<number | null>(null);
-
-  // Drag-and-drop reordering logic
-  const handleDragStart = (idx: number) => { dragItem.current = idx; };
-  const handleDragEnter = (idx: number) => { dragOverItem.current = idx; };
-  const handleDragEnd = () => {
-    if (dragItem.current !== null && dragOverItem.current !== null && dragItem.current !== dragOverItem.current) {
-      const newImages = [...images];
-      const dragged = newImages.splice(dragItem.current, 1)[0];
-      newImages.splice(dragOverItem.current, 0, dragged);
-      setImages(newImages);
-      // If main image was moved, update index
-      if (mainImageIdx === dragItem.current) setMainImageIdx(dragOverItem.current);
-      else if (mainImageIdx === dragOverItem.current) setMainImageIdx(dragItem.current);
-    }
-    dragItem.current = null;
-    dragOverItem.current = null;
-  };
-
-  return (
-    <div
-      className={`border-2 border-dashed rounded-lg p-6 text-center transition ${dragActive ? "border-blue-500 bg-blue-50" : "border-gray-300"}`}
-      onDragOver={e => { e.preventDefault(); setDragActive(true); }}
-      onDragLeave={e => { e.preventDefault(); setDragActive(false); }}
-      onDrop={e => {
-        e.preventDefault(); setDragActive(false);
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-          setImages([...images, ...Array.from(e.dataTransfer.files)]);
-        }
-      }}
-    >
-      <p className="mb-2">Drag & drop images here, or click to select</p>
-      <input type="file" multiple accept="image/*" className="hidden" id="property-images-upload" onChange={e => {
-        if (e.target.files) setImages([...images, ...Array.from(e.target.files)]);
-      }} />
-      <label htmlFor="property-images-upload" className="cursor-pointer bg-blue-700 text-white px-4 py-2 rounded">Select Images</label>
-      {images.length > 0 && (
-        <div className="mt-4 flex flex-wrap gap-2 justify-center">
-          {images.map((img, idx) => (
-            <div
-              key={idx}
-              draggable
-              onDragStart={() => handleDragStart(idx)}
-              onDragEnter={() => handleDragEnter(idx)}
-              onDragEnd={handleDragEnd}
-              className={`border rounded p-2 bg-gray-50 flex flex-col items-center w-32 cursor-move ${mainImageIdx === idx ? "border-blue-500" : ""}`}
-            >
-              <span className="truncate w-full text-xs mb-1">{img.name}</span>
-              <button
-                type="button"
-                className={`text-xs px-2 py-1 rounded ${mainImageIdx === idx ? "bg-blue-700 text-white" : "bg-gray-200"}`}
-                onClick={() => setMainImageIdx(idx)}
-              >{mainImageIdx === idx ? "Main Image" : "Set as Main"}</button>
-              <button
-                type="button"
-                className="text-xs text-red-500 mt-1"
-                onClick={() => {
-                  const newImages = images.filter((_, i) => i !== idx);
-                  setImages(newImages);
-                  if (mainImageIdx === idx) setMainImageIdx(0);
-                  else if (mainImageIdx > idx) setMainImageIdx(mainImageIdx - 1);
-                }}
-              >Remove</button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function CreatePropertyPage() {
   const router = useRouter();
   const [form, setForm] = useState({
-    location: "Guyana",
+    location: "",
     title: "",
     description: "",
     price: "",
@@ -109,9 +32,12 @@ export default function CreatePropertyPage() {
     neighborhood: "",
   });
   const [images, setImages] = useState<File[]>([]);
-  const [mainImageIdx, setMainImageIdx] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState<string>("GY");
+  const [selectedRegion, setSelectedRegion] = useState<string>("");
+  const [currencyCode, setCurrencyCode] = useState<string>("GYD");
+  const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -122,8 +48,24 @@ export default function CreatePropertyPage() {
     }
   };
 
-  const handleImageUpload = (files: File[]) => {
-  setImages(files);
+  const handleLocationChange = (field: 'country' | 'region', value: string) => {
+    if (field === 'country') {
+      setSelectedCountry(value);
+      setSelectedRegion('');
+      setForm({ ...form, location: value, region: '' });
+    } else {
+      setSelectedRegion(value);
+      setForm({ ...form, region: value });
+    }
+  };
+
+  const handleCurrencyChange = (code: string, symbol: string) => {
+    setCurrencyCode(code);
+    setCurrencySymbol(symbol);
+  };
+
+  const handleImagesChange = (images: File[]) => {
+    setImages(images);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -158,6 +100,8 @@ export default function CreatePropertyPage() {
       region: form.region,
       city: form.city,
       neighborhood: form.neighborhood,
+      country: selectedCountry,
+      currency: currencyCode,
       user_id: userData.user.id,
     }).select();
     if (dbError || !propertyData || !propertyData[0]?.id) {
@@ -180,7 +124,7 @@ export default function CreatePropertyPage() {
         property_id: propertyId,
         url,
         type: "image",
-        is_primary: i === mainImageIdx,
+        is_primary: i === 0,
         position: i,
       });
     }
@@ -194,21 +138,16 @@ export default function CreatePropertyPage() {
         {/* Basic Info */}
         <div>
           <h3 className="font-semibold mb-2">Basic Info</h3>
-          {/* Location Dropdown */}
-          <select name="location" value={form.location} onChange={handleChange} required className="border rounded px-3 py-2 w-full mb-2">
-            <option value="Guyana">Guyana</option>
-            <option value="Ghana">Ghana</option>
-            <option value="Rwanda">Rwanda</option>
-            <option value="South Africa">South Africa</option>
-            <option value="Trinidad">Trinidad</option>
-            <option value="Jamaica">Jamaica</option>
-            <option value="Namibia">Namibia</option>
-            <option value="Dominican Republic">Dominican Republic</option>
-            <option value="Caribbean">Caribbean</option>
-          </select>
+          <GlobalSouthLocationSelector
+            selectedCountry={selectedCountry}
+            selectedRegion={selectedRegion}
+            onLocationChange={handleLocationChange}
+            onCurrencyChange={handleCurrencyChange}
+            required={true}
+          />
           <input name="title" type="text" placeholder="Property Title" value={form.title} onChange={handleChange} required className="border rounded px-3 py-2 w-full mb-2" />
           <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} required className="border rounded px-3 py-2 w-full mb-2" />
-          <input name="price" type="number" placeholder="Price (USD)" value={form.price} onChange={handleChange} required className="border rounded px-3 py-2 w-full mb-2" />
+          <input name="price" type="number" placeholder={`Price (${currencySymbol})`} value={form.price} onChange={handleChange} required className="border rounded px-3 py-2 w-full mb-2" />
         </div>
         {/* Property Details */}
         <div>
@@ -258,11 +197,14 @@ export default function CreatePropertyPage() {
             <option value="active">Active</option>
           </select>
         </div>
-        {/* Drag-and-drop image upload with main image selection and reordering */}
-        <div>
-          <h3 className="font-semibold mb-2">Property Images</h3>
-          <DragDropUpload images={images} setImages={setImages} mainImageIdx={mainImageIdx} setMainImageIdx={setMainImageIdx} />
-        </div>
+        {/* Enhanced image upload */}
+        <EnhancedImageUpload
+          images={images}
+          onImagesChange={handleImagesChange}
+          maxImages={10}
+          title="Property Images"
+          description="Upload high-quality photos of your property"
+        />
         {/* Error and submit */}
         {error && <div className="text-red-500 text-sm">{error}</div>}
         <button type="submit" disabled={loading} className="bg-primary text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-primary-dark transition">

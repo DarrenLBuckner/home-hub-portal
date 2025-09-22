@@ -39,12 +39,15 @@ export default function AuthNavBar() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change:', event, !!session?.user);
+      console.log('🔄 Auth state change:', event, !!session?.user);
       
-      if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        console.log('👋 User signed out, clearing state');
         setUser(null);
         setUserType(null);
+        setLoading(false);
       } else if (event === 'SIGNED_IN' && session?.user) {
+        console.log('👤 User signed in:', session.user.email);
         setUser(session.user);
         // Small delay to ensure session is fully established
         setTimeout(() => {

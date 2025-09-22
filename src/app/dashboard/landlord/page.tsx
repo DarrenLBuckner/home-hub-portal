@@ -68,7 +68,7 @@ export default function LandlordDashboard() {
           setSubscription(prev => prev ? ({
             ...prev,
             totalProperties: userProperties.length,
-            activeListings: userProperties.filter(p => p.status === 'approved').length
+            activeListings: userProperties.filter(p => p.status === 'available').length
           }) : null);
         }
         
@@ -115,6 +115,29 @@ export default function LandlordDashboard() {
       window.location.href = '/login';
     }
   }
+
+  // Property status management function
+  const updatePropertyStatus = async (propertyId: string, newStatus: string) => {
+    try {
+      const { error } = await supabase
+        .from('properties')
+        .update({ status: newStatus })
+        .eq('id', propertyId)
+        .eq('user_id', user?.id); // Ensure landlord can only update their own properties
+
+      if (error) {
+        alert('Error updating property status');
+        console.error(error);
+      } else {
+        alert(`Property ${newStatus === 'rented' ? 'marked as rented! Listing complete.' : 'status updated successfully!'}`);
+        // Refresh properties list
+        fetchUserData();
+      }
+    } catch (error) {
+      alert('Error updating property');
+      console.error(error);
+    }
+  };
 
   if (loading) {
     return (
@@ -274,13 +297,18 @@ export default function LandlordDashboard() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
                         <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${
-                          property.status === "approved" 
+                          property.status === "available" 
                             ? "bg-green-100 text-green-800 border border-green-200" 
                             : property.status === "pending" 
-                            ? "bg-yellow-100 text-yellow-800 border border-yellow-200" 
-                            : "bg-red-100 text-red-800 border border-red-200"
+                            ? "bg-blue-100 text-blue-800 border border-blue-200" 
+                            : property.status === "rented"
+                            ? "bg-purple-100 text-purple-800 border border-purple-200"
+                            : "bg-yellow-100 text-yellow-800 border border-yellow-200"
                         }`}>
-                          {property.status.toUpperCase()}
+                          {property.status === "available" ? "LIVE" : 
+                           property.status === "pending" ? "UNDER CONTRACT" : 
+                           property.status === "rented" ? "RENTED" : 
+                           "AWAITING APPROVAL"}
                         </span>
                         <span className="text-xs text-gray-500 uppercase font-medium">🏠 RENTAL PROPERTY</span>
                       </div>
@@ -296,15 +324,67 @@ export default function LandlordDashboard() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between pt-3 border-t border-gray-200">
-                    <div className="flex space-x-4 text-xs text-gray-500">
-                      <span>🛏️ {property.bedrooms || 'N/A'} bed</span>
-                      <span>🚿 {property.bathrooms || 'N/A'} bath</span>
-                      <span>📐 {property.squareFootage || 'N/A'} sqft</span>
+                  <div className="pt-3 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex space-x-4 text-xs text-gray-500">
+                        <span>🛏️ {property.bedrooms || 'N/A'} bed</span>
+                        <span>🚿 {property.bathrooms || 'N/A'} bath</span>
+                        <span>📐 {property.squareFootage || 'N/A'} sqft</span>
+                      </div>
+                      <button className="text-xs text-green-600 font-medium hover:text-green-700 hover:underline">
+                        View Details →
+                      </button>
                     </div>
-                    <button className="text-xs text-green-600 font-medium hover:text-green-700 hover:underline">
-                      View Details →
-                    </button>
+                    
+                    {/* Property Status Management */}
+                    <div className="flex gap-2 flex-wrap">
+                      {property.status === 'available' && (
+                        <>
+                          <button 
+                            onClick={() => updatePropertyStatus(property.id, 'pending')}
+                            className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition"
+                          >
+                            📝 Mark Under Contract
+                          </button>
+                          <button 
+                            onClick={() => updatePropertyStatus(property.id, 'rented')}
+                            className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition"
+                          >
+                            🏠 Mark Rented
+                          </button>
+                        </>
+                      )}
+                      {property.status === 'pending' && (
+                        <>
+                          <button 
+                            onClick={() => updatePropertyStatus(property.id, 'rented')}
+                            className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition"
+                          >
+                            🏠 Mark Rented
+                          </button>
+                          <button 
+                            onClick={() => updatePropertyStatus(property.id, 'available')}
+                            className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition"
+                          >
+                            ↩️ Back to Market
+                          </button>
+                        </>
+                      )}
+                      {property.status === 'rented' && (
+                        <>
+                          <div className="text-xs text-purple-600 font-semibold">
+                            🎉 Property Rented - Listing Complete!
+                          </div>
+                        </>
+                      )}
+                      {property.status === 'off_market' && (
+                        <>
+                          <div className="text-xs text-yellow-600 font-semibold">
+                            ⏳ Awaiting admin approval to go live
+                          </div>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

@@ -1,9 +1,17 @@
+import { useState } from 'react';
+import GlobalSouthLocationSelector from '@/components/GlobalSouthLocationSelector';
+
 interface Step3LocationProps {
   formData: any;
   setFormData: (data: any) => void;
 }
 
 export default function Step3Location({ formData, setFormData }: Step3LocationProps) {
+  const [selectedCountry, setSelectedCountry] = useState<string>(formData.country || "GY");
+  const [selectedRegion, setSelectedRegion] = useState<string>(formData.region || "");
+  const [currencyCode, setCurrencyCode] = useState<string>(formData.currency || "GYD");
+  const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
+
   const handleChange = (field: string, value: string) => {
     setFormData((prev: any) => ({
       ...prev,
@@ -11,100 +19,45 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
     }));
   };
 
-  // Complete list of Guyana's 10 Administrative Regions with their major areas
-  const guyanaRegionsData = {
-    'Region 1 - Barima-Waini': [
-      'Mabaruma', 'Port Kaituma', 'Matthew\'s Ridge', 'Moruca', 'Koriabo'
-    ],
-    'Region 2 - Pomeroon-Supenaam': [
-      'Anna Regina', 'Charity', 'Adventure', 'Supenaam', 'Spring Garden'
-    ],
-    'Region 3 - Essequibo Islands-West Demerara': [
-      'Vreed-en-Hoop', 'Parika', 'Wales', 'Uitvlugt', 'Leonora', 'Best', 'Versailles'
-    ],
-    'Region 4 - Demerara-Mahaica': [
-      'Georgetown', 'Diamond', 'Grove', 'Timehri', 'Soesdyke', 'Mahaica', 'Bagotstown',
-      'Campbellville', 'Kitty', 'Alberttown', 'Newtown', 'Queenstown', 'Stabroek',
-      'Bel Air', 'Ruimveldt', 'South Georgetown', 'East Georgetown', 'North Georgetown',
-      'Cummings Lodge', 'Turkeyen', 'Sophia', 'Better Hope', 'Enmore'
-    ],
-    'Region 5 - Mahaica-Berbice': [
-      'Mahaicony', 'Fort Wellington', 'Onverwagt', 'Blairmont', 'Bath Settlement'
-    ],
-    'Region 6 - East Berbice-Corentyne': [
-      'New Amsterdam', 'Rose Hall', 'Corriverton', 'Skeldon', 'Springlands',
-      'Port Mourant', 'Albion', 'Nigg', 'Canje', 'Number 19 Village'
-    ],
-    'Region 7 - Cuyuni-Mazaruni': [
-      'Bartica', 'Mazaruni', 'Issano', 'Kartabo', 'Monkey Mountain'
-    ],
-    'Region 8 - Potaro-Siparuni': [
-      'Mahdia', 'Tumatumari', 'Kangaruma', 'Paramakatoi'
-    ],
-    'Region 9 - Upper Takutu-Upper Essequibo': [
-      'Lethem', 'Annai', 'Sand Creek', 'Karasabai', 'Aishalton'
-    ],
-    'Region 10 - Upper Demerara-Berbice': [
-      'Linden', 'Ituni', 'Kwakwani', 'Rockstone', 'Berbice River'
-    ]
+  const handleLocationChange = (field: 'country' | 'region', value: string) => {
+    if (field === 'country') {
+      setSelectedCountry(value);
+      setSelectedRegion('');
+      setFormData((prev: any) => ({
+        ...prev,
+        country: value,
+        region: '',
+        currency: currencyCode
+      }));
+    } else {
+      setSelectedRegion(value);
+      setFormData((prev: any) => ({
+        ...prev,
+        region: value
+      }));
+    }
   };
 
-  const selectedRegionAreas = formData.region ? guyanaRegionsData[formData.region] || [] : [];
+  const handleCurrencyChange = (code: string, symbol: string) => {
+    setCurrencyCode(code);
+    setCurrencySymbol(symbol);
+    setFormData((prev: any) => ({
+      ...prev,
+      currency: code
+    }));
+  };
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold mb-4">Property Location</h2>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Administrative Region *
-        </label>
-        <select
-          value={formData.region}
-          onChange={(e) => {
-            handleChange('region', e.target.value);
-            // Clear city when region changes
-            handleChange('city', '');
-          }}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        >
-          <option value="">Select a region</option>
-          {Object.keys(guyanaRegionsData).map((region) => (
-            <option key={region} value={region}>{region}</option>
-          ))}
-        </select>
-        <p className="text-sm text-gray-500 mt-1">
-          Select your administrative region (all 10 regions of Guyana)
-        </p>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          City/Town/Area *
-        </label>
-        {formData.region ? (
-          <select
-            value={formData.city}
-            onChange={(e) => handleChange('city', e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">Select city/town/area</option>
-            {selectedRegionAreas.map((area) => (
-              <option key={area} value={area}>{area}</option>
-            ))}
-          </select>
-        ) : (
-          <input
-            type="text"
-            disabled
-            placeholder="Please select a region first"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-500 cursor-not-allowed"
-          />
-        )}
-        <p className="text-sm text-gray-500 mt-1">
-          {formData.region ? 'Select from major areas in your region' : 'Choose a region to see available areas'}
-        </p>
-      </div>
+      <GlobalSouthLocationSelector
+        selectedCountry={selectedCountry}
+        selectedRegion={selectedRegion}
+        onLocationChange={handleLocationChange}
+        onCurrencyChange={handleCurrencyChange}
+        required={true}
+      />
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -123,27 +76,32 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
       </div>
 
       {/* Regional Information */}
-      {formData.region && (
+      {selectedCountry && selectedRegion && (
         <div className="bg-green-50 p-4 rounded-lg">
           <h3 className="font-medium text-green-900 mb-2">
-            📍 {formData.region}
+            📍 {selectedRegion}
           </h3>
           <p className="text-sm text-green-800">
-            {selectedRegionAreas.length} major areas available in this region. 
-            {formData.region.includes('Region 4') && ' This includes the capital Georgetown and surrounding areas.'}
-            {formData.region.includes('Region 6') && ' This includes New Amsterdam and the Corentyne coast.'}
-            {formData.region.includes('Region 10') && ' This includes Linden and the Upper Demerara area.'}
+            Selected region in {selectedCountry === 'GY' ? 'Guyana' : 
+                              selectedCountry === 'TT' ? 'Trinidad and Tobago' :
+                              selectedCountry === 'JM' ? 'Jamaica' :
+                              selectedCountry === 'BB' ? 'Barbados' :
+                              selectedCountry === 'GH' ? 'Ghana' :
+                              selectedCountry === 'NG' ? 'Nigeria' :
+                              selectedCountry === 'KE' ? 'Kenya' : selectedCountry}. 
+            Currency: {currencySymbol}
           </p>
         </div>
       )}
 
       <div className="bg-blue-50 p-4 rounded-lg">
-        <h3 className="font-medium text-blue-900 mb-2">Location & Privacy</h3>
+        <h3 className="font-medium text-blue-900 mb-2">Global South Coverage & Privacy</h3>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Your exact address will not be shown publicly</li>
           <li>• Only the region and general area will be displayed to buyers</li>
           <li>• Specific location details shared only with approved inquiries</li>
-          <li>• All 10 administrative regions of Guyana are supported</li>
+          <li>• Serving 7 Global South countries: Caribbean & Africa markets</li>
+          <li>• Automatic currency adaptation for your selected country</li>
         </ul>
       </div>
     </div>

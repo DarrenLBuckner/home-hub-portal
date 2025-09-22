@@ -88,10 +88,10 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
         <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-indigo-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Commission Ready</p>
-              <p className="text-3xl font-bold text-indigo-600">{stats.sold}</p>
+              <p className="text-gray-600 text-sm font-medium">Subscription Active</p>
+              <p className="text-3xl font-bold text-indigo-600">✓</p>
             </div>
-            <div className="text-4xl">💰</div>
+            <div className="text-4xl">⭐</div>
           </div>
         </div>
       </div>
@@ -141,7 +141,7 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
           <h3 className="font-bold text-blue-800 mb-2">🎖️ Agent Advantages:</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-blue-700">
             <div>✅ <strong>Full Access:</strong> Both sale and rental properties</div>
-            <div>💰 <strong>Commission Tracking:</strong> Built-in commission management</div>
+            <div>⭐ <strong>Subscription Model:</strong> Simple monthly pricing, no per-listing fees</div>
             <div>📈 <strong>Professional Tools:</strong> Advanced analytics and reporting</div>
           </div>
         </div>

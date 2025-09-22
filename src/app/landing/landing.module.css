@@ -225,6 +225,209 @@
   transform: scale(1.04);
 }
 
+/* Mobile-First Responsive Design */
+.mobileHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+  padding: 1rem;
+}
+
+.logo {
+  margin-bottom: 1rem;
+}
+
+.mobileTitle {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  color: #f6b93b;
+  line-height: 1.2;
+}
+
+.mobileSubtitle {
+  font-size: 1rem;
+  color: #fff;
+  opacity: 0.9;
+  margin: 0;
+}
+
+.mobileActions {
+  width: 100%;
+  max-width: 500px;
+  padding: 0 1rem;
+}
+
+.registrationGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.registrationCard {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 16px;
+  padding: 1.5rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.registrationCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+}
+
+.cardIcon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin: 0.5rem 0;
+}
+
+.cardDescription {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0.5rem 0 1rem 0;
+  line-height: 1.4;
+}
+
+.primaryButton {
+  display: block;
+  background: #27ae60;
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  margin: 1rem auto 0.5rem auto;
+  width: fit-content;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, transform 0.1s ease;
+  box-shadow: 0 2px 10px rgba(39, 174, 96, 0.2);
+}
+
+.primaryButton:hover {
+  background: #219150;
+  transform: scale(1.02);
+}
+
+.pricing {
+  font-size: 0.8rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.existingUserSection {
+  text-align: center;
+  padding: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin-top: 1rem;
+}
+
+.existingUserText {
+  font-size: 0.9rem;
+  color: #fff;
+  opacity: 0.8;
+  margin: 0 0 1rem 0;
+}
+
+.secondaryButton {
+  display: inline-block;
+  background: transparent;
+  color: #f6b93b;
+  padding: 0.75rem 2rem;
+  border: 2px solid #f6b93b;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  margin: 0 auto;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.secondaryButton:hover {
+  background: #f6b93b;
+  color: #2c3e50;
+}
+
+.mobileFooter {
+  margin-top: auto;
+  padding: 1.5rem 1rem;
+  text-align: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.footerContent {
+  color: #fff;
+  opacity: 0.7;
+  font-size: 0.85rem;
+}
+
+/* Tablet Styles */
+@media (min-width: 768px) {
+  .mobileTitle {
+    font-size: 2.2rem;
+  }
+  
+  .mobileSubtitle {
+    font-size: 1.1rem;
+  }
+  
+  .registrationGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    max-width: 900px;
+  }
+  
+  .mobileActions {
+    max-width: 900px;
+  }
+  
+  .cardTitle {
+    font-size: 1.4rem;
+  }
+  
+  .cardDescription {
+    font-size: 1rem;
+  }
+}
+
+/* Desktop Styles */
+@media (min-width: 1024px) {
+  .mobileHeader {
+    margin-bottom: 3rem;
+  }
+  
+  .mobileTitle {
+    font-size: 2.5rem;
+  }
+  
+  .mobileSubtitle {
+    font-size: 1.2rem;
+  }
+  
+  .registrationGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+}
+
 @media (max-width: 600px) {
   .portalStack {
     gap: 0.7rem;

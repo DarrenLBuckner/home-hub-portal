@@ -73,16 +73,38 @@ export default function BackendNavBar({ userType = "agent" }: BackendNavBarProps
 
 	const handleLogout = async () => {
 		try {
+			console.log('🚪 Starting logout process...');
 			const supabase = createClient();
-			const { error } = await supabase.auth.signOut();
+			
+			// Clear the session completely
+			const { error } = await supabase.auth.signOut({
+				scope: 'global' // This ensures all sessions are cleared
+			});
+			
 			if (error) {
 				console.error('Error logging out:', error.message);
 			} else {
-				// Redirect to logout page after successful signout
+				console.log('✅ Successfully signed out');
+				
+				// Clear any cached data
+				if (typeof window !== 'undefined') {
+					// Clear localStorage
+					localStorage.clear();
+					// Clear sessionStorage
+					sessionStorage.clear();
+				}
+				
+				// Force page reload to clear any cached state
 				window.location.href = '/logout';
 			}
 		} catch (error) {
 			console.error('Logout error:', error);
+			// Even if there's an error, try to clear local state
+			if (typeof window !== 'undefined') {
+				localStorage.clear();
+				sessionStorage.clear();
+			}
+			window.location.href = '/logout';
 		}
 	};
 		return (

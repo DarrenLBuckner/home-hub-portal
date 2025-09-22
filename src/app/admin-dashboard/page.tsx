@@ -227,7 +227,7 @@ export default function AdminDashboard() {
           const { count: approvedCount } = await supabase
             .from('properties')
             .select('*', { count: 'exact', head: true })
-            .eq('status', 'approved');
+            .eq('status', 'available');
 
           totalActive = (activeCount || 0) + (availableCount || 0) + (approvedCount || 0);
           console.log('Total active properties:', totalActive, {activeCount, availableCount, approvedCount});
