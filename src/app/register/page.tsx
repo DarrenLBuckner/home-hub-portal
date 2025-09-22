@@ -7,6 +7,9 @@ const countries = [
   { code: 'JM', name: 'Jamaica', currency: 'JMD', symbol: 'J$' },
   { code: 'TT', name: 'Trinidad & Tobago', currency: 'TTD', symbol: 'TT$' },
   { code: 'BB', name: 'Barbados', currency: 'BBD', symbol: 'Bds$' },
+  { code: 'GH', name: 'Ghana', currency: 'GHS', symbol: 'GH₵' },
+  { code: 'NG', name: 'Nigeria', currency: 'NGN', symbol: '₦' },
+  { code: 'KE', name: 'Kenya', currency: 'KES', symbol: 'KSh' },
   { code: 'US', name: 'United States', currency: 'USD', symbol: '$' },
   { code: 'CA', name: 'Canada', currency: 'CAD', symbol: 'C$' },
 ];
@@ -18,7 +21,7 @@ const agentPlans = [
     listings: '5 listings',
     photos: '8 photos/property',
     support: 'Basic support',
-    pricing: { GYD: 6000, JMD: 12000, TTD: 400, BBD: 150, USD: 75, CAD: 100 },
+    pricing: { GYD: 6000, JMD: 12000, TTD: 400, BBD: 150, GHS: 1200, NGN: 120000, KES: 9700, USD: 75, CAD: 100 },
     color: 'green',
     recommended: false
   },
@@ -28,7 +31,7 @@ const agentPlans = [
     listings: '20 listings',
     photos: '15 photos/property',
     support: 'Priority support',
-    pricing: { GYD: 11000, JMD: 22000, TTD: 750, BBD: 275, USD: 135, CAD: 180 },
+    pricing: { GYD: 11000, JMD: 22000, TTD: 750, BBD: 275, GHS: 2200, NGN: 220000, KES: 17500, USD: 135, CAD: 180 },
     color: 'blue',
     recommended: true
   },
@@ -38,7 +41,7 @@ const agentPlans = [
     listings: 'Unlimited listings',
     photos: '25 photos/property',
     support: 'Premium support',
-    pricing: { GYD: 25000, JMD: 50000, TTD: 1700, BBD: 625, USD: 310, CAD: 420 },
+    pricing: { GYD: 25000, JMD: 50000, TTD: 1700, BBD: 625, GHS: 5000, NGN: 500000, KES: 40000, USD: 310, CAD: 420 },
     color: 'purple',
     recommended: false
   }
