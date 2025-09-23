@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 // Public database client (frontend)
 export const createPublicDbClient = () => {
   return createClient(
-    'https://jvtqyjukmmnudfbvzxew.supabase.co',
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.PUBLIC_DB_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
   )
 }
