@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
+import { FEATURE_FLAGS, isPaymentRequired, getBetaExpiryDate } from '@/lib/config/featureFlags';
 
 export async function POST(request: Request) {
   try {
@@ -68,8 +69,29 @@ export async function POST(request: Request) {
 
     // Note: Welcome email functionality can be added later
     
+    const userId = data.user.id;
+    
+    if (!isPaymentRequired()) {
+      await supabase.from('profiles').update({
+        subscription_status: 'active',
+        subscription_plan: 'beta_free',
+        subscription_expires: getBetaExpiryDate('landlord'),
+        beta_user: true
+      }).eq('id', userId);
+      
+      return NextResponse.json({ 
+        success: true, 
+        userId,
+        redirectTo: '/dashboard/landlord',
+        skipPayment: true,
+        message: 'Welcome to Portal Home Hub Beta! Free access until February 28, 2025'
+      });
+    }
+    
+    // Original return for when payment is required
     return NextResponse.json({ 
-      user: data.user,
+      success: true, 
+      userId,
       message: 'Registration successful! You can now login to access your dashboard.' 
     });
   } catch (error: any) {

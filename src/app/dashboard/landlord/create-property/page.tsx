@@ -54,7 +54,7 @@ export default function CreateLandlordProperty() {
       }
 
       if (profile.subscription_status !== 'active') {
-        window.location.href = '/dashboard/landlord';
+        window.location.href = '/dashboard/subscription-expired';
         return;
       }
 

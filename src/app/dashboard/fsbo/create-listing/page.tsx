@@ -53,6 +53,11 @@ export default function CreateFSBOListing() {
         return;
       }
 
+      if (profile.subscription_status !== 'active') {
+        window.location.href = '/dashboard/subscription-expired';
+        return;
+      }
+
       setUser(authUser);
       setLoading(false);
     }

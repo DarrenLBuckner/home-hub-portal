@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
 import { sendWelcomeEmail } from '@/lib/email.js';
+import { FEATURE_FLAGS, isPaymentRequired, getBetaExpiryDate } from '@/lib/config/featureFlags';
 
 export async function POST(request: Request) {
   try {
@@ -39,7 +40,27 @@ export async function POST(request: Request) {
       // Don't fail the registration if email fails
     }
     
-    return NextResponse.json({ user: data.user });
+    const userId = data.user.id;
+    
+    if (!isPaymentRequired()) {
+      await supabase.from('profiles').update({
+        subscription_status: 'active',
+        subscription_plan: 'beta_free',
+        subscription_expires: getBetaExpiryDate('fsbo'),
+        beta_user: true
+      }).eq('id', userId);
+      
+      return NextResponse.json({ 
+        success: true, 
+        userId,
+        redirectTo: '/dashboard/fsbo',
+        skipPayment: true,
+        message: 'Welcome to Portal Home Hub Beta! Free access until February 28, 2025'
+      });
+    }
+    
+    // Original return for when payment is required
+    return NextResponse.json({ success: true, userId });
   } catch (error: any) {
     console.error('Registration error:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

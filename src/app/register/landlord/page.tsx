@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -53,6 +54,7 @@ const landlordPlans = [
 ];
 
 export default function LandlordRegistrationPage() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [selectedPlan, setSelectedPlan] = useState('featured');
@@ -151,18 +153,23 @@ export default function LandlordRegistrationPage() {
         throw new Error(data.error || 'Registration failed');
       }
       
-      // Store registration data for payment page
-      sessionStorage.setItem('landlordRegistration', JSON.stringify({
-        userId: data.user.id,
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        plan: formData.plan,
-        country: formData.country
-      }));
-      
-      // Redirect to success page
-      window.location.href = '/register-success';
+      if (data.success) {
+        if (data.skipPayment) {
+          // Beta user - go directly to dashboard
+          router.push(data.redirectTo || '/dashboard/landlord');
+        } else {
+          // Regular user - go to payment
+          sessionStorage.setItem('landlordRegistration', JSON.stringify({
+            userId: data.userId,
+            email: formData.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            plan: formData.plan,
+            country: formData.country
+          }));
+          router.push('/register/payment');
+        }
+      }
       
     } catch (error: any) {
       setError(error.message);
