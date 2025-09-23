@@ -129,22 +129,22 @@
   background: #e58e26;
 }
 
-  .buttonSecondary {
-    background: #f6b93b;
-    color: #222f3e;
-    padding: 0.75rem 2rem;
-    border-radius: 8px;
-    font-weight: 600;
-    text-decoration: none;
-    border: none;
-    margin-left: 1rem;
-    transition: background 0.2s, color 0.2s;
-    box-shadow: 0 2px 8px rgba(246, 185, 59, 0.10);
-  }
-  .buttonSecondary:hover {
-    background: #e58e26;
-    color: #fff;
-  }
+.buttonSecondary {
+  background: #f6b93b;
+  color: #222f3e;
+  padding: 0.75rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  margin-left: 1rem;
+  transition: background 0.2s, color 0.2s;
+  box-shadow: 0 2px 8px rgba(246, 185, 59, 0.10);
+}
+.buttonSecondary:hover {
+  background: #e58e26;
+  color: #fff;
+}
 
 .advertiseWrapper {
   width: 100%;
