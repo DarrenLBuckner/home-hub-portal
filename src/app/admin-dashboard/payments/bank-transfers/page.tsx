@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from '@/supabase';
 import { formatGYD } from '@/lib/bankConfig';
+import { checkAdminAccessWithClient, redirectToAdminLogin } from '@/lib/auth/adminCheck';
 
 interface BankTransfer {
   id: string;
@@ -38,23 +39,19 @@ export default function BankTransfersAdminPage() {
   const [verificationNotes, setVerificationNotes] = useState<{[key: string]: string}>({});
 
   useEffect(() => {
-    async function checkAdminAccess() {
+    async function checkAdminAccessAndLoad() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       
       if (!authUser) {
-        window.location.href = '/admin-login';
+        redirectToAdminLogin();
         return;
       }
 
-      // Check if user is admin
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('user_type')
-        .eq('id', authUser.id)
-        .single();
-
-      if (!profile || !['admin', 'super_admin'].includes(profile.user_type)) {
-        window.location.href = '/admin-login';
+      // Use reusable admin check function
+      const isAdmin = await checkAdminAccessWithClient(supabase, authUser.id);
+      
+      if (!isAdmin) {
+        redirectToAdminLogin();
         return;
       }
 
@@ -63,7 +60,7 @@ export default function BankTransfersAdminPage() {
       setLoading(false);
     }
 
-    checkAdminAccess();
+    checkAdminAccessAndLoad();
   }, []);
 
   const loadBankTransfers = async () => {

@@ -1,8 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/supabase';
+import { checkUserApprovalStatus } from '@/lib/auth/approvalStatus';
+import PendingApprovalMessage from '@/components/PendingApprovalMessage';
 
 // Step components
 import Step1BasicInfo from './components/Step1BasicInfo';
@@ -18,6 +20,12 @@ export default function CreateFSBOProperty() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [approvalStatus, setApprovalStatus] = useState<{
+    isApproved: boolean;
+    status: 'pending' | 'approved' | 'rejected';
+    message?: string;
+  } | null>(null);
   const [formData, setFormData] = useState({
     // Basic Info
     title: '',
@@ -50,7 +58,35 @@ export default function CreateFSBOProperty() {
     status: 'pending'
   });
   
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState<File[]>([]);
+
+  // Check user approval status on component mount
+  useEffect(() => {
+    async function checkApproval() {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          router.push('/login');
+          return;
+        }
+
+        const approval = await checkUserApprovalStatus(user.id);
+        setApprovalStatus({
+          isApproved: approval.isApproved,
+          status: approval.approvalStatus,
+          message: approval.message
+        });
+        setLoading(false);
+      } catch (error) {
+        console.error('Error checking approval status:', error);
+        setLoading(false);
+      }
+    }
+
+    checkApproval();
+  }, [router]);
 
   const validateCurrentStep = () => {
     setError('');
@@ -253,8 +289,8 @@ export default function CreateFSBOProperty() {
       
       // Remove any undefined values
       Object.keys(propertyData).forEach(key => {
-        if (propertyData[key] === undefined) {
-          delete propertyData[key];
+        if (propertyData[key as keyof typeof propertyData] === undefined) {
+          delete propertyData[key as keyof typeof propertyData];
         }
       });
       
@@ -357,6 +393,28 @@ export default function CreateFSBOProperty() {
   };
 
   const steps = ['Basic Info', 'Details', 'Location', 'Photos', 'Contact', 'Review'];
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Checking account status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show pending approval message if user is not approved
+  if (approvalStatus && !approvalStatus.isApproved) {
+    return (
+      <PendingApprovalMessage 
+        message={approvalStatus.message}
+        approvalStatus={approvalStatus.status === 'rejected' ? 'rejected' : 'pending'}
+      />
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">

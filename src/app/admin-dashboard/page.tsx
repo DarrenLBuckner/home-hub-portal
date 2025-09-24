@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
+import { checkAdminAccessWithClient, redirectToAdminLogin } from '@/lib/auth/adminCheck';
+import { getClientPermissions, ClientPermissions, createPermissionChecker } from '@/lib/auth/permissions';
 
 interface Property {
   id: string;
@@ -47,6 +49,7 @@ interface Statistics {
 export default function AdminDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [permissions, setPermissions] = useState<ClientPermissions | null>(null);
   const [loading, setLoading] = useState(true);
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
   const [statistics, setStatistics] = useState<Statistics>({
@@ -72,7 +75,7 @@ export default function AdminDashboard() {
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
 
   useEffect(() => {
-    async function checkAdminAccess() {
+    async function checkAdminAccessAndLoad() {
       // Get current user
       console.log('🔍 ADMIN DASHBOARD: Checking user authentication...');
       const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -80,43 +83,43 @@ export default function AdminDashboard() {
       
       if (!authUser) {
         console.log('❌ No authenticated user, redirecting to admin login');
-        window.location.href = '/admin-login';
+        redirectToAdminLogin();
         return;
       }
 
-      // TEMPORARY BYPASS for admin access while we fix profiles table
-      console.log('🚨 TEMPORARY BYPASS: Allowing admin access for authenticated user:', authUser.email);
-      setUser(authUser);
-      setLoading(false);
-      return;
+      // Use reusable admin check function
+      const isAdmin = await checkAdminAccessWithClient(supabase, authUser.id);
+      
+      if (!isAdmin) {
+        console.log('❌ User is not admin, redirecting to admin login');
+        redirectToAdminLogin();
+        return;
+      }
 
-      // Check if user is admin or super_admin in profiles table
-      const { data: profile, error: profileError } = await supabase
+      // Get user profile details for display
+      const { data: profile } = await supabase
         .from('profiles')
         .select('user_type, first_name, last_name, email')
         .eq('id', authUser.id)
         .single();
 
-      console.log('Admin dashboard profile check:', { profile, profileError });
-
-      if (profileError || !profile || (profile.user_type !== 'admin' && profile.user_type !== 'super_admin')) {
-        console.log('Not authorized as admin. User type:', profile?.user_type);
-        window.location.href = '/admin-login';
-        return;
-      }
-
       // Update the user state to include admin info
       setUser({ 
         ...authUser, 
-        name: `${profile.first_name} ${profile.last_name}`,
-        email: profile.email,
-        role: profile.user_type 
+        name: profile ? `${profile.first_name} ${profile.last_name}` : authUser.email,
+        email: profile?.email || authUser.email,
+        role: profile?.user_type || 'admin'
       });
+      
+      // Load user permissions
+      const userPermissions = await getClientPermissions(authUser.id);
+      setPermissions(userPermissions);
+      
       await loadDashboardData();
       setLoading(false);
     }
 
-    checkAdminAccess();
+    checkAdminAccessAndLoad();
   }, []);
 
   async function handleLogout() {
@@ -153,7 +156,7 @@ export default function AdminDashboard() {
       // Try to load images separately if property_media table exists
       if (pendingData && pendingData.length > 0) {
         try {
-          const propertyIds = pendingData.map(p => p.id);
+          const propertyIds = pendingData.map((p: Property) => p.id);
           const { data: mediaData, error: mediaError } = await supabase
             .from('property_media')
             .select('property_id, media_url, is_primary')
@@ -199,9 +202,9 @@ export default function AdminDashboard() {
 
           if (!typeError && byUserTypeData) {
             byUserType = {
-              fsbo: byUserTypeData?.filter(p => p.listed_by_type === 'owner' || p.listed_by_type === 'fsbo').length || 0,
-              agent: byUserTypeData?.filter(p => p.listed_by_type === 'agent').length || 0,
-              landlord: byUserTypeData?.filter(p => p.listed_by_type === 'landlord').length || 0,
+              fsbo: byUserTypeData?.filter((p: any) => p.listed_by_type === 'owner' || p.listed_by_type === 'fsbo').length || 0,
+              agent: byUserTypeData?.filter((p: any) => p.listed_by_type === 'agent').length || 0,
+              landlord: byUserTypeData?.filter((p: any) => p.listed_by_type === 'landlord').length || 0,
             };
             console.log('By user type:', byUserType);
           } else {
@@ -273,11 +276,10 @@ export default function AdminDashboard() {
       setError(`Failed to load dashboard data: ${err?.message || 'Unknown error'}`);
       // Set empty arrays so UI doesn't break
       setPendingProperties([]);
-      setStats({
+      setStatistics({
         totalPending: 0,
-        totalToday: 0,
-        totalThisWeek: 0,
-        byUserType: {},
+        todaySubmissions: 0,
+        byUserType: { fsbo: 0, agent: 0, landlord: 0 },
         totalActive: 0,
         totalRejected: 0,
       });
@@ -513,19 +515,63 @@ export default function AdminDashboard() {
               <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
               <p className="text-gray-600 mt-1">Property Review & Management</p>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
               <div className="text-right">
                 <div className="text-sm text-gray-500">Welcome back,</div>
                 <div className="font-medium">{user?.name}</div>
+                {permissions && (
+                  <div className="text-xs text-gray-400 capitalize">
+                    {permissions.role.replace('_', ' ')}
+                  </div>
+                )}
               </div>
-              <Link href="/admin-dashboard/pricing">
-                <button className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors">
-                  💰 Pricing
-                </button>
-              </Link>
+              
+              {/* User Approvals - All admins can access */}
+              {permissions?.canViewUsers && (
+                <Link href="/admin-dashboard/user-approvals">
+                  <button className="px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors">
+                    👥 Users
+                  </button>
+                </Link>
+              )}
+              
+              {/* Financial Operations - All admins can access */}
+              {permissions?.canViewFinancials && (
+                <>
+                  <Link href="/admin-dashboard/pricing">
+                    <button className="px-3 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors">
+                      💰 Pricing
+                    </button>
+                  </Link>
+                  <Link href="/admin-dashboard/payments/bank-transfers">
+                    <button className="px-3 py-2 bg-purple-600 text-white text-sm font-medium rounded hover:bg-purple-700 transition-colors">
+                      💳 Payments
+                    </button>
+                  </Link>
+                </>
+              )}
+              
+              {/* Revenue - Super admin only */}
+              {permissions?.canViewRevenue && (
+                <Link href="/admin-dashboard/revenue">
+                  <button className="px-3 py-2 bg-emerald-600 text-white text-sm font-medium rounded hover:bg-emerald-700 transition-colors">
+                    � Revenue
+                  </button>
+                </Link>
+              )}
+              
+              {/* System Settings - Super admin only */}
+              {permissions?.canChangeSettings && (
+                <Link href="/admin-dashboard/system-settings">
+                  <button className="px-3 py-2 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-700 transition-colors">
+                    ⚙️ Settings
+                  </button>
+                </Link>
+              )}
+              
               <button
                 onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+                className="px-3 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
               >
                 Logout
               </button>

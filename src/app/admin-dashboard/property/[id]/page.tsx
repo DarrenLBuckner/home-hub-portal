@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/supabase";
+import { checkAdminAccessWithClient, redirectToDashboard } from '@/lib/auth/adminCheck';
 
 interface PropertyMedia {
   media_url: string;
@@ -69,19 +70,15 @@ export default function AdminPropertyDetailsPage() {
         return;
       }
 
-      // Check if user is admin using admin_users table
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .single();
-
-      if (!adminUser) {
-        window.location.href = '/dashboard';
+      // Use reusable admin check function
+      const isAdmin = await checkAdminAccessWithClient(supabase, authUser.id);
+      
+      if (!isAdmin) {
+        redirectToDashboard();
         return;
       }
 
-      setUser({ ...authUser, admin: adminUser });
+      setUser(authUser);
 
       // Load property with all details
       const { data: propertyData, error: propertyError } = await supabase

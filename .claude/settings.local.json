@@ -2,7 +2,20 @@
   "permissions": {
     "allow": [
       "Bash(npm run lint)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(vercel:*)",
+      "WebFetch(domain:portalhomehub.com)",
+      "WebFetch(domain:guyanhomehub.com)",
+      "Bash(npm run build:*)",
+      "Bash(npx next:*)",
+      "Bash(timeout 45 npx next build)",
+      "Bash(node:*)",
+      "Bash(timeout 30 node:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout 45 npm run build)",
+      "Bash(timeout 30 npm run dev)"
     ],
     "deny": [],
     "ask": []

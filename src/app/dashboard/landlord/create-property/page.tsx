@@ -3,6 +3,8 @@ import React, { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/supabase";
+import { checkUserApprovalStatus } from '@/lib/auth/approvalStatus';
+import PendingApprovalMessage from '@/components/PendingApprovalMessage';
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
@@ -29,6 +31,12 @@ type PropertyForm = {
 export default function CreateLandlordProperty() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [approvalStatus, setApprovalStatus] = useState<{
+    isApproved: boolean;
+    approvalStatus: 'pending' | 'approved' | 'rejected';
+    message?: string;
+    rejectionReason?: string;
+  } | null>(null);
 
   useEffect(() => {
     async function checkAuth() {
@@ -56,6 +64,19 @@ export default function CreateLandlordProperty() {
       if (profile.subscription_status !== 'active') {
         window.location.href = '/dashboard/subscription-expired';
         return;
+      }
+
+      // Check approval status
+      try {
+        const status = await checkUserApprovalStatus(authUser.id);
+        setApprovalStatus(status);
+      } catch (error) {
+        console.error('Error checking approval status:', error);
+        setApprovalStatus({
+          isApproved: false,
+          approvalStatus: 'pending',
+          message: 'Unable to verify account status. Please contact support.'
+        });
       }
 
       setUser(authUser);
@@ -205,6 +226,17 @@ export default function CreateLandlordProperty() {
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
         <p className="mt-4 text-gray-600">Loading...</p>
       </main>
+    );
+  }
+
+  // Show pending approval message if user is not approved
+  if (approvalStatus && !approvalStatus.isApproved) {
+    return (
+      <PendingApprovalMessage 
+        message={approvalStatus.message}
+        approvalStatus={approvalStatus.approvalStatus === 'rejected' ? 'rejected' : 'pending'}
+        rejectionReason={approvalStatus.rejectionReason}
+      />
     );
   }
 
