@@ -88,11 +88,11 @@ export default function LandlordRegistrationPage() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return formData.plan && formData.country;
+        return !!(formData.plan && formData.country);
       case 2:
-        return formData.firstName && formData.lastName && formData.email && formData.phone;
+        return !!(formData.firstName && formData.lastName && formData.email && formData.phone);
       case 3:
-        return formData.password && formData.confirmPassword && formData.password === formData.confirmPassword;
+        return !!(formData.password && formData.confirmPassword && formData.password === formData.confirmPassword);
       default:
         return true;
     }
