@@ -153,7 +153,7 @@ export default function AdminDashboard() {
       // Try to load images separately if property_media table exists
       if (pendingData && pendingData.length > 0) {
         try {
-          const propertyIds = pendingData.map(p => p.id);
+          const propertyIds = pendingData.map((p: Property) => p.id);
           const { data: mediaData, error: mediaError } = await supabase
             .from('property_media')
             .select('property_id, media_url, is_primary')
@@ -199,9 +199,9 @@ export default function AdminDashboard() {
 
           if (!typeError && byUserTypeData) {
             byUserType = {
-              fsbo: byUserTypeData?.filter(p => p.listed_by_type === 'owner' || p.listed_by_type === 'fsbo').length || 0,
-              agent: byUserTypeData?.filter(p => p.listed_by_type === 'agent').length || 0,
-              landlord: byUserTypeData?.filter(p => p.listed_by_type === 'landlord').length || 0,
+              fsbo: byUserTypeData?.filter((p: any) => p.listed_by_type === 'owner' || p.listed_by_type === 'fsbo').length || 0,
+              agent: byUserTypeData?.filter((p: any) => p.listed_by_type === 'agent').length || 0,
+              landlord: byUserTypeData?.filter((p: any) => p.listed_by_type === 'landlord').length || 0,
             };
             console.log('By user type:', byUserType);
           } else {
@@ -273,11 +273,10 @@ export default function AdminDashboard() {
       setError(`Failed to load dashboard data: ${err?.message || 'Unknown error'}`);
       // Set empty arrays so UI doesn't break
       setPendingProperties([]);
-      setStats({
+      setStatistics({
         totalPending: 0,
-        totalToday: 0,
-        totalThisWeek: 0,
-        byUserType: {},
+        todaySubmissions: 0,
+        byUserType: { fsbo: 0, agent: 0, landlord: 0 },
         totalActive: 0,
         totalRejected: 0,
       });
@@ -466,22 +465,37 @@ export default function AdminDashboard() {
               📧 {property.owner_email} • 📱 {property.owner_whatsapp}
             </div>
 
-            {/* Action Buttons */}
+            {/* Action Buttons - Role-Based Controls */}
             <div className="flex space-x-2">
-              <button
-                onClick={() => approveProperty(property.id)}
-                disabled={processingPropertyId === property.id}
-                className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors disabled:opacity-50"
-              >
-                {processingPropertyId === property.id ? 'Processing...' : '✅ Approve'}
-              </button>
-              <button
-                onClick={() => setShowRejectModal(property.id)}
-                disabled={processingPropertyId === property.id}
-                className="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors disabled:opacity-50"
-              >
-                ❌ Reject
-              </button>
+              {user?.role === 'super_admin' ? (
+                // Super Admin - Full approval/rejection powers
+                <>
+                  <button
+                    onClick={() => approveProperty(property.id)}
+                    disabled={processingPropertyId === property.id}
+                    className="flex-1 px-3 py-2 bg-green-600 text-white text-sm font-medium rounded hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    {processingPropertyId === property.id ? 'Processing...' : '✅ Approve'}
+                  </button>
+                  <button
+                    onClick={() => setShowRejectModal(property.id)}
+                    disabled={processingPropertyId === property.id}
+                    className="flex-1 px-3 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    ❌ Reject
+                  </button>
+                </>
+              ) : (
+                // Regular Admin - Review only with restrictions
+                <>
+                  <div className="flex-1 px-3 py-2 bg-gray-400 text-white text-sm font-medium rounded text-center opacity-75 cursor-not-allowed">
+                    🔒 Approve (Super Admin Only)
+                  </div>
+                  <div className="flex-1 px-3 py-2 bg-gray-400 text-white text-sm font-medium rounded text-center opacity-75 cursor-not-allowed">
+                    🔒 Reject (Super Admin Only)
+                  </div>
+                </>
+              )}
               <Link href={`/admin-dashboard/property/${property.id}`}>
                 <button className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition-colors">
                   View Details
@@ -535,6 +549,41 @@ export default function AdminDashboard() {
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Admin Actions - Role-Based UI Controls */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {/* Payment Navigation - Available to all admins */}
+          <Link href="/submit-payment" className="bg-green-600 text-white p-4 rounded-lg text-center hover:bg-green-700 transition-colors">
+            <div className="text-xl">💰</div>
+            <div>Submit Payment</div>
+          </Link>
+          <Link href="/admin-payments" className="bg-blue-600 text-white p-4 rounded-lg text-center hover:bg-blue-700 transition-colors">
+            <div className="text-xl">📊</div>
+            <div>View Payments</div>
+          </Link>
+          
+          {/* Super Admin Only Features */}
+          {user?.role === 'super_admin' && (
+            <>
+              <Link href="/admin-dashboard/user-management" className="bg-purple-600 text-white p-4 rounded-lg text-center hover:bg-purple-700 transition-colors">
+                <div className="text-xl">👥</div>
+                <div>User Management</div>
+              </Link>
+              <Link href="/admin-dashboard/system-settings" className="bg-red-600 text-white p-4 rounded-lg text-center hover:bg-red-700 transition-colors">
+                <div className="text-xl">⚙️</div>
+                <div>System Settings</div>
+              </Link>
+            </>
+          )}
+          
+          {/* Admin Role Badge */}
+          <div className="bg-gray-100 text-gray-800 p-4 rounded-lg text-center border-2 border-gray-300">
+            <div className="text-xl">{user?.role === 'super_admin' ? '👑' : '🛡️'}</div>
+            <div className="text-sm font-medium">
+              {user?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
+            </div>
+          </div>
+        </div>
+
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-lg p-6 border border-gray-200">
@@ -614,9 +663,16 @@ export default function AdminDashboard() {
         {/* Pending Properties */}
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900">
-              Properties Awaiting Approval ({statistics.totalPending})
-            </h2>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Properties Awaiting Approval ({statistics.totalPending})
+              </h2>
+              {user?.role !== 'super_admin' && (
+                <p className="text-sm text-amber-600 mt-1">
+                  ⚠️ Review-only mode - Contact Super Admin to approve/reject properties
+                </p>
+              )}
+            </div>
             <button 
               onClick={loadDashboardData}
               className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
