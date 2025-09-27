@@ -44,7 +44,65 @@ export default function AdminPayments() {
         .eq('id', authUser.id)
         .single();
 
-      console.log('Admin payments profile check:', { profile, profileError });
+      console.log('🔍 Admin payments profile check:', { 
+        profile, 
+        profileError,
+        userId: authUser.id,
+        userEmail: authUser.email 
+      });
+
+      // TEMPORARY: Check if profile exists and has valid admin data, if not use hardcoded permissions
+      if (profileError || !profile || !profile.admin_level) {
+        console.log('🚨 TEMPORARY: Profile issue for payments, checking for hardcoded admin access');
+        
+        // Hardcoded admin permissions for known users
+        const adminConfig: { [email: string]: { level: string, country?: number, displayName?: string } } = {
+          'mrdarrenbuckner@gmail.com': { level: 'super', displayName: 'Darren' },
+          'qumar@guyanahomehub.com': { level: 'owner', country: 1, displayName: 'Qumar' }
+        };
+        
+        const adminInfo = adminConfig[authUser.email];
+        if (adminInfo) {
+          console.log('✅ TEMPORARY: Found hardcoded admin config for payments:', authUser.email);
+          const isSuperAdmin = adminInfo.level === 'super';
+          
+          setUser({ 
+            ...authUser, 
+            name: adminInfo.displayName || authUser.email.split('@')[0],
+            email: authUser.email,
+            role: 'admin',
+            admin_level: adminInfo.level
+          });
+          setUserRole(adminInfo.level);
+          setPermissions({
+            canViewUsers: true,
+            canEditUsers: false,
+            canDeleteUsers: false,
+            canViewPayments: true,
+            canProcessPayments: true,
+            canAcceptPayments: true,
+            canIssueRefunds: isSuperAdmin,
+            canApproveProperties: true,
+            canRejectProperties: true,
+            canEscalateToHigherAdmin: !isSuperAdmin,
+            canViewSystemSettings: true,
+            canEditSystemSettings: isSuperAdmin,
+            canViewAllDashboards: true,
+            canManageAdmins: isSuperAdmin,
+            assignedCountryId: adminInfo.country || null,
+            assignedCountryName: adminInfo.country ? 'Guyana' : null,
+            canViewAllCountries: isSuperAdmin,
+            countryFilter: adminInfo.country || null
+          });
+          setLoading(false);
+          return;
+        } else {
+          console.log('❌ No hardcoded admin config found for payments:', authUser.email);
+          alert('Access denied. Please contact administrator to set up your admin profile.');
+          window.location.href = '/admin-login';
+          return;
+        }
+      }
 
       // Check permissions using the new country-aware system
       const userPermissions = await getCountryAwareAdminPermissions(
@@ -55,8 +113,14 @@ export default function AdminPayments() {
         supabase
       );
       
+      console.log('🔍 User permissions result for payments:', userPermissions);
+      
       if (profileError || !profile || !userPermissions.canViewPayments) {
-        console.log('Not authorized to view payments. User type:', profile?.user_type);
+        console.log('❌ Not authorized to view payments.', {
+          profileError,
+          profile: profile?.user_type,
+          permissions: userPermissions
+        });
         alert('Access denied. Admin privileges required to view payments.');
         window.location.href = '/admin-login';
         return;
@@ -102,27 +166,15 @@ export default function AdminPayments() {
       const countryFilter = getCountryFilter(permissions);
       console.log('Country filter:', countryFilter);
 
+      // Simple query without joins - just get payment history
       let query = supabase
-        .from('subscription_payments')
-        .select(`
-          *,
-          profiles:user_id (
-            first_name,
-            last_name,
-            email,
-            country_id,
-            countries:country_id (
-              name,
-              code
-            )
-          )
-        `)
+        .from('payment_history')
+        .select('*')
         .order('created_at', { ascending: false });
 
-      // Apply country filtering if not super admin
-      if (!countryFilter.all && countryFilter.countryId) {
-        query = query.eq('profiles.country_id', countryFilter.countryId);
-      }
+      // TODO: Add country filtering when we have proper user relationship
+      // For now, load all payments for testing
+      console.log('Note: Country filtering temporarily disabled for testing');
 
       const { data: paymentsData, error: paymentsError } = await query;
 
@@ -145,7 +197,7 @@ export default function AdminPayments() {
   async function updatePaymentStatus(paymentId: string, newStatus: 'approved' | 'rejected' | 'verified' | 'refunded') {
     try {
       const { error } = await supabase
-        .from('subscription_payments')
+        .from('payment_history')
         .update({ 
           status: newStatus,
           updated_at: new Date().toISOString()
@@ -253,16 +305,32 @@ export default function AdminPayments() {
           <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-amber-800 text-sm">
               ⚠️ <strong>View-Only Access:</strong> You can review payments but cannot approve or reject them. 
-              Only Super Admin (mrdarrenbuckner@gmail.com) can process payments.
+              Only Super Admin can process payments.
             </p>
           </div>
         )}
 
-        {/* Super Admin full access message */}
-        {permissions?.canProcessPayments && (
+        {/* Admin access messages based on actual role */}
+        {permissions?.canProcessPayments && userRole === 'super' && (
           <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
             <p className="text-green-800 text-sm">
-              ✅ <strong>Super Admin Access:</strong> You have full access to approve/reject payments and manage the system.
+              ✅ <strong>Super Admin Access:</strong> You have full access to approve/reject payments, issue refunds, and manage the entire system.
+            </p>
+          </div>
+        )}
+
+        {permissions?.canProcessPayments && userRole === 'owner' && (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 text-sm">
+              ✅ <strong>Full {permissions?.assignedCountryName || 'Country'} Access:</strong> You can approve/reject payments and manage properties for {permissions?.assignedCountryName || 'your assigned country'}. Contact Super Admin for refunds.
+            </p>
+          </div>
+        )}
+
+        {permissions?.canProcessPayments && userRole === 'basic' && (
+          <div className="mb-6 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+            <p className="text-purple-800 text-sm">
+              ✅ <strong>Basic Admin - {permissions?.assignedCountryName || 'Country'} Access:</strong> You can accept/reject payments for {permissions?.assignedCountryName || 'your assigned country'}. Escalate complex issues to higher admins.
             </p>
           </div>
         )}

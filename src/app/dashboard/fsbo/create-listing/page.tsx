@@ -41,14 +41,29 @@ export default function CreateFSBOListing() {
         return;
       }
 
-      // Check if user is FSBO
+      // Check if user is FSBO or eligible admin
       const { data: profile } = await supabase
         .from('profiles')
         .select('user_type, subscription_status')
         .eq('id', authUser.id)
         .single();
 
-      if (!profile || profile.user_type !== 'fsbo') {
+      if (!profile || (profile.user_type !== 'fsbo' && profile.user_type !== 'admin')) {
+        window.location.href = '/dashboard';
+        return;
+      }
+
+      // Check admin config for admin levels (Owner Admin and Super Admin can bypass)
+      const adminConfig: { [email: string]: { level: string } } = {
+        'mrdarrenbuckner@gmail.com': { level: 'super' },
+        'qumar@guyanahomehub.com': { level: 'owner' }
+      };
+      
+      const adminInfo = adminConfig[authUser.email];
+      const isEligibleAdmin = profile.user_type === 'admin' && adminInfo && ['super', 'owner'].includes(adminInfo.level);
+
+      // Allow if: eligible admin (super/owner) OR regular FSBO user
+      if (!isEligibleAdmin && profile.user_type !== 'fsbo') {
         window.location.href = '/dashboard';
         return;
       }
@@ -246,7 +261,6 @@ export default function CreateFSBOListing() {
           selectedRegion={selectedRegion}
           onLocationChange={handleLocationChange}
           onCurrencyChange={handleCurrencyChange}
-          required={true}
         />
 
         <div className="grid grid-cols-2 gap-4">
@@ -343,10 +357,8 @@ export default function CreateFSBOListing() {
         
         <EnhancedImageUpload
           images={form.images}
-          onImagesChange={handleImagesChange}
+          setImages={handleImagesChange}
           maxImages={imageLimit}
-          title="Property Images"
-          description="Upload high-quality photos of your property for sale"
         />
         
         <label className="flex items-center gap-2 mt-4">

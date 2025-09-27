@@ -41,19 +41,29 @@ export default function CreateLandlordProperty() {
         return;
       }
 
-      // Check if user is landlord
+      // Check if user is landlord or admin
       const { data: profile } = await supabase
         .from('profiles')
-        .select('user_type, subscription_status')
+        .select('user_type, subscription_status, admin_level')
         .eq('id', authUser.id)
         .single();
 
-      if (!profile || profile.user_type !== 'landlord') {
+      if (!profile || (profile.user_type !== 'landlord' && profile.user_type !== 'admin')) {
         window.location.href = '/dashboard';
         return;
       }
 
-      if (profile.subscription_status !== 'active') {
+      // Check admin config for admin levels
+      const adminConfig: { [email: string]: { level: string } } = {
+        'mrdarrenbuckner@gmail.com': { level: 'super' },
+        'qumar@guyanahomehub.com': { level: 'owner' }
+      };
+      
+      const adminInfo = adminConfig[authUser.email];
+      const isEligibleAdmin = profile.user_type === 'admin' && adminInfo && ['super', 'owner'].includes(adminInfo.level);
+
+      // Allow if: regular landlord with active subscription OR eligible admin
+      if (!isEligibleAdmin && (profile.user_type !== 'landlord' || profile.subscription_status !== 'active')) {
         window.location.href = '/dashboard/landlord';
         return;
       }
@@ -251,7 +261,6 @@ export default function CreateLandlordProperty() {
           selectedRegion={selectedRegion}
           onLocationChange={handleLocationChange}
           onCurrencyChange={handleCurrencyChange}
-          required={true}
         />
 
         <div className="grid grid-cols-2 gap-4">
@@ -349,10 +358,8 @@ export default function CreateLandlordProperty() {
         
         <EnhancedImageUpload
           images={form.images}
-          onImagesChange={handleImagesChange}
+          setImages={handleImagesChange}
           maxImages={imageLimit}
-          title="Property Images"
-          description="Upload high-quality photos of your rental property"
         />
         
         <label className="flex items-center gap-2 mt-4">

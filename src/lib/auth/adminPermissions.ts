@@ -5,6 +5,11 @@ export interface AdminPermissions {
   canDeleteUsers: boolean;
   canViewPayments: boolean;
   canProcessPayments: boolean;
+  canAcceptPayments: boolean;
+  canIssueRefunds: boolean;
+  canApproveProperties: boolean;
+  canRejectProperties: boolean;
+  canEscalateToHigherAdmin: boolean;
   canViewSystemSettings: boolean;
   canEditSystemSettings: boolean;
   canViewAllDashboards: boolean;
@@ -13,6 +18,7 @@ export interface AdminPermissions {
   assignedCountryId: number | null;
   assignedCountryName: string | null;
   canViewAllCountries: boolean;
+  countryFilter: number | null;
 }
 
 export function getAdminPermissions(
@@ -30,6 +36,11 @@ export function getAdminPermissions(
       canDeleteUsers: true,
       canViewPayments: true,
       canProcessPayments: true,
+      canAcceptPayments: true,
+      canIssueRefunds: true,
+      canApproveProperties: true,
+      canRejectProperties: true,
+      canEscalateToHigherAdmin: false, // Super admin doesn't need escalation
       canViewSystemSettings: true,
       canEditSystemSettings: true,
       canViewAllDashboards: true,
@@ -37,17 +48,23 @@ export function getAdminPermissions(
       assignedCountryId: null, // Super admin not restricted by country
       assignedCountryName: null,
       canViewAllCountries: true,
+      countryFilter: null,
     };
   }
 
-  // Country Admin - View-only access, restricted to their assigned country
+  // Country Admin (owner) - Can manage their country, approve/reject, accept payments but not issue refunds
   if (adminLevel === 'owner') {
     return {
       canViewUsers: true,
       canEditUsers: false,
       canDeleteUsers: false,
       canViewPayments: true,
-      canProcessPayments: false,
+      canProcessPayments: true,
+      canAcceptPayments: true,
+      canIssueRefunds: false, // Only super admin can issue refunds
+      canApproveProperties: true,
+      canRejectProperties: true,
+      canEscalateToHigherAdmin: true, // Can escalate to super admin
       canViewSystemSettings: true,
       canEditSystemSettings: false,
       canViewAllDashboards: true,
@@ -55,6 +72,31 @@ export function getAdminPermissions(
       assignedCountryId: countryId || null,
       assignedCountryName: countryName || null,
       canViewAllCountries: false,
+      countryFilter: countryId || null,
+    };
+  }
+
+  // Basic Admin - First line admin, can approve/reject properties and accept payments
+  if (adminLevel === 'basic') {
+    return {
+      canViewUsers: true,
+      canEditUsers: false,
+      canDeleteUsers: false,
+      canViewPayments: true,
+      canProcessPayments: true,
+      canAcceptPayments: true,
+      canIssueRefunds: false, // Cannot issue refunds
+      canApproveProperties: true, // Can approve properties
+      canRejectProperties: true, // Can reject properties
+      canEscalateToHigherAdmin: true, // Can escalate to owner/super admin
+      canViewSystemSettings: false,
+      canEditSystemSettings: false,
+      canViewAllDashboards: false,
+      canManageAdmins: false,
+      assignedCountryId: countryId || null,
+      assignedCountryName: countryName || null,
+      canViewAllCountries: false,
+      countryFilter: countryId || null,
     };
   }
 
@@ -65,6 +107,11 @@ export function getAdminPermissions(
     canDeleteUsers: false,
     canViewPayments: false,
     canProcessPayments: false,
+    canAcceptPayments: false,
+    canIssueRefunds: false,
+    canApproveProperties: false,
+    canRejectProperties: false,
+    canEscalateToHigherAdmin: false,
     canViewSystemSettings: false,
     canEditSystemSettings: false,
     canViewAllDashboards: false,
@@ -72,6 +119,7 @@ export function getAdminPermissions(
     assignedCountryId: null,
     assignedCountryName: null,
     canViewAllCountries: false,
+    countryFilter: null,
   };
 }
 

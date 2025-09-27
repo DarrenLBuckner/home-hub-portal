@@ -1,0 +1,84 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = createRouteHandlerClient({ cookies });
+    
+    // Check if user is authenticated and has admin privileges
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // For security, only allow specific admin emails to run migrations
+    const allowedAdmins = [
+      'darren@portalhomehub.com',
+      'darren@lebuckner.com', 
+      'admin@portalhomehub.com'
+    ];
+    
+    if (!allowedAdmins.includes(user.email || '')) {
+      return NextResponse.json({ 
+        error: 'Insufficient privileges', 
+        userEmail: user.email,
+        message: 'Only specific admin emails can run migrations'
+      }, { status: 403 });
+    }
+
+    const results = [];
+
+    // Simple approach: Just update the existing user to be a super admin
+    results.push({ step: 'Updating user to super admin', status: 'running' });
+    
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({
+        user_type: 'admin',
+        admin_level: 'super',
+        display_name: 'Super Admin',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', user.id);
+
+    if (updateError) {
+      results.push({ step: 'Updating user to super admin', status: 'error', error: updateError.message });
+    } else {
+      results.push({ step: 'Updating user to super admin', status: 'completed' });
+    }
+
+    // Check current profile structure
+    results.push({ step: 'Checking current profile', status: 'running' });
+    
+    const { data: currentProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      results.push({ step: 'Checking current profile', status: 'error', error: profileError.message });
+    } else {
+      results.push({ 
+        step: 'Checking current profile', 
+        status: 'completed', 
+        data: currentProfile 
+      });
+    }
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Migration completed',
+      results,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Migration error:', error);
+    return NextResponse.json({ 
+      error: 'Migration failed', 
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
+  }
+}

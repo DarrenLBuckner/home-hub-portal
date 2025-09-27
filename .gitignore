@@ -17,6 +17,10 @@ out/
 .env.test.local
 .env.production.local
 
+# Utility scripts that may contain sensitive data
+fix-*.js
+debug-*.js
+
 # Logging
 npm-debug.log*
 yarn-debug.log*
