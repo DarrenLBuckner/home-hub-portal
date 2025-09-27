@@ -3,10 +3,12 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
+import { getCountryAwareAdminPermissions, AdminPermissions, getCountryFilter } from '@/lib/auth/adminPermissions';
 
 export default function AdminUsers() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const [permissions, setPermissions] = useState<AdminPermissions | null>(null);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<any[]>([]);
   const [error, setError] = useState("");
@@ -31,12 +33,23 @@ export default function AdminUsers() {
 
       console.log('Admin users profile check:', { profile, profileError });
 
-      if (profileError || !profile || !['admin', 'super_admin'].includes(profile.user_type)) {
-        console.log('Not authorized as admin. User type:', profile?.user_type);
-        alert('Access denied. Admin privileges required.');
+      // Check permissions using the country-aware system
+      const userPermissions = await getCountryAwareAdminPermissions(
+        profile?.user_type || '', 
+        profile?.email || '',
+        profile?.admin_level || null,
+        authUser.id,
+        supabase
+      );
+      
+      if (profileError || !profile || !userPermissions.canViewUsers) {
+        console.log('Not authorized to view users. User type:', profile?.user_type);
+        alert('Access denied. Admin privileges required to view users.');
         router.push('/');
         return;
       }
+
+      setPermissions(userPermissions);
 
       setUser({ 
         ...authUser, 
@@ -45,22 +58,57 @@ export default function AdminUsers() {
         role: profile.user_type 
       });
 
-      // Load users
-      await loadUsers();
       setLoading(false);
     }
 
     checkAdminAccess();
   }, [router]);
 
+  // Load users when permissions are available
+  useEffect(() => {
+    if (permissions && user) {
+      loadUsers();
+    }
+  }, [permissions, user]);
+
+  // Load users when permissions are available
+  useEffect(() => {
+    if (permissions && user) {
+      loadUsers();
+    }
+  }, [permissions, user]);
+
   const loadUsers = async () => {
     try {
-      const { data: profiles, error } = await supabase
+      if (!permissions) {
+        console.log('No permissions available yet');
+        return;
+      }
+
+      // Get country filter based on admin permissions
+      const countryFilter = getCountryFilter(permissions);
+      console.log('Country filter for users:', countryFilter);
+
+      let query = supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          countries:country_id (
+            name,
+            code
+          )
+        `)
         .order('created_at', { ascending: false });
 
+      // Apply country filtering if not super admin
+      if (!countryFilter.all && countryFilter.countryId) {
+        query = query.eq('country_id', countryFilter.countryId);
+      }
+
+      const { data: profiles, error } = await query;
+
       if (error) throw error;
+      console.log('Loaded users:', profiles?.length || 0, 'with country filter:', countryFilter);
       setUsers(profiles || []);
     } catch (error) {
       console.error('Error loading users:', error);
@@ -117,6 +165,34 @@ export default function AdminUsers() {
       <div className="py-10">
         <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
+            {/* Country access indicator */}
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-blue-800 text-sm">
+                🌍 <strong>Data Scope:</strong> {permissions?.canViewAllCountries 
+                  ? 'Viewing users from ALL countries (Super Admin access)' 
+                  : `Viewing users from ${permissions?.assignedCountryName || 'your assigned country'} only`}
+              </p>
+            </div>
+
+            {/* Role-based access notification */}
+            {!permissions?.canEditUsers && (
+              <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <p className="text-amber-800 text-sm">
+                  ⚠️ <strong>View-Only Access:</strong> You can view users but cannot edit or delete them. 
+                  Only Super Admin (mrdarrenbuckner@gmail.com) can modify user accounts.
+                </p>
+              </div>
+            )}
+
+            {/* Super Admin full access message */}
+            {permissions?.canEditUsers && (
+              <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-green-800 text-sm">
+                  ✅ <strong>Super Admin Access:</strong> You have full access to view, edit, and manage all user accounts.
+                </p>
+              </div>
+            )}
+
             {error && (
               <div className="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
                 {error}
@@ -152,7 +228,7 @@ export default function AdminUsers() {
                               </div>
                               <div className="ml-2">
                                 <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  profile.user_type === 'super_admin' ? 'bg-red-100 text-red-800' :
+                                  profile.admin_level === 'super' ? 'bg-red-100 text-red-800' :
                                   profile.user_type === 'admin' ? 'bg-purple-100 text-purple-800' :
                                   profile.user_type === 'landlord' ? 'bg-blue-100 text-blue-800' :
                                   profile.user_type === 'agent' ? 'bg-green-100 text-green-800' :
@@ -172,12 +248,19 @@ export default function AdminUsers() {
                             Status: {profile.subscription_status || 'inactive'}
                           </div>
                           <div className="ml-4">
-                            <Link
-                              href={`/admin-dashboard/user-management`}
-                              className="text-blue-600 hover:text-blue-500 text-sm font-medium"
-                            >
-                              Manage
-                            </Link>
+                            {permissions?.canEditUsers ? (
+                              <Link
+                                href={`/admin-dashboard/user-management`}
+                                className="text-blue-600 hover:text-blue-500 text-sm font-medium"
+                                title="Super Admin: Manage User"
+                              >
+                                Manage
+                              </Link>
+                            ) : (
+                              <span className="text-gray-400 text-sm" title="View Only Access">
+                                View Only
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>

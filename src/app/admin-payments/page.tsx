@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
+import { getCountryAwareAdminPermissions, isSuperAdmin, AdminPermissions, getCountryFilter } from '@/lib/auth/adminPermissions';
 
 interface Payment {
   id: string;
@@ -20,6 +21,7 @@ export default function AdminPayments() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [userRole, setUserRole] = useState<string>('');
+  const [permissions, setPermissions] = useState<AdminPermissions | null>(null);
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [error, setError] = useState("");
@@ -35,7 +37,7 @@ export default function AdminPayments() {
         return;
       }
 
-      // Check if user is admin or super_admin in profiles table
+      // Check if user is admin or super in profiles table
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('user_type, admin_level, first_name, last_name, email')
@@ -44,8 +46,18 @@ export default function AdminPayments() {
 
       console.log('Admin payments profile check:', { profile, profileError });
 
-      if (profileError || !profile || (profile.user_type !== 'admin' && profile.user_type !== 'super_admin')) {
-        console.log('Not authorized as admin. User type:', profile?.user_type);
+      // Check permissions using the new country-aware system
+      const userPermissions = await getCountryAwareAdminPermissions(
+        profile?.user_type || '', 
+        profile?.email || '',
+        profile?.admin_level || null,
+        authUser.id,
+        supabase
+      );
+      
+      if (profileError || !profile || !userPermissions.canViewPayments) {
+        console.log('Not authorized to view payments. User type:', profile?.user_type);
+        alert('Access denied. Admin privileges required to view payments.');
         window.location.href = '/admin-login';
         return;
       }
@@ -53,6 +65,7 @@ export default function AdminPayments() {
       // Get user role from admin_level or fallback to user_type
       const role = profile.admin_level || profile.user_type;
       setUserRole(role);
+      setPermissions(userPermissions);
 
       // Update the user state to include admin info
       setUser({ 
@@ -63,22 +76,55 @@ export default function AdminPayments() {
         admin_level: profile.admin_level
       });
 
-      await loadPayments();
       setLoading(false);
     }
 
     checkAdminAccess();
   }, []);
 
+  // Load payments when permissions are available
+  useEffect(() => {
+    if (permissions && user) {
+      loadPayments();
+    }
+  }, [permissions, user]);
+
   async function loadPayments() {
     try {
       console.log('Loading payments data...');
       
-      // Load payments data (simplified to avoid relationship errors)
-      const { data: paymentsData, error: paymentsError } = await supabase
+      if (!permissions) {
+        console.log('No permissions available yet');
+        return;
+      }
+
+      // Get country filter based on admin permissions
+      const countryFilter = getCountryFilter(permissions);
+      console.log('Country filter:', countryFilter);
+
+      let query = supabase
         .from('subscription_payments')
-        .select('*')
+        .select(`
+          *,
+          profiles:user_id (
+            first_name,
+            last_name,
+            email,
+            country_id,
+            countries:country_id (
+              name,
+              code
+            )
+          )
+        `)
         .order('created_at', { ascending: false });
+
+      // Apply country filtering if not super admin
+      if (!countryFilter.all && countryFilter.countryId) {
+        query = query.eq('profiles.country_id', countryFilter.countryId);
+      }
+
+      const { data: paymentsData, error: paymentsError } = await query;
 
       if (paymentsError) {
         console.error('Error loading payments:', paymentsError);
@@ -86,7 +132,7 @@ export default function AdminPayments() {
         return;
       }
 
-      console.log('Loaded payments:', paymentsData?.length || 0);
+      console.log('Loaded payments:', paymentsData?.length || 0, 'with country filter:', countryFilter);
       setPayments(paymentsData || []);
 
     } catch (err: any) {
@@ -193,12 +239,30 @@ export default function AdminPayments() {
           </p>
         </div>
 
+        {/* Country access indicator */}
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-800 text-sm">
+            🌍 <strong>Data Scope:</strong> {permissions?.canViewAllCountries 
+              ? 'Viewing payments from ALL countries (Super Admin access)' 
+              : `Viewing payments from ${permissions?.assignedCountryName || 'your assigned country'} only`}
+          </p>
+        </div>
+
         {/* Role-based access notification */}
-        {userRole !== 'owner' && userRole !== 'super' && (
+        {!permissions?.canProcessPayments && (
           <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
             <p className="text-amber-800 text-sm">
               ⚠️ <strong>View-Only Access:</strong> You can review payments but cannot approve or reject them. 
-              Contact a Super Admin for approval actions.
+              Only Super Admin (mrdarrenbuckner@gmail.com) can process payments.
+            </p>
+          </div>
+        )}
+
+        {/* Super Admin full access message */}
+        {permissions?.canProcessPayments && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-800 text-sm">
+              ✅ <strong>Super Admin Access:</strong> You have full access to approve/reject payments and manage the system.
             </p>
           </div>
         )}
@@ -291,24 +355,26 @@ export default function AdminPayments() {
                         {new Date(payment.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        {/* Role-based action buttons */}
-                        {payment.status === 'pending' && (userRole === 'owner' || userRole === 'super') ? (
+                        {/* Role-based action buttons using permissions */}
+                        {payment.status === 'pending' && permissions?.canProcessPayments ? (
                           <div className="flex space-x-2">
                             <button 
                               onClick={() => updatePaymentStatus(payment.id, 'approved')}
                               className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
+                              title="Super Admin: Approve Payment"
                             >
                               Approve
                             </button>
                             <button 
                               onClick={() => updatePaymentStatus(payment.id, 'rejected')}
                               className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors"
+                              title="Super Admin: Reject Payment"
                             >
                               Reject
                             </button>
                           </div>
                         ) : payment.status === 'pending' ? (
-                          <span className="text-gray-500">View Only</span>
+                          <span className="text-gray-500" title="View Only Access">View Only</span>
                         ) : (
                           <span className="text-gray-500 capitalize">{payment.status}</span>
                         )}

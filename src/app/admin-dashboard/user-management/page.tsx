@@ -33,7 +33,7 @@ export default function UserManagement() {
         return;
       }
 
-      // Check if user is super_admin
+      // Check if user is super admin
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('user_type, admin_level, first_name, last_name, email')
@@ -42,7 +42,7 @@ export default function UserManagement() {
 
       console.log('User management profile check:', { profile, profileError });
 
-      if (profileError || !profile || profile.user_type !== 'super_admin') {
+      if (profileError || !profile || profile.admin_level !== 'super') {
         console.log('Not authorized as super admin. User type:', profile?.user_type);
         alert('Access denied. Super Admin privileges required.');
         router.push('/admin-dashboard');
@@ -247,7 +247,7 @@ export default function UserManagement() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          userData.user_type === 'super_admin' 
+                          userData.admin_level === 'super' 
                             ? 'bg-red-100 text-red-800'
                             : userData.user_type === 'admin'
                             ? 'bg-blue-100 text-blue-800'
@@ -271,7 +271,7 @@ export default function UserManagement() {
                             <option value="user">User</option>
                             <option value="agent">Agent</option>
                             <option value="admin">Admin</option>
-                            <option value="super_admin">Super Admin</option>
+                            <option value="super">Super Admin</option>
                           </select>
                         ) : (
                           <span className="text-gray-500 text-sm">Current User</span>

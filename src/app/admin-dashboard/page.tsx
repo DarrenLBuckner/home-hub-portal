@@ -90,7 +90,7 @@ export default function AdminDashboard() {
       setLoading(false);
       return;
 
-      // Check if user is admin or super_admin in profiles table
+      // Check if user is admin with proper admin_level in profiles table
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('user_type, first_name, last_name, email')
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
 
       console.log('Admin dashboard profile check:', { profile, profileError });
 
-      if (profileError || !profile || (profile.user_type !== 'admin' && profile.user_type !== 'super_admin')) {
+      if (profileError || !profile || profile.user_type !== 'admin' || !['super', 'owner'].includes(profile.admin_level)) {
         console.log('Not authorized as admin. User type:', profile?.user_type);
         window.location.href = '/admin-login';
         return;

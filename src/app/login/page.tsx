@@ -68,7 +68,7 @@ export default function LoginPage() {
         // Redirect to appropriate dashboard based on user type
         switch(profile.user_type) {
           case 'admin':
-          case 'super_admin':
+          case 'super':
             window.location.href = '/admin-dashboard';
             break;
           case 'owner':

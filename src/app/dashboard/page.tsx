@@ -30,7 +30,7 @@ export default function DashboardPage() {
           // Redirect to appropriate dashboard based on user type
           const dashboardRoutes = {
             admin: '/admin-dashboard',
-            super_admin: '/admin-dashboard', // Super admin uses admin dashboard
+            super: '/admin-dashboard', // Super admin uses admin dashboard
             agent: '/dashboard/agent',
             owner: '/dashboard/owner',  // Points to renamed directory
             landlord: '/dashboard/landlord'  // DEBUG: landlord should go here

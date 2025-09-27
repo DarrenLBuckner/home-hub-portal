@@ -21,7 +21,7 @@ export default function SystemSettings() {
         return;
       }
 
-      // Check if user is super_admin
+      // Check if user is super admin
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('user_type, admin_level, first_name, last_name, email')
@@ -30,7 +30,7 @@ export default function SystemSettings() {
 
       console.log('System settings profile check:', { profile, profileError });
 
-      if (profileError || !profile || profile.user_type !== 'super_admin') {
+      if (profileError || !profile || profile.admin_level !== 'super') {
         console.log('Not authorized as super admin. User type:', profile?.user_type);
         alert('Access denied. Super Admin privileges required.');
         router.push('/admin-dashboard');

@@ -30,7 +30,7 @@ export default function AdminSettings() {
 
       console.log('Admin settings profile check:', { profile, profileError });
 
-      if (profileError || !profile || !['admin', 'super_admin'].includes(profile.user_type)) {
+      if (profileError || !profile || !['admin'].includes(profile.user_type) || !['super', 'owner'].includes(profile.admin_level)) {
         console.log('Not authorized as admin. User type:', profile?.user_type);
         alert('Access denied. Admin privileges required.');
         router.push('/');
