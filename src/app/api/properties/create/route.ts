@@ -4,6 +4,16 @@ import { requireAuth } from "../../../../lib/auth";
 
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
 
+// Helper function to map country to site_id
+function getSiteIdFromCountry(country: string): string {
+  if (!country) return 'portal';
+  
+  const countryLower = country.toLowerCase();
+  if (countryLower.includes('guyana')) return 'guyana';
+  if (countryLower.includes('ghana')) return 'ghana';
+  return 'portal';
+}
+
 export async function POST(req: NextRequest) {
   try {
     let userId: string;
@@ -128,6 +138,7 @@ export async function POST(req: NextRequest) {
         listed_by_type: 'landlord',
         status: body.status || 'off_market',
         propertyCategory: 'rental',
+        site_id: getSiteIdFromCountry(body.country),
         created_at: new Date().toISOString(),
       };
     } else {
@@ -163,6 +174,7 @@ export async function POST(req: NextRequest) {
         listing_type: 'sale',
         listed_by_type: 'owner',
         status: body.status || 'off_market',
+        site_id: getSiteIdFromCountry(body.region), // Use region since FSBO doesn't have country field
         
         // Legacy/additional fields
         propertyCategory: 'sale',

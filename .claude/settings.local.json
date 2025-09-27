@@ -1,20 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:portalhomehub.com)",
-      "Bash(npm run dev:*)",
       "Bash(npm run lint)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
+      "Bash(git push:*)",
       "Bash(vercel:*)",
-      "Bash(npx tsc:*)",
+      "WebFetch(domain:portalhomehub.com)",
+      "WebFetch(domain:guyanhomehub.com)",
       "Bash(npm run build:*)",
-      "Bash(~/bin/gh auth:*)",
-      "Bash(git config:*)",
-      "Bash(curl:*)",
+      "Bash(npx next:*)",
+      "Bash(timeout 45 npx next build)",
+      "Bash(node:*)",
+      "Bash(timeout 30 node:*)",
       "Bash(npm install:*)",
-      "Bash(rg:*)",
-      "Bash(git push:*)"
+      "Bash(timeout 45 npm run build)",
+      "Bash(timeout 30 npm run dev)"
     ],
     "deny": [],
     "ask": []

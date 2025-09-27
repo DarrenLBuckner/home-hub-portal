@@ -28,6 +28,7 @@ interface GlobalSouthLocationSelectorProps {
   selectedRegion: string;
   onLocationChange: (field: 'country' | 'region', value: string) => void;
   onCurrencyChange?: (currencyCode: string, currencySymbol: string) => void;
+  required?: boolean;
   className?: string;
   showCurrencyInfo?: boolean;
 }

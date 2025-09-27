@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/supabase";
 import { getGlobalSouthCountries } from "../../../lib/global-south-countries";
+import PropertyFeaturing from "@/components/PropertyFeaturing";
 
 export default function FSBODashboard() {
   const [user, setUser] = useState<any>(null);
@@ -195,7 +196,7 @@ export default function FSBODashboard() {
             
             {/* Property Status Management */}
             <div className="pt-3 border-t border-gray-200">
-              <div className="flex gap-2 flex-wrap">
+              <div className="flex gap-2 flex-wrap mb-3">
                 {property.status === 'available' && (
                   <>
                     <button 
@@ -243,6 +244,34 @@ export default function FSBODashboard() {
                   </>
                 )}
               </div>
+              
+              {/* Property Featuring */}
+              {property.status === 'available' && (
+                <PropertyFeaturing
+                  propertyId={property.id}
+                  propertyTitle={property.title}
+                  currentlyFeatured={property.is_featured}
+                  featuredUntil={property.featured_until}
+                  featuredType={property.featured_type}
+                  userType="fsbo"
+                  siteId={property.site_id}
+                  onFeaturingUpdate={() => {
+                    // Refresh properties list
+                    const refreshData = async () => {
+                      const supabase = createClient();
+                      const { data: { user: authUser } } = await supabase.auth.getUser();
+                      if (authUser) {
+                        const { data: userProperties } = await supabase
+                          .from("properties")
+                          .select("*")
+                          .eq("user_id", authUser.id);
+                        setProperties(userProperties || []);
+                      }
+                    };
+                    refreshData();
+                  }}
+                />
+              )}
             </div>
           </div>
         ))}

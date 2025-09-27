@@ -1,11 +1,15 @@
 "use client";
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
   { code: 'JM', name: 'Jamaica', currency: 'JMD', symbol: 'J$' },
   { code: 'TT', name: 'Trinidad & Tobago', currency: 'TTD', symbol: 'TT$' },
   { code: 'BB', name: 'Barbados', currency: 'BBD', symbol: 'Bds$' },
+  { code: 'GH', name: 'Ghana', currency: 'GHS', symbol: 'GH₵' },
+  { code: 'NG', name: 'Nigeria', currency: 'NGN', symbol: '₦' },
+  { code: 'KE', name: 'Kenya', currency: 'KES', symbol: 'KSh' },
   { code: 'US', name: 'United States', currency: 'USD', symbol: '$' },
   { code: 'CA', name: 'Canada', currency: 'CAD', symbol: 'C$' },
 ];
@@ -18,7 +22,7 @@ const landlordPlans = [
     photos: '5 photos/property',
     support: 'Basic support',
     duration: '30 days',
-    pricing: { GYD: 5200, JMD: 10400, TTD: 350, BBD: 130, USD: 65, CAD: 85 },
+    pricing: { GYD: 5200, JMD: 10400, TTD: 350, BBD: 130, GHS: 1050, NGN: 105000, KES: 8400, USD: 65, CAD: 85 },
     color: 'green',
     recommended: false,
     badge: null
@@ -30,7 +34,7 @@ const landlordPlans = [
     photos: '10 photos/property',
     support: 'Priority support',
     duration: '60 days',
-    pricing: { GYD: 7300, JMD: 14600, TTD: 490, BBD: 185, USD: 90, CAD: 120 },
+    pricing: { GYD: 7300, JMD: 14600, TTD: 490, BBD: 185, GHS: 1470, NGN: 147000, KES: 11700, USD: 90, CAD: 120 },
     color: 'blue',
     recommended: true,
     badge: 'Most Popular'
@@ -42,7 +46,7 @@ const landlordPlans = [
     photos: '15 photos/property',
     support: 'Premium support',
     duration: '90 days',
-    pricing: { GYD: 12500, JMD: 25000, TTD: 840, BBD: 315, USD: 155, CAD: 210 },
+    pricing: { GYD: 12500, JMD: 25000, TTD: 840, BBD: 315, GHS: 2500, NGN: 250000, KES: 20000, USD: 155, CAD: 210 },
     color: 'purple',
     recommended: false,
     badge: 'Best Value'
@@ -50,6 +54,7 @@ const landlordPlans = [
 ];
 
 export default function LandlordRegistrationPage() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [selectedPlan, setSelectedPlan] = useState('featured');
@@ -148,18 +153,23 @@ export default function LandlordRegistrationPage() {
         throw new Error(data.error || 'Registration failed');
       }
       
-      // Store registration data for payment page
-      sessionStorage.setItem('landlordRegistration', JSON.stringify({
-        userId: data.user.id,
-        email: formData.email,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        plan: formData.plan,
-        country: formData.country
-      }));
-      
-      // Redirect to success page
-      window.location.href = '/register-success';
+      if (data.success) {
+        if (data.skipPayment) {
+          // Beta user - go directly to dashboard
+          router.push(data.redirectTo || '/dashboard/landlord');
+        } else {
+          // Regular user - go to payment
+          sessionStorage.setItem('landlordRegistration', JSON.stringify({
+            userId: data.userId,
+            email: formData.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            plan: formData.plan,
+            country: formData.country
+          }));
+          router.push('/register/payment');
+        }
+      }
       
     } catch (error: any) {
       setError(error.message);

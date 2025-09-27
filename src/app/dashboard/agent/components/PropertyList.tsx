@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/supabase';
+import PropertyFeaturing from '@/components/PropertyFeaturing';
 
 const statusColors: { [key: string]: string } = {
   off_market: 'bg-gray-200 text-gray-700',
@@ -217,7 +218,7 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
                 </div>
                 
                 {/* Edit and Delete buttons */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-3">
                   <button
                     className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm"
                     onClick={() => handleEdit(property.id)}
@@ -233,6 +234,36 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
                     {deletingId === property.id ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
+                
+                {/* Property Featuring for Available Properties */}
+                {property.status === 'available' && (
+                  <div className="border-t border-gray-200 pt-3">
+                    <PropertyFeaturing
+                      propertyId={property.id}
+                      propertyTitle={property.title}
+                      currentlyFeatured={property.is_featured}
+                      featuredUntil={property.featured_until}
+                      featuredType={property.featured_type}
+                      userType="agent"
+                      siteId={property.site_id}
+                      onFeaturingUpdate={() => {
+                        // Refresh properties list
+                        const supabase = createClient();
+                        const fetchProperties = async () => {
+                          const { data, error } = await supabase
+                            .from('properties')
+                            .select('*')
+                            .eq('user_id', userId)
+                            .order('created_at', { ascending: false });
+                          if (!error) {
+                            setProperties(data || []);
+                          }
+                        };
+                        fetchProperties();
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

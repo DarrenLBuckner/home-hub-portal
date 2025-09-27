@@ -1,15 +1,23 @@
 
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
+import { checkUserApprovalStatus } from '@/lib/auth/approvalStatus';
+import PendingApprovalMessage from '@/components/PendingApprovalMessage';
 
 
 export default function CreatePropertyPage() {
   const router = useRouter();
+  const [approvalStatus, setApprovalStatus] = useState<{
+    isApproved: boolean;
+    approvalStatus: 'pending' | 'approved' | 'rejected';
+    message?: string;
+    rejectionReason?: string;
+  } | null>(null);
   const [form, setForm] = useState({
     location: "",
     title: "",
@@ -32,12 +40,42 @@ export default function CreatePropertyPage() {
     neighborhood: "",
   });
   const [images, setImages] = useState<File[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<string>("GY");
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
+
+  // Check user approval status on component mount
+  useEffect(() => {
+    async function checkApproval() {
+      try {
+        const supabase = createClientComponentClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          router.push('/login');
+          return;
+        }
+
+        const status = await checkUserApprovalStatus(user.id);
+        setApprovalStatus(status);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error checking approval status:', error);
+        setApprovalStatus({
+          isApproved: false,
+          approvalStatus: 'pending',
+          message: 'Unable to verify account status. Please contact support.'
+        });
+        setLoading(false);
+      }
+    }
+
+    checkApproval();
+  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -130,6 +168,29 @@ export default function CreatePropertyPage() {
     }
     router.push("/dashboard/agent/properties");
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Checking account status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show pending approval message if user is not approved
+  if (approvalStatus && !approvalStatus.isApproved) {
+    return (
+      <PendingApprovalMessage 
+        message={approvalStatus.message}
+        approvalStatus={approvalStatus.approvalStatus === 'rejected' ? 'rejected' : 'pending'}
+        rejectionReason={approvalStatus.rejectionReason}
+      />
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow p-8 mt-8">

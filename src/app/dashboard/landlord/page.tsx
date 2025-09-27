@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/supabase";
 import { getActiveCountries } from "@/lib/countries";
+import PropertyFeaturing from "@/components/PropertyFeaturing";
 
 export default function LandlordDashboard() {
   const router = useRouter();
@@ -385,6 +386,25 @@ export default function LandlordDashboard() {
                         </>
                       )}
                     </div>
+                    
+                    {/* Property Featuring */}
+                    {property.status === 'available' && (
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <PropertyFeaturing
+                          propertyId={property.id}
+                          propertyTitle={property.title}
+                          currentlyFeatured={property.is_featured}
+                          featuredUntil={property.featured_until}
+                          featuredType={property.featured_type}
+                          userType="landlord"
+                          siteId={property.site_id}
+                          onFeaturingUpdate={() => {
+                            // Refresh properties list
+                            fetchUserData();
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

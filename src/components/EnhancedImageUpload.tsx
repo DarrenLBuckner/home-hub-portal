@@ -4,21 +4,29 @@ import { useState, useRef, useCallback } from 'react';
 
 interface EnhancedImageUploadProps {
   images: File[];
-  setImages: (images: File[]) => void;
+  setImages?: (images: File[]) => void;
+  onImagesChange?: (images: File[]) => void;
   maxImages?: number;
   maxSizePerImage?: number; // in MB
   acceptedTypes?: string[];
   className?: string;
+  title?: string;
+  description?: string;
 }
 
 export default function EnhancedImageUpload({
   images,
   setImages,
+  onImagesChange,
   maxImages = 10,
   maxSizePerImage = 10,
   acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
-  className = ''
+  className = '',
+  title,
+  description
 }: EnhancedImageUploadProps) {
+  // Use either setImages or onImagesChange
+  const updateImages = setImages || onImagesChange;
   const [dragActive, setDragActive] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
@@ -72,7 +80,7 @@ export default function EnhancedImageUpload({
 
     if (validFiles.length > 0) {
       const newImages = [...images, ...validFiles];
-      setImages(newImages);
+      updateImages?.(newImages);
     }
   }, [images, setImages, maxImages, maxSizePerImage, acceptedTypes]);
 
@@ -112,7 +120,7 @@ export default function EnhancedImageUpload({
       URL.revokeObjectURL(previewUrls[index]);
     }
     
-    setImages(newImages);
+    updateImages?.(newImages);
     setPreviewUrls(newPreviewUrls);
   };
 
@@ -126,7 +134,7 @@ export default function EnhancedImageUpload({
     newImages.splice(toIndex, 0, movedImage);
     newPreviewUrls.splice(toIndex, 0, movedPreview);
     
-    setImages(newImages);
+    updateImages?.(newImages);
     setPreviewUrls(newPreviewUrls);
   };
 
