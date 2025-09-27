@@ -68,7 +68,7 @@ export default function LandlordDashboard() {
           setSubscription(prev => prev ? ({
             ...prev,
             totalProperties: userProperties.length,
-            activeListings: userProperties.filter(p => p.status === 'available').length
+            activeListings: userProperties.filter((p: any) => p.status === 'available').length
           }) : null);
         }
         
@@ -131,7 +131,7 @@ export default function LandlordDashboard() {
       } else {
         alert(`Property ${newStatus === 'rented' ? 'marked as rented! Listing complete.' : 'status updated successfully!'}`);
         // Refresh properties list
-        fetchUserData();
+        window.location.reload();
       }
     } catch (error) {
       alert('Error updating property');
