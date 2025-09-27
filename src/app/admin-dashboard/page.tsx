@@ -153,7 +153,7 @@ export default function AdminDashboard() {
       // Try to load images separately if property_media table exists
       if (pendingData && pendingData.length > 0) {
         try {
-          const propertyIds = pendingData.map(p => p.id);
+          const propertyIds = pendingData.map((p: any) => p.id);
           const { data: mediaData, error: mediaError } = await supabase
             .from('property_media')
             .select('property_id, media_url, is_primary')
@@ -199,9 +199,9 @@ export default function AdminDashboard() {
 
           if (!typeError && byUserTypeData) {
             byUserType = {
-              fsbo: byUserTypeData?.filter(p => p.listed_by_type === 'owner' || p.listed_by_type === 'fsbo').length || 0,
-              agent: byUserTypeData?.filter(p => p.listed_by_type === 'agent').length || 0,
-              landlord: byUserTypeData?.filter(p => p.listed_by_type === 'landlord').length || 0,
+              fsbo: byUserTypeData?.filter((p: any) => p.listed_by_type === 'owner' || p.listed_by_type === 'fsbo').length || 0,
+              agent: byUserTypeData?.filter((p: any) => p.listed_by_type === 'agent').length || 0,
+              landlord: byUserTypeData?.filter((p: any) => p.listed_by_type === 'landlord').length || 0,
             };
             console.log('By user type:', byUserType);
           } else {
@@ -273,13 +273,16 @@ export default function AdminDashboard() {
       setError(`Failed to load dashboard data: ${err?.message || 'Unknown error'}`);
       // Set empty arrays so UI doesn't break
       setPendingProperties([]);
-      setStats({
+      setStatistics({
         totalPending: 0,
-        totalToday: 0,
-        totalThisWeek: 0,
-        byUserType: {},
+        todaySubmissions: 0,
+        byUserType: {
+          fsbo: 0,
+          agent: 0,
+          landlord: 0
+        },
         totalActive: 0,
-        totalRejected: 0,
+        totalRejected: 0
       });
     }
   }

@@ -10,7 +10,7 @@ interface Payment {
   property_id: string;
   user_id: string;
   amount: number;
-  status: 'pending' | 'approved' | 'rejected' | 'verified' | 'refunded';
+  status: 'pending' | 'approved' | 'rejected';
   payment_method: string;
   created_at: string;
   updated_at: string;
@@ -142,7 +142,7 @@ export default function AdminPayments() {
     }
   }
 
-  async function updatePaymentStatus(paymentId: string, newStatus: 'approved' | 'rejected' | 'verified' | 'refunded') {
+  async function updatePaymentStatus(paymentId: string, newStatus: 'approved' | 'rejected') {
     try {
       const { error } = await supabase
         .from('subscription_payments')
@@ -344,12 +344,8 @@ export default function AdminPayments() {
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                           payment.status === 'approved' 
                             ? 'bg-green-100 text-green-800'
-                            : payment.status === 'verified'
-                            ? 'bg-blue-100 text-blue-800'
                             : payment.status === 'rejected'
                             ? 'bg-red-100 text-red-800'
-                            : payment.status === 'refunded'
-                            ? 'bg-purple-100 text-purple-800'
                             : 'bg-yellow-100 text-yellow-800'
                         }`}>
                           {payment.status}
@@ -359,45 +355,29 @@ export default function AdminPayments() {
                         {new Date(payment.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
-                          {/* Payment acceptance - all admins */}
-                          {payment.status === 'pending' && ['super', 'owner', 'basic'].includes(userRole) && (
+                        {/* Role-based action buttons using permissions */}
+                        {payment.status === 'pending' && permissions?.canProcessPayments ? (
+                          <div className="flex space-x-2">
                             <button 
-                              onClick={() => updatePaymentStatus(payment.id, 'verified')}
+                              onClick={() => updatePaymentStatus(payment.id, 'approved')}
                               className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition-colors"
-                              title="Accept payment and mark as verified"
+                              title="Super Admin: Approve Payment"
                             >
-                              Accept Payment
+                              Approve
                             </button>
-                          )}
-
-                          {/* Refunds - ONLY super admin */}
-                          {payment.status === 'verified' && userRole === 'super' && (
                             <button 
-                              onClick={() => updatePaymentStatus(payment.id, 'refunded')}
-                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors ml-2"
-                              title="Issue refund - Super Admin only"
+                              onClick={() => updatePaymentStatus(payment.id, 'rejected')}
+                              className="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700 transition-colors"
+                              title="Super Admin: Reject Payment"
                             >
-                              Issue Refund
+                              Reject
                             </button>
-                          )}
-
-                          {/* Show limitation for non-super admins */}
-                          {payment.status === 'verified' && ['owner', 'basic'].includes(userRole) && (
-                            <span className="text-gray-500 italic text-xs" title="Only Super Admin can issue refunds">
-                              Refunds need Super Admin
-                            </span>
-                          )}
-
-                          {/* Show status for non-actionable payments */}
-                          {payment.status === 'pending' && !['super', 'owner', 'basic'].includes(userRole) && (
-                            <span className="text-gray-500 text-xs" title="View Only Access">View Only</span>
-                          )}
-
-                          {!['pending', 'verified'].includes(payment.status) && (
-                            <span className="text-gray-500 capitalize text-xs">{payment.status}</span>
-                          )}
-                        </div>
+                          </div>
+                        ) : payment.status === 'pending' ? (
+                          <span className="text-gray-500" title="View Only Access">View Only</span>
+                        ) : (
+                          <span className="text-gray-500 capitalize">{payment.status}</span>
+                        )}
                       </td>
                     </tr>
                   ))}
