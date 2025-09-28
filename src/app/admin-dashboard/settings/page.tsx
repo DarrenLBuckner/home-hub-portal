@@ -37,9 +37,13 @@ export default function AdminSettings() {
         return;
       }
 
+      const displayName = [profile.first_name, profile.last_name]
+        .filter(Boolean)
+        .join(' ') || profile.email?.split('@')[0] || 'User';
+      
       setUser({ 
         ...authUser, 
-        name: `${profile.first_name} ${profile.last_name}`,
+        name: displayName,
         email: profile.email,
         role: profile.user_type 
       });

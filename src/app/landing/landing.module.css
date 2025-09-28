@@ -291,10 +291,11 @@
 }
 
 .cardDescription {
-  font-size: 0.9rem;
-  color: #64748b;
+  font-size: 0.95rem;
+  color: #4a5568;
   margin: 0.5rem 0 1rem 0;
   line-height: 1.4;
+  font-weight: 500;
 }
 
 .primaryButton {
@@ -322,9 +323,13 @@
 }
 
 .pricing {
-  font-size: 0.8rem;
-  color: #64748b;
-  font-weight: 500;
+  font-size: 0.9rem;
+  color: #2d3748;
+  font-weight: 600;
+  background: #f7fafc;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
 }
 
 .existingUserSection {

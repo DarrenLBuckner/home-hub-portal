@@ -27,7 +27,24 @@ export default function PrivacyPage() {
       <h2 className="text-xl font-semibold mt-6 mb-2">10. Changes to This Policy</h2>
       <p>We may update this Privacy Policy from time to time. We will notify users of material changes via email or platform notices.</p>
   <h2 className="text-xl font-semibold mt-6 mb-2">11. Contact</h2>
-  <p>If you have any questions or concerns about this policy, please contact us at: <a href="mailto:info@guyanahomehub.com" className="underline">info@guyanahomehub.com</a></p>
+  <div className="space-y-4">
+    <p className="mb-4">If you have any questions or concerns about this policy, please contact us:</p>
+    <div className="flex flex-col gap-3">
+      <a 
+        href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20I%20have%20a%20question%20about%20your%20privacy%20policy." 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg w-fit"
+      >
+        <span className="mr-2">💬</span>
+        WhatsApp Support
+      </a>
+      <div className="text-sm text-gray-600">
+        <p>Preferred method for fastest response • +592 762-9797</p>
+        <p>✉️ Email: <a href="mailto:info@guyanahomehub.com" className="text-blue-600 underline">info@guyanahomehub.com</a></p>
+      </div>
+    </div>
+  </div>
   <div className="mt-8 text-xs text-gray-500">© 2025 Guyana Home Hub and all other countries we operate in. All rights reserved. A subsidiary of Caribbean Home Hub LLC, a registered company in Missouri, USA.</div>
     </div>
   );

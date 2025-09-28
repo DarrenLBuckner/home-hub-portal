@@ -133,33 +133,32 @@ export default function CreatePropertyPage() {
 
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow p-8 mt-8">
-      <h2 className="text-2xl font-bold mb-6 text-primary">Create New Property (Agent)</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-900">Create New Property (Agent)</h2>
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {/* Basic Info */}
         <div>
-          <h3 className="font-semibold mb-2">Basic Info</h3>
+          <h3 className="text-lg font-bold mb-4 text-gray-900 border-b border-gray-200 pb-2">📋 Basic Info</h3>
           <GlobalSouthLocationSelector
             selectedCountry={selectedCountry}
             selectedRegion={selectedRegion}
             onLocationChange={handleLocationChange}
             onCurrencyChange={handleCurrencyChange}
-            required={true}
           />
-          <input name="title" type="text" placeholder="Property Title" value={form.title} onChange={handleChange} required className="border rounded px-3 py-2 w-full mb-2" />
-          <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} required className="border rounded px-3 py-2 w-full mb-2" />
-          <input name="price" type="number" placeholder={`Price (${currencySymbol})`} value={form.price} onChange={handleChange} required className="border rounded px-3 py-2 w-full mb-2" />
+          <input name="title" type="text" placeholder="Property Title" value={form.title} onChange={handleChange} required className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <textarea name="description" placeholder="Description" value={form.description} onChange={handleChange} required className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base min-h-[100px]" />
+          <input name="price" type="number" placeholder={`Price (${currencySymbol})`} value={form.price} onChange={handleChange} required className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
         </div>
         {/* Property Details */}
         <div>
-          <h3 className="font-semibold mb-2">Property Details</h3>
-          <input name="property_type" type="text" placeholder="Property Type" value={form.property_type} onChange={handleChange} className="border rounded px-3 py-2 w-full mb-2" />
-          <input name="listing_type" type="text" placeholder="Listing Type (Sale/Rent)" value={form.listing_type} onChange={handleChange} className="border rounded px-3 py-2 w-full mb-2" />
-          <input name="bedrooms" type="number" placeholder="Bedrooms" value={form.bedrooms} onChange={handleChange} className="border rounded px-3 py-2 w-full mb-2" />
-          <input name="bathrooms" type="number" placeholder="Bathrooms" value={form.bathrooms} onChange={handleChange} className="border rounded px-3 py-2 w-full mb-2" />
+          <h3 className="text-lg font-bold mb-4 text-gray-900 border-b border-gray-200 pb-2">🏠 Property Details</h3>
+          <input name="property_type" type="text" placeholder="Property Type" value={form.property_type} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <input name="listing_type" type="text" placeholder="Listing Type (Sale/Rent)" value={form.listing_type} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <input name="bedrooms" type="number" placeholder="Bedrooms" value={form.bedrooms} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <input name="bathrooms" type="number" placeholder="Bathrooms" value={form.bathrooms} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
           {/* House Size */}
-          <div className="flex gap-2 mb-2">
-            <input name="house_size_value" type="number" placeholder="House Size" value={form.house_size_value} onChange={handleChange} className="border rounded px-3 py-2 w-1/2" />
-            <select name="house_size_unit" value={form.house_size_unit} onChange={handleChange} className="border rounded px-3 py-2 w-1/2">
+          <div className="flex gap-2 mb-3">
+            <input name="house_size_value" type="number" placeholder="House Size" value={form.house_size_value} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-1/2 text-gray-900 bg-white placeholder-gray-600 text-base" />
+            <select name="house_size_unit" value={form.house_size_unit} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-1/2 text-gray-900 bg-white text-base">
               <option value="sq ft">Sq Ft</option>
               <option value="sq m">Sq M</option>
               <option value="acres">Acres</option>
@@ -167,9 +166,9 @@ export default function CreatePropertyPage() {
             </select>
           </div>
           {/* Land Size */}
-          <div className="flex gap-2 mb-2">
-            <input name="land_size_value" type="number" placeholder="Land Size" value={form.land_size_value} onChange={handleChange} className="border rounded px-3 py-2 w-1/2" />
-            <select name="land_size_unit" value={form.land_size_unit} onChange={handleChange} className="border rounded px-3 py-2 w-1/2">
+          <div className="flex gap-2 mb-3">
+            <input name="land_size_value" type="number" placeholder="Land Size" value={form.land_size_value} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-1/2 text-gray-900 bg-white placeholder-gray-600 text-base" />
+            <select name="land_size_unit" value={form.land_size_unit} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-1/2 text-gray-900 bg-white text-base">
               <option value="sq ft">Sq Ft</option>
               <option value="sq m">Sq M</option>
               <option value="acres">Acres</option>
@@ -177,34 +176,37 @@ export default function CreatePropertyPage() {
             </select>
           </div>
           {/* Location field moved to Basic Info as dropdown */}
-          <input name="year_built" type="number" placeholder="Year Built" value={form.year_built} onChange={handleChange} className="border rounded px-3 py-2 w-full mb-2" />
-          <input name="amenities" type="text" placeholder="Amenities (comma separated)" value={form.amenities} onChange={handleChange} className="border rounded px-3 py-2 w-full mb-2" />
-          <input name="features" type="text" placeholder="Features (comma separated)" value={form.features} onChange={handleChange} className="border rounded px-3 py-2 w-full mb-2" />
+          <input name="year_built" type="number" placeholder="Year Built" value={form.year_built} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <input name="amenities" type="text" placeholder="Amenities (comma separated)" value={form.amenities} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <input name="features" type="text" placeholder="Features (comma separated)" value={form.features} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
         </div>
         {/* Location Details */}
         <div>
-          <h3 className="font-semibold mb-2">Location Details</h3>
-          <input name="region" type="text" placeholder="Region" value={form.region} onChange={handleChange} className="border rounded px-3 py-2 w-full mb-2" />
-          <input name="city" type="text" placeholder="City" value={form.city} onChange={handleChange} className="border rounded px-3 py-2 w-full mb-2" />
-          <input name="neighborhood" type="text" placeholder="Neighborhood" value={form.neighborhood} onChange={handleChange} className="border rounded px-3 py-2 w-full mb-2" />
+          <h3 className="text-lg font-bold mb-4 text-gray-900 border-b border-gray-200 pb-2">📍 Location Details</h3>
+          <input name="region" type="text" placeholder="Region" value={form.region} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <input name="city" type="text" placeholder="City" value={form.city} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <input name="neighborhood" type="text" placeholder="Neighborhood" value={form.neighborhood} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
         </div>
   {/* Agent Details (hidden for agent form) */}
         {/* Status */}
         <div>
-          <h3 className="font-semibold mb-2">Status</h3>
-          <select name="status" value={form.status} onChange={handleChange} className="border rounded px-3 py-2 w-full">
+          <h3 className="text-lg font-bold mb-4 text-gray-900 border-b border-gray-200 pb-2">⚡ Status</h3>
+          <select name="status" value={form.status} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full text-gray-900 bg-white text-base">
             <option value="draft">Draft</option>
             <option value="active">Active</option>
           </select>
         </div>
         {/* Enhanced image upload */}
-        <EnhancedImageUpload
-          images={images}
-          onImagesChange={handleImagesChange}
-          maxImages={10}
-          title="Property Images"
-          description="Upload high-quality photos of your property"
-        />
+        {/* Property Images */}
+        <div>
+          <h3 className="text-lg font-bold mb-4 text-gray-900 border-b border-gray-200 pb-2">📸 Property Images</h3>
+          <p className="text-gray-600 mb-4">Upload high-quality photos of your property</p>
+          <EnhancedImageUpload
+            images={images}
+            setImages={handleImagesChange}
+            maxImages={10}
+          />
+        </div>
         {/* Error and submit */}
         {error && <div className="text-red-500 text-sm">{error}</div>}
         <button type="submit" disabled={loading} className="bg-primary text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-primary-dark transition">

@@ -117,7 +117,7 @@ function EnterprisePaymentForm() {
   }
 
   // WhatsApp support link
-  const whatsappNumber = "5927059857";
+  const whatsappNumber = "5927629797";
   const whatsappMsg = encodeURIComponent("May PortalHomeHub Message: I need help with my payment.");
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${whatsappMsg}`;
 
@@ -197,7 +197,7 @@ export default function PaymentPage() {
       <main className="max-w-xl mx-auto py-12 px-4 text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">Payment Configuration Error</h1>
         <p className="text-gray-700">Payment system is not properly configured. Please contact support.</p>
-        <a href="https://wa.me/5927059857?text=Payment%20configuration%20error" className="mt-4 inline-block px-4 py-2 bg-green-500 text-white rounded">
+        <a href="https://wa.me/5927629797?text=Payment%20configuration%20error" className="mt-4 inline-block px-4 py-2 bg-green-500 text-white rounded">
           Contact Support
         </a>
       </main>

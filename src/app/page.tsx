@@ -53,9 +53,9 @@ export default function LandingPage() {
 
         {/* Existing User Section */}
         <div className={styles.existingUserSection}>
-          <p className={styles.existingUserText}>Already have an account?</p>
-          <Link href="/login" className={styles.secondaryButton}>
-            Sign In
+          <p className="text-white text-base font-semibold mb-4">Already have an account?</p>
+          <Link href="/login" className="inline-block bg-transparent text-yellow-300 border-2 border-yellow-300 hover:bg-yellow-300 hover:text-gray-900 px-6 py-3 rounded-xl font-bold text-base transition-all duration-200 min-h-[48px] flex items-center justify-center">
+            🔑 Sign In
           </Link>
         </div>
       </section>
@@ -64,6 +64,18 @@ export default function LandingPage() {
       <footer className={styles.mobileFooter}>
         <div className={styles.footerContent}>
           <p>© 2025 Caribbean Home Hub</p>
+          <div className="mt-4">
+            <a 
+              href="https://wa.me/5927629797?text=Hello%20Portal%20Home%20Hub!%20I%20need%20help%20with..." 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 mb-3"
+            >
+              <span className="mr-2">💬</span>
+              WhatsApp Support
+            </a>
+            <p className="text-yellow-200 text-sm font-medium">Chat for fastest response • +592 762-9797</p>
+          </div>
         </div>
       </footer>
     </div>

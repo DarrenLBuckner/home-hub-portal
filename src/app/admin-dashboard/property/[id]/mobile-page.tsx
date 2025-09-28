@@ -300,7 +300,10 @@ export default function MobilePropertyDetailPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 px-3 bg-white rounded-lg">
                 <span className="text-sm font-medium text-gray-600">Name:</span>
-                <span className="text-sm text-gray-900">{property.profiles.first_name} {property.profiles.last_name}</span>
+                <span className="text-sm text-gray-900">
+                  {[property.profiles.first_name, property.profiles.last_name].filter(Boolean).join(' ') || 
+                   'Unknown User'}
+                </span>
               </div>
               <div className="flex items-center justify-between py-2 px-3 bg-white rounded-lg">
                 <span className="text-sm font-medium text-gray-600">Email:</span>

@@ -285,7 +285,10 @@ export default function MobileOptimizedAdminDashboard() {
                 )}
               </div>
               <div className="mt-1 text-xs text-blue-600">
-                Submitted {new Date(property.created_at).toLocaleDateString()} by {property.profiles.first_name} {property.profiles.last_name}
+                Submitted {new Date(property.created_at).toLocaleDateString()} by {
+                  [property.profiles.first_name, property.profiles.last_name].filter(Boolean).join(' ') || 
+                  'Unknown User'
+                }
               </div>
             </div>
           </div>

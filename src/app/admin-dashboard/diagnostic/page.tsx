@@ -226,6 +226,32 @@ export default function AdminDiagnosticPage() {
             </div>
           </div>
         )}
+
+        {/* Support Contact Information */}
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-6 shadow-lg mt-6">
+          <h2 className="text-lg font-bold text-green-900 mb-4">💬 Need Admin Support?</h2>
+          <p className="text-green-800 text-sm mb-4">
+            If you're experiencing technical issues or need assistance with admin functions, our support team is here to help.
+          </p>
+          <div className="space-y-3">
+            <a 
+              href="https://wa.me/5927629797" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center justify-center w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <span className="mr-2">📱</span>
+              WhatsApp: +592 762-9797 (Fastest Response)
+            </a>
+            <div className="text-center text-green-700 text-sm">
+              <div className="flex items-center justify-center space-x-2">
+                <span>📞</span>
+                <span>Phone: <strong>+5927629797</strong></span>
+              </div>
+              <p className="mt-2 text-xs text-green-600">Available for urgent admin and technical support</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

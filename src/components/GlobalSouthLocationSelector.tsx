@@ -157,13 +157,13 @@ export default function GlobalSouthLocationSelector({
     <div className={`space-y-6 ${className}`}>
       {/* Country Selection */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Country *
+        <label className="block text-base font-bold text-gray-900 mb-3">
+          🌍 Country *
         </label>
         <select
           value={selectedCountry}
           onChange={(e) => handleCountryChange(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+          className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white text-base"
         >
           <option value="">Select a country</option>
           
@@ -210,14 +210,14 @@ export default function GlobalSouthLocationSelector({
       {/* Region/City Selection */}
       {selectedCountry && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            City/Region *
+          <label className="block text-base font-bold text-gray-900 mb-3">
+            🏢 City/Region *
           </label>
           <select
             value={selectedRegion}
             onChange={(e) => onLocationChange('region', e.target.value)}
             disabled={regionsLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-gray-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white text-base disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-600"
           >
             <option value="">
               {regionsLoading ? 'Loading cities...' : 'Select city or region'}

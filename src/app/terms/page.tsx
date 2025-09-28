@@ -31,7 +31,24 @@ export default function TermsPage() {
       <h2 className="text-xl font-semibold mt-6 mb-2">12. Updates</h2>
       <p>We may update these Terms of Service from time to time. Continued use after updates means you accept the revised terms.</p>
   <h2 className="text-xl font-semibold mt-6 mb-2">13. Contact</h2>
-  <p>For questions or concerns, email us at: <a href="mailto:info@guyanahomehub.com" className="underline">info@guyanahomehub.com</a></p>
+  <div className="space-y-4">
+    <p className="mb-4">For questions or concerns, contact us:</p>
+    <div className="flex flex-col gap-3">
+      <a 
+        href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20I%20have%20a%20question%20about%20your%20terms%20of%20service." 
+        target="_blank" 
+        rel="noopener noreferrer"
+        className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg w-fit"
+      >
+        <span className="mr-2">💬</span>
+        WhatsApp Support
+      </a>
+      <div className="text-sm text-gray-600">
+        <p>Preferred method for fastest response • +592 762-9797</p>
+        <p>✉️ Email: <a href="mailto:info@guyanahomehub.com" className="text-blue-600 underline">info@guyanahomehub.com</a></p>
+      </div>
+    </div>
+  </div>
   <div className="mt-8 text-xs text-gray-500">© 2025 Guyana Home Hub and all other countries we operate in. All rights reserved. A subsidiary of Caribbean Home Hub LLC, a registered company in Missouri, USA.</div>
     </div>
   );

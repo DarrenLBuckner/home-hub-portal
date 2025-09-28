@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { createClient } from "@/supabase";
 
-type UserType = "agent" | "landlord" | "fsbo" | "admin" | "super_admin";
+type UserType = "agent" | "landlord" | "fsbo" | "owner" | "admin" | "super_admin";
 type NavLink = { label: string; href: string; isButton?: boolean; dropdown?: boolean };
 
 interface BackendNavBarProps {
@@ -33,6 +33,12 @@ const navLinks: Record<UserType, NavLink[]> = {
 	owner: [
 		{ label: "Dashboard", href: "/dashboard/owner" },
 		{ label: "Profile/Settings", href: "/dashboard/owner/settings" },
+		{ label: "Register", href: "/register", dropdown: true },
+		{ label: "Logout", href: "/logout", isButton: true },
+	],
+	fsbo: [
+		{ label: "Dashboard", href: "/dashboard/fsbo" },
+		{ label: "Profile/Settings", href: "/dashboard/fsbo" },
 		{ label: "Register", href: "/register", dropdown: true },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
@@ -121,7 +127,7 @@ export default function BackendNavBar({ userType = "agent" }: BackendNavBarProps
 							<svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
 						</button>
 						{showSitesDropdown && (
-							<ul className="absolute left-0 top-full mt-2 bg-white text-blue-900 rounded shadow-lg min-w-[220px] z-20">
+							<ul className="absolute left-0 top-full mt-2 bg-white text-blue-900 rounded shadow-lg min-w-[220px] z-[60]">
 								{consumerSites.map(site => (
 									<li key={site.label} className="flex items-center px-4 py-2">
 										<span className="mr-2 text-lg">{site.flag}</span>
@@ -150,7 +156,7 @@ export default function BackendNavBar({ userType = "agent" }: BackendNavBarProps
 							<svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
 						</button>
 						{showCreateDropdown && (
-							<ul className="absolute left-0 top-full mt-2 bg-white text-blue-900 rounded shadow-lg min-w-[220px] z-20">
+							<ul className="absolute left-0 top-full mt-2 bg-white text-blue-900 rounded shadow-lg min-w-[220px] z-[60]">
 								<li>
 									<Link href="/dashboard/agent/create-property" className="block px-4 py-2 hover:bg-blue-100">Agent Property</Link>
 								</li>

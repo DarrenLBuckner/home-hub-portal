@@ -140,8 +140,8 @@ export default function CreateLandlordProperty() {
     setSuccess(false);
     setIsSubmitting(true);
 
-    // Validate required fields
-    const required: (keyof PropertyForm)[] = ["title", "description", "price", "location", "propertyType", "bedrooms", "bathrooms", "squareFootage", "attestation"];
+    // Validate required fields (location and squareFootage now optional)
+    const required: (keyof PropertyForm)[] = ["title", "description", "price", "propertyType", "bedrooms", "bathrooms", "attestation"];
     for (const field of required) {
       if (!form[field]) {
         setError(`Missing field: ${field}`);
@@ -226,7 +226,7 @@ export default function CreateLandlordProperty() {
         </Link>
       </div>
 
-      <h1 className="text-3xl font-bold text-green-700 mb-6">Create Rental Property Listing</h1>
+      <h1 className="text-3xl font-bold text-gray-900 mb-6">🏠 Create Rental Property Listing</h1>
       
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
         <h2 className="font-semibold text-green-800 mb-2">Landlord Listing</h2>
@@ -242,7 +242,7 @@ export default function CreateLandlordProperty() {
           placeholder="Property Title (e.g., 'Modern 2BR Apartment in Georgetown')*" 
           value={form.title} 
           onChange={handleChange} 
-          className="w-full border rounded-lg px-4 py-2" 
+          className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
           required 
         />
         
@@ -251,7 +251,7 @@ export default function CreateLandlordProperty() {
           placeholder="Detailed description of your rental property*" 
           value={form.description} 
           onChange={handleChange} 
-          className="w-full border rounded-lg px-4 py-2" 
+          className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
           required 
           rows={4} 
         />
@@ -265,23 +265,23 @@ export default function CreateLandlordProperty() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">Rent ({currencySymbol})</label>
+            <label htmlFor="price" className="block text-sm font-bold text-gray-900 mb-2">💰 Rent ({currencySymbol})</label>
             <input 
               type="number" 
               name="price" 
               value={form.price} 
               onChange={handleChange} 
               required 
-              className="w-full border rounded-lg px-4 py-2" 
+              className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
             />
           </div>
           <div>
-            <label htmlFor="rentalType" className="block text-sm font-medium text-gray-700 mb-1">Rental Period</label>
+            <label htmlFor="rentalType" className="block text-sm font-bold text-gray-900 mb-2">🗓️ Rental Period</label>
             <select 
               name="rentalType" 
               value={form.rentalType} 
               onChange={handleChange} 
-              className="w-full border rounded-lg px-4 py-2"
+              className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white text-base"
             >
               <option value="monthly">Monthly</option>
               <option value="weekly">Weekly</option>
@@ -293,18 +293,17 @@ export default function CreateLandlordProperty() {
         <input 
           name="location" 
           type="text" 
-          placeholder="Specific address or area*" 
+          placeholder="Specific address or area (Optional - for privacy)" 
           value={form.location} 
           onChange={handleChange} 
-          className="w-full border rounded-lg px-4 py-2" 
-          required 
+          className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
         />
         
         <select 
           name="propertyType" 
           value={form.propertyType} 
           onChange={handleChange} 
-          className="w-full border rounded-lg px-4 py-2"
+          className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white text-base"
         >
           {PROPERTY_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
         </select>
@@ -316,7 +315,7 @@ export default function CreateLandlordProperty() {
             placeholder="Bedrooms*" 
             value={form.bedrooms} 
             onChange={handleChange} 
-            className="border rounded-lg px-4 py-2" 
+            className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
             required 
           />
           <input 
@@ -325,7 +324,7 @@ export default function CreateLandlordProperty() {
             placeholder="Bathrooms*" 
             value={form.bathrooms} 
             onChange={handleChange} 
-            className="border rounded-lg px-4 py-2" 
+            className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
             required 
           />
         </div>
@@ -333,23 +332,23 @@ export default function CreateLandlordProperty() {
         <input 
           name="squareFootage" 
           type="number" 
-          placeholder="Square Footage*" 
+          placeholder="Square Footage (Optional)" 
           value={form.squareFootage} 
           onChange={handleChange} 
-          className="w-full border rounded-lg px-4 py-2" 
-          required 
+          className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
         />
         
-        <div className="mb-2 font-semibold">Features/Amenities:</div>
+        <div className="mb-3 text-lg font-bold text-gray-900 border-b border-gray-200 pb-2">✨ Features/Amenities:</div>
         <div className="grid grid-cols-2 gap-2 mb-4">
           {FEATURES.map(feature => (
-            <label key={feature} className="flex items-center gap-2">
+            <label key={feature} className="flex items-center gap-2 text-gray-900 font-medium">
               <input 
                 type="checkbox" 
                 name="features" 
                 value={feature} 
                 checked={form.features.includes(feature)} 
                 onChange={handleChange} 
+                className="w-4 h-4 text-blue-600 border-2 border-gray-400 rounded focus:ring-blue-500"
               />
               {feature}
             </label>

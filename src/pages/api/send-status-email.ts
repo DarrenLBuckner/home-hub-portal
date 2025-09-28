@@ -30,7 +30,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         </div>
         <p style="font-size: 16px; margin-bottom: 16px;">Your free trial is active. Explore listings, connect, and grow your business!</p>
       ` : ''}
-      <p style="font-size: 16px; margin-bottom: 16px;">If you have any questions, reply to this email or contact our support team. We're here to help you succeed!</p>
+      <div style="margin: 20px 0; padding: 16px; background: #dcfce7; border-radius: 8px; border: 1px solid #16a34a;">
+        <p style="margin: 0 0 12px 0; font-size: 16px;">Have questions or need support? Contact us directly on WhatsApp:</p>
+        <a href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20I%20have%20a%20question%20about%20my%20property%20listing%20status." 
+           style="display: inline-block; padding: 12px 24px; background: #16a34a; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+          📱 WhatsApp Support: +592 762-9797
+        </a>
+        <p style="margin: 12px 0 0 0; font-size: 14px; color: #059669;">Fastest response • We're here to help you succeed!</p>
+      </div>
       <hr style="margin: 24px 0; border: none; border-top: 1px solid #eee;" />
   <p style="font-size: 14px; color: #888;">Thank you for choosing Portal Home Hub.<br />
       <span style="color: #14b8a6; font-weight: bold;">Your Caribbean Real Estate Partner</span></p>

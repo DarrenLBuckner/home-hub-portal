@@ -30,10 +30,10 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold mb-4">Basic Information</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-6 border-b border-gray-200 pb-2">📋 Basic Information</h2>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-base font-bold text-gray-900 mb-3">
           Property Title *
         </label>
         <input
@@ -41,20 +41,20 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
           value={formData.title}
           onChange={(e) => handleChange('title', e.target.value)}
           placeholder="e.g., Beautiful 3-bedroom family home in Georgetown"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white placeholder-gray-600 text-base"
           maxLength={100}
         />
         <p className="text-sm text-gray-500 mt-1">{formData.title.length}/100 characters</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+        <label className="block text-base font-bold text-gray-900 mb-3">
           Property Type *
         </label>
         <select
           value={formData.property_type}
           onChange={(e) => handleChange('property_type', e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white text-base"
         >
           <optgroup label="🏘️ Residential Properties">
             <option value="Single Family Home">Single Family Home</option>
@@ -113,15 +113,15 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Asking Price ({currencySymbol}) *
+        <label className="block text-base font-bold text-gray-900 mb-3">
+          💰 Asking Price ({currencySymbol}) *
         </label>
         <input
           type="number"
           value={formData.price}
           onChange={(e) => handleChange('price', e.target.value)}
           placeholder="e.g., 25000000"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white placeholder-gray-600 text-base"
           min="0"
         />
         <p className="text-sm text-gray-500 mt-1">
@@ -138,15 +138,15 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Property Description *
+        <label className="block text-base font-bold text-gray-900 mb-3">
+          📝 Property Description *
         </label>
         <textarea
           value={formData.description}
           onChange={(e) => handleChange('description', e.target.value)}
           placeholder="Describe your property's features, condition, and what makes it special..."
           rows={6}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white placeholder-gray-600 text-base"
           maxLength={1000}
         />
         <p className="text-sm text-gray-500 mt-1">{formData.description.length}/1000 characters</p>

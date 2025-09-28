@@ -117,8 +117,38 @@ export default function SystemSettings() {
             <p className="text-gray-600 text-sm mb-4">
               Site name, logo, contact information, and basic configurations.
             </p>
+            
+            {/* Current Contact Information */}
+            <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+              <h4 className="font-medium text-gray-900 mb-2">Current Contact Information</h4>
+              <div className="space-y-2 text-sm text-gray-700">
+                <div className="flex items-center space-x-2">
+                  <span>📞</span>
+                  <span>Main Phone: <strong>+5927629797</strong></span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span>💬</span>
+                  <a 
+                    href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub%20Admin%2C%20I%20need%20assistance%20with%20system%20settings." 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="inline-block px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+                  >
+                    📱 WhatsApp Admin Support
+                  </a>
+                </div>
+                <div className="flex items-center space-x-2 text-xs text-gray-500 ml-6">
+                  <span>Phone: +592 762-9797 • Preferred for faster response</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <span>🌍</span>
+                  <span>Country: Guyana</span>
+                </div>
+              </div>
+            </div>
+            
             <button className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded cursor-not-allowed">
-              Coming Soon
+              Advanced Settings Coming Soon
             </button>
           </div>
 

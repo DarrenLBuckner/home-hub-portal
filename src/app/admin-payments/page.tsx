@@ -57,8 +57,8 @@ export default function AdminPayments() {
         
         // Hardcoded admin permissions for known users
         const adminConfig: { [email: string]: { level: string, country?: number, displayName?: string } } = {
-          'mrdarrenbuckner@gmail.com': { level: 'super', displayName: 'Darren' },
-          'qumar@guyanahomehub.com': { level: 'owner', country: 1, displayName: 'Qumar' }
+          'mrdarrenbuckner@gmail.com': { level: 'super', displayName: 'Darren Buckner' },
+          'qumar@guyanahomehub.com': { level: 'owner', country: 1, displayName: 'Qumar Torrington' }
         };
         
         const adminInfo = adminConfig[authUser.email];
@@ -132,9 +132,13 @@ export default function AdminPayments() {
       setPermissions(userPermissions);
 
       // Update the user state to include admin info
+      const displayName = [profile.first_name, profile.last_name]
+        .filter(Boolean)
+        .join(' ') || profile.email?.split('@')[0] || 'User';
+      
       setUser({ 
         ...authUser, 
-        name: `${profile.first_name} ${profile.last_name}`,
+        name: displayName,
         email: profile.email,
         role: profile.user_type,
         admin_level: profile.admin_level

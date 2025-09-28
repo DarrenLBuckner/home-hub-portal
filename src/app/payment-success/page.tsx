@@ -79,7 +79,19 @@ export default function PaymentSuccessPage() {
         </>
       )}
       
-      <div className="text-sm text-gray-500">If you have any questions, <a href="https://wa.me/5927059857?text=May%20PortalHomeHub%20Message:%20I%20need%20help%20with%20my%20account." target="_blank" rel="noopener noreferrer" className="text-green-600 underline">contact support on WhatsApp</a>.</div>
+      <div className="mt-6 flex flex-col items-center gap-3">
+        <p className="text-sm text-gray-600">Need help with your account?</p>
+        <a 
+          href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20I%20just%20completed%20payment%20and%20need%20help%20with%20my%20account." 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+        >
+          <span className="mr-2">💬</span>
+          WhatsApp Support
+        </a>
+        <p className="text-xs text-gray-500">Instant support • +592 762-9797</p>
+      </div>
     </main>
   );
 }
