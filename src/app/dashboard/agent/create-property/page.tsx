@@ -124,13 +124,13 @@ export default function CreatePropertyPage() {
     const propertyId = propertyData[0].id;
     for (let i = 0; i < images.length; i++) {
       const file = images[i];
-      const { data: uploadData, error: uploadError } = await supabase.storage.from("property-media").upload(`${propertyId}/${file.name}`, file);
+      const { data: uploadData, error: uploadError } = await supabase.storage.from("property-images").upload(`${propertyId}/${file.name}`, file);
       if (uploadError) {
         setError(uploadError.message);
         setLoading(false);
         return;
       }
-      const url = supabase.storage.from("property-media").getPublicUrl(`${propertyId}/${file.name}`).data.publicUrl;
+      const url = supabase.storage.from("property-images").getPublicUrl(`${propertyId}/${file.name}`).data.publicUrl;
       await supabase.from("property_media").insert({
         property_id: propertyId,
         url,

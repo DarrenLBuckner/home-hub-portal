@@ -99,6 +99,13 @@ export async function POST(req: NextRequest) {
         } else if (typeof file.data === 'string') {
           // Handle base64 data URL (data:image/jpeg;base64,...)
           const base64Data = file.data.includes(',') ? file.data.split(',')[1] : file.data;
+          
+          // Validate base64 size (base64 is ~33% larger than original)
+          const estimatedSize = (base64Data.length * 3) / 4;
+          if (estimatedSize > 15 * 1024 * 1024) { // 15MB limit after base64 conversion
+            throw new Error(`Image too large after conversion: ${Math.round(estimatedSize / 1024 / 1024)}MB (15MB max)`);
+          }
+          
           fileBuffer = Buffer.from(base64Data, 'base64');
         } else {
           throw new Error(`Unsupported file data format: ${typeof file.data} (constructor: ${file.data?.constructor?.name})`);
@@ -109,7 +116,7 @@ export async function POST(req: NextRequest) {
           fileName: file.name
         });
         
-        const fileName = `${userId}/${Date.now()}-${i}-${file.name}`;
+        const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${i}-${file.name}`;
         const { data, error } = await supabase.storage
           .from("property-images")
           .upload(fileName, fileBuffer, {
