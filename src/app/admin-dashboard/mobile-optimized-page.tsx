@@ -100,7 +100,7 @@ export default function MobileOptimizedAdminDashboard() {
         .from('properties')
         .select(`
           *,
-          profiles:user_id (
+          profiles!properties_user_id_fkey (
             first_name,
             last_name,
             user_type
@@ -126,7 +126,7 @@ export default function MobileOptimizedAdminDashboard() {
       // Load statistics
       const { data: stats, error: statsError } = await supabase
         .from('properties')
-        .select('status, created_at, profiles:user_id(user_type)');
+        .select('status, created_at, profiles!properties_user_id_fkey(user_type)');
 
       if (statsError) {
         console.error('Stats error:', statsError);

@@ -63,7 +63,7 @@ export default function MobilePropertyDetailPage() {
         .from('properties')
         .select(`
           *,
-          profiles:user_id (
+          profiles!properties_user_id_fkey (
             first_name,
             last_name,
             user_type
