@@ -116,7 +116,7 @@ export default function MobileOptimizedAdminDashboard() {
 
       setPendingProperties(properties || []);
 
-      // Load statistics - simplified without join for now
+      // Load basic statistics without join to avoid errors
       const { data: stats, error: statsError } = await supabase
         .from('properties')
         .select('status, created_at, user_id');
@@ -131,11 +131,27 @@ export default function MobileOptimizedAdminDashboard() {
         p.created_at.startsWith(today)
       ).length || 0;
 
-      const byUserType = {
-        fsbo: stats?.filter((p: any) => p.profiles?.user_type === 'owner').length || 0,
-        agent: stats?.filter((p: any) => p.profiles?.user_type === 'agent').length || 0,
-        landlord: stats?.filter((p: any) => p.profiles?.user_type === 'landlord').length || 0,
-      };
+      // Get user type counts with a separate query to avoid join issues
+      const { data: userTypeCounts, error: userTypeError } = await supabase
+        .from('profiles')
+        .select('user_type, id');
+
+      let byUserType = { fsbo: 0, agent: 0, landlord: 0 };
+      
+      if (!userTypeError && userTypeCounts && stats) {
+        // Match users with their properties
+        const userTypeMap = new Map();
+        userTypeCounts.forEach((profile: any) => {
+          userTypeMap.set(profile.id, profile.user_type);
+        });
+
+        stats.forEach((property: any) => {
+          const userType = userTypeMap.get(property.user_id);
+          if (userType === 'owner') byUserType.fsbo++;
+          else if (userType === 'agent') byUserType.agent++;
+          else if (userType === 'landlord') byUserType.landlord++;
+        });
+      }
 
       setStatistics({
         totalPending: properties?.length || 0,
