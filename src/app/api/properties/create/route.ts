@@ -83,19 +83,25 @@ export async function POST(req: NextRequest) {
           name: file.name,
           type: file.type,
           hasData: !!file.data,
-          dataType: typeof file.data
+          dataType: typeof file.data,
+          isFile: file.data instanceof File,
+          constructor: file.data?.constructor?.name
         });
 
-        // Convert file data - handle different formats
+        // Convert file data - handle different formats including File objects
         let fileBuffer: Buffer;
-        if (file.data instanceof ArrayBuffer) {
+        if (file.data instanceof File) {
+          // Handle File object - convert to ArrayBuffer first
+          const arrayBuffer = await file.data.arrayBuffer();
+          fileBuffer = Buffer.from(arrayBuffer);
+        } else if (file.data instanceof ArrayBuffer) {
           fileBuffer = Buffer.from(file.data);
         } else if (typeof file.data === 'string') {
           // Handle base64 data URL (data:image/jpeg;base64,...)
           const base64Data = file.data.includes(',') ? file.data.split(',')[1] : file.data;
           fileBuffer = Buffer.from(base64Data, 'base64');
         } else {
-          throw new Error(`Unsupported file data format: ${typeof file.data}`);
+          throw new Error(`Unsupported file data format: ${typeof file.data} (constructor: ${file.data?.constructor?.name})`);
         }
 
         console.log(`📁 File buffer created:`, {
