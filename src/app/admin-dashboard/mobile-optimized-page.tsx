@@ -95,10 +95,17 @@ export default function MobileOptimizedAdminDashboard() {
     try {
       console.log('🔄 Loading dashboard data...');
       
-      // Build query based on permissions - simplified without join for now
+      // Build query with profiles data for pending properties
       let propertiesQuery = supabase
         .from('properties')
-        .select('*')
+        .select(`
+          *,
+          profiles (
+            first_name,
+            last_name,
+            user_type
+          )
+        `)
         .eq('status', 'pending');
 
       // Apply country filter for non-super admins
@@ -250,7 +257,7 @@ export default function MobileOptimizedAdminDashboard() {
               PENDING
             </span>
             <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md uppercase">
-              {displayUserType(property.profiles.user_type)}
+              {property.profiles ? displayUserType(property.profiles.user_type) : 'Unknown'}
             </span>
           </div>
           
@@ -295,8 +302,9 @@ export default function MobileOptimizedAdminDashboard() {
               </div>
               <div className="mt-1 text-xs text-blue-600">
                 Submitted {new Date(property.created_at).toLocaleDateString()} by {
-                  [property.profiles.first_name, property.profiles.last_name].filter(Boolean).join(' ') || 
-                  'Unknown User'
+                  property.profiles ? 
+                    [property.profiles.first_name, property.profiles.last_name].filter(Boolean).join(' ') || 'Unknown User'
+                    : 'Unknown User'
                 }
               </div>
             </div>
