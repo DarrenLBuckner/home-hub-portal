@@ -61,14 +61,7 @@ export default function MobilePropertyDetailPage() {
     try {
       const { data, error } = await supabase
         .from('properties')
-        .select(`
-          *,
-          profiles!properties_user_id_fkey (
-            first_name,
-            last_name,
-            user_type
-          )
-        `)
+        .select('*')
         .eq('id', propertyId)
         .single();
 

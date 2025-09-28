@@ -95,17 +95,10 @@ export default function MobileOptimizedAdminDashboard() {
     try {
       console.log('🔄 Loading dashboard data...');
       
-      // Build query based on permissions
+      // Build query based on permissions - simplified without join for now
       let propertiesQuery = supabase
         .from('properties')
-        .select(`
-          *,
-          profiles!properties_user_id_fkey (
-            first_name,
-            last_name,
-            user_type
-          )
-        `)
+        .select('*')
         .eq('status', 'pending');
 
       // Apply country filter for non-super admins
@@ -123,10 +116,10 @@ export default function MobileOptimizedAdminDashboard() {
 
       setPendingProperties(properties || []);
 
-      // Load statistics
+      // Load statistics - simplified without join for now
       const { data: stats, error: statsError } = await supabase
         .from('properties')
-        .select('status, created_at, profiles!properties_user_id_fkey(user_type)');
+        .select('status, created_at, user_id');
 
       if (statsError) {
         console.error('Stats error:', statsError);
