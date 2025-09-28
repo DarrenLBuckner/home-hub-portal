@@ -177,17 +177,22 @@ LEFT JOIN property_payments prop_pay ON pp.id = prop_pay.plan_id AND prop_pay.st
 GROUP BY pp.id, pp.plan_name, pp.user_type, pp.plan_type, pp.price, pp.max_properties, pp.featured_listings_included, pp.listing_duration_days, pp.is_active, pp.is_popular, pp.display_order, pp.features
 ORDER BY pp.user_type, pp.display_order;
 
+-- Drop existing views if they exist to avoid conflicts
+DROP VIEW IF EXISTS public_main_properties CASCADE;
+DROP VIEW IF EXISTS public_rental_properties CASCADE;
+DROP VIEW IF EXISTS public_fsbo_properties CASCADE;
+
 -- Frontend properties view (compatible with existing structure)
-CREATE OR REPLACE VIEW public_main_properties AS
+CREATE VIEW public_main_properties AS
 SELECT 
   p.*,
-  pm.url as primary_image, -- Uses existing column name
+  pm.media_url as primary_image, -- Correct column name from property_media table
   COALESCE(pr.first_name || ' ' || pr.last_name, 'Owner') as contact_name,
   pr.user_type,
   CASE 
-    WHEN p.featured = true OR (p.featured_until IS NOT NULL AND p.featured_until > NOW()) THEN TRUE 
+    WHEN COALESCE(p.featured, false) = true OR (p.featured_until IS NOT NULL AND p.featured_until > NOW()) THEN TRUE 
     ELSE FALSE 
-  END as is_currently_featured, -- Compatible with existing 'featured' column
+  END as is_currently_featured, -- Check if featured column exists first
   COALESCE(p.visibility_settings->>'priority', 'normal') as priority_level
 FROM properties p
 LEFT JOIN property_media pm ON p.id = pm.property_id AND pm.is_primary = TRUE
@@ -195,7 +200,7 @@ LEFT JOIN profiles pr ON p.user_id = pr.id
 WHERE p.status = 'active'
 AND COALESCE((p.visibility_settings->>'main_site')::boolean, true) = true
 ORDER BY 
-  CASE WHEN p.featured = true OR (p.featured_until IS NOT NULL AND p.featured_until > NOW()) THEN 0 ELSE 1 END,
+  CASE WHEN COALESCE(p.featured, false) = true OR (p.featured_until IS NOT NULL AND p.featured_until > NOW()) THEN 0 ELSE 1 END,
   CASE COALESCE(p.visibility_settings->>'priority', 'normal')
     WHEN 'high' THEN 1
     WHEN 'medium' THEN 2
@@ -204,10 +209,10 @@ ORDER BY
   p.updated_at DESC;
 
 -- Rentals view
-CREATE OR REPLACE VIEW public_rental_properties AS
+CREATE VIEW public_rental_properties AS
 SELECT 
   p.*,
-  pm.url as primary_image,
+  pm.media_url as primary_image,
   COALESCE(pr.first_name || ' ' || pr.last_name, 'Owner') as contact_name
 FROM properties p
 LEFT JOIN property_media pm ON p.id = pm.property_id AND pm.is_primary = TRUE
@@ -216,14 +221,14 @@ WHERE p.listing_type = 'rent'
 AND p.status = 'active'
 AND COALESCE((p.visibility_settings->>'rentals_page')::boolean, true) = true
 ORDER BY 
-  CASE WHEN p.featured = true OR (p.featured_until IS NOT NULL AND p.featured_until > NOW()) THEN 0 ELSE 1 END,
+  CASE WHEN COALESCE(p.featured, false) = true OR (p.featured_until IS NOT NULL AND p.featured_until > NOW()) THEN 0 ELSE 1 END,
   p.updated_at DESC;
 
 -- FSBO view
-CREATE OR REPLACE VIEW public_fsbo_properties AS
+CREATE VIEW public_fsbo_properties AS
 SELECT 
   p.*,
-  pm.url as primary_image,
+  pm.media_url as primary_image,
   COALESCE(pr.first_name || ' ' || pr.last_name, 'Owner') as contact_name
 FROM properties p
 LEFT JOIN property_media pm ON p.id = pm.property_id AND pm.is_primary = TRUE
@@ -232,7 +237,7 @@ WHERE p.status = 'active'
 AND p.listed_by_type = 'fsbo'
 AND COALESCE((p.visibility_settings->>'fsbo_page')::boolean, false) = true
 ORDER BY 
-  CASE WHEN p.featured = true OR (p.featured_until IS NOT NULL AND p.featured_until > NOW()) THEN 0 ELSE 1 END,
+  CASE WHEN COALESCE(p.featured, false) = true OR (p.featured_until IS NOT NULL AND p.featured_until > NOW()) THEN 0 ELSE 1 END,
   p.updated_at DESC;
 
 -- ===========================
@@ -254,6 +259,11 @@ BEGIN
   SELECT COUNT(*) INTO current_count 
   FROM properties 
   WHERE user_id = user_uuid AND status IN ('active', 'pending', 'draft');
+  
+  -- Admin users: unlimited properties
+  IF user_type_val = 'admin' THEN
+    RETURN TRUE;
+  END IF;
   
   -- Agent: Check subscription limits
   IF user_type_val = 'agent' THEN
@@ -277,7 +287,7 @@ BEGIN
     RETURN current_count < max_allowed;
   END IF;
   
-  -- FSBO and Landlords: unlimited properties (they pay per property)
+  -- FSBO, Landlords, and Admins: unlimited properties (they pay per property or have admin privileges)
   RETURN TRUE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

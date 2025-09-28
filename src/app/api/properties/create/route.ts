@@ -64,6 +64,52 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Check property creation limits for non-admin users
+    const adminConfig: { [email: string]: { level: string } } = {
+      'mrdarrenbuckner@gmail.com': { level: 'super' },
+      'qumar@guyanahomehub.com': { level: 'owner' }
+    };
+
+    // Get user profile to check admin status
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_type, email')
+      .eq('id', userId)
+      .single();
+
+    const isEligibleAdmin = profile && profile.user_type === 'admin' && 
+                           adminConfig[profile.email] && 
+                           ['super', 'owner'].includes(adminConfig[profile.email].level);
+
+    // Only check property limits for non-admin users
+    if (!isEligibleAdmin) {
+      // Check if user can create more properties using database function
+      const { data: canCreate, error: limitCheckError } = await supabase
+        .rpc('can_user_create_property', { user_uuid: userId });
+
+      if (limitCheckError) {
+        console.error('Property limit check error:', limitCheckError);
+        return NextResponse.json({ 
+          error: "Unable to verify property limits. Please contact support." 
+        }, { status: 500 });
+      }
+
+      if (!canCreate) {
+        // Get current property count and user details for better error message
+        const { data: propertyCount } = await supabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .in('status', ['active', 'pending', 'draft']);
+
+        const count = propertyCount || 0;
+        
+        return NextResponse.json({ 
+          error: `Property limit exceeded. You have ${count} properties and your current plan limits have been reached. Please upgrade your subscription or contact support.` 
+        }, { status: 403 });
+      }
+    }
+
     // Enforce image limits (15 for rental, 20 for FSBO)
     const maxImages = isRental ? 15 : 20;
     if (body.images.length > maxImages) {
