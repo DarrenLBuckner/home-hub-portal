@@ -22,10 +22,10 @@ export async function verifyUserRole(userId: string, allowedRoles: string[]) {
   }
 }
 
-export async function requireAuth(request: Request) {
+export async function requireAuth(request: Request, requestBody?: any) {
   try {
     // Get the user ID from the request body (sent by authenticated frontend)
-    const body = await request.clone().json()
+    const body = requestBody || await request.json()
     const userId = body.userId
     
     if (!userId) {

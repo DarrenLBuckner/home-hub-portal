@@ -6,10 +6,13 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 
 export async function POST(req: NextRequest) {
   try {
+    // Read the request body once
+    const body = await req.json();
+    
     let userId: string;
     let userType: string;
     try {
-      const auth = await requireAuth(req);
+      const auth = await requireAuth(req, body);
       userId = auth.userId;
       userType = auth.userType;
       if (!userId) {
@@ -27,8 +30,6 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    
-    const body = await req.json();
     
     // Determine property type based on propertyCategory
     const isRental = body.propertyCategory === "rental";
