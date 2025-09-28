@@ -10,7 +10,7 @@ import CompletionIncentive, { CompletionProgress } from "@/components/Completion
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
 
 const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Townhouse", "Studio", "Room"];
-const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym"];
+const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym", "Gated", "Fruit Trees", "Farmland", "Backup Generator", "Solar", "Electric Gate"];
 
 type PropertyForm = {
   title: string;
@@ -156,8 +156,8 @@ export default function CreateLandlordProperty() {
     setSuccess(false);
     setIsSubmitting(true);
 
-    // Validate required fields (location and squareFootage now optional)
-    const required: (keyof PropertyForm)[] = ["title", "description", "price", "propertyType", "bedrooms", "bathrooms", "attestation"];
+    // Validate required fields (squareFootage optional, location required for verification)
+    const required: (keyof PropertyForm)[] = ["title", "description", "price", "propertyType", "bedrooms", "bathrooms", "location", "attestation"];
     for (const field of required) {
       if (!form[field]) {
         setError(`Missing field: ${field}`);
@@ -313,14 +313,20 @@ export default function CreateLandlordProperty() {
           </div>
         </div>
         
-        <input 
-          name="location" 
-          type="text" 
-          placeholder="Specific address or area (Optional - for privacy)" 
-          value={form.location} 
-          onChange={handleChange} 
-          className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
-        />
+        <div className="space-y-2">
+          <input 
+            name="location" 
+            type="text" 
+            placeholder="Property address or specific location" 
+            value={form.location} 
+            onChange={handleChange} 
+            required
+            className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
+          />
+          <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded border-l-4 border-blue-400">
+            <span className="font-medium text-blue-800">🔒 Privacy Protected:</span> Address is required for property verification only. It will never be shown to renters until you approve them.
+          </div>
+        </div>
         
         <select 
           name="propertyType" 

@@ -209,7 +209,7 @@ export default function CreatePropertyPage() {
             userType="agent"
           />
           
-          <input name="amenities" type="text" placeholder="Amenities (comma separated) - Pool, Gym, Garden, etc." value={form.amenities} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <input name="amenities" type="text" placeholder="Amenities (comma separated) - Pool, Gym, Garden, Gated, Solar, Electric Gate, etc." value={form.amenities} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
           <CompletionIncentive 
             fieldName="amenities"
             fieldType="amenities" 

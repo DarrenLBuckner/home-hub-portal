@@ -41,6 +41,7 @@ export default function CreateFSBOProperty() {
     region: '',
     city: '',
     neighborhood: '',
+    address: '',
     
     // Contact
     owner_email: '',
@@ -106,6 +107,10 @@ export default function CreateFSBOProperty() {
           setError('City is required');
           return false;
         }
+        if (!formData.address || !formData.address.trim()) {
+          setError('Property address is required for verification');
+          return false;
+        }
         break;
       case 5:
         if (!formData.owner_email.trim() || !formData.owner_email.includes('@')) {
@@ -157,6 +162,7 @@ export default function CreateFSBOProperty() {
         region: formData.region || '',
         city: formData.city || '',
         neighborhood: formData.neighborhood || null,
+        address: formData.address || '',
         owner_email: formData.owner_email,
         owner_whatsapp: formData.owner_whatsapp || '',
         user_id: user.id,

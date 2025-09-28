@@ -33,14 +33,14 @@ export async function POST(req: NextRequest) {
       // Rental property validation - uses different field names
       required = [
         "title", "description", "price", "propertyType", 
-        "bedrooms", "bathrooms", 
+        "bedrooms", "bathrooms", "location",
         "images"
       ];
     } else {
-      // FSBO sale property validation
+      // FSBO sale property validation  
       required = [
         "title", "description", "price", "property_type", 
-        "bedrooms", "bathrooms", 
+        "bedrooms", "bathrooms", "region", "city", "address",
         "owner_email", "owner_whatsapp",
         "images"
       ];

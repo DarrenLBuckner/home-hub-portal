@@ -8,7 +8,7 @@ import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 
 const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Townhouse", "Studio", "Room"];
-const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym"];
+const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym", "Gated", "Fruit Trees", "Farmland", "Backup Generator", "Solar", "Electric Gate"];
 
 type PropertyForm = {
   title: string;

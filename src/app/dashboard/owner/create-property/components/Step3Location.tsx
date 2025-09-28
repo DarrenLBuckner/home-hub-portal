@@ -56,8 +56,24 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
         selectedRegion={selectedRegion}
         onLocationChange={handleLocationChange}
         onCurrencyChange={handleCurrencyChange}
-        required={true}
       />
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Property Address <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={formData.address || ''}
+          onChange={(e) => handleChange('address', e.target.value)}
+          placeholder="Full property address"
+          required
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+        <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded border-l-4 border-blue-400 mt-2">
+          <span className="font-medium text-blue-800">🔒 Privacy Protected:</span> Address is required for property verification only. It will never be shown to buyers until you approve them.
+        </div>
+      </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -71,7 +87,7 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <p className="text-sm text-gray-500 mt-1">
-          Optional: Add specific street, housing scheme, or neighborhood details
+          Optional: Add specific street, housing scheme, or neighborhood details for public display
         </p>
       </div>
 

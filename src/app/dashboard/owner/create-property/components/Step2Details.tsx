@@ -23,7 +23,8 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
   const commonAmenities = [
     'Air Conditioning', 'Parking', 'Swimming Pool', 'Garden', 'Security System',
     'Furnished', 'Balcony', 'Walk-in Closet', 'Laundry Room', 'Fireplace',
-    'Solar Panels', 'Generator', 'Water Tank', 'Internet/WiFi Ready'
+    'Solar Panels', 'Generator', 'Water Tank', 'Internet/WiFi Ready', 'Gated',
+    'Fruit Trees', 'Farmland', 'Backup Generator', 'Solar', 'Electric Gate'
   ];
 
   return (

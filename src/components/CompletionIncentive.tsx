@@ -15,7 +15,7 @@ const COMPLETION_BENEFITS = {
   address: {
     impact: "85%",
     benefit: "Properties with specific locations get 85% more inquiries",
-    privacy: "You can use general area (e.g., 'Near Stabroek Market') to protect exact address"
+    privacy: "Required for verification only - never shown to customers until you approve them"
   },
   squareFootage: {
     impact: "73%",
