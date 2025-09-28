@@ -24,20 +24,7 @@ export async function verifyUserRole(userId: string, allowedRoles: string[]) {
 
 export async function requireAuth(request: Request) {
   try {
-    // For now, we'll use a simpler approach that works with the current setup
-    // In the future, this should be properly implemented with JWT verification
-    
-    // Get the Authorization header
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new Error('No valid authorization header')
-    }
-    
-    // Extract the token (in a real implementation, you'd verify this JWT)
-    const token = authHeader.substring(7)
-    
-    // For now, we'll need to get the user ID from the request body
-    // This is not ideal but works for the current implementation
+    // Get the user ID from the request body (sent by authenticated frontend)
     const body = await request.clone().json()
     const userId = body.userId
     
@@ -45,7 +32,19 @@ export async function requireAuth(request: Request) {
       throw new Error('No user ID provided')
     }
     
-    return { userId }
+    // Verify the user exists in our database
+    const supabase = createAdminClient()
+    const { data: profile, error } = await supabase
+      .from('profiles')
+      .select('id, user_type')
+      .eq('id', userId)
+      .single()
+    
+    if (error || !profile) {
+      throw new Error('User not found or invalid')
+    }
+    
+    return { userId, userType: (profile as any).user_type }
   } catch (err) {
     throw new Error('Authentication failed')
   }
