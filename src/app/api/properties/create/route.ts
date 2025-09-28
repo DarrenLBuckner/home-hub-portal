@@ -7,11 +7,22 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env
 export async function POST(req: NextRequest) {
   try {
     let userId: string;
+    let userType: string;
     try {
       const auth = await requireAuth(req);
       userId = auth.userId;
+      userType = auth.userType;
       if (!userId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
+      
+      // Validate that user has permission to create properties
+      const allowedUserTypes = ['admin', 'landlord', 'agent', 'fsbo'];
+      if (!allowedUserTypes.includes(userType)) {
+        return NextResponse.json({ 
+          error: "Insufficient privileges", 
+          message: "Only admin, landlord, agent, or FSBO users can create properties"
+        }, { status: 403 });
       }
     } catch (err) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
