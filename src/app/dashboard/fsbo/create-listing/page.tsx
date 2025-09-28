@@ -170,12 +170,20 @@ export default function CreateFSBOListing() {
       return;
     }
 
-    // Prepare images for upload
-    const imagesForUpload = form.images.map((file: File) => ({
-      name: file.name,
-      type: file.type,
-      data: file,
-    }));
+    // Prepare images for upload - convert File objects to base64
+    const imagesForUpload = await Promise.all(
+      form.images.map(async (file: File) => {
+        return new Promise<{name: string, type: string, data: string}>((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve({
+            name: file.name,
+            type: file.type,
+            data: reader.result as string, // Already in data: URL format
+          });
+          reader.readAsDataURL(file);
+        });
+      })
+    );
 
     // Store property in DB via API
     try {
