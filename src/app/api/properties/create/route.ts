@@ -78,9 +78,29 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < body.images.length; i++) {
       const file = body.images[i];
       try {
-        // Convert file data if it's base64
-        const fileBuffer = file.data instanceof ArrayBuffer ? file.data : 
-          Buffer.from(file.data.split(',')[1], 'base64');
+        console.log(`📸 Processing image ${i + 1}:`, {
+          name: file.name,
+          type: file.type,
+          hasData: !!file.data,
+          dataType: typeof file.data
+        });
+
+        // Convert file data - handle different formats
+        let fileBuffer: Buffer;
+        if (file.data instanceof ArrayBuffer) {
+          fileBuffer = Buffer.from(file.data);
+        } else if (typeof file.data === 'string') {
+          // Handle base64 data URL (data:image/jpeg;base64,...)
+          const base64Data = file.data.includes(',') ? file.data.split(',')[1] : file.data;
+          fileBuffer = Buffer.from(base64Data, 'base64');
+        } else {
+          throw new Error(`Unsupported file data format: ${typeof file.data}`);
+        }
+
+        console.log(`📁 File buffer created:`, {
+          size: fileBuffer.length,
+          fileName: file.name
+        });
         
         const fileName = `${userId}/${Date.now()}-${i}-${file.name}`;
         const { data, error } = await supabase.storage
@@ -89,18 +109,38 @@ export async function POST(req: NextRequest) {
             contentType: file.type,
             upsert: false,
           });
+
+        if (error) {
+          console.error(`🚨 Storage upload error for ${file.name}:`, error);
+          throw error;
+        }
           
-        if (error || !data?.path) throw error;
+        if (!data?.path) {
+          throw new Error("No file path returned from storage");
+        }
+
+        console.log(`✅ File uploaded successfully:`, data.path);
         
         const { data: urlData } = supabase.storage
           .from("property-images")
           .getPublicUrl(data.path);
           
-        if (!urlData?.publicUrl) throw new Error("Failed to get public URL");
+        if (!urlData?.publicUrl) {
+          throw new Error("Failed to get public URL");
+        }
+
+        console.log(`🔗 Public URL generated:`, urlData.publicUrl);
         imageUrls.push(urlData.publicUrl);
       } catch (err) {
-        console.error("Image upload error:", err);
-        return NextResponse.json({ error: `Image upload failed for file ${i + 1}` }, { status: 500 });
+        console.error(`❌ Image upload error for file ${i + 1} (${file.name}):`, err);
+        return NextResponse.json({ 
+          error: `Image upload failed for file ${i + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          fileDetails: {
+            name: file.name,
+            type: file.type,
+            size: file.data ? (typeof file.data === 'string' ? file.data.length : file.data.byteLength || 'unknown') : 'no data'
+          }
+        }, { status: 500 });
       }
     }
 
