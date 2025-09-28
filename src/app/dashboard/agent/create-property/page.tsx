@@ -1,11 +1,13 @@
 
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
+import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
+import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
 
 
 export default function CreatePropertyPage() {
@@ -38,6 +40,15 @@ export default function CreatePropertyPage() {
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
+
+  // Calculate completion score in real-time
+  const completionAnalysis = calculateCompletionScore({
+    ...form,
+    images,
+    amenities: form.amenities ? form.amenities.split(',').filter(a => a.trim()) : []
+  });
+
+  const userMotivation = getUserMotivation('agent');
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -134,6 +145,14 @@ export default function CreatePropertyPage() {
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow p-8 mt-8">
       <h2 className="text-2xl font-bold mb-6 text-gray-900">Create New Property (Agent)</h2>
+      
+      {/* Completion Progress */}
+      <CompletionProgress 
+        completionPercentage={completionAnalysis.percentage}
+        userType="agent"
+        missingFields={completionAnalysis.missingFields}
+      />
+      
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {/* Basic Info */}
         <div>
@@ -157,7 +176,7 @@ export default function CreatePropertyPage() {
           <input name="bathrooms" type="number" placeholder="Bathrooms" value={form.bathrooms} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
           {/* House Size */}
           <div className="flex gap-2 mb-3">
-            <input name="house_size_value" type="number" placeholder="House Size" value={form.house_size_value} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-1/2 text-gray-900 bg-white placeholder-gray-600 text-base" />
+            <input name="house_size_value" type="number" placeholder="House Size (Optional - Privacy Friendly)" value={form.house_size_value} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-1/2 text-gray-900 bg-white placeholder-gray-600 text-base" />
             <select name="house_size_unit" value={form.house_size_unit} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-1/2 text-gray-900 bg-white text-base">
               <option value="sq ft">Sq Ft</option>
               <option value="sq m">Sq M</option>
@@ -165,6 +184,12 @@ export default function CreatePropertyPage() {
               <option value="hectares">Hectares</option>
             </select>
           </div>
+          <CompletionIncentive 
+            fieldName="house_size_value"
+            fieldType="squareFootage" 
+            isCompleted={!!form.house_size_value}
+            userType="agent"
+          />
           {/* Land Size */}
           <div className="flex gap-2 mb-3">
             <input name="land_size_value" type="number" placeholder="Land Size" value={form.land_size_value} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-1/2 text-gray-900 bg-white placeholder-gray-600 text-base" />
@@ -176,8 +201,21 @@ export default function CreatePropertyPage() {
             </select>
           </div>
           {/* Location field moved to Basic Info as dropdown */}
-          <input name="year_built" type="number" placeholder="Year Built" value={form.year_built} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
-          <input name="amenities" type="text" placeholder="Amenities (comma separated)" value={form.amenities} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <input name="year_built" type="number" placeholder="Year Built (Optional - Builds Buyer Confidence)" value={form.year_built} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <CompletionIncentive 
+            fieldName="year_built"
+            fieldType="yearBuilt" 
+            isCompleted={!!form.year_built}
+            userType="agent"
+          />
+          
+          <input name="amenities" type="text" placeholder="Amenities (comma separated) - Pool, Gym, Garden, etc." value={form.amenities} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <CompletionIncentive 
+            fieldName="amenities"
+            fieldType="amenities" 
+            isCompleted={!!form.amenities && form.amenities.length > 0}
+            userType="agent"
+          />
           <input name="features" type="text" placeholder="Features (comma separated)" value={form.features} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
         </div>
         {/* Location Details */}

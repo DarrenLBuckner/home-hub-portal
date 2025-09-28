@@ -6,6 +6,8 @@ import { createClient } from "@/supabase";
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
+import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
+import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
 
 const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Townhouse", "Studio", "Room"];
 const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym"];
@@ -100,6 +102,20 @@ export default function CreateLandlordProperty() {
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
 
   const imageLimit = 15; // Landlords get more image uploads
+
+  // Calculate completion score in real-time
+  const completionAnalysis = calculateCompletionScore({
+    title: form.title,
+    description: form.description,
+    price: form.price,
+    property_type: form.propertyType,
+    house_size_value: form.squareFootage,
+    location: form.location,
+    images: form.images,
+    amenities: form.features
+  });
+
+  const userMotivation = getUserMotivation('landlord');
 
   // Handle location and currency changes
   const handleLocationChange = (field: 'country' | 'region', value: string) => {
@@ -227,6 +243,13 @@ export default function CreateLandlordProperty() {
       </div>
 
       <h1 className="text-3xl font-bold text-gray-900 mb-6">🏠 Create Rental Property Listing</h1>
+      
+      {/* Completion Progress */}
+      <CompletionProgress 
+        completionPercentage={completionAnalysis.percentage}
+        userType="landlord"
+        missingFields={completionAnalysis.missingFields}
+      />
       
       <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
         <h2 className="font-semibold text-green-800 mb-2">Landlord Listing</h2>

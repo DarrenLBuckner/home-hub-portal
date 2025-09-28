@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/supabase';
+import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
+import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
 
 // Step components
 import Step1BasicInfo from './components/Step1BasicInfo';
@@ -50,7 +52,22 @@ export default function CreateFSBOProperty() {
     status: 'pending'
   });
   
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState<File[]>([]);
+
+  // Calculate completion score in real-time
+  const completionAnalysis = calculateCompletionScore({
+    title: formData.title,
+    description: formData.description,
+    price: formData.price.toString(),
+    property_type: formData.property_type,
+    house_size_value: formData.house_size_value.toString(),
+    region: formData.region,
+    city: formData.city,
+    images: images,
+    amenities: formData.amenities || []
+  });
+
+  const userMotivation = getUserMotivation('fsbo');
 
   const validateCurrentStep = () => {
     setError('');
@@ -253,8 +270,8 @@ export default function CreateFSBOProperty() {
       
       // Remove any undefined values
       Object.keys(propertyData).forEach(key => {
-        if (propertyData[key] === undefined) {
-          delete propertyData[key];
+        if ((propertyData as any)[key] === undefined) {
+          delete (propertyData as any)[key];
         }
       });
       
@@ -362,7 +379,12 @@ export default function CreateFSBOProperty() {
     <div className="max-w-4xl mx-auto p-6">
       <h1 className="text-3xl font-bold mb-8">Create Your FSBO Listing</h1>
       
-      {/* Debug component - removed */}
+      {/* Completion Progress */}
+      <CompletionProgress 
+        completionPercentage={completionAnalysis.percentage}
+        userType="fsbo"
+        missingFields={completionAnalysis.missingFields}
+      />
       
       {/* Progress bar */}
       <div className="mb-8">
