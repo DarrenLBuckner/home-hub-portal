@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useId } from 'react';
 
 interface EnhancedImageUploadProps {
   images: File[];
@@ -23,6 +23,7 @@ export default function EnhancedImageUpload({
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputId = useId();
 
   // Generate preview URLs when images change
   useState(() => {
@@ -139,7 +140,7 @@ export default function EnhancedImageUpload({
       {/* Enhanced Upload Area */}
       {canUploadMore && (
         <div
-          className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 cursor-pointer group ${
+          className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 group ${
             dragActive 
               ? 'border-blue-500 bg-blue-50 scale-105' 
               : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
@@ -148,11 +149,6 @@ export default function EnhancedImageUpload({
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            inputRef.current?.click();
-          }}
         >
           <input
             ref={inputRef}
@@ -160,7 +156,7 @@ export default function EnhancedImageUpload({
             multiple
             accept={acceptedTypes.join(',')}
             onChange={handleInputChange}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            className="sr-only"
           />
           
           <div className="space-y-4">
@@ -200,24 +196,26 @@ export default function EnhancedImageUpload({
               </p>
             </div>
             
-            {/* Upload Button */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                // Use setTimeout to ensure proper event handling
-                setTimeout(() => {
-                  inputRef.current?.click();
-                }, 10);
-              }}
-              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            {/* Mobile-Optimized Upload Button */}
+            <label
+              htmlFor={fileInputId}
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer active:scale-95 touch-manipulation"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
               Choose Files
-            </button>
+            </label>
+            
+            {/* Hidden file input for mobile compatibility */}
+            <input
+              id={fileInputId}
+              type="file"
+              multiple
+              accept={acceptedTypes.join(',')}
+              onChange={handleInputChange}
+              className="sr-only"
+            />
           </div>
 
           {/* Global South Optimization Note */}
@@ -306,18 +304,11 @@ export default function EnhancedImageUpload({
             ))}
           </div>
 
-          {/* Additional Upload Button */}
+          {/* Additional Upload Button - Mobile Optimized */}
           {canUploadMore && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setTimeout(() => {
-                  inputRef.current?.click();
-                }, 10);
-              }}
-              className="w-full border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-gray-50 transition-colors group"
+            <label
+              htmlFor={`${fileInputId}-more`}
+              className="w-full border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-gray-50 transition-colors group cursor-pointer active:scale-95 touch-manipulation"
             >
               <div className="flex items-center justify-center space-x-2 text-gray-600 group-hover:text-blue-600">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,7 +316,17 @@ export default function EnhancedImageUpload({
                 </svg>
                 <span className="font-medium">Add More Photos ({maxImages - images.length} remaining)</span>
               </div>
-            </button>
+              
+              {/* Hidden file input for "Add More" */}
+              <input
+                id={`${fileInputId}-more`}
+                type="file"
+                multiple
+                accept={acceptedTypes.join(',')}
+                onChange={handleInputChange}
+                className="sr-only"
+              />
+            </label>
           )}
         </div>
       )}
