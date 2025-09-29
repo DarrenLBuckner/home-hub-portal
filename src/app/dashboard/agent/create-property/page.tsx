@@ -83,63 +83,105 @@ export default function CreatePropertyPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-    const supabase = createClientComponentClient();
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user?.id) {
-      setError("User not authenticated.");
+
+    // Validate required fields
+    if (!form.property_type) {
+      setError('Please select a Property Type.');
       setLoading(false);
       return;
     }
-    // Insert property
-    const { data: propertyData, error: dbError } = await supabase.from("properties").insert({
-      title: form.title,
-      description: form.description,
-      price: Number(form.price),
-      status: form.status,
-      property_type: form.property_type,
-      listing_type: form.listing_type,
-      bedrooms: Number(form.bedrooms),
-      bathrooms: Number(form.bathrooms),
-      house_size_value: form.house_size_value ? Number(form.house_size_value) : null,
-      house_size_unit: form.house_size_unit,
-      land_size_value: form.land_size_value ? Number(form.land_size_value) : null,
-      land_size_unit: form.land_size_unit,
-      location: form.location,
-      year_built: form.year_built ? Number(form.year_built) : null,
-      amenities: form.amenities,
-      features: form.features,
-      region: form.region,
-      city: form.city,
-      neighborhood: form.neighborhood,
-      country: selectedCountry,
-      currency: currencyCode,
-      user_id: userData.user.id,
-    }).select();
-    if (dbError || !propertyData || !propertyData[0]?.id) {
-      setError(dbError?.message || "Failed to create property.");
+    
+    if (!form.listing_type) {
+      setError('Please select a Listing Type (For Sale or For Rent).');
       setLoading(false);
       return;
     }
-    // Upload images to Supabase Storage and save URLs in property_media
-    const propertyId = propertyData[0].id;
-    for (let i = 0; i < images.length; i++) {
-      const file = images[i];
-      const { data: uploadData, error: uploadError } = await supabase.storage.from("property-images").upload(`${propertyId}/${file.name}`, file);
-      if (uploadError) {
-        setError(uploadError.message);
+
+    try {
+      const supabase = createClientComponentClient();
+      
+      // First, get the current session
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) {
+        console.error('Session error:', sessionError);
+        setError("Authentication error. Please refresh the page and try again.");
         setLoading(false);
         return;
       }
-      const url = supabase.storage.from("property-images").getPublicUrl(`${propertyId}/${file.name}`).data.publicUrl;
-      await supabase.from("property_media").insert({
-        property_id: propertyId,
-        url,
-        type: "image",
-        is_primary: i === 0,
-        position: i,
-      });
+
+      if (!sessionData?.session?.user?.id) {
+        console.error('No active session found');
+        setError("Please log in again to create properties.");
+        setLoading(false);
+        // Redirect to login
+        router.push('/login');
+        return;
+      }
+
+      const userId = sessionData.session.user.id;
+      console.log('✅ User authenticated:', userId);
+
+      // Insert property
+      const { data: propertyData, error: dbError } = await supabase.from("properties").insert({
+        title: form.title,
+        description: form.description,
+        price: Number(form.price),
+        status: form.status,
+        property_type: form.property_type,
+        listing_type: form.listing_type,
+        bedrooms: Number(form.bedrooms),
+        bathrooms: Number(form.bathrooms),
+        house_size_value: form.house_size_value ? Number(form.house_size_value) : null,
+        house_size_unit: form.house_size_unit,
+        land_size_value: form.land_size_value ? Number(form.land_size_value) : null,
+        land_size_unit: form.land_size_unit,
+        location: form.location,
+        year_built: form.year_built ? Number(form.year_built) : null,
+        amenities: form.amenities,
+        features: form.features,
+        region: form.region,
+        city: form.city,
+        neighborhood: form.neighborhood,
+        country: selectedCountry,
+        currency: currencyCode,
+        user_id: userId,
+      }).select();
+      
+      if (dbError || !propertyData || !propertyData[0]?.id) {
+        setError(dbError?.message || "Failed to create property.");
+        setLoading(false);
+        return;
+      }
+      
+      // Upload images to Supabase Storage and save URLs in property_media
+      const propertyId = propertyData[0].id;
+      for (let i = 0; i < images.length; i++) {
+        const file = images[i];
+        const { data: uploadData, error: uploadError } = await supabase.storage.from("property-images").upload(`${propertyId}/${file.name}`, file);
+        if (uploadError) {
+          setError(uploadError.message);
+          setLoading(false);
+          return;
+        }
+        const url = supabase.storage.from("property-images").getPublicUrl(`${propertyId}/${file.name}`).data.publicUrl;
+        await supabase.from("property_media").insert({
+          property_id: propertyId,
+          url,
+          type: "image",
+          is_primary: i === 0,
+          position: i,
+        });
+      }
+      
+      console.log('✅ Property created successfully:', propertyId);
+      router.push("/dashboard/agent/properties");
+      
+    } catch (authError) {
+      console.error('❌ Property creation failed:', authError);
+      setError("Failed to create property. Please try again.");
+      setLoading(false);
     }
-    router.push("/dashboard/agent/properties");
   };
 
   return (
@@ -170,8 +212,41 @@ export default function CreatePropertyPage() {
         {/* Property Details */}
         <div>
           <h3 className="text-lg font-bold mb-4 text-gray-900 border-b border-gray-200 pb-2">🏠 Property Details</h3>
-          <input name="property_type" type="text" placeholder="Property Type" value={form.property_type} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
-          <input name="listing_type" type="text" placeholder="Listing Type (Sale/Rent)" value={form.listing_type} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          {/* Property Type Dropdown */}
+          <div className="mb-3">
+            <select 
+              name="property_type" 
+              value={form.property_type || ''} 
+              onChange={handleChange} 
+              className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full text-gray-900 bg-white text-base"
+              required
+            >
+              <option value="">Select Property Type...</option>
+              <option value="House">🏠 House</option>
+              <option value="Apartment">🏢 Apartment</option>
+              <option value="Condo">🏘️ Condo</option>
+              <option value="Land">🌿 Land</option>
+              <option value="Commercial">🏢 Commercial</option>
+              <option value="Townhouse">🏘️ Townhouse</option>
+              <option value="Villa">🏛️ Villa</option>
+              <option value="Studio">🏠 Studio</option>
+            </select>
+          </div>
+          
+          {/* Listing Type Dropdown */}
+          <div className="mb-3">
+            <select 
+              name="listing_type" 
+              value={form.listing_type || ''} 
+              onChange={handleChange} 
+              className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full text-gray-900 bg-white text-base"
+              required
+            >
+              <option value="">Select Listing Type...</option>
+              <option value="sale">🏠 For Sale</option>
+              <option value="rent">🏡 For Rent</option>
+            </select>
+          </div>
           <input name="bedrooms" type="number" placeholder="Bedrooms" value={form.bedrooms} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
           <input name="bathrooms" type="number" placeholder="Bathrooms" value={form.bathrooms} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
           {/* House Size */}
@@ -218,12 +293,12 @@ export default function CreatePropertyPage() {
           />
           <input name="features" type="text" placeholder="Features (comma separated)" value={form.features} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
         </div>
-        {/* Location Details */}
+        {/* Additional Location Details */}
         <div>
-          <h3 className="text-lg font-bold mb-4 text-gray-900 border-b border-gray-200 pb-2">📍 Location Details</h3>
-          <input name="region" type="text" placeholder="Region" value={form.region} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
-          <input name="city" type="text" placeholder="City" value={form.city} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
-          <input name="neighborhood" type="text" placeholder="Neighborhood" value={form.neighborhood} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <h3 className="text-lg font-bold mb-4 text-gray-900 border-b border-gray-200 pb-2">📍 Additional Location Details</h3>
+          <p className="text-sm text-gray-600 mb-3">Country and region are selected above. Add specific location details below:</p>
+          <input name="city" type="text" placeholder="Specific Area/District (e.g., Kitty, Campbellville, New Amsterdam)" value={form.city} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <input name="neighborhood" type="text" placeholder="Neighborhood/Street (Optional - e.g., Main Street, Sheriff Street)" value={form.neighborhood} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
         </div>
   {/* Agent Details (hidden for agent form) */}
         {/* Status */}
@@ -247,7 +322,7 @@ export default function CreatePropertyPage() {
         </div>
         {/* Error and submit */}
         {error && <div className="text-red-500 text-sm">{error}</div>}
-        <button type="submit" disabled={loading} className="bg-primary text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-primary-dark transition">
+        <button type="submit" disabled={loading} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition">
           {loading ? "Creating..." : "Create Property"}
         </button>
       </form>

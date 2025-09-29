@@ -100,6 +100,8 @@ export default function EnhancedImageUpload({
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       handleFiles(e.target.files);
+      // Reset the input value to allow selecting the same file again if needed
+      e.target.value = '';
     }
   }, [handleFiles]);
 
@@ -146,7 +148,11 @@ export default function EnhancedImageUpload({
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
-          onClick={() => inputRef.current?.click()}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            inputRef.current?.click();
+          }}
         >
           <input
             ref={inputRef}
@@ -198,8 +204,12 @@ export default function EnhancedImageUpload({
             <button
               type="button"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                inputRef.current?.click();
+                // Use setTimeout to ensure proper event handling
+                setTimeout(() => {
+                  inputRef.current?.click();
+                }, 10);
               }}
               className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 hover:shadow-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
             >
@@ -299,7 +309,14 @@ export default function EnhancedImageUpload({
           {/* Additional Upload Button */}
           {canUploadMore && (
             <button
-              onClick={() => inputRef.current?.click()}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setTimeout(() => {
+                  inputRef.current?.click();
+                }, 10);
+              }}
               className="w-full border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-blue-400 hover:bg-gray-50 transition-colors group"
             >
               <div className="flex items-center justify-center space-x-2 text-gray-600 group-hover:text-blue-600">
