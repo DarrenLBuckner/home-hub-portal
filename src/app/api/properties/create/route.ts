@@ -31,17 +31,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
-    // Determine property type based on propertyCategory
+    // Determine property type based on propertyCategory and userType
     const isRental = body.propertyCategory === "rental";
     const isSale = body.propertyCategory === "sale";
+    const isAgent = userType === "agent";
     
     if (!isRental && !isSale) {
       return NextResponse.json({ error: "Invalid propertyCategory. Must be 'rental' or 'sale'" }, { status: 400 });
     }
     
-    // Validate required fields - different for rental vs sale
+    // Validate required fields - different for rental vs sale vs agent
     let required: string[];
-    if (isRental) {
+    if (isAgent) {
+      // Agent property validation - uses agent form field names
+      required = [
+        "title", "description", "price", "property_type", 
+        "listing_type", "bedrooms", "bathrooms", "region",
+        "images"
+      ];
+    } else if (isRental) {
       // Rental property validation - uses different field names
       required = [
         "title", "description", "price", "propertyType", 
@@ -204,10 +212,47 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Prepare property data for database - different structure for rental vs sale
+    // Prepare property data for database - different structure for rental vs sale vs agent
     let propertyData: any;
     
-    if (isRental) {
+    if (isAgent) {
+      // Agent property data structure - handles both sale and rental
+      propertyData = {
+        // Basic Info
+        title: body.title,
+        description: body.description,
+        price: parseInt(body.price),
+        property_type: body.property_type,
+        listing_type: body.listing_type, // 'sale' or 'rent'
+        
+        // Property Details
+        bedrooms: parseInt(body.bedrooms) || null,
+        bathrooms: parseInt(body.bathrooms) || null,
+        house_size_value: body.house_size_value ? parseInt(body.house_size_value) : null,
+        house_size_unit: body.house_size_unit || 'sq ft',
+        land_size_value: body.land_size_value ? parseInt(body.land_size_value) : null,
+        land_size_unit: body.land_size_unit || 'sq ft',
+        year_built: body.year_built ? parseInt(body.year_built) : null,
+        amenities: body.amenities || null,
+        features: body.features || null,
+        
+        // Location
+        location: body.location || body.region,
+        country: body.country || 'GY',
+        region: body.region,
+        city: body.city,
+        neighborhood: body.neighborhood,
+        
+        // Agent-specific fields
+        currency: body.currency || 'GYD',
+        listed_by_type: 'agent',
+        
+        // System fields
+        user_id: userId,
+        status: body.status || 'draft',
+        created_at: new Date().toISOString(),
+      };
+    } else if (isRental) {
       // Rental property data structure
       propertyData = {
         // Basic Info

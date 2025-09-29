@@ -97,24 +97,22 @@ export default function CreatePropertyPage() {
       return;
     }
 
+    if (images.length < 1) {
+      setError("Please upload at least one image.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const supabase = createClientComponentClient();
       
-      // First, get the current session
+      // Get current user session
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError) {
+      if (sessionError || !sessionData?.session?.user?.id) {
         console.error('Session error:', sessionError);
-        setError("Authentication error. Please refresh the page and try again.");
+        setError("Authentication error. Please log in again.");
         setLoading(false);
-        return;
-      }
-
-      if (!sessionData?.session?.user?.id) {
-        console.error('No active session found');
-        setError("Please log in again to create properties.");
-        setLoading(false);
-        // Redirect to login
         router.push('/login');
         return;
       }
@@ -122,59 +120,64 @@ export default function CreatePropertyPage() {
       const userId = sessionData.session.user.id;
       console.log('✅ User authenticated:', userId);
 
-      // Insert property
-      const { data: propertyData, error: dbError } = await supabase.from("properties").insert({
-        title: form.title,
-        description: form.description,
-        price: Number(form.price),
-        status: form.status,
-        property_type: form.property_type,
-        listing_type: form.listing_type,
-        bedrooms: Number(form.bedrooms),
-        bathrooms: Number(form.bathrooms),
-        house_size_value: form.house_size_value ? Number(form.house_size_value) : null,
-        house_size_unit: form.house_size_unit,
-        land_size_value: form.land_size_value ? Number(form.land_size_value) : null,
-        land_size_unit: form.land_size_unit,
-        location: form.location,
-        year_built: form.year_built ? Number(form.year_built) : null,
-        amenities: form.amenities,
-        features: form.features,
-        region: form.region,
-        city: form.city,
-        neighborhood: form.neighborhood,
-        country: selectedCountry,
-        currency: currencyCode,
-        user_id: userId,
-      }).select();
-      
-      if (dbError || !propertyData || !propertyData[0]?.id) {
-        setError(dbError?.message || "Failed to create property.");
+      // Prepare images for upload - convert File objects to base64
+      const imagesForUpload = await Promise.all(
+        images.map(async (file: File) => {
+          return new Promise<{name: string, type: string, data: string}>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve({
+              name: file.name,
+              type: file.type,
+              data: reader.result as string, // Already in data: URL format
+            });
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+
+      // Create property using API route for proper server-side authentication
+      const res = await fetch("/api/properties/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          // Map agent form fields to API expected format
+          title: form.title,
+          description: form.description,
+          price: form.price,
+          property_type: form.property_type,
+          listing_type: form.listing_type,
+          bedrooms: form.bedrooms,
+          bathrooms: form.bathrooms,
+          house_size_value: form.house_size_value,
+          house_size_unit: form.house_size_unit,
+          land_size_value: form.land_size_value,
+          land_size_unit: form.land_size_unit,
+          location: form.location || selectedRegion, // Use region as location fallback
+          year_built: form.year_built,
+          amenities: form.amenities,
+          features: form.features,
+          region: form.region || selectedRegion,
+          city: form.city,
+          neighborhood: form.neighborhood,
+          address: form.neighborhood || form.city, // Use neighborhood or city as address
+          status: form.status,
+          country: selectedCountry,
+          currency: currencyCode,
+          images: imagesForUpload,
+          userId,
+          propertyCategory: form.listing_type === 'sale' ? 'sale' : 'rental', // Map to API format
+        }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) {
+        setError(result.error || "Failed to create property. Please try again.");
         setLoading(false);
         return;
       }
-      
-      // Upload images to Supabase Storage and save URLs in property_media
-      const propertyId = propertyData[0].id;
-      for (let i = 0; i < images.length; i++) {
-        const file = images[i];
-        const { data: uploadData, error: uploadError } = await supabase.storage.from("property-images").upload(`${propertyId}/${file.name}`, file);
-        if (uploadError) {
-          setError(uploadError.message);
-          setLoading(false);
-          return;
-        }
-        const url = supabase.storage.from("property-images").getPublicUrl(`${propertyId}/${file.name}`).data.publicUrl;
-        await supabase.from("property_media").insert({
-          property_id: propertyId,
-          url,
-          type: "image",
-          is_primary: i === 0,
-          position: i,
-        });
-      }
-      
-      console.log('✅ Property created successfully:', propertyId);
+
+      console.log('✅ Property created successfully via API');
+      // Success - redirect to agent properties dashboard
       router.push("/dashboard/agent/properties");
       
     } catch (authError) {
