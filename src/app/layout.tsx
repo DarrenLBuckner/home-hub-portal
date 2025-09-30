@@ -10,7 +10,11 @@ export const metadata: Metadata = {
   description: "Portal Home Hub - Real estate portal for agents, landlords, and FSBO. Find and list properties in Guyana and beyond.",
   keywords: "real estate, property, homes, agents, landlords, FSBO, Guyana, Portal Home Hub",
   authors: [{ name: "Portal Home Hub" }],
-  viewport: "width=device-width, initial-scale=1",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

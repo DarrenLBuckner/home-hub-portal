@@ -1,34 +1,81 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { requireAuth } from "../../../../lib/auth";
+import { supabaseServer } from "@/lib/supabase/server";
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+export const runtime = 'nodejs'; // avoid Edge runtime issues
 
 export async function POST(req: NextRequest) {
   try {
+    // Use the singleton server client instead of creating a new one
+    const supabase = supabaseServer();
+    
+    // Authenticate the user
+    const {
+      data: { user },
+      error: userErr,
+    } = await supabase.auth.getUser();
+
+    if (userErr) {
+      console.error('Auth error:', userErr.message);
+      return NextResponse.json({ error: userErr.message }, { status: 401 });
+    }
+    
+    if (!user) {
+      console.error('No user found');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    
+    console.log('Authenticated as:', user.email);
+    
+    // Get user profile for permissions
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('user_type, email')
+      .eq('id', user.id)
+      .single();
+      
+    if (profileError || !userProfile) {
+      console.error('Profile error:', profileError);
+      return NextResponse.json({ error: "User profile not found" }, { status: 401 });
+    }
+    
+    const userType = userProfile.user_type;
+    
     // Read the request body once
     const body = await req.json();
     
-    let userId: string;
-    let userType: string;
-    try {
-      const auth = await requireAuth(req, body);
-      userId = auth.userId;
-      userType = auth.userType;
-      if (!userId) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-      
-      // Validate that user has permission to create properties
-      const allowedUserTypes = ['admin', 'landlord', 'agent', 'fsbo'];
-      if (!allowedUserTypes.includes(userType)) {
-        return NextResponse.json({ 
-          error: "Insufficient privileges", 
-          message: "Only admin, landlord, agent, or FSBO users can create properties"
-        }, { status: 403 });
-      }
-    } catch (err) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    // Add this where the request payload is processed
+    const propertyType = body.property_type || body.propertyType;
+    
+    // Add field normalizations for all required fields
+    const normalizedPayload = {
+      ...body,
+      // Normalize property_type/propertyType
+      property_type: body.property_type || body.propertyType || null,
+      // Normalize listing_type/listingType
+      listing_type: body.listing_type || body.listingType || null,
+      // Normalize house_size_value with default
+      house_size_value: body.house_size_value || body.houseSizeValue || 0, // Default if missing
+      // Normalize region/location
+      region: body.region || (body.location ? body.location.region : null),
+      city: body.city || (body.location ? body.location.city : null),
+      // Handle amenities array/string conversion
+      amenities: Array.isArray(body.amenities) ? body.amenities : 
+                (typeof body.amenities === 'string' ? body.amenities.split(',').map((a: string) => a.trim()) : []),
+      // Ensure user_id is set correctly
+      user_id: user.id,
+      // Set default status
+      status: 'pending'
+    };
+    
+    const userId = user.id;
+    
+    // Validate that user has permission to create properties
+    const allowedUserTypes = ['admin', 'landlord', 'agent', 'fsbo'];
+    if (!allowedUserTypes.includes(userType)) {
+      return NextResponse.json({ 
+        error: "Insufficient privileges", 
+        message: "Only admin, landlord, agent, or FSBO users can create properties"
+      }, { status: 403 });
     }
     
     // Determine property type based on propertyCategory and userType
@@ -40,58 +87,120 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid propertyCategory. Must be 'rental' or 'sale'" }, { status: 400 });
     }
     
-    // Validate required fields - different for rental vs sale vs agent
-    let required: string[];
-    if (isAgent) {
-      // Agent property validation - uses agent form field names
-      required = [
-        "title", "description", "price", "property_type", 
-        "listing_type", "bedrooms", "bathrooms", "region",
-        "images"
-      ];
-    } else if (isRental) {
-      // Rental property validation - uses different field names
-      required = [
-        "title", "description", "price", "propertyType", 
-        "bedrooms", "bathrooms", "location",
-        "images"
-      ];
-    } else {
-      // FSBO sale property validation  
-      required = [
-        "title", "description", "price", "property_type", 
-        "bedrooms", "bathrooms", "region", "city", "address",
-        "owner_email", "owner_whatsapp",
-        "images"
+    // Validate required fields for all property types
+    let requiredFields = [
+      "title", "description", "price", "property_type",
+      "listing_type", "bedrooms", "bathrooms", "region", "city"
+    ];
+    
+    // Add user-type specific required fields
+    if (userType === 'fsbo') {
+      requiredFields = [
+        ...requiredFields,
+        "owner_email", "owner_whatsapp"
       ];
     }
     
-    for (const field of required) {
-      if (!body[field]) {
-        return NextResponse.json({ error: `Missing field: ${field}` }, { status: 400 });
-      }
+    // Always require images
+    requiredFields.push("images");
+    
+    // Check required fields using normalized payload
+    const missingFields = requiredFields.filter(field => {
+      return !normalizedPayload[field] && normalizedPayload[field] !== 0;
+    });
+    
+    if (missingFields.length > 0) {
+      return NextResponse.json({
+        error: `Missing required fields: ${missingFields.join(', ')}`,
+      }, { status: 400 });
     }
 
-    // Check property creation limits for non-admin users
+    // Special admin privileges ONLY for super admins and owner admins
     const adminConfig: { [email: string]: { level: string } } = {
       'mrdarrenbuckner@gmail.com': { level: 'super' },
-      'qumar@guyanahomehub.com': { level: 'owner' }
+      'qumar@guyanahomehub.com': { level: 'owner' },
+      'Qumar@guyanahomehub.com': { level: 'owner' } // Handle both cases
     };
 
-    // Get user profile to check admin status
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('user_type, email')
-      .eq('id', userId)
-      .single();
+    // Check if user is a super admin or owner admin
+    console.log('🔍 Admin Check Debug:', {
+      userEmail: userProfile.email,
+      userType: userProfile.user_type,
+      emailInConfig: !!adminConfig[userProfile.email],
+      configLevel: adminConfig[userProfile.email]?.level,
+      adminConfigEmails: Object.keys(adminConfig)
+    });
 
-    const isEligibleAdmin = profile && profile.user_type === 'admin' && 
-                           adminConfig[profile.email] && 
-                           ['super', 'owner'].includes(adminConfig[profile.email].level);
+    // More lenient admin check - check email first, then user_type as fallback
+    const isEligibleAdmin = userProfile && 
+                           adminConfig[userProfile.email] && 
+                           ['super', 'owner'].includes(adminConfig[userProfile.email].level);
 
-    // Only check property limits for non-admin users
-    if (!isEligibleAdmin) {
-      // Check if user can create more properties using database function
+    console.log('🔍 Final Admin Status:', {
+      isEligibleAdmin,
+      email: userProfile.email,
+      userType: userProfile.user_type
+    });
+
+    if (isEligibleAdmin) {
+      // Special limits ONLY for super admins and owner admins  
+      const saleLimit = 20;
+      const rentalLimit = 5;
+      
+      // Count their existing properties
+      const { count: saleCount, error: saleCountError } = await supabase
+        .from('properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('listing_type', 'sale')
+        .in('status', ['active', 'pending', 'draft']);
+        
+      const { count: rentalCount, error: rentalCountError } = await supabase
+        .from('properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('listing_type', 'rent')
+        .in('status', ['active', 'pending', 'draft']);
+
+      if (saleCountError || rentalCountError) {
+        console.error('Admin property count error:', { saleCountError, rentalCountError });
+        return NextResponse.json({ 
+          error: "Unable to verify admin property limits. Please contact support." 
+        }, { status: 500 });
+      }
+      
+      // Check against special admin limits
+      if (normalizedPayload.listing_type === 'sale' && (saleCount || 0) >= saleLimit) {
+        console.error('❌ Admin sale property limit exceeded');
+        return NextResponse.json({ 
+          error: `Sale property limit reached. Admin accounts allow ${saleLimit} sale properties. You currently have ${saleCount || 0}.` 
+        }, { status: 403 });
+      }
+      
+      if (normalizedPayload.listing_type === 'rent' && (rentalCount || 0) >= rentalLimit) {
+        console.error('❌ Admin rental property limit exceeded');
+        return NextResponse.json({ 
+          error: `Rental property limit reached. Admin accounts allow ${rentalLimit} rental properties. You currently have ${rentalCount || 0}.` 
+        }, { status: 403 });
+      }
+
+      console.log('✅ Admin property limits check passed:', {
+        email: userProfile.email,
+        adminLevel: adminConfig[userProfile.email].level,
+        saleCount: saleCount || 0,
+        rentalCount: rentalCount || 0,
+        saleLimit,
+        rentalLimit
+      });
+      
+    } else {
+      // For all other users (agents, landlords, FSBO) - use existing subscription-based system
+      console.log('🔍 Using subscription-based limits for user:', {
+        userType: userProfile.user_type,
+        email: userProfile.email
+      });
+      
+      // Use the existing subscription-based check
       const { data: canCreate, error: limitCheckError } = await supabase
         .rpc('can_user_create_property', { user_uuid: userId });
 
@@ -103,7 +212,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (!canCreate) {
-        // Get current property count and user details for better error message
+        // Get current property count for better error message
         const { data: propertyCount } = await supabase
           .from('properties')
           .select('*', { count: 'exact', head: true })
@@ -112,10 +221,13 @@ export async function POST(req: NextRequest) {
 
         const count = propertyCount || 0;
         
+        console.error('❌ Subscription property limit exceeded');
         return NextResponse.json({ 
-          error: `Property limit exceeded. You have ${count} properties and your current plan limits have been reached. Please upgrade your subscription or contact support.` 
+          error: `Property limit exceeded. You have ${count} properties and your current plan limits have been reached. Please upgrade your subscription or purchase additional properties.` 
         }, { status: 403 });
       }
+
+      console.log('✅ Subscription-based property limits check passed');
     }
 
     // Enforce image limits (15 for rental, 20 for FSBO)
@@ -233,7 +345,7 @@ export async function POST(req: NextRequest) {
         land_size_value: body.land_size_value ? parseInt(body.land_size_value) : null,
         land_size_unit: body.land_size_unit || 'sq ft',
         year_built: body.year_built ? parseInt(body.year_built) : null,
-        amenities: body.amenities || null,
+        amenities: normalizedPayload.amenities || null,
         features: body.features || null,
         
         // Location
@@ -253,13 +365,13 @@ export async function POST(req: NextRequest) {
         created_at: new Date().toISOString(),
       };
     } else if (isRental) {
-      // Rental property data structure
+      // Rental property data structure - handle both agent and landlord forms
       propertyData = {
         // Basic Info
         title: body.title,
         description: body.description,
         price: parseInt(body.price),
-        property_type: body.propertyType, // Note: different field name
+        property_type: body.property_type || body.propertyType, // Handle both field name formats
         
         // Property Details
         bedrooms: parseInt(body.bedrooms),
@@ -303,7 +415,7 @@ export async function POST(req: NextRequest) {
         land_size_value: body.land_size_value ? parseInt(body.land_size_value) : null,
         land_size_unit: body.land_size_unit,
         year_built: body.year_built ? parseInt(body.year_built) : null,
-        amenities: body.amenities || [],
+        amenities: normalizedPayload.amenities || [],
         
         // Step 3 - Location
         region: body.region,
@@ -326,6 +438,23 @@ export async function POST(req: NextRequest) {
       };
     }
 
+    // Log the data being inserted for debugging
+    console.log('🔧 Inserting property data:', {
+      userType,
+      isAgent,
+      isRental,
+      isSale,
+      propertyData: {
+        ...propertyData,
+        // Don't log sensitive data, just structure
+        title: propertyData.title,
+        property_type: propertyData.property_type,
+        listing_type: propertyData.listing_type,
+        status: propertyData.status,
+        user_id: propertyData.user_id
+      }
+    });
+
     // Insert property into properties table
     const { data: propertyResult, error: dbError } = await supabase
       .from("properties")
@@ -334,8 +463,16 @@ export async function POST(req: NextRequest) {
       .single();
       
     if (dbError) {
-      console.error("Database error:", dbError);
-      return NextResponse.json({ error: dbError.message || "Database error" }, { status: 500 });
+      console.error('Property creation error details:', dbError);
+      console.error('Error message:', dbError.message);
+      console.error('Payload:', normalizedPayload);
+      console.error("💥 Database error:", dbError);
+      console.error("💥 Failed property data:", propertyData);
+      return NextResponse.json({ 
+        error: `Database error: ${dbError.message}`,
+        details: dbError.details || 'No additional details',
+        code: dbError.code || 'Unknown error code'
+      }, { status: 500 });
     }
 
     // Insert images into property_media table
@@ -347,13 +484,22 @@ export async function POST(req: NextRequest) {
       display_order: index,
     }));
 
+    console.log('📸 Inserting property media:', {
+      propertyId: propertyResult.id,
+      imageCount: imageUrls.length,
+      mediaInserts: mediaInserts.length
+    });
+
     const { error: mediaError } = await supabase
       .from("property_media")
       .insert(mediaInserts);
       
     if (mediaError) {
-      console.error("Media insert error:", mediaError);
+      console.error("💥 Media insert error:", mediaError);
+      console.error("💥 Failed media inserts:", mediaInserts);
       // Don't fail the whole request, just log the error
+    } else {
+      console.log('✅ Property media inserted successfully');
     }
 
     return NextResponse.json({ 

@@ -2,24 +2,46 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+// Authentication is now handled entirely server-side in the API route
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
+import AmenitiesSelector from "@/components/AmenitiesSelector";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
 
 
+interface FormData {
+  location: string;
+  title: string;
+  description: string;
+  price: string;
+  status: string;
+  property_type: string;
+  listing_type: string;
+  bedrooms: string;
+  bathrooms: string;
+  house_size_value: string;
+  house_size_unit: string;
+  land_size_value: string;
+  land_size_unit: string;
+  year_built: string;
+  amenities: string[];
+  region: string;
+  city: string;
+  neighborhood: string;
+}
+
 export default function CreatePropertyPage() {
   const router = useRouter();
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<FormData>({
     location: "",
     title: "",
     description: "",
     price: "",
     status: "draft",
-    property_type: "",
-    listing_type: "",
+    property_type: "House", // Default to House to prevent validation errors
+    listing_type: "sale", // Default to sale to prevent validation errors
     bedrooms: "",
     bathrooms: "",
     house_size_value: "",
@@ -27,8 +49,7 @@ export default function CreatePropertyPage() {
     land_size_value: "",
     land_size_unit: "sq ft",
     year_built: "",
-    amenities: "",
-    features: "",
+    amenities: [],
     region: "",
     city: "",
     neighborhood: "",
@@ -36,6 +57,7 @@ export default function CreatePropertyPage() {
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [selectedCountry, setSelectedCountry] = useState<string>("GY");
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
@@ -45,7 +67,7 @@ export default function CreatePropertyPage() {
   const completionAnalysis = calculateCompletionScore({
     ...form,
     images,
-    amenities: form.amenities ? form.amenities.split(',').filter(a => a.trim()) : []
+    amenities: Array.isArray(form.amenities) ? form.amenities : []
   });
 
   const userMotivation = getUserMotivation('agent');
@@ -79,6 +101,42 @@ export default function CreatePropertyPage() {
     setImages(images);
   };
 
+  const handleCreateAnother = () => {
+    // Reset form to initial state
+    setForm({
+      location: "",
+      title: "",
+      description: "",
+      price: "",
+      status: "draft",
+      property_type: "House",
+      listing_type: "sale",
+      bedrooms: "",
+      bathrooms: "",
+      house_size_value: "",
+      house_size_unit: "sq ft",
+      land_size_value: "",
+      land_size_unit: "sq ft",
+      year_built: "",
+      amenities: [],
+      region: "",
+      city: "",
+      neighborhood: "",
+    });
+    setImages([]);
+    setSuccess("");
+    setError("");
+    setSelectedCountry("GY");
+    setSelectedRegion("");
+    setCurrencyCode("GYD");
+    setCurrencySymbol("GY$");
+  };
+
+  const handleGoToDashboard = () => {
+    router.push("/dashboard/agent");
+  };
+
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -104,21 +162,8 @@ export default function CreatePropertyPage() {
     }
 
     try {
-      const supabase = createClientComponentClient();
-      
-      // Get current user session
-      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !sessionData?.session?.user?.id) {
-        console.error('Session error:', sessionError);
-        setError("Authentication error. Please log in again.");
-        setLoading(false);
-        router.push('/login');
-        return;
-      }
-
-      const userId = sessionData.session.user.id;
-      console.log('✅ User authenticated:', userId);
+      // The API route will handle all authentication server-side with @supabase/ssr
+      console.log('🔍 Starting property creation - authentication handled by API route');
 
       // Prepare images for upload - convert File objects to base64
       const imagesForUpload = await Promise.all(
@@ -155,7 +200,6 @@ export default function CreatePropertyPage() {
           location: form.location || selectedRegion, // Use region as location fallback
           year_built: form.year_built,
           amenities: form.amenities,
-          features: form.features,
           region: form.region || selectedRegion,
           city: form.city,
           neighborhood: form.neighborhood,
@@ -164,21 +208,30 @@ export default function CreatePropertyPage() {
           country: selectedCountry,
           currency: currencyCode,
           images: imagesForUpload,
-          userId,
+          // userId will be extracted server-side from authenticated session
           propertyCategory: form.listing_type === 'sale' ? 'sale' : 'rental', // Map to API format
         }),
       });
 
       const result = await res.json();
       if (!res.ok) {
-        setError(result.error || "Failed to create property. Please try again.");
+        // Check for authentication errors
+        if (res.status === 401) {
+          console.error('❌ Authentication failed - corrupted session detected');
+          setError("Authentication error detected. Please log out and log back in to fix your session.");
+        } else {
+          setError(result.error || "Failed to create property. Please try again.");
+        }
         setLoading(false);
         return;
       }
 
       console.log('✅ Property created successfully via API');
-      // Success - redirect to agent properties dashboard
-      router.push("/dashboard/agent/properties");
+      
+      // Show success message with options
+      setSuccess("✅ Property created successfully!");
+      setError("");
+      setLoading(false);
       
     } catch (authError) {
       console.error('❌ Property creation failed:', authError);
@@ -219,12 +272,11 @@ export default function CreatePropertyPage() {
           <div className="mb-3">
             <select 
               name="property_type" 
-              value={form.property_type || ''} 
+              value={form.property_type} 
               onChange={handleChange} 
               className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full text-gray-900 bg-white text-base"
               required
             >
-              <option value="">Select Property Type...</option>
               <option value="House">🏠 House</option>
               <option value="Apartment">🏢 Apartment</option>
               <option value="Condo">🏘️ Condo</option>
@@ -240,12 +292,11 @@ export default function CreatePropertyPage() {
           <div className="mb-3">
             <select 
               name="listing_type" 
-              value={form.listing_type || ''} 
+              value={form.listing_type} 
               onChange={handleChange} 
               className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full text-gray-900 bg-white text-base"
               required
             >
-              <option value="">Select Listing Type...</option>
               <option value="sale">🏠 For Sale</option>
               <option value="rent">🏡 For Rent</option>
             </select>
@@ -287,14 +338,23 @@ export default function CreatePropertyPage() {
             userType="agent"
           />
           
-          <input name="amenities" type="text" placeholder="Amenities (comma separated) - Pool, Gym, Garden, Gated, Solar, Electric Gate, etc." value={form.amenities} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
+          <div className="mb-4">
+            <AmenitiesSelector
+              value={form.amenities || []}
+              onChange={(amenities) => {
+                setForm({
+                  ...form,
+                  amenities
+                });
+              }}
+            />
+          </div>
           <CompletionIncentive 
             fieldName="amenities"
             fieldType="amenities" 
-            isCompleted={!!form.amenities && form.amenities.length > 0}
+            isCompleted={Array.isArray(form.amenities) && form.amenities.length > 0}
             userType="agent"
           />
-          <input name="features" type="text" placeholder="Features (comma separated)" value={form.features} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
         </div>
         {/* Additional Location Details */}
         <div>
@@ -323,11 +383,38 @@ export default function CreatePropertyPage() {
             maxImages={10}
           />
         </div>
+        {/* Success message with options */}
+        {success && (
+          <div className="bg-green-50 border border-green-200 p-6 rounded-lg">
+            <div className="text-green-700 text-lg font-semibold mb-4">{success}</div>
+            <div className="space-y-3">
+              <p className="text-green-600 text-sm">What would you like to do next?</p>
+              <div className="flex gap-3 flex-wrap">
+                <button 
+                  onClick={handleCreateAnother}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition"
+                >
+                  ➕ Create Another Property
+                </button>
+                <button 
+                  onClick={handleGoToDashboard}
+                  className="bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-gray-700 transition"
+                >
+                  🏠 Go to Dashboard
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Error and submit */}
         {error && <div className="text-red-500 text-sm">{error}</div>}
-        <button type="submit" disabled={loading} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition">
-          {loading ? "Creating..." : "Create Property"}
-        </button>
+        
+        {!success && (
+          <button type="submit" disabled={loading} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold shadow hover:bg-blue-700 transition">
+            {loading ? "Submitting..." : "Submit Property"}
+          </button>
+        )}
       </form>
     </div>
   );

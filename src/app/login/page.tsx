@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from "@/supabase";
 
-export default function LoginPage() {
+function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -11,6 +12,17 @@ export default function LoginPage() {
   const [showReset, setShowReset] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetStatus, setResetStatus] = useState('');
+  const [sessionMessage, setSessionMessage] = useState('');
+  
+  const searchParams = useSearchParams();
+
+  // Check for session expiry message
+  useEffect(() => {
+    const sessionExpired = searchParams?.get('sessionExpired');
+    if (sessionExpired === 'admin') {
+      setSessionMessage('🔐 Your admin session has expired after 4 hours for security. Please log in again.');
+    }
+  }, [searchParams]);
 
   const validatePassword = (pw: string) => {
     // Require at least one special character
@@ -149,7 +161,14 @@ export default function LoginPage() {
             )}
           </button>
         </div>
-  {/* Password requirements removed since password is set on registration */}
+  {/* Session expiry message */}
+        {sessionMessage && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <div className="text-yellow-800 text-sm font-medium">{sessionMessage}</div>
+          </div>
+        )}
+        
+        {/* Password requirements removed since password is set on registration */}
         {error && <div className="mb-4 text-red-500 text-sm">{error}</div>}
         <button
           type="submit"
@@ -205,5 +224,13 @@ export default function LoginPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

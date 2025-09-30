@@ -65,7 +65,7 @@ const FIELD_RECOMMENDATIONS = {
   },
   amenities: {
     impact: "91%",
-    suggestion: "List 3-5 key features that make this property special"
+    suggestion: "Select 5+ amenities to maximize appeal - each one increases your listing score!"
   },
   images: {
     impact: "95%",
@@ -88,13 +88,26 @@ export function calculateCompletionScore(formData: PropertyFormData): Completion
     totalWeight += weight;
     
     const value = formData[field as keyof PropertyFormData];
-    const isCompleted = checkFieldCompletion(field, value);
     
-    if (isCompleted) {
-      completedFields.push(field);
-      completedWeight += weight;
+    // Special handling for amenities to give bonus scoring
+    if (field === 'amenities') {
+      const amenitiesScore = getAmenitiesScore(value as string[]);
+      completedWeight += amenitiesScore;
+      
+      if (amenitiesScore > 0) {
+        completedFields.push(field);
+      } else {
+        missingFields.push(field);
+      }
     } else {
-      missingFields.push(field);
+      const isCompleted = checkFieldCompletion(field, value);
+      
+      if (isCompleted) {
+        completedFields.push(field);
+        completedWeight += weight;
+      } else {
+        missingFields.push(field);
+      }
     }
   });
 
@@ -131,6 +144,20 @@ function checkFieldCompletion(field: string, value: any): boolean {
     default:
       return value !== undefined && value !== null && value !== '';
   }
+}
+
+// Enhanced amenities scoring - gives bonus for more amenities
+function getAmenitiesScore(amenities: string[]): number {
+  if (!Array.isArray(amenities) || amenities.length === 0) return 0;
+  
+  // Base score for having any amenities (5 points out of 7)
+  let score = 5;
+  
+  // Bonus points for more amenities (up to max 7 points)
+  if (amenities.length >= 3) score += 1; // 6 points for 3+ amenities
+  if (amenities.length >= 5) score += 1; // 7 points for 5+ amenities
+  
+  return Math.min(score, 7); // Cap at the original weight of 7
 }
 
 // Get user-specific messaging

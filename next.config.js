@@ -7,6 +7,10 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Enable standalone output for Docker only in production
+  ...(process.env.NODE_ENV === 'production' && {
+    output: 'standalone',
+  }),
 };
 
 module.exports = nextConfig;
