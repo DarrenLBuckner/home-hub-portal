@@ -2,7 +2,7 @@
 import React, { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/supabase";
+import { supabaseBrowser } from "@/lib/supabase/browser";
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
@@ -34,7 +34,7 @@ export default function CreateLandlordProperty() {
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = createClient();
+      const supabase = supabaseBrowser();
       
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser();
@@ -214,6 +214,8 @@ export default function CreateLandlordProperty() {
           country: selectedCountry,
           region: selectedRegion,
           currency: currencyCode,
+          listing_type: "rent", // Required by API
+          city: selectedRegion, // Use region as city for rentals
           propertyCategory: "rental", // Mark as rental property
         }),
       });
