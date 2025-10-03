@@ -1,39 +1,28 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from '@supabase/ssr';
-import { requireAuth } from "../../../../../lib/auth";
+import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { cookies } from 'next/headers';
+import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
 import { getCountryAwareAdminPermissions } from '@/lib/auth/adminPermissions';
 
-const supabase = createServerClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    cookies: {
-      get: () => undefined,
-      set: () => {},
-      remove: () => {}
-    }
-  }
-);
-
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    let userId: string;
-    try {
-      const auth = await requireAuth(req);
-      userId = auth.userId;
-      if (!userId) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-    } catch (err) {
+    const supabase = createRouteHandlerClient({ cookies });
+    
+    // Get user session
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const propertyId = params.id;
-    const body = await req.json();
+    const body = await request.json();
     
     // Validate required fields
     const required = [
@@ -81,7 +70,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       .from("properties")
       .update(updateData)
       .eq('id', propertyId)
-      .eq('user_id', userId) // Ensure user owns this property
+      .eq('user_id', user.id) // Ensure user owns this property
       .select('id')
       .single();
       
@@ -107,32 +96,17 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 // POST /api/properties/update/[id] - Admin property status update
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
+    const supabase = createRouteHandlerClient({ cookies });
     const propertyId = params.id;
-    const body = await req.json();
+    const body = await request.json();
     
-    // Get authorization header
-    const authorization = req.headers.get('authorization')
-    if (!authorization?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
-    
-    const token = authorization.replace('Bearer ', '')
-    
-    // Create client with user token
-    const userSupabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          get: () => undefined,
-          set: () => {},
-          remove: () => {}
-        }
-      }
-    )
-    const { data: { user }, error: authError } = await userSupabase.auth.getUser(token)
+    // Get user session
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
       return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 })
@@ -214,7 +188,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // Update property status using service role client
-    const { data: updatedProperty, error: updateError } = await supabase
+    const { data: updatedProperty, error: updateError } = await adminSupabase
       .from('properties')
       .update(updateData)
       .eq('id', propertyId)
