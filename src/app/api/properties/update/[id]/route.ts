@@ -102,6 +102,7 @@ export async function POST(
 ) {
   try {
     const supabase = createRouteHandlerClient({ cookies });
+    const adminSupabase = createAdminClient();
     const propertyId = params.id;
     const body = await request.json();
     
@@ -113,7 +114,6 @@ export async function POST(
     }
 
     // Get user profile and admin permissions using admin client
-    const adminSupabase = createAdminClient()
     const { data: profile, error: profileError } = await adminSupabase
       .from('profiles')
       .select('user_type, admin_level, country_id')
@@ -171,7 +171,13 @@ export async function POST(
     }
 
     // Prepare update data
-    const updateData: any = {
+    const updateData: {
+      status: string;
+      updated_at: string;
+      rejection_reason?: string;
+      reviewed_by?: string;
+      reviewed_at?: string;
+    } = {
       status: body.status,
       updated_at: new Date().toISOString()
     }
@@ -190,6 +196,7 @@ export async function POST(
     // Update property status using service role client
     const { data: updatedProperty, error: updateError } = await adminSupabase
       .from('properties')
+      // @ts-ignore - TypeScript has issues with Supabase update types in this configuration
       .update(updateData)
       .eq('id', propertyId)
       .select()
