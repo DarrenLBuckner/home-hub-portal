@@ -62,8 +62,12 @@ export async function middleware(request: NextRequest) {
   if (isProtectedRoute) {
     console.log(`🔒 MIDDLEWARE: Checking auth for protected route: ${request.nextUrl.pathname}`)
     
-    // Get the session from cookies
-    const accessToken = request.cookies.get('sb-opjnizbtppkynxzssijy-auth-token')
+    // Extract project ID from Supabase URL dynamically
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+    const projectId = supabaseUrl.match(/https:\/\/([a-zA-Z0-9]+)\.supabase\.co/)?.[1] || 'unknown'
+    
+    // Get the session from cookies using dynamic project ID
+    const accessToken = request.cookies.get(`sb-${projectId}-auth-token`)
     console.log(`🍪 MIDDLEWARE: Access token exists: ${!!accessToken}`)
     
     const { data: { user }, error } = await supabase.auth.getUser()
@@ -116,9 +120,11 @@ export async function middleware(request: NextRequest) {
         
         const response = NextResponse.redirect(redirectUrl)
         
-        // Clear auth cookies
-        response.cookies.delete('sb-opjnizbtppkynxzssijy-auth-token')
-        response.cookies.delete('sb-opjnizbtppkynxzssijy-auth-token-code-verifier')
+        // Clear auth cookies using dynamic project ID
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+        const projectId = supabaseUrl.match(/https:\/\/([a-zA-Z0-9]+)\.supabase\.co/)?.[1] || 'unknown'
+        response.cookies.delete(`sb-${projectId}-auth-token`)
+        response.cookies.delete(`sb-${projectId}-auth-token-code-verifier`)
         
         return response
       }

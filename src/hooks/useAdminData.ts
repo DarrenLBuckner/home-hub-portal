@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/supabase';
+import { AdminPermissions, getAdminPermissions } from '@/lib/auth/adminPermissions';
 
 interface AdminData {
   id: string;
@@ -14,27 +15,15 @@ interface AdminData {
   admin_created_at: string | null;
 }
 
-interface AdminPermissions {
-  canManageAllUsers: boolean;
-  canManageCountryUsers: boolean;
-  canCreateOwnerAdmins: boolean;
-  canCreateBasicAdmins: boolean;
-  canViewAllPayments: boolean;
-  canViewCountryPayments: boolean;
-  canViewPayments: boolean;
-  canRemoveAdmins: boolean;
-  canApproveProperties: boolean;
-  canRejectProperties: boolean;
-  canEscalateToHigherAdmin: boolean;
-  canViewAllCountries: boolean;
-  countryRestriction: string | null;
-  countryFilter: string | null;
+// AdminPermissions interface is now imported from adminPermissions.ts
+interface ExtendedAdminPermissions extends AdminPermissions {
+  // Add any hook-specific permissions here
   displayRole: string;
 }
 
 interface UseAdminDataReturn {
   adminData: AdminData | null;
-  permissions: AdminPermissions | null;
+  permissions: ExtendedAdminPermissions | null;
   isAdmin: boolean;
   isLoading: boolean;
   error: string | null;
@@ -43,60 +32,55 @@ interface UseAdminDataReturn {
 
 export function useAdminData(): UseAdminDataReturn {
   const [adminData, setAdminData] = useState<AdminData | null>(null);
-  const [permissions, setPermissions] = useState<AdminPermissions | null>(null);
+  const [permissions, setPermissions] = useState<ExtendedAdminPermissions | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const calculatePermissions = (data: AdminData): AdminPermissions => {
-    if (!data || data.user_type !== 'admin') {
-      return {
-        canManageAllUsers: false,
-        canManageCountryUsers: false,
-        canCreateOwnerAdmins: false,
-        canCreateBasicAdmins: false,
-        canViewAllPayments: false,
-        canViewCountryPayments: false,
-        canViewPayments: false,
-        canRemoveAdmins: false,
-        canApproveProperties: false,
-        canRejectProperties: false,
-        canEscalateToHigherAdmin: false,
-        canViewAllCountries: false,
-        countryRestriction: null,
-        countryFilter: null,
-        displayRole: 'No Admin Access'
-      };
-    }
+  const calculatePermissions = (data: AdminData): ExtendedAdminPermissions => {
+    // DEBUG: Log what we're passing to getAdminPermissions
+    console.log('🔍 calculatePermissions - Input data:', {
+      user_type: data.user_type,
+      email: data.email, 
+      admin_level: data.admin_level,
+      country_id: data.country_id
+    });
 
-    const isSuper = data.admin_level === 'super';
-    const isOwner = data.admin_level === 'owner';
-    const isBasic = data.admin_level === 'basic';
+    // Get base permissions from main adminPermissions.ts
+    const basePermissions = getAdminPermissions(
+      data.user_type, 
+      data.email, 
+      data.admin_level,
+      data.country_id ? Number(data.country_id) : null,
+      null // country name - we'll handle this later
+    );
 
-    let displayRole = 'Admin Access';
-    if (isSuper) {
-      displayRole = 'Super Admin Access';
-    } else if (isOwner && data.country_id) {
-      // Get country name for display - for now use country_id
-      displayRole = `Full ${data.country_id} Access`;  
-    } else if (isBasic && data.country_id) {
-      displayRole = `Basic ${data.country_id} Access`;
+    // DEBUG: Log what permissions we got back
+    console.log('🔍 calculatePermissions - Result permissions:', {
+      canAccessDiagnostics: basePermissions.canAccessDiagnostics,
+      canAccessSystemSettings: basePermissions.canAccessSystemSettings,
+      canAccessPricingManagement: basePermissions.canAccessPricingManagement
+    });
+
+    // Add display role for UI
+    let displayRole = 'No Admin Access';
+    if (data.user_type === 'admin') {
+      const isSuper = data.admin_level === 'super';
+      const isOwner = data.admin_level === 'owner';
+      const isBasic = data.admin_level === 'basic';
+
+      if (isSuper) {
+        displayRole = 'Super Admin Access';
+      } else if (isOwner && data.country_id) {
+        displayRole = `Full ${data.country_id} Access`;  
+      } else if (isBasic && data.country_id) {
+        displayRole = `Basic ${data.country_id} Access`;
+      } else {
+        displayRole = 'Admin Access';
+      }
     }
 
     return {
-      canManageAllUsers: isSuper,
-      canManageCountryUsers: isOwner || isBasic,
-      canCreateOwnerAdmins: isSuper,
-      canCreateBasicAdmins: isSuper || isOwner,
-      canViewAllPayments: isSuper,
-      canViewCountryPayments: isOwner || isBasic,
-      canViewPayments: true, // All admins can view payments
-      canRemoveAdmins: isSuper || isOwner,
-      canApproveProperties: true, // All admins can approve properties
-      canRejectProperties: true, // All admins can reject properties  
-      canEscalateToHigherAdmin: !isSuper, // Only non-super admins can escalate
-      canViewAllCountries: isSuper,
-      countryRestriction: isSuper ? null : data.country_id,
-      countryFilter: isSuper ? null : data.country_id,
+      ...basePermissions,
       displayRole
     };
   };
@@ -153,8 +137,13 @@ export function useAdminData(): UseAdminDataReturn {
         admin_created_at: data.profile.admin_created_at
       };
 
-      // Use server-provided permissions if available, otherwise calculate
-      const permissions = data.permissions || calculatePermissions(adminData);
+      // DEBUG: Check what server is returning
+      console.log('🔍 Server response - data.permissions:', data.permissions);
+      
+      // FORCE client-side calculation for now to bypass server issue
+      const permissions = calculatePermissions(adminData);
+      
+      console.log('🔍 Final permissions after calculation:', permissions);
 
       console.log('✅ useAdminData: Admin data processed successfully', {
         email: adminData.email,

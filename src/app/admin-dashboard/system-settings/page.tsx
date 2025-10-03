@@ -3,63 +3,67 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
+import { useAdminData } from '@/hooks/useAdminData';
 
 export default function SystemSettings() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Super Admin access control
   useEffect(() => {
-    async function checkSuperAdminAccess() {
-      console.log('🔍 SYSTEM SETTINGS: Checking super admin access...');
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      
-      if (!authUser) {
-        console.log('❌ No authenticated user, redirecting to admin login');
-        window.location.href = '/admin-login';
-        return;
-      }
-
-      // Check if user is super admin
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_type, admin_level, first_name, last_name, email')
-        .eq('id', authUser.id)
-        .single();
-
-      console.log('System settings profile check:', { profile, profileError });
-
-      if (profileError || !profile || profile.admin_level !== 'super') {
-        console.log('Not authorized as super admin. User type:', profile?.user_type);
-        alert('Access denied. Super Admin privileges required.');
-        router.push('/admin-dashboard');
-        return;
-      }
-
-      setUser({ 
-        ...authUser, 
-        name: `${profile.first_name} ${profile.last_name}`,
-        email: profile.email,
-        role: profile.user_type 
-      });
-
-      setLoading(false);
+    if (adminLoading) return;
+    
+    if (adminError) {
+      console.error('❌ Admin data error:', adminError);
+      alert('Error loading admin data. Please try again.');
+      router.push('/admin-login');
+      return;
     }
-
-    checkSuperAdminAccess();
-  }, []);
+    
+    if (!isAdmin) {
+      console.log('❌ Not authorized to view system settings - not admin.');
+      alert('Access denied. Admin privileges required.');
+      router.push('/admin-login');
+      return;
+    }
+    
+    // Check if user has system settings access (Super Admin only)
+    if (!permissions?.canAccessSystemSettings) {
+      console.log('❌ Not authorized to view system settings - insufficient permissions.');
+      alert('Access denied. Super Admin privileges required for system settings.');
+      router.push('/admin-dashboard');
+      return;
+    }
+    
+    setLoading(false);
+  }, [adminLoading, adminError, isAdmin, permissions, router]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/admin-login');
   };
 
-  if (loading) {
+  // Show loading while checking permissions
+  if (adminLoading || loading) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-4 text-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Loading system settings...</p>
+        <p className="mt-4 text-gray-600">Checking Super Admin access...</p>
+      </main>
+    );
+  }
+
+  // Don't render if not authorized (useEffect will handle redirect)
+  if (!isAdmin || !permissions?.canAccessSystemSettings) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
+          <div className="text-red-600 text-4xl mb-4">🔒</div>
+          <p className="text-gray-900 font-bold mb-2">Super Admin Access Required</p>
+          <p className="text-gray-600">System settings are restricted to Super Admin only.</p>
+        </div>
       </main>
     );
   }
@@ -77,7 +81,7 @@ export default function SystemSettings() {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <div className="text-sm text-gray-500">Super Admin</div>
-                <div className="font-medium">{user?.name}</div>
+                <div className="font-medium">{adminData?.display_name || adminData?.email || 'Admin User'}</div>
               </div>
               <Link href="/admin-dashboard">
                 <button className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-700 transition-colors">
@@ -174,48 +178,6 @@ export default function SystemSettings() {
             </div>
             <p className="text-gray-600 text-sm mb-4">
               SMTP configuration, email templates, and notification settings.
-            </p>
-            <button className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded cursor-not-allowed">
-              Coming Soon
-            </button>
-          </div>
-
-          {/* Security Settings */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center mb-4">
-              <div className="text-2xl mr-3">🔐</div>
-              <h3 className="text-lg font-semibold text-gray-900">Security Settings</h3>
-            </div>
-            <p className="text-gray-600 text-sm mb-4">
-              Authentication, password policies, and access controls.
-            </p>
-            <button className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded cursor-not-allowed">
-              Coming Soon
-            </button>
-          </div>
-
-          {/* Database Settings */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center mb-4">
-              <div className="text-2xl mr-3">🗄️</div>
-              <h3 className="text-lg font-semibold text-gray-900">Database Settings</h3>
-            </div>
-            <p className="text-gray-600 text-sm mb-4">
-              Backup configuration, maintenance schedules, and optimization.
-            </p>
-            <button className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded cursor-not-allowed">
-              Coming Soon
-            </button>
-          </div>
-
-          {/* API Settings */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center mb-4">
-              <div className="text-2xl mr-3">🔌</div>
-              <h3 className="text-lg font-semibold text-gray-900">API Settings</h3>
-            </div>
-            <p className="text-gray-600 text-sm mb-4">
-              API keys, rate limiting, and third-party integrations.
             </p>
             <button className="w-full px-4 py-2 bg-gray-100 text-gray-600 rounded cursor-not-allowed">
               Coming Soon

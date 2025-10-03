@@ -14,6 +14,17 @@ export interface AdminPermissions {
   canEditSystemSettings: boolean;
   canViewAllDashboards: boolean;
   canManageAdmins: boolean;
+  // Navigation-specific permissions
+  canAccessDiagnostics: boolean;        // System diagnostics - Super Admin only
+  canAccessSystemSettings: boolean;     // Core system settings - Super Admin only  
+  canAccessUserManagement: boolean;     // User management - Super + Owner
+  canAccessPricingManagement: boolean;  // Pricing access - Super + Owner
+  canAccessSettings: boolean;           // General settings - Super + Owner + Basic
+  // Granular pricing permissions
+  canEditGlobalPricing: boolean;        // Edit pricing for all countries - Super Admin only
+  canEditCountryPricing: boolean;       // Edit pricing for assigned country - Super + Owner
+  canViewAllCountryPricing: boolean;    // View pricing for all countries - Super Admin only
+  canViewCountryPricing: boolean;       // View pricing for assigned country - Super + Owner
   // Country-based access control
   assignedCountryId: number | null;
   assignedCountryName: string | null;
@@ -45,6 +56,17 @@ export function getAdminPermissions(
       canEditSystemSettings: true,
       canViewAllDashboards: true,
       canManageAdmins: true,
+      // Navigation permissions - Super Admin gets everything
+      canAccessDiagnostics: true,        // ONLY Super Admin
+      canAccessSystemSettings: true,     // ONLY Super Admin
+      canAccessUserManagement: true,     // Super Admin can manage all users
+      canAccessPricingManagement: true,  // Super Admin can access pricing
+      canAccessSettings: true,           // Super Admin gets all settings
+      // Granular pricing permissions - Super Admin gets global control
+      canEditGlobalPricing: true,        // Can edit pricing for ALL countries
+      canEditCountryPricing: true,       // Can edit pricing for any country
+      canViewAllCountryPricing: true,    // Can view pricing for ALL countries
+      canViewCountryPricing: true,       // Can view pricing for any country
       assignedCountryId: null, // Super admin not restricted by country
       assignedCountryName: null,
       canViewAllCountries: true,
@@ -69,6 +91,17 @@ export function getAdminPermissions(
       canEditSystemSettings: false,
       canViewAllDashboards: true,
       canManageAdmins: false,
+      // Navigation permissions - Owner Admin gets limited access
+      canAccessDiagnostics: false,       // NO access to diagnostics
+      canAccessSystemSettings: false,    // NO access to system settings
+      canAccessUserManagement: true,     // Can manage users in their country
+      canAccessPricingManagement: true,  // Can access pricing for their country
+      canAccessSettings: true,           // Basic settings for their country
+      // Granular pricing permissions - Owner Admin gets country-specific control
+      canEditGlobalPricing: false,       // CANNOT edit pricing for all countries
+      canEditCountryPricing: true,       // CAN edit pricing for their country
+      canViewAllCountryPricing: false,   // CANNOT view pricing for all countries
+      canViewCountryPricing: true,       // CAN view pricing for their country
       assignedCountryId: countryId || null,
       assignedCountryName: countryName || null,
       canViewAllCountries: false,
@@ -93,6 +126,17 @@ export function getAdminPermissions(
       canEditSystemSettings: false,
       canViewAllDashboards: false,
       canManageAdmins: false,
+      // Navigation permissions - Basic Admin gets minimal access
+      canAccessDiagnostics: false,       // NO access to diagnostics
+      canAccessSystemSettings: false,    // NO access to system settings
+      canAccessUserManagement: false,    // NO access to user management
+      canAccessPricingManagement: false, // NO access to pricing
+      canAccessSettings: true,           // Basic settings only
+      // Granular pricing permissions - Basic Admin gets no pricing access
+      canEditGlobalPricing: false,       // NO pricing access
+      canEditCountryPricing: false,      // NO pricing access
+      canViewAllCountryPricing: false,   // NO pricing access
+      canViewCountryPricing: false,      // NO pricing access
       assignedCountryId: countryId || null,
       assignedCountryName: countryName || null,
       canViewAllCountries: false,
@@ -116,6 +160,17 @@ export function getAdminPermissions(
     canEditSystemSettings: false,
     canViewAllDashboards: false,
     canManageAdmins: false,
+    // Navigation permissions - No admin access
+    canAccessDiagnostics: false,
+    canAccessSystemSettings: false,
+    canAccessUserManagement: false,
+    canAccessPricingManagement: false,
+    canAccessSettings: false,
+    // Granular pricing permissions - No admin access
+    canEditGlobalPricing: false,
+    canEditCountryPricing: false,
+    canViewAllCountryPricing: false,
+    canViewCountryPricing: false,
     assignedCountryId: null,
     assignedCountryName: null,
     canViewAllCountries: false,

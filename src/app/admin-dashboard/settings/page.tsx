@@ -143,7 +143,7 @@ export default function AdminSettings() {
                           <div className="flex items-center">
                             <div className="flex-shrink-0">
                               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                                <span className="text-white font-bold">U</span>
+                                <span className="text-white font-bold">👥</span>
                               </div>
                             </div>
                             <div className="ml-5 w-0 flex-1">
@@ -152,8 +152,8 @@ export default function AdminSettings() {
                                   User Management
                                 </dt>
                                 <dd className="text-lg font-medium text-gray-900">
-                                  <Link href="/admin-dashboard/user-management" className="text-blue-600 hover:text-blue-500">
-                                    Manage →
+                                  <Link href="/admin-dashboard/users" className="text-blue-600 hover:text-blue-500">
+                                    Manage Users →
                                   </Link>
                                 </dd>
                               </dl>

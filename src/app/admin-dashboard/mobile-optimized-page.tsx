@@ -22,6 +22,9 @@ interface Property {
   owner_whatsapp: string;
   listed_by_type: string;
   user_id: string;
+  reviewed_by?: string;
+  reviewed_at?: string;
+  rejection_reason?: string;
   property_media: Array<{
     media_url: string;
     is_primary: boolean;
@@ -30,6 +33,11 @@ interface Property {
     first_name: string;
     last_name: string;
     user_type: string;
+  };
+  reviewer?: {
+    first_name: string;
+    last_name: string;
+    email: string;
   };
 }
 
@@ -104,6 +112,11 @@ export default function MobileOptimizedAdminDashboard() {
             first_name,
             last_name,
             user_type
+          ),
+          reviewer:reviewed_by (
+            first_name,
+            last_name,
+            email
           )
         `)
         .eq('status', 'pending');
@@ -176,42 +189,93 @@ export default function MobileOptimizedAdminDashboard() {
 
   async function approveProperty(propertyId: string) {
     setProcessingPropertyId(propertyId);
+    setError(''); // Clear any previous errors
+    
     try {
+      console.log(`🔄 Approving property ${propertyId}...`);
+      
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No authentication token available');
+      }
+      
       const response = await fetch(`/api/properties/update/${propertyId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({ status: 'active' }),
       });
 
+      const result = await response.json();
+
       if (response.ok) {
+        console.log('✅ Property approved successfully:', result);
+        
+        // Show success message briefly
+        const property = pendingProperties.find(p => p.id === propertyId);
+        alert(`✅ Property "${property?.title}" has been approved and is now active!`);
+        
         await loadDashboardData();
       } else {
-        setError('Failed to approve property');
+        console.error('❌ Approval failed:', result);
+        setError(result.error || 'Failed to approve property');
       }
     } catch (error) {
-      setError('Network error occurred');
+      console.error('❌ Network error during approval:', error);
+      setError('Network error occurred. Please try again.');
     }
     setProcessingPropertyId(null);
   }
 
   async function rejectProperty(propertyId: string, reason: string) {
+    if (!reason.trim()) {
+      setError('Please provide a reason for rejection');
+      return;
+    }
+
     setProcessingPropertyId(propertyId);
+    setError(''); // Clear any previous errors
+    
     try {
+      console.log(`🔄 Rejecting property ${propertyId} with reason: ${reason}`);
+      
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No authentication token available');
+      }
+      
       const response = await fetch(`/api/properties/update/${propertyId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({ status: 'rejected', rejection_reason: reason }),
       });
 
+      const result = await response.json();
+
       if (response.ok) {
+        console.log('✅ Property rejected successfully:', result);
+        
+        // Show success message briefly
+        const property = pendingProperties.find(p => p.id === propertyId);
+        alert(`❌ Property "${property?.title}" has been rejected.\nReason: ${reason}`);
+        
         setShowRejectModal(null);
         setRejectReason("");
         await loadDashboardData();
       } else {
-        setError('Failed to reject property');
+        console.error('❌ Rejection failed:', result);
+        setError(result.error || 'Failed to reject property');
       }
     } catch (error) {
-      setError('Network error occurred');
+      console.error('❌ Network error during rejection:', error);
+      setError('Network error occurred. Please try again.');
     }
     setProcessingPropertyId(null);
   }
@@ -379,12 +443,53 @@ export default function MobileOptimizedAdminDashboard() {
                 Hi, {getAdminDisplayName(adminData)}
               </div>
             </div>
-            <div className="flex space-x-2">
-              <Link href="/admin-dashboard/pricing">
-                <button className="px-3 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors">
-                  💰 Pricing
-                </button>
-              </Link>
+            <div className="flex flex-wrap gap-2">
+              {/* Pricing - Super Admin & Owner Admin only */}
+              {permissions?.canAccessPricingManagement && (
+                <Link href="/admin-dashboard/pricing">
+                  <button className="px-3 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors">
+                    💰 Pricing
+                  </button>
+                </Link>
+              )}
+              
+              {/* User Management - Super Admin & Owner Admin only */}
+              {permissions?.canAccessUserManagement && (
+                <Link href="/admin-dashboard/user-management">
+                  <button className="px-3 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors">
+                    👥 Users
+                  </button>
+                </Link>
+              )}
+              
+              {/* Settings - All admin levels */}
+              {permissions?.canAccessSettings && (
+                <Link href="/admin-dashboard/settings">
+                  <button className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 transition-colors">
+                    ⚙️ Settings
+                  </button>
+                </Link>
+              )}
+              
+              {/* Diagnostics - SUPER ADMIN ONLY */}
+              {permissions?.canAccessDiagnostics && (
+                <Link href="/admin-dashboard/diagnostic">
+                  <button className="px-3 py-2 bg-orange-600 text-white text-xs font-bold rounded-lg hover:bg-orange-700 transition-colors">
+                    🩺 Diagnostic
+                  </button>
+                </Link>
+              )}
+              
+              {/* System Settings - SUPER ADMIN ONLY */}
+              {permissions?.canAccessSystemSettings && (
+                <Link href="/admin-dashboard/system-settings">
+                  <button className="px-3 py-2 bg-gray-600 text-white text-xs font-bold rounded-lg hover:bg-gray-700 transition-colors">
+                    🛠️ System
+                  </button>
+                </Link>
+              )}
+              
+              {/* Refresh - Always available to all admins */}
               <button 
                 onClick={loadDashboardData}
                 className="px-3 py-2 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"

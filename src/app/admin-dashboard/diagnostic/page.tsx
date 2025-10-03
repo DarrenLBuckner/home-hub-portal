@@ -1,6 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
+import { useAdminData } from '@/hooks/useAdminData';
 
 interface DiagnosticResult {
   step: string;
@@ -10,8 +13,37 @@ interface DiagnosticResult {
 }
 
 export default function AdminDiagnosticPage() {
+  const router = useRouter();
+  const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   const [results, setResults] = useState<DiagnosticResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  
+  // Super Admin access control
+  useEffect(() => {
+    if (adminLoading) return;
+    
+    if (adminError) {
+      console.error('❌ Admin data error:', adminError);
+      alert('Error loading admin data. Please try again.');
+      router.push('/admin-login');
+      return;
+    }
+    
+    if (!isAdmin) {
+      console.log('❌ Not authorized to view diagnostics - not admin.');
+      alert('Access denied. Admin privileges required.');
+      router.push('/admin-login');
+      return;
+    }
+    
+    // Check if user has diagnostics access (Super Admin only)
+    if (!permissions?.canAccessDiagnostics) {
+      console.log('❌ Not authorized to view diagnostics - insufficient permissions.');
+      alert('Access denied. Super Admin privileges required for system diagnostics.');
+      router.push('/admin-dashboard');
+      return;
+    }
+  }, [adminLoading, adminError, isAdmin, permissions, router]);
 
   const addResult = (result: DiagnosticResult) => {
     setResults(prev => [...prev, result]);
@@ -74,68 +106,101 @@ export default function AdminDiagnosticPage() {
         });
       }
 
-      // Step 3: Check table structure
-      addResult({ step: "Checking Table Structure", status: 'loading' });
-      const { data: columns, error: columnsError } = await supabase
-        .from('information_schema.columns')
-        .select('column_name')
-        .eq('table_name', 'profiles')
-        .eq('table_schema', 'public');
-
-      if (columnsError) {
+      // Step 3: Check database connectivity
+      addResult({ step: "Checking Database Connection", status: 'loading' });
+      try {
+        const { count, error: countError } = await supabase
+          .from('profiles')
+          .select('*', { count: 'exact' });
+          
+        if (countError) {
+          addResult({ 
+            step: "Checking Database Connection", 
+            status: 'error', 
+            error: countError.message 
+          });
+        } else {
+          addResult({ 
+            step: "Checking Database Connection", 
+            status: 'success', 
+            data: { totalUsers: count || 0, connectionStatus: 'Connected' } 
+          });
+        }
+      } catch (dbError) {
         addResult({ 
-          step: "Checking Table Structure", 
+          step: "Checking Database Connection", 
           status: 'error', 
-          error: columnsError.message 
-        });
-      } else {
-        addResult({ 
-          step: "Checking Table Structure", 
-          status: 'success', 
-          data: columns?.map((c: any) => c.column_name) || [] 
+          error: dbError instanceof Error ? dbError.message : 'Database connection failed' 
         });
       }
 
-      // Step 4: Check for admin users
-      addResult({ step: "Checking Admin Users", status: 'loading' });
-      const { data: admins, error: adminsError } = await supabase
+      // Step 4: Check admin privileges and permissions
+      addResult({ step: "Checking Admin System Status", status: 'loading' });
+      const { data: adminStats, error: adminStatsError } = await supabase
         .from('profiles')
-        .select('email, user_type, admin_level')
+        .select('user_type, admin_level')
         .eq('user_type', 'admin');
 
-      if (adminsError) {
+      if (adminStatsError) {
         addResult({ 
-          step: "Checking Admin Users", 
+          step: "Checking Admin System Status", 
           status: 'error', 
-          error: adminsError.message 
+          error: adminStatsError.message 
         });
       } else {
+        // Deduplicate and summarize admin data
+        const adminSummary = adminStats?.reduce((acc: any, admin: any) => {
+          const key = `${admin.user_type}_${admin.admin_level || 'basic'}`;
+          acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {}) || {};
+        
         addResult({ 
-          step: "Checking Admin Users", 
+          step: "Checking Admin System Status", 
           status: 'success', 
-          data: admins || [] 
+          data: {
+            currentUserLevel: adminData?.admin_level || 'Unknown',
+            adminCounts: adminSummary,
+            systemAccessible: true
+          }
         });
       }
 
-      // Step 5: Check new tables
-      addResult({ step: "Checking New Tables", status: 'loading' });
-      const { data: tables, error: tablesError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .in('table_name', ['admin_permissions', 'admin_activity_log'])
-        .eq('table_schema', 'public');
+      // Step 5: Check property limits system
+      addResult({ step: "Checking Property Limits System", status: 'loading' });
+      try {
+        const { data: limitsCheck, error: limitsError } = await supabase
+          .from('user_property_limits')
+          .select('user_id')
+          .limit(1);
+          
+        const { data: quotasCheck, error: quotasError } = await supabase
+          .from('property_quotas')
+          .select('user_type')
+          .limit(1);
 
-      if (tablesError) {
+        if (limitsError || quotasError) {
+          addResult({ 
+            step: "Checking Property Limits System", 
+            status: 'error', 
+            error: limitsError?.message || quotasError?.message || 'Property limits system error' 
+          });
+        } else {
+          addResult({ 
+            step: "Checking Property Limits System", 
+            status: 'success', 
+            data: {
+              userLimitsTable: limitsCheck ? 'Available' : 'Not found',
+              quotasTable: quotasCheck ? 'Available' : 'Not found',
+              systemStatus: 'Property limits system operational'
+            }
+          });
+        }
+      } catch (systemError) {
         addResult({ 
-          step: "Checking New Tables", 
+          step: "Checking Property Limits System", 
           status: 'error', 
-          error: tablesError.message 
-        });
-      } else {
-        addResult({ 
-          step: "Checking New Tables", 
-          status: 'success', 
-          data: tables?.map((t: any) => t.table_name) || [] 
+          error: systemError instanceof Error ? systemError.message : 'System check failed' 
         });
       }
 
@@ -154,9 +219,56 @@ export default function AdminDiagnosticPage() {
     runDiagnostics();
   }, []);
 
+  // Show loading while checking permissions
+  if (adminLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Checking Super Admin access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authorized (useEffect will handle redirect)
+  if (!isAdmin || !permissions?.canAccessDiagnostics) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
+          <div className="text-red-600 text-4xl mb-4">🔒</div>
+          <p className="text-gray-900 font-bold mb-2">Super Admin Access Required</p>
+          <p className="text-gray-600">System diagnostics are restricted to Super Admin only.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-4xl mx-auto">
+        {/* Navigation Header */}
+        <div className="bg-white rounded-2xl p-4 shadow-lg mb-4">
+          <div className="flex items-center justify-between">
+            <Link href="/admin-dashboard" className="flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+              <span className="mr-2">←</span>
+              <span className="font-medium">Back to Dashboard</span>
+            </Link>
+            <div className="flex space-x-2">
+              <Link href="/admin-dashboard/settings">
+                <button className="px-3 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 transition-colors">
+                  ⚙️ Settings
+                </button>
+              </Link>
+              <Link href="/admin-dashboard/user-management">
+                <button className="px-3 py-2 bg-green-600 text-white text-xs font-bold rounded-lg hover:bg-green-700 transition-colors">
+                  👥 Users
+                </button>                
+              </Link>
+            </div>
+          </div>
+        </div>
+        
         <div className="bg-white rounded-2xl p-6 shadow-lg mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">🔍 Admin System Diagnostics</h1>
           <p className="text-gray-600 mb-4">
@@ -197,10 +309,25 @@ export default function AdminDiagnosticPage() {
               
               {result.data && (
                 <div className="bg-gray-50 rounded-lg p-3">
-                  <p className="text-gray-700 text-sm font-medium mb-1">Data:</p>
-                  <pre className="text-xs text-gray-600 overflow-x-auto">
-                    {JSON.stringify(result.data, null, 2)}
-                  </pre>
+                  <p className="text-gray-700 text-sm font-medium mb-1">Results:</p>
+                  {/* Format data in a more readable way */}
+                  {typeof result.data === 'object' && result.data !== null ? (
+                    <div className="space-y-1 text-sm text-gray-600">
+                      {Object.entries(result.data).map(([key, value]) => (
+                        <div key={key} className="flex justify-between">
+                          <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}:</span>
+                          <span className="text-right">
+                            {typeof value === 'object' && value !== null 
+                              ? JSON.stringify(value, null, 2)
+                              : String(value)
+                            }
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-600">{String(result.data)}</p>
+                  )}
                 </div>
               )}
             </div>
@@ -208,23 +335,60 @@ export default function AdminDiagnosticPage() {
         </div>
 
         {!isRunning && results.length > 0 && (
-          <div className="bg-white rounded-2xl p-6 shadow-lg mt-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-4">🎯 Quick Actions</h2>
-            <div className="space-y-3">
-              <a 
-                href="/admin-login" 
-                className="block w-full px-4 py-3 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                🔑 Go to Admin Login
-              </a>
-              <a 
-                href="/" 
-                className="block w-full px-4 py-3 border border-gray-300 text-gray-700 text-center rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                🏠 Go to Home
-              </a>
+          <>
+            {/* Diagnostic Summary */}
+            <div className="bg-blue-50 border border-blue-200 rounded-2xl p-6 shadow-lg mt-6">
+              <h2 className="text-lg font-bold text-blue-900 mb-4">📋 Diagnostic Summary</h2>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-bold text-green-600">
+                    {results.filter(r => r.status === 'success').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Passed</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-red-600">
+                    {results.filter(r => r.status === 'error').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Failed</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {results.length}
+                  </div>
+                  <div className="text-sm text-gray-600">Total Checks</div>
+                </div>
+              </div>
+              {adminData && (
+                <div className="mt-4 p-3 bg-white rounded-lg">
+                  <p className="text-sm text-gray-700">
+                    <strong>Current User:</strong> {adminData.display_name || adminData.first_name || 'Admin'} ({adminData.email})
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    <strong>Admin Level:</strong> {adminData.admin_level || 'Basic'} Admin
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
+            
+            <div className="bg-white rounded-2xl p-6 shadow-lg mt-6">
+              <h2 className="text-lg font-bold text-gray-900 mb-4">🎯 Quick Actions</h2>
+              <div className="space-y-3">
+                <Link 
+                  href="/admin-dashboard" 
+                  className="block w-full px-4 py-3 bg-blue-600 text-white text-center rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  🏠 Back to Admin Dashboard
+                </Link>
+                <Link 
+                  href="/admin-dashboard/users" 
+                  className="block w-full px-4 py-3 border border-gray-300 text-gray-700 text-center rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  👥 Manage Users
+                </Link>
+              </div>
+            </div>
+          </>
         )}
 
         {/* Support Contact Information */}

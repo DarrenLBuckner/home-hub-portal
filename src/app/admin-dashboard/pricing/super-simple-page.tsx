@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useAdminData } from '@/hooks/useAdminData';
 
 interface PricingPlan {
   id: string;
@@ -20,11 +22,40 @@ interface PricingPlan {
 }
 
 export default function SuperSimplePricingManagement() {
+  const router = useRouter();
+  const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   const [plans, setPlans] = useState<PricingPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingPlan, setEditingPlan] = useState<PricingPlan | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const supabase = createClientComponentClient();
+  
+  // Admin access control for pricing management
+  useEffect(() => {
+    if (adminLoading) return;
+    
+    if (adminError) {
+      console.error('❌ Admin data error:', adminError);
+      alert('Error loading admin data. Please try again.');
+      router.push('/admin-login');
+      return;
+    }
+    
+    if (!isAdmin) {
+      console.log('❌ Not authorized to view pricing management - not admin.');
+      alert('Access denied. Admin privileges required.');
+      router.push('/admin-login');
+      return;
+    }
+    
+    // Check if user has pricing management access (Super Admin + Owner Admin only)
+    if (!permissions?.canAccessPricingManagement) {
+      console.log('❌ Not authorized to view pricing management - insufficient permissions.');
+      alert('Access denied. Super Admin or Owner Admin privileges required for pricing management.');
+      router.push('/admin-dashboard');
+      return;
+    }
+  }, [adminLoading, adminError, isAdmin, permissions, router]);
 
   useEffect(() => {
     fetchPricingPlans();
@@ -32,10 +63,19 @@ export default function SuperSimplePricingManagement() {
 
   const fetchPricingPlans = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('admin_pricing_overview')
-        .select('*')
-        .order('user_type', { ascending: true });
+        .select('*');
+      
+      // Apply country filter for Owner Admins (Super Admin sees all)
+      if (!permissions?.canViewAllCountryPricing && permissions?.countryFilter) {
+        // Owner Admin: Filter to their country only
+        query = query.eq('country_id', permissions.countryFilter);
+      }
+      
+      query = query.order('user_type', { ascending: true });
+      
+      const { data, error } = await query;
 
       if (error) throw error;
       setPlans(data || []);
@@ -48,13 +88,26 @@ export default function SuperSimplePricingManagement() {
 
   const updatePlan = async (planId: string, updates: Partial<PricingPlan>) => {
     try {
-      const { error } = await supabase
+      // Check if user has permission to edit pricing
+      if (!permissions?.canEditCountryPricing && !permissions?.canEditGlobalPricing) {
+        alert('Access denied. You do not have permission to edit pricing.');
+        return;
+      }
+      
+      let query = supabase
         .from('pricing_plans')
         .update({
           ...updates,
           updated_at: new Date().toISOString()
         })
         .eq('id', planId);
+      
+      // Apply country filter for Owner Admins (they can only edit their country's pricing)
+      if (!permissions?.canEditGlobalPricing && permissions?.countryFilter) {
+        query = query.eq('country_id', permissions.countryFilter);
+      }
+
+      const { error } = await query;
 
       if (error) throw error;
       
@@ -217,12 +270,28 @@ export default function SuperSimplePricingManagement() {
     );
   };
 
-  if (loading) {
+  // Show loading while checking permissions or loading data
+  if (adminLoading || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin text-4xl mb-4">⏳</div>
-          <p className="text-gray-600">Loading your pricing plans...</p>
+          <p className="text-gray-600">
+            {adminLoading ? 'Checking pricing management access...' : 'Loading your pricing plans...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not authorized (useEffect will handle redirect)
+  if (!isAdmin || !permissions?.canAccessPricingManagement) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
+          <div className="text-red-600 text-4xl mb-4">🔒</div>
+          <p className="text-gray-900 font-bold mb-2">Admin Access Required</p>
+          <p className="text-gray-600">Pricing management is restricted to Super Admin and Owner Admin only.</p>
         </div>
       </div>
     );
@@ -240,12 +309,35 @@ export default function SuperSimplePricingManagement() {
       {/* Header */}
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">💰 Super Simple Pricing Management</h1>
-          <p className="text-gray-600">Change your pricing plans easily - no technical knowledge required!</p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 mb-2">💰 Super Simple Pricing Management</h1>
+              <p className="text-gray-600">Change your pricing plans easily - no technical knowledge required!</p>
+            </div>
+            <div className="text-right">
+              <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                permissions?.canEditGlobalPricing 
+                  ? 'bg-red-100 text-red-800' 
+                  : 'bg-yellow-100 text-yellow-800'
+              }`}>
+                {permissions?.canEditGlobalPricing ? '🌍 Global Access' : `🏴 ${adminData?.country_id || 'Country'} Access`}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {permissions?.canEditGlobalPricing 
+                  ? 'Can edit pricing for all countries' 
+                  : 'Can edit pricing for your country only'}
+              </p>
+            </div>
+          </div>
           <div className="mt-4 p-4 bg-blue-50 rounded-lg">
             <p className="text-blue-800">
               <strong>🎯 Quick Tips:</strong> Click "Edit" to change prices instantly. 
               Toggle plans on/off with the switch. Mark plans as "Popular" to highlight them.
+              {!permissions?.canEditGlobalPricing && (
+                <span className="block mt-2 text-yellow-700">
+                  <strong>📍 Note:</strong> As Owner Admin, you can only modify pricing for your assigned country.
+                </span>
+              )}
             </p>
           </div>
         </div>
