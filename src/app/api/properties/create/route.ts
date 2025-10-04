@@ -146,18 +146,29 @@ export async function POST(req: NextRequest) {
       userType: userProfile.user_type,
       emailInConfig: !!adminConfig[userProfile.email],
       configLevel: adminConfig[userProfile.email]?.level,
-      adminConfigEmails: Object.keys(adminConfig)
+      adminConfigEmails: Object.keys(adminConfig),
+      exactEmailMatch: adminConfig[userProfile.email],
+      caseInsensitiveCheck: Object.keys(adminConfig).find(email => email.toLowerCase() === userProfile.email?.toLowerCase())
     });
 
     // More lenient admin check - check email first, then user_type as fallback
+    // Handle case insensitive email matching
+    const userEmail = userProfile.email?.toLowerCase();
+    const matchedAdminEmail = Object.keys(adminConfig).find(email => email.toLowerCase() === userEmail);
+    const adminSettings = matchedAdminEmail ? adminConfig[matchedAdminEmail] : null;
+    
     const isEligibleAdmin = userProfile && 
-                           adminConfig[userProfile.email] && 
-                           ['super', 'owner'].includes(adminConfig[userProfile.email].level);
+                           adminSettings && 
+                           ['super', 'owner'].includes(adminSettings.level);
 
     console.log('🔍 Final Admin Status:', {
       isEligibleAdmin,
       email: userProfile.email,
-      userType: userProfile.user_type
+      userEmailLower: userEmail,
+      matchedAdminEmail,
+      adminSettings,
+      userType: userProfile.user_type,
+      adminConfigKeys: Object.keys(adminConfig)
     });
 
     if (isEligibleAdmin) {
@@ -204,11 +215,12 @@ export async function POST(req: NextRequest) {
 
       console.log('✅ Admin property limits check passed:', {
         email: userProfile.email,
-        adminLevel: adminConfig[userProfile.email].level,
+        adminLevel: adminSettings?.level,
         saleCount: saleCount || 0,
         rentalCount: rentalCount || 0,
         saleLimit,
-        rentalLimit
+        rentalLimit,
+        listingType: normalizedPayload.listing_type
       });
       
     } else {
