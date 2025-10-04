@@ -2,7 +2,7 @@
 import React, { useState, ChangeEvent, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { supabaseBrowser } from "@/lib/supabase/browser";
+// supabaseBrowser import removed - authentication now handled server-side
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
@@ -34,7 +34,8 @@ export default function CreateLandlordProperty() {
 
   useEffect(() => {
     async function checkAuth() {
-      const supabase = supabaseBrowser();
+      // Authentication now handled server-side - no client-side auth needed
+      return;
       
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser();
