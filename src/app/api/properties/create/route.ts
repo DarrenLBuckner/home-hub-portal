@@ -6,8 +6,11 @@ export const runtime = 'nodejs'; // avoid Edge runtime issues
 
 export async function POST(req: NextRequest) {
   try {
+    console.log('🚀 Properties Create API - Starting request processing');
+    
     // Create supabase server client
     const cookieStore = await cookies();
+    console.log('✅ Cookies retrieved successfully');
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -25,6 +28,7 @@ export async function POST(req: NextRequest) {
         },
       }
     );
+    console.log('✅ Supabase client created successfully');
     
     // Authenticate the user
     const {
@@ -560,7 +564,15 @@ export async function POST(req: NextRequest) {
     });
     
   } catch (err: any) {
-    console.error("API error:", err);
-    return NextResponse.json({ error: err?.message || "Unknown error" }, { status: 500 });
+    console.error("💥 API error - Full details:", {
+      message: err?.message,
+      stack: err?.stack,
+      name: err?.name,
+      cause: err?.cause
+    });
+    return NextResponse.json({ 
+      error: err?.message || "Unknown error",
+      details: process.env.NODE_ENV === 'development' ? err?.stack : undefined
+    }, { status: 500 });
   }
 }
