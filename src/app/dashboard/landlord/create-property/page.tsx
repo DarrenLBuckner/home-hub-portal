@@ -37,6 +37,7 @@ export default function CreateLandlordProperty() {
       // Authentication now handled server-side - no client-side auth needed
       return;
       
+      /* DISABLED - Authentication now server-side
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
@@ -73,6 +74,7 @@ export default function CreateLandlordProperty() {
 
       setUser(authUser);
       setLoading(false);
+      */
     }
 
     checkAuth();
