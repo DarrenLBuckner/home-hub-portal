@@ -7,6 +7,11 @@ export const runtime = 'nodejs'; // avoid Edge runtime issues
 export async function POST(req: NextRequest) {
   try {
     console.log('🚀 Properties Create API - Starting request processing');
+    console.log('🔍 Environment check:', {
+      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+      hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY
+    });
     
     // Create supabase server client
     const cookieStore = await cookies();
@@ -589,15 +594,16 @@ export async function POST(req: NextRequest) {
     });
     
   } catch (err: any) {
-    console.error("💥 API error - Full details:", {
-      message: err?.message,
-      stack: err?.stack,
-      name: err?.name,
-      cause: err?.cause
-    });
+    console.error("💥💥💥 CRITICAL API ERROR 💥💥💥");
+    console.error("Error message:", err?.message);
+    console.error("Error stack:", err?.stack);
+    console.error("Error name:", err?.name);
+    console.error("Full error object:", err);
+    
     return NextResponse.json({ 
-      error: err?.message || "Unknown error",
-      details: process.env.NODE_ENV === 'development' ? err?.stack : undefined
+      error: `API Error: ${err?.message || "Unknown error"}`,
+      type: err?.name || "UnknownError",
+      details: err?.stack || "No stack trace available"
     }, { status: 500 });
   }
 }
