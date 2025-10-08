@@ -180,14 +180,6 @@ export async function POST(req: NextRequest) {
       adminConfigKeys: Object.keys(adminConfig)
     });
 
-    // EMERGENCY DEBUG - Force admin bypass for Qumar temporarily
-    if (userProfile.email?.toLowerCase() === 'qumar@guyanahomehub.com') {
-      console.log('🚨 EMERGENCY ADMIN BYPASS FOR QUMAR - SKIPPING ALL LIMITS 🚨');
-      // Skip directly to property creation - no limit checks
-      // This bypasses both admin and regular limit checks for testing
-      console.log('Bypassing all property limit checks for Qumar');
-    } else {
-
     // CRITICAL DEBUG - Add a clear marker for admin path
     if (isEligibleAdmin) {
       console.log('🚨🚨🚨 ADMIN PATH CONFIRMED - BYPASSING REGULAR LIMITS 🚨🚨🚨');
