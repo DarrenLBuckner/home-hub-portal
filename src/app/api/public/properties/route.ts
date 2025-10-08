@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     
     console.log(`🔍 Fetching properties - site: ${site}, listing_type: ${listing_type}`)
     
-    // Build the query - look for active properties (not just 'available')
+    // Build the query - look for active properties
     let query = supabase
       .from('properties')
       .select(`
@@ -23,14 +23,16 @@ export async function GET(request: NextRequest) {
           *
         )
       `)
-      .in('status', ['pending', 'off_market']) // Include valid statuses from database
+      .in('status', ['active', 'pending']) // Look for active and pending properties
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     
-    // Add site filtering if provided
+    // Add site filtering if provided - but make it optional since many properties don't have site_id
     if (site) {
       console.log(`Filtering properties for site: ${site}`)
-      query = query.eq('site_id', site)
+      // For now, skip site filtering since properties don't have site_id set
+      // query = query.eq('site_id', site)
+      console.log(`Note: Site filtering temporarily disabled - properties don't have site_id field`)
     }
     
     // Add listing type filtering if provided
@@ -49,7 +51,7 @@ export async function GET(request: NextRequest) {
     const { count, error: countError } = await supabase
       .from('properties')
       .select('*', { count: 'exact', head: true })
-      .in('status', ['pending', 'off_market'])
+      .in('status', ['active', 'pending'])
     
     if (countError) {
       console.error('Count error:', countError)
