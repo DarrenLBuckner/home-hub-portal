@@ -176,6 +176,12 @@ export async function POST(req: NextRequest) {
     });
 
     if (isEligibleAdmin) {
+      console.log('🎯 ADMIN PATH TAKEN - Using special admin limits for:', {
+        email: userProfile.email,
+        adminLevel: adminSettings?.level,
+        userType: userProfile.user_type
+      });
+      
       // Special limits ONLY for super admins and owner admins  
       const saleLimit = 20;
       const rentalLimit = 5;
@@ -229,9 +235,10 @@ export async function POST(req: NextRequest) {
       
     } else {
       // For all other users (agents, landlords, FSBO) - use enhanced property limits system
-      console.log('🔍 Using enhanced property limits system for user:', {
+      console.log('🔍 Using enhanced property limits system for NON-ADMIN user:', {
         userType: userProfile.user_type,
-        email: userProfile.email
+        email: userProfile.email,
+        isEligibleAdmin: false
       });
       
       // Use the new enhanced property limits check
@@ -251,7 +258,7 @@ export async function POST(req: NextRequest) {
 
       const result = limitResult?.[0];
       if (!result?.can_create) {
-        console.error('❌ Enhanced property limit exceeded');
+        console.error('❌ Enhanced property limit exceeded for non-admin user');
         
         // Provide specific error messages based on user type
         let errorMessage = result?.reason || 'Property limit exceeded';
@@ -276,7 +283,7 @@ export async function POST(req: NextRequest) {
         }, { status: 403 });
       }
 
-      console.log('✅ Enhanced property limits check passed:', {
+      console.log('✅ Enhanced property limits check passed for non-admin:', {
         userType: userProfile.user_type,
         can_create: result?.can_create,
         current_count: result?.current_count,
