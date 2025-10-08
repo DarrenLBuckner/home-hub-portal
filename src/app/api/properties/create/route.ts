@@ -175,6 +175,24 @@ export async function POST(req: NextRequest) {
       adminConfigKeys: Object.keys(adminConfig)
     });
 
+    // CRITICAL DEBUG - Add a clear marker for admin path
+    if (isEligibleAdmin) {
+      console.log('🚨🚨🚨 ADMIN PATH CONFIRMED - BYPASSING REGULAR LIMITS 🚨🚨🚨');
+      console.log('Admin details:', {
+        email: userProfile.email,
+        adminLevel: adminSettings?.level,
+        shouldBypassLimits: true
+      });
+    } else {
+      console.log('❌❌❌ NOT ADMIN - WILL USE REGULAR LIMITS ❌❌❌');
+      console.log('Non-admin details:', {
+        email: userProfile.email,
+        userType: userProfile.user_type,
+        matchedAdminEmail,
+        adminSettings
+      });
+    }
+
     if (isEligibleAdmin) {
       console.log('🎯 ADMIN PATH TAKEN - Using special admin limits for:', {
         email: userProfile.email,
