@@ -205,19 +205,6 @@ export async function POST(req: NextRequest) {
         userType: userProfile.user_type
       });
       
-      // TEMPORARY DEBUG - Return success immediately to test admin detection
-      return NextResponse.json({
-        success: true,
-        message: "ADMIN DETECTED - Property creation would succeed with admin limits",
-        adminInfo: {
-          email: userProfile.email,
-          isEligibleAdmin: true,
-          adminLevel: adminSettings?.level,
-          saleLimit: 20,
-          rentalLimit: 5
-        }
-      });
-      
       // Special limits ONLY for super admins and owner admins  
       const saleLimit = 20;
       const rentalLimit = 5;

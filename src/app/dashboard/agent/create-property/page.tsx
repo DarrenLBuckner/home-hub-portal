@@ -364,14 +364,7 @@ export default function CreatePropertyPage() {
           <input name="neighborhood" type="text" placeholder="Neighborhood/Street (Optional - e.g., Main Street, Sheriff Street)" value={form.neighborhood} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full mb-3 text-gray-900 bg-white placeholder-gray-600 text-base" />
         </div>
   {/* Agent Details (hidden for agent form) */}
-        {/* Status */}
-        <div>
-          <h3 className="text-lg font-bold mb-4 text-gray-900 border-b border-gray-200 pb-2">⚡ Status</h3>
-          <select name="status" value={form.status} onChange={handleChange} className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 w-full text-gray-900 bg-white text-base">
-            <option value="draft">Draft</option>
-            <option value="active">Active</option>
-          </select>
-        </div>
+        {/* Status removed - all properties go to admin for approval */}
         {/* Enhanced image upload */}
         {/* Property Images */}
         <div>
