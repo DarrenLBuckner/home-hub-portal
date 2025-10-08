@@ -446,7 +446,7 @@ export async function POST(req: NextRequest) {
         
         // System fields
         user_id: userId,
-        status: body.status || 'draft',
+        status: 'pending', // All properties need admin approval
         created_at: new Date().toISOString(),
       };
     } else if (isRental) {
@@ -479,7 +479,7 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         listing_type: 'rent',
         listed_by_type: 'landlord',
-        status: body.status || 'off_market',
+        status: 'pending', // All properties need admin approval
         propertyCategory: 'rental',
         created_at: new Date().toISOString(),
       };
@@ -515,7 +515,7 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         listing_type: 'sale',
         listed_by_type: 'owner',
-        status: body.status || 'off_market',
+        status: 'pending', // All properties need admin approval
         
         // Legacy/additional fields
         propertyCategory: 'sale',
