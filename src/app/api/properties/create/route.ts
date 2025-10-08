@@ -188,18 +188,6 @@ export async function POST(req: NextRequest) {
         adminLevel: adminSettings?.level,
         shouldBypassLimits: true
       });
-      
-      // IMMEDIATE RETURN FOR TESTING - Skip all property creation logic
-      return NextResponse.json({
-        success: true,
-        message: "ADMIN BYPASS TEST - Property creation would have succeeded",
-        adminStatus: {
-          isEligibleAdmin: true,
-          email: userProfile.email,
-          adminLevel: adminSettings?.level
-        }
-      });
-      
     } else {
       console.log('❌❌❌ NOT ADMIN - WILL USE REGULAR LIMITS ❌❌❌');
       console.log('Non-admin details:', {
