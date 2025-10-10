@@ -142,33 +142,39 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Special admin privileges ONLY for super admins and owner admins
-    const adminConfig: { [email: string]: { level: string } } = {
-      'mrdarrenbuckner@gmail.com': { level: 'super' },
-      'qumar@guyanahomehub.com': { level: 'owner' },
-      'Qumar@guyanahomehub.com': { level: 'owner' } // Handle both cases
+    // BULLETPROOF ADMIN DETECTION - Based on working emergency bypass
+    const ADMIN_REGISTRY = {
+      super: ['mrdarrenbuckner@gmail.com'] as string[],
+      owner: ['qumar@guyanahomehub.com'] as string[],
+      basic: [] as string[] // For future country-specific admins
     };
 
-    // Check if user is a super admin or owner admin
-    console.log('🔍 Admin Check Debug:', {
-      userEmail: userProfile.email,
-      userType: userProfile.user_type,
-      emailInConfig: !!adminConfig[userProfile.email],
-      configLevel: adminConfig[userProfile.email]?.level,
-      adminConfigEmails: Object.keys(adminConfig),
-      exactEmailMatch: adminConfig[userProfile.email],
-      caseInsensitiveCheck: Object.keys(adminConfig).find(email => email.toLowerCase() === userProfile.email?.toLowerCase())
-    });
+    function getAdminLevel(email: string | undefined): 'super' | 'owner' | 'basic' | null {
+      if (!email) return null;
+      
+      const normalizedEmail = email.toLowerCase().trim();
+      
+      if (ADMIN_REGISTRY.super.includes(normalizedEmail)) return 'super';
+      if (ADMIN_REGISTRY.owner.includes(normalizedEmail)) return 'owner';
+      if (ADMIN_REGISTRY.basic.includes(normalizedEmail)) return 'basic';
+      
+      return null;
+    }
 
-    // More lenient admin check - check email first, then user_type as fallback
-    // Handle case insensitive email matching
-    const userEmail = userProfile.email?.toLowerCase();
-    const matchedAdminEmail = Object.keys(adminConfig).find(email => email.toLowerCase() === userEmail);
-    const adminSettings = matchedAdminEmail ? adminConfig[matchedAdminEmail] : null;
-    
-    const isEligibleAdmin = userProfile && 
-                           adminSettings && 
-                           ['super', 'owner'].includes(adminSettings.level);
+    // Apply bulletproof admin detection
+    const adminLevel = getAdminLevel(userProfile.email);
+    const isEligibleAdmin = adminLevel === 'super' || adminLevel === 'owner';
+
+    console.log('🔍 BULLETPROOF Admin Detection:', {
+      email: userProfile.email,
+      emailNormalized: userProfile.email?.toLowerCase().trim(),
+      adminLevel,
+      isEligibleAdmin,
+      registryCheck: {
+        super: ADMIN_REGISTRY.super.includes(userProfile.email?.toLowerCase().trim() || ''),
+        owner: ADMIN_REGISTRY.owner.includes(userProfile.email?.toLowerCase().trim() || '')
+      }
+    });
 
     console.log('🔍 Final Admin Status:', {
       isEligibleAdmin,
@@ -198,20 +204,12 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // EMERGENCY DEBUG - Force return success for Qumar to test
-    if (userProfile.email?.toLowerCase() === 'qumar@guyanahomehub.com') {
-      console.log('🚨🚨🚨 EMERGENCY QUMAR BYPASS - RETURNING SUCCESS 🚨🚨🚨');
-      return NextResponse.json({
-        success: true,
-        message: "Emergency bypass for Qumar - property would be created successfully",
-        bypass: true
-      });
-    }
+    // Remove old conflicting admin detection code
 
     if (isEligibleAdmin) {
       console.log('🎯 ADMIN PATH TAKEN - Using special admin limits for:', {
         email: userProfile.email,
-        adminLevel: adminSettings?.level,
+        adminLevel: adminLevel,
         userType: userProfile.user_type
       });
       
@@ -258,7 +256,7 @@ export async function POST(req: NextRequest) {
 
       console.log('✅ Admin property limits check passed:', {
         email: userProfile.email,
-        adminLevel: adminSettings?.level,
+        adminLevel: adminLevel,
         saleCount: saleCount || 0,
         rentalCount: rentalCount || 0,
         saleLimit,
