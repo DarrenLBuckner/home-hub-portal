@@ -179,11 +179,9 @@ export async function POST(req: NextRequest) {
     console.log('🔍 Final Admin Status:', {
       isEligibleAdmin,
       email: userProfile.email,
-      userEmailLower: userEmail,
-      matchedAdminEmail,
-      adminSettings,
-      userType: userProfile.user_type,
-      adminConfigKeys: Object.keys(adminConfig)
+      emailNormalized: userProfile.email?.toLowerCase().trim(),
+      adminLevel: adminLevel,
+      userType: userProfile.user_type
     });
 
     // CRITICAL DEBUG - Add a clear marker for admin path
@@ -191,7 +189,7 @@ export async function POST(req: NextRequest) {
       console.log('🚨🚨🚨 ADMIN PATH CONFIRMED - BYPASSING REGULAR LIMITS 🚨🚨🚨');
       console.log('Admin details:', {
         email: userProfile.email,
-        adminLevel: adminSettings?.level,
+        adminLevel: adminLevel,
         shouldBypassLimits: true
       });
     } else {
@@ -199,8 +197,7 @@ export async function POST(req: NextRequest) {
       console.log('Non-admin details:', {
         email: userProfile.email,
         userType: userProfile.user_type,
-        matchedAdminEmail,
-        adminSettings
+        adminLevel: null
       });
     }
 
