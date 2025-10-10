@@ -26,13 +26,19 @@ export async function POST() {
 
     console.log('🔧 Setting up Qumar as Owner Admin...');
 
-    // Update Qumar's profile to admin status
+    // First check what countries exist
+    const { data: countries, error: countriesError } = await supabase
+      .from('countries')
+      .select('id, name');
+
+    console.log('Available countries:', countries);
+
+    // Update Qumar's profile to admin status (without country_id for now)
     const { data: updatedProfile, error: updateError } = await supabase
       .from('profiles')
       .update({
         user_type: 'admin',
         admin_level: 'owner',
-        country_id: 1, // Guyana
         display_name: 'Qumar Torrington',
         updated_at: new Date().toISOString()
       })
@@ -55,7 +61,6 @@ export async function POST() {
       .update({
         user_type: 'admin',
         admin_level: 'owner',
-        country_id: 1, // Guyana
         display_name: 'Qumar Torrington',
         updated_at: new Date().toISOString()
       })
@@ -71,7 +76,13 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       message: "Qumar has been set up as Owner Admin successfully",
-      updatedProfiles: [updatedProfile, altProfile].filter(Boolean)
+      updatedProfiles: [updatedProfile, altProfile].filter(Boolean),
+      countries: countries,
+      debug: {
+        countriesError: countriesError?.message,
+        updateError: updateError ? String(updateError) : null,
+        altError: altError ? String(altError) : null
+      }
     });
 
   } catch (error) {
