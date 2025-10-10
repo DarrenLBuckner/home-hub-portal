@@ -47,7 +47,7 @@ interface Property {
 export default function AdminPropertyDetailsPage() {
   const router = useRouter();
   const params = useParams();
-  const propertyId = params.id as string;
+  const propertyId = params?.id as string;
   
   const [user, setUser] = useState<any>(null);
   const [property, setProperty] = useState<Property | null>(null);

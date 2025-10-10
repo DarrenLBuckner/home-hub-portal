@@ -101,17 +101,23 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    // Use the same auth pattern as the working create property API
+    const supabase = createRouteHandlerClient({ 
+      cookies: cookies 
+    });
     const adminSupabase = createAdminClient();
     const propertyId = params.id;
     const body = await request.json();
     
-    // Get user session
+    // Get user session (supports both cookies and Bearer tokens)
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
+      console.error('❌ Authentication failed:', authError?.message);
       return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 })
     }
+
+    console.log('✅ User authenticated for approval:', user.email);
 
     // Get user profile and admin permissions using admin client
     const { data: profile, error: profileError } = await adminSupabase
@@ -238,3 +244,4 @@ export async function POST(
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
+
