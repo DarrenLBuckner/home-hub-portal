@@ -144,7 +144,7 @@ export default function AdminDashboard() {
           *,
           profiles!inner(first_name, last_name, user_type)
         `)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'draft'])
         .order('created_at', { ascending: true });
 
       if (pendingError) {
@@ -179,11 +179,11 @@ export default function AdminDashboard() {
       console.log('Loading statistics...');
       
       try {
-        // Count pending
+        // Count pending and draft (both need admin review)
         const { count: totalPending } = await supabase
           .from('properties')
           .select('*', { count: 'exact', head: true })
-          .eq('status', 'pending');
+          .in('status', ['pending', 'draft']);
         console.log('Total pending:', totalPending);
 
         // Count today's submissions
@@ -200,7 +200,7 @@ export default function AdminDashboard() {
           const { data: byUserTypeData, error: typeError } = await supabase
             .from('properties')
             .select('listed_by_type')
-            .eq('status', 'pending');
+            .in('status', ['pending', 'draft']);
 
           if (!typeError && byUserTypeData) {
             byUserType = {

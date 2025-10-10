@@ -108,18 +108,13 @@ export default function MobileOptimizedAdminDashboard() {
         .from('properties')
         .select(`
           *,
-          profiles (
+          profiles!inner (
             first_name,
             last_name,
             user_type
-          ),
-          reviewer:reviewed_by (
-            first_name,
-            last_name,
-            email
           )
         `)
-        .eq('status', 'pending');
+        .in('status', ['pending', 'draft']);
 
       // Apply country filter for non-super admins
       if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
