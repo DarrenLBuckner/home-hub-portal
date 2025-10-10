@@ -139,7 +139,10 @@ export default function AdminDashboard() {
       
       const { data: pendingData, error: pendingError } = await supabase
         .from('properties')
-        .select('*')
+        .select(`
+          *,
+          profiles!inner(first_name, last_name, user_type)
+        `)
         .eq('status', 'pending')
         .order('created_at', { ascending: true });
 
