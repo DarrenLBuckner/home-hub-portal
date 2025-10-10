@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
+import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
@@ -12,7 +12,24 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options });
+          },
+        },
+      }
+    );
     
     // Get user session
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -102,14 +119,34 @@ export async function POST(
 ) {
   try {
     // Use the same auth pattern as the working create property API
-    const supabase = createRouteHandlerClient({ 
-      cookies: cookies 
-    });
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options });
+          },
+        },
+      }
+    );
     const adminSupabase = createAdminClient();
     const propertyId = params.id;
     const body = await request.json();
     
-    // Get user session (supports both cookies and Bearer tokens)
+    // Debug logging for property approval
+    console.log('🔍 APPROVAL DEBUG - Params received:', params);
+    console.log('🔍 APPROVAL DEBUG - Property ID:', propertyId);
+    console.log('🔍 APPROVAL DEBUG - Request body:', body);
+    
+    // Get user session
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     
     if (authError || !user) {
@@ -160,13 +197,27 @@ export async function POST(
     }
 
     // Get the property to check country access
+    console.log('🔍 APPROVAL DEBUG - Querying property with ID:', propertyId);
+    console.log('🔍 APPROVAL DEBUG - ID type:', typeof propertyId);
+    
+    // First, let's try to find ANY property with this ID regardless of filters
+    const { data: debugProperty, error: debugError } = await adminSupabase
+      .from('properties')
+      .select('*')
+      .eq('id', propertyId);
+    
+    console.log('🔍 APPROVAL DEBUG - Debug query (all properties with this ID):', { debugProperty, debugError });
+    
     const { data: property, error: propertyError } = await adminSupabase
       .from('properties')
       .select('id, country_id, site_id, status')
       .eq('id', propertyId)
       .single()
 
+    console.log('🔍 APPROVAL DEBUG - Property query result:', { property, propertyError });
+
     if (propertyError || !property) {
+      console.error('❌ APPROVAL DEBUG - Property not found error:', propertyError);
       return NextResponse.json({ error: 'Property not found' }, { status: 404 })
     }
 
