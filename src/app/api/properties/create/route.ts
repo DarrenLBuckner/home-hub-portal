@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     // Get user profile for permissions
     const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_type, email')
+      .select('user_type, email, property_limit')
       .eq('id', user.id)
       .single();
       
@@ -204,60 +204,42 @@ export async function POST(req: NextRequest) {
     // Remove old conflicting admin detection code
 
     if (isEligibleAdmin) {
-      console.log('🎯 ADMIN PATH TAKEN - Using special admin limits for:', {
+      console.log('🎯 ADMIN PATH TAKEN - Using database property limits for:', {
         email: userProfile.email,
         adminLevel: adminLevel,
         userType: userProfile.user_type
       });
       
-      // Special limits ONLY for super admins and owner admins  
-      const saleLimit = 20;
-      const rentalLimit = 5;
+      // Get property_limit from database for admin users
+      const propertyLimit = userProfile.property_limit || 0;
       
-      // Count their existing properties
-      const { count: saleCount, error: saleCountError } = await supabase
+      // Count total existing properties (all types)
+      const { count: totalCount, error: totalCountError } = await supabase
         .from('properties')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .eq('listing_type', 'sale')
-        .in('status', ['active', 'pending', 'draft']);
-        
-      const { count: rentalCount, error: rentalCountError } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .eq('listing_type', 'rent')
         .in('status', ['active', 'pending', 'draft']);
 
-      if (saleCountError || rentalCountError) {
-        console.error('Admin property count error:', { saleCountError, rentalCountError });
+      if (totalCountError) {
+        console.error('Admin property count error:', totalCountError);
         return NextResponse.json({ 
           error: "Unable to verify admin property limits. Please contact support." 
         }, { status: 500 });
       }
       
-      // Check against special admin limits
-      if (normalizedPayload.listing_type === 'sale' && (saleCount || 0) >= saleLimit) {
-        console.error('❌ Admin sale property limit exceeded');
+      // Check against database property limit
+      if ((totalCount || 0) >= propertyLimit) {
+        console.error('❌ Admin property limit exceeded');
         return NextResponse.json({ 
-          error: `Sale property limit reached. Admin accounts allow ${saleLimit} sale properties. You currently have ${saleCount || 0}.` 
-        }, { status: 403 });
-      }
-      
-      if (normalizedPayload.listing_type === 'rent' && (rentalCount || 0) >= rentalLimit) {
-        console.error('❌ Admin rental property limit exceeded');
-        return NextResponse.json({ 
-          error: `Rental property limit reached. Admin accounts allow ${rentalLimit} rental properties. You currently have ${rentalCount || 0}.` 
+          error: `Property limit reached. Admin accounts allow ${propertyLimit} properties. You currently have ${totalCount || 0}.` 
         }, { status: 403 });
       }
 
       console.log('✅ Admin property limits check passed:', {
         email: userProfile.email,
         adminLevel: adminLevel,
-        saleCount: saleCount || 0,
-        rentalCount: rentalCount || 0,
-        saleLimit,
-        rentalLimit,
+        totalCount: totalCount || 0,
+        propertyLimit: propertyLimit,
         listingType: normalizedPayload.listing_type
       });
       
