@@ -47,6 +47,7 @@ interface Statistics {
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
@@ -540,7 +541,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
             <div className="flex items-center space-x-3">
               <div className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
-                {userRole === 'super' ? '👑 Super Admin' : userRole === 'owner' ? '🌍 Country Admin' : '⭐ Admin'}
+                {adminData?.admin_level === 'super' ? '👑 Super Admin' : adminData?.admin_level === 'owner' ? '🌍 Country Admin' : '⭐ Admin'}
               </div>
               <div className="text-xs text-gray-500 sm:hidden">
                 Hi, {user?.name}
