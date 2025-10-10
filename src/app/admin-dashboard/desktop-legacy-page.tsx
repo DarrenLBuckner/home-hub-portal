@@ -26,7 +26,7 @@ interface Property {
     media_url: string;
     is_primary: boolean;
   }>;
-  profiles: {
+  owner: {
     first_name: string;
     last_name: string;
     user_type: string;
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
         .from('properties')
         .select(`
           *,
-          profiles!inner(first_name, last_name, user_type)
+          owner:profiles!user_id(first_name, last_name, user_type)
         `)
         .in('status', ['pending', 'draft'])
         .order('created_at', { ascending: true });
@@ -371,7 +371,7 @@ export default function AdminDashboard() {
           propertyId,
           ownerEmail: property.owner_email,
           propertyTitle: property.title,
-          ownerName: property.profiles?.first_name || 'Property Owner'
+          ownerName: property.owner?.first_name || 'Property Owner'
         })
       });
 
@@ -396,7 +396,7 @@ export default function AdminDashboard() {
           propertyId,
           ownerEmail: property.owner_email,
           propertyTitle: property.title,
-          ownerName: property.profiles?.first_name || 'Property Owner',
+          ownerName: property.owner?.first_name || 'Property Owner',
           rejectionReason: reason
         })
       });
@@ -464,7 +464,7 @@ export default function AdminDashboard() {
               <div className="text-right ml-4">
                 <div className="text-lg font-bold text-blue-600">${property.price.toLocaleString()}</div>
                 <div className="text-xs text-gray-500">
-                  by {property.profiles?.first_name || 'Unknown'} {property.profiles?.last_name || 'User'}
+                  by {property.owner?.first_name || 'Unknown'} {property.owner?.last_name || 'User'}
                 </div>
               </div>
             </div>

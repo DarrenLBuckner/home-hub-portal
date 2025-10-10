@@ -29,7 +29,9 @@ interface Property {
     media_url: string;
     is_primary: boolean;
   }>;
-  profiles: {
+  owner: {
+    id: string;
+    email: string;
     first_name: string;
     last_name: string;
     user_type: string;
@@ -108,7 +110,9 @@ export default function MobileOptimizedAdminDashboard() {
         .from('properties')
         .select(`
           *,
-          profiles!inner (
+          owner:profiles!user_id (
+            id,
+            email,
             first_name,
             last_name,
             user_type
@@ -316,7 +320,7 @@ export default function MobileOptimizedAdminDashboard() {
               PENDING
             </span>
             <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md uppercase">
-              {property.profiles ? displayUserType(property.profiles.user_type) : 'Unknown'}
+              {property.owner ? displayUserType(property.owner.user_type) : 'Unknown'}
             </span>
           </div>
           
@@ -361,8 +365,8 @@ export default function MobileOptimizedAdminDashboard() {
               </div>
               <div className="mt-1 text-xs text-blue-600">
                 Submitted {new Date(property.created_at).toLocaleDateString()} by {
-                  property.profiles ? 
-                    [property.profiles.first_name, property.profiles.last_name].filter(Boolean).join(' ') || 'Unknown User'
+                  property.owner ?
+                    [property.owner.first_name, property.owner.last_name].filter(Boolean).join(' ') || 'Unknown User'
                     : 'Unknown User'
                 }
               </div>

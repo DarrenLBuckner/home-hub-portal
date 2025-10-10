@@ -36,7 +36,7 @@ interface Property {
   listed_by_type: string;
   user_id: string;
   property_media: PropertyMedia[];
-  profiles: {
+  owner: {
     first_name: string;
     last_name: string;
     user_type: string;
@@ -88,7 +88,7 @@ export default function AdminPropertyDetailsPage() {
         .from('properties')
         .select(`
           *,
-          profiles!inner(first_name, last_name, user_type, phone),
+          owner:profiles!user_id(first_name, last_name, user_type, phone),
           property_media!left(
             media_url,
             media_type,
@@ -544,7 +544,7 @@ export default function AdminPropertyDetailsPage() {
             <div className="space-y-3">
               <div>
                 <div className="text-sm text-gray-500">Name</div>
-                <div className="font-medium">{property.profiles.first_name} {property.profiles.last_name}</div>
+                <div className="font-medium">{property.owner.first_name} {property.owner.last_name}</div>
               </div>
               <div>
                 <div className="text-sm text-gray-500">Email</div>
@@ -554,10 +554,10 @@ export default function AdminPropertyDetailsPage() {
                 <div className="text-sm text-gray-500">WhatsApp</div>
                 <div className="font-medium">{property.owner_whatsapp}</div>
               </div>
-              {property.profiles.phone && (
+              {property.owner.phone && (
                 <div>
                   <div className="text-sm text-gray-500">Profile Phone</div>
-                  <div className="font-medium">{property.profiles.phone}</div>
+                  <div className="font-medium">{property.owner.phone}</div>
                 </div>
               )}
               <div>
