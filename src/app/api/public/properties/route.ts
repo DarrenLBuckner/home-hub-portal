@@ -27,12 +27,10 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     
-    // Add site filtering if provided - but make it optional since many properties don't have site_id
+    // Add site filtering if provided
     if (site) {
       console.log(`Filtering properties for site: ${site}`)
-      // For now, skip site filtering since properties don't have site_id set
-      // query = query.eq('site_id', site)
-      console.log(`Note: Site filtering temporarily disabled - properties don't have site_id field`)
+      query = query.eq('site_id', site)
     }
     
     // Add listing type filtering if provided
@@ -47,11 +45,20 @@ export async function GET(request: NextRequest) {
       throw error
     }
     
-    // Get total count for pagination
-    const { count, error: countError } = await supabase
+    // Get total count for pagination with same filters
+    let countQuery = supabase
       .from('properties')
       .select('*', { count: 'exact', head: true })
       .in('status', ['active', 'pending'])
+    
+    if (site) {
+      countQuery = countQuery.eq('site_id', site)
+    }
+    if (listing_type) {
+      countQuery = countQuery.eq('listing_type', listing_type)
+    }
+    
+    const { count, error: countError } = await countQuery
     
     if (countError) {
       console.error('Count error:', countError)

@@ -13,12 +13,12 @@ export async function GET(
   try {
     const { id } = await params
 
-    // Get single property by ID with status 'available'
+    // Get single property by ID with status 'active'
     const { data, error } = await supabase
       .from('properties')
       .select('*')
       .eq('id', id)
-      .eq('status', 'available')
+      .eq('status', 'active')
       .single()
 
     if (error) {

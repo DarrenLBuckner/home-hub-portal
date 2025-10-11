@@ -141,10 +141,8 @@ export async function POST(
     const propertyId = params.id;
     const body = await request.json();
     
-    // Debug logging for property approval
-    console.log('🔍 APPROVAL DEBUG - Params received:', params);
-    console.log('🔍 APPROVAL DEBUG - Property ID:', propertyId);
-    console.log('🔍 APPROVAL DEBUG - Request body:', body);
+    // Property approval request
+    console.log('✅ Processing approval for property ID:', propertyId);
     
     // Get user session
     const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -196,34 +194,21 @@ export async function POST(
       return NextResponse.json({ error: 'No permission to reject properties' }, { status: 403 })
     }
 
-    // Get the property to check country access
-    console.log('🔍 APPROVAL DEBUG - Querying property with ID:', propertyId);
-    console.log('🔍 APPROVAL DEBUG - ID type:', typeof propertyId);
-    
-    // First, let's try to find ANY property with this ID regardless of filters
-    const { data: debugProperty, error: debugError } = await adminSupabase
-      .from('properties')
-      .select('*')
-      .eq('id', propertyId);
-    
-    console.log('🔍 APPROVAL DEBUG - Debug query (all properties with this ID):', { debugProperty, debugError });
-    
+    // Get the property to check permissions
     const { data: property, error: propertyError } = await adminSupabase
       .from('properties')
-      .select('id, country_id, site_id, status')
+      .select('id, country, status')
       .eq('id', propertyId)
       .single()
 
-    console.log('🔍 APPROVAL DEBUG - Property query result:', { property, propertyError });
-
     if (propertyError || !property) {
-      console.error('❌ APPROVAL DEBUG - Property not found error:', propertyError);
+      console.error('❌ Property not found:', propertyError?.message);
       return NextResponse.json({ error: 'Property not found' }, { status: 404 })
     }
 
     // Check country access for non-super admins
     if (!permissions.canViewAllCountries && permissions.countryFilter && 
-        (property as any).country_id !== permissions.countryFilter) {
+        (property as any).country !== permissions.countryFilter) {
       return NextResponse.json({ error: 'No access to properties from this country' }, { status: 403 })
     }
 
