@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/supabase';
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
@@ -19,6 +19,7 @@ export default function CreateFSBOProperty() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false); // Bulletproof double-submit prevention
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
     // Basic Info
@@ -222,6 +223,14 @@ export default function CreateFSBOProperty() {
   const handleSubmitForReview = async () => {
     if (!validateCurrentStep()) return;
     
+    // BULLETPROOF double-submit prevention using ref (immediate check)
+    if (submittingRef.current || isSubmitting) {
+      console.log('🚫 Submission already in progress - blocking duplicate');
+      return;
+    }
+    
+    // Set BOTH ref and state immediately
+    submittingRef.current = true;
     setIsSubmitting(true);
     setError('');
     const supabase = createClient();
@@ -233,6 +242,7 @@ export default function CreateFSBOProperty() {
       if (authError || !user) {
         console.error('Auth error:', authError);
         setError('Please login to submit a property');
+        submittingRef.current = false; // Reset ref on error
         setIsSubmitting(false);
         return;
       }
@@ -305,6 +315,7 @@ export default function CreateFSBOProperty() {
       if (testError) {
         console.error('MINIMAL DATA TEST FAILED:', testError);
         setError(`Basic insert failed: ${testError.message}`);
+        submittingRef.current = false; // Reset ref on error
         setIsSubmitting(false);
         return;
       }
@@ -332,6 +343,7 @@ export default function CreateFSBOProperty() {
         } else {
           setError(`Submission failed: ${error.message}`);
         }
+        submittingRef.current = false; // Reset ref on error
         setIsSubmitting(false);
         return;
       }
@@ -375,6 +387,7 @@ export default function CreateFSBOProperty() {
     } catch (err: any) {
       console.error('Unexpected error:', err);
       setError('An unexpected error occurred. Please try again.');
+      submittingRef.current = false; // Reset ref on error
       setIsSubmitting(false);
     }
   };
@@ -467,6 +480,7 @@ export default function CreateFSBOProperty() {
               {isSubmitting ? 'Saving...' : 'Save as Draft'}
             </button>
             <button 
+              type="button"
               onClick={handleSubmitForReview}
               className="px-6 py-3 bg-orange-600 text-white rounded hover:bg-orange-700"
               disabled={isSubmitting}

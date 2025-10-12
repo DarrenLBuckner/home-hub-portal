@@ -234,6 +234,9 @@ export default function CreatePropertyPage() {
       setError("");
       setLoading(false);
       
+      // Immediate redirect to prevent double submission
+      setTimeout(() => router.push('/dashboard/agent'), 1000);
+      
     } catch (authError) {
       console.error('❌ Property creation failed:', authError);
       setError("Failed to create property. Please try again.");

@@ -6,6 +6,7 @@ export const AMENITIES_CATEGORIES = [
       { id: 'ac', label: 'Air Conditioning' },
       { id: 'ceiling_fans', label: 'Ceiling Fans' },
       { id: 'solar_power', label: 'Solar Panels/Backup Power' },
+      { id: 'backup_generator', label: 'Backup Generator' },
       { id: 'water_heater', label: 'Water Heater (Solar/Electric)' },
       { id: 'cross_ventilation', label: 'Cross-Ventilation/Large Windows' }
     ]
@@ -43,6 +44,7 @@ export const AMENITIES_CATEGORIES = [
       { id: 'garden', label: 'Garden/Yard Space' },
       { id: 'fruit_trees', label: 'Fruit Trees' },
       { id: 'parking', label: 'Parking' },
+      { id: 'garage', label: 'Garage' },
       { id: 'pool', label: 'Swimming Pool' }
     ]
   },
