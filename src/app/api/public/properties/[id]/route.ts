@@ -16,7 +16,15 @@ export async function GET(
     // Get single property by ID with status 'active'
     const { data, error } = await supabase
       .from('properties')
-      .select('*')
+      .select(`
+        *,
+        property_media!property_media_property_id_fkey (
+          media_url,
+          media_type,
+          display_order,
+          is_primary
+        )
+      `)
       .eq('id', id)
       .eq('status', 'active')
       .single()
@@ -36,7 +44,24 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(data, {
+    // Transform the data to include images properly (same logic as list endpoint)
+    const images = data.property_media
+      ?.filter((media: any) => media.media_type === 'image')
+      ?.sort((a: any, b: any) => {
+        // Primary images first, then by display_order
+        if (a.is_primary && !b.is_primary) return -1
+        if (!a.is_primary && b.is_primary) return 1
+        return a.display_order - b.display_order
+      })
+      ?.map((media: any) => media.media_url) || []
+
+    const transformedProperty = {
+      ...data,
+      images,
+      property_media: undefined // Remove the nested object
+    }
+
+    return NextResponse.json(transformedProperty, {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
