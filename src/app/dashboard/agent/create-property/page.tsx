@@ -210,6 +210,7 @@ export default function CreatePropertyPage() {
           images: imagesForUpload,
           // userId will be extracted server-side from authenticated session
           propertyCategory: form.listing_type === 'sale' ? 'sale' : 'rental', // Map to API format
+          site_id: 'guyana',  // ADD THIS LINE ONLY
         }),
       });
 

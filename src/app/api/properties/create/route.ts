@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     console.log('✅ Cookies retrieved successfully');
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
       {
         cookies: {
           get(name: string) {
@@ -211,37 +211,48 @@ export async function POST(req: NextRequest) {
       });
       
       // Get property_limit from database for admin users
-      const propertyLimit = userProfile.property_limit || 0;
+      // NULL property_limit = unlimited (for super admin)
+      // Number property_limit = limited (for owner admin)
+      const propertyLimit = userProfile.property_limit;
       
-      // Count total existing properties (all types)
-      const { count: totalCount, error: totalCountError } = await supabase
-        .from('properties')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId)
-        .in('status', ['active', 'pending', 'draft']);
+      // Only check limits if propertyLimit is not NULL (super admin has NULL = unlimited)
+      if (propertyLimit !== null) {
+        // Count total existing properties (all types) for owner admin with limits
+        const { count: totalCount, error: totalCountError } = await supabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', userId)
+          .in('status', ['active', 'pending', 'draft']);
 
-      if (totalCountError) {
-        console.error('Admin property count error:', totalCountError);
-        return NextResponse.json({ 
-          error: "Unable to verify admin property limits. Please contact support." 
-        }, { status: 500 });
+        if (totalCountError) {
+          console.error('Admin property count error:', totalCountError);
+          return NextResponse.json({ 
+            error: "Unable to verify admin property limits. Please contact support." 
+          }, { status: 500 });
+        }
+        
+        // Check against database property limit for owner admin
+        if ((totalCount || 0) >= propertyLimit) {
+          console.error('❌ Owner admin property limit exceeded');
+          return NextResponse.json({ 
+            error: `Property limit reached. Admin accounts allow ${propertyLimit} properties. You currently have ${totalCount || 0}.` 
+          }, { status: 403 });
+        }
+        
+        console.log('✅ Owner admin property limits check passed:', {
+          email: userProfile.email,
+          adminLevel: adminLevel,
+          totalCount: totalCount || 0,
+          propertyLimit: propertyLimit,
+          listingType: normalizedPayload.listing_type
+        });
+      } else {
+        console.log('✅ Super admin unlimited access - no property limit check:', {
+          email: userProfile.email,
+          adminLevel: adminLevel,
+          propertyLimit: 'UNLIMITED'
+        });
       }
-      
-      // Check against database property limit
-      if ((totalCount || 0) >= propertyLimit) {
-        console.error('❌ Admin property limit exceeded');
-        return NextResponse.json({ 
-          error: `Property limit reached. Admin accounts allow ${propertyLimit} properties. You currently have ${totalCount || 0}.` 
-        }, { status: 403 });
-      }
-
-      console.log('✅ Admin property limits check passed:', {
-        email: userProfile.email,
-        adminLevel: adminLevel,
-        totalCount: totalCount || 0,
-        propertyLimit: propertyLimit,
-        listingType: normalizedPayload.listing_type
-      });
       
     } else {
       // For all other users (agents, landlords, FSBO) - use enhanced property limits system

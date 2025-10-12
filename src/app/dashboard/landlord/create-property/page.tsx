@@ -220,6 +220,7 @@ export default function CreateLandlordProperty() {
           listing_type: "rent", // Required by API
           city: selectedRegion, // Use region as city for rentals
           propertyCategory: "rental", // Mark as rental property
+          site_id: 'guyana',  // ADD THIS LINE ONLY
         }),
       });
 

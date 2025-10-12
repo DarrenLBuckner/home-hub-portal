@@ -14,7 +14,13 @@
       "Bash(curl:*)",
       "Bash(npm install:*)",
       "Bash(rg:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Read(//mnt/c/LocalFiles/Home Hub Folders/guyana-home-hub/src/**)",
+      "Read(//mnt/c/LocalFiles/Home Hub Folders/guyana-home-hub/**)",
+      "Bash(cat:*)",
+      "Read(//mnt/c/LocalFiles/**)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []
