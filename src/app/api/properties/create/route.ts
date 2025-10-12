@@ -445,6 +445,7 @@ export async function POST(req: NextRequest) {
         // System fields
         user_id: userId,
         status: body.status || 'draft',
+        site_id: body.site_id || 'guyana',  // Multi-tenant support
         created_at: new Date().toISOString(),
       };
     } else if (isRental) {
@@ -478,6 +479,7 @@ export async function POST(req: NextRequest) {
         listing_type: 'rent',
         listed_by_type: 'landlord',
         status: body.status || 'off_market',
+        site_id: body.site_id || 'guyana',  // Multi-tenant support
         propertyCategory: 'rental',
         created_at: new Date().toISOString(),
       };
@@ -514,6 +516,7 @@ export async function POST(req: NextRequest) {
         listing_type: 'sale',
         listed_by_type: 'owner',
         status: body.status || 'off_market',
+        site_id: body.site_id || 'guyana',  // Multi-tenant support
         
         // Legacy/additional fields
         propertyCategory: 'sale',
