@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       .from('properties')
       .select(`
         *,
-        property_media (
+        property_media!property_media_property_id_fkey (
           media_url,
           media_type,
           display_order,
@@ -28,7 +28,6 @@ export async function GET(request: NextRequest) {
       `)
       .in('status', ['active', 'pending']) // Look for active and pending properties
       .order('created_at', { ascending: false })
-      .order('display_order', { foreignTable: 'property_media', ascending: true })
       .range(offset, offset + limit - 1)
     
     // Add site filtering if provided
