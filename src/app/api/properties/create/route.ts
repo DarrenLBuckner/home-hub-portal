@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     // Get user profile for permissions
     const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_type, email, property_limit')
+      .select('user_type, email, property_limit, country_id')
       .eq('id', user.id)
       .single();
       
@@ -446,6 +446,7 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         status: body.status || 'draft',
         site_id: body.site_id || 'guyana',  // Multi-tenant support
+        country_id: userProfile?.country_id || 'GY',  // ✅ Use 'GY' not 1
         created_at: new Date().toISOString(),
       };
     } else if (isRental) {
@@ -480,6 +481,7 @@ export async function POST(req: NextRequest) {
         listed_by_type: 'landlord',
         status: body.status || 'off_market',
         site_id: body.site_id || 'guyana',  // Multi-tenant support
+        country_id: userProfile?.country_id || 'GY',  // ✅ Use 'GY' not 1
         propertyCategory: 'rental',
         created_at: new Date().toISOString(),
       };
@@ -517,6 +519,7 @@ export async function POST(req: NextRequest) {
         listed_by_type: 'owner',
         status: body.status || 'off_market',
         site_id: body.site_id || 'guyana',  // Multi-tenant support
+        country_id: userProfile?.country_id || 'GY',  // ✅ Use 'GY' not 1
         
         // Legacy/additional fields
         propertyCategory: 'sale',
