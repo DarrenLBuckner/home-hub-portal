@@ -409,99 +409,148 @@ export default function CreateFSBOProperty() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8">Create Your FSBO Listing</h1>
-      
-      {/* Completion Progress */}
-      <CompletionProgress 
-        completionPercentage={completionAnalysis.percentage}
-        userType="fsbo"
-        missingFields={completionAnalysis.missingFields}
-      />
-      
-      {/* Progress bar */}
-      <div className="mb-8">
-        <div className="flex justify-between mb-2">
-          {steps.map((step, idx) => (
-            <div
-              key={idx}
-              className={`text-sm ${
-                currentStep > idx + 1 
-                  ? 'text-green-600 font-medium' 
-                  : currentStep === idx + 1 
-                    ? 'text-blue-600 font-bold' 
-                    : 'text-gray-400'
-              }`}
-            >
-              {step}
-            </div>
-          ))}
-        </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${(currentStep / 6) * 100}%` }}
+      <div className="bg-white rounded-xl shadow-lg p-8">
+        <h1 className="text-3xl font-bold mb-2 text-gray-900 flex items-center gap-3">
+          🏠 Create FSBO Listing
+          <span className="bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded-full">For Sale By Owner</span>
+        </h1>
+        <p className="text-gray-600 mb-8">Sell your property directly and save on commission fees</p>
+        
+        {/* Performance Score at Top */}
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-200 mb-8">
+          <CompletionProgress 
+            completionPercentage={completionAnalysis.percentage}
+            userType="fsbo"
+            missingFields={completionAnalysis.missingFields}
           />
         </div>
-      </div>
-
-      {/* Error message */}
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-800">{error}</p>
-        </div>
-      )}
-
-      {/* Form steps */}
-      <div className="min-h-[400px]">
-        {currentStep === 1 && <Step1BasicInfo formData={formData} setFormData={setFormData} />}
-        {currentStep === 2 && <Step2Details formData={formData} setFormData={setFormData} />}
-        {currentStep === 3 && <Step3Location formData={formData} setFormData={setFormData} />}
-        {currentStep === 4 && <Step4Photos images={images} setImages={setImages} />}
-        {currentStep === 5 && <Step5Contact formData={formData} setFormData={setFormData} />}
-        {currentStep === 6 && <Step6Review formData={formData} images={images} />}
-      </div>
-
-      {/* Navigation buttons */}
-      <div className="flex justify-between mt-8 pt-6 border-t">
-        {currentStep > 1 ? (
-          <button
-            onClick={handlePrevious}
-            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            disabled={isSubmitting}
-          >
-            Previous
-          </button>
-        ) : (
-          <div></div>
-        )}
         
-        {currentStep < 6 ? (
-          <button
-            onClick={handleNext}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            disabled={isSubmitting}
-          >
-            Next
-          </button>
-        ) : (
-          <div className="flex gap-4 mt-8 p-6 border-t">
-            <button 
-              onClick={handleSaveAsDraft}
-              className="px-6 py-2 border border-gray-300 rounded"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Saving...' : 'Save as Draft'}
-            </button>
-            <button 
-              type="button"
-              onClick={handleSubmitForReview}
-              className="px-6 py-3 bg-orange-600 text-white rounded hover:bg-orange-700"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Submitting...' : 'Submit for Review'}
-            </button>
+        {/* Enhanced Progress bar */}
+        <div className="mb-8">
+          <div className="flex justify-between mb-4">
+            {steps.map((step, idx) => (
+              <div
+                key={idx}
+                className={`flex flex-col items-center text-center ${
+                  currentStep > idx + 1 
+                    ? 'text-green-600' 
+                    : currentStep === idx + 1 
+                      ? 'text-blue-600' 
+                      : 'text-gray-400'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mb-1 ${
+                  currentStep > idx + 1 
+                    ? 'bg-green-100 text-green-600' 
+                    : currentStep === idx + 1 
+                      ? 'bg-blue-100 text-blue-600' 
+                      : 'bg-gray-100 text-gray-400'
+                }`}>
+                  {currentStep > idx + 1 ? '✓' : idx + 1}
+                </div>
+                <div className={`text-xs font-medium ${
+                  currentStep > idx + 1 
+                    ? 'text-green-600' 
+                    : currentStep === idx + 1 
+                      ? 'text-blue-600' 
+                      : 'text-gray-400'
+                }`}>
+                  {step}
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+            <div
+              className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 shadow-sm"
+              style={{ width: `${(currentStep / 6) * 100}%` }}
+            />
+          </div>
+          <div className="text-center mt-2 text-sm text-gray-600">
+            Step {currentStep} of {steps.length}
+          </div>
+        </div>
+
+        {/* Error message */}
+        {error && (
+          <div className="mb-6 p-6 bg-red-50 border-2 border-red-200 rounded-xl">
+            <div className="flex items-center gap-3">
+              <span className="text-red-500 text-2xl">⚠️</span>
+              <p className="text-red-800 font-medium">{error}</p>
+            </div>
           </div>
         )}
+
+        {/* Form steps - Enhanced styling */}
+        <div className="min-h-[500px] bg-gray-50 p-8 rounded-xl border border-gray-200">
+          {currentStep === 1 && <Step1BasicInfo formData={formData} setFormData={setFormData} />}
+          {currentStep === 2 && <Step2Details formData={formData} setFormData={setFormData} />}
+          {currentStep === 3 && <Step3Location formData={formData} setFormData={setFormData} />}
+          {currentStep === 4 && <Step4Photos images={images} setImages={setImages} />}
+          {currentStep === 5 && <Step5Contact formData={formData} setFormData={setFormData} />}
+          {currentStep === 6 && <Step6Review formData={formData} images={images} />}
+        </div>
+
+        {/* Enhanced Navigation buttons */}
+        <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
+          {currentStep > 1 ? (
+            <button
+              onClick={handlePrevious}
+              className="inline-flex items-center gap-2 px-6 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium disabled:opacity-50"
+              disabled={isSubmitting}
+            >
+              ← Previous
+            </button>
+          ) : (
+            <div></div>
+          )}
+          
+          {currentStep < 6 ? (
+            <button
+              onClick={handleNext}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium shadow-lg transform hover:scale-105 disabled:opacity-50"
+              disabled={isSubmitting}
+            >
+              Next →
+            </button>
+          ) : (
+            <div className="flex gap-4">
+              <button 
+                onClick={handleSaveAsDraft}
+                className="px-6 py-3 border-2 border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 font-medium disabled:opacity-50"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin">⏳</span>
+                    Saving...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    💾 Save as Draft
+                  </span>
+                )}
+              </button>
+              <button 
+                type="button"
+                onClick={handleSubmitForReview}
+                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-bold shadow-lg transform hover:scale-105 disabled:opacity-50"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin">⏳</span>
+                    Submitting...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    🚀 Submit for Review
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

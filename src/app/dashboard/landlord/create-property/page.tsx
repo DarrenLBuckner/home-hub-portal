@@ -261,215 +261,348 @@ export default function CreateLandlordProperty() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto py-12 px-4">
-      <div className="mb-6">
-        <Link href="/dashboard/landlord" className="text-green-600 hover:underline text-sm">
-          ← Back to Dashboard
-        </Link>
-      </div>
+    <div className="max-w-4xl mx-auto p-6">
+      <div className="bg-white rounded-xl shadow-lg p-8">
+        {/* Back Navigation */}
+        <div className="mb-6">
+          <Link href="/dashboard/landlord" className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-medium hover:underline">
+            ← Back to Dashboard
+          </Link>
+        </div>
 
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">🏠 Create Rental Property Listing</h1>
-      
-      {/* Completion Progress */}
-      <CompletionProgress 
-        completionPercentage={completionAnalysis.percentage}
-        userType="landlord"
-        missingFields={completionAnalysis.missingFields}
-      />
-      
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-        <h2 className="font-semibold text-green-800 mb-2">Landlord Listing</h2>
-        <p className="text-green-700 text-sm">
-          You're creating a rental property listing. This will be marked as a rental property and displayed in the rental section of the website.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow">
-        <input 
-          name="title" 
-          type="text" 
-          placeholder="Property Title (e.g., 'Modern 2BR Apartment in Georgetown')*" 
-          value={form.title} 
-          onChange={handleChange} 
-          className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
-          required 
-        />
+        <h1 className="text-3xl font-bold mb-2 text-gray-900 flex items-center gap-3">
+          🏡 Create Rental Property
+          <span className="bg-green-100 text-green-800 text-sm px-3 py-1 rounded-full">Landlord</span>
+        </h1>
+        <p className="text-gray-600 mb-8">List your rental property and find quality tenants</p>
         
-        <textarea 
-          name="description" 
-          placeholder="Detailed description of your rental property*" 
-          value={form.description} 
-          onChange={handleChange} 
-          className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
-          required 
-          rows={4} 
-        />
+        {/* Performance Score at Top */}
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-200 mb-6">
+          <CompletionProgress 
+            completionPercentage={completionAnalysis.percentage}
+            userType="landlord"
+            missingFields={completionAnalysis.missingFields}
+          />
+        </div>
         
-        <GlobalSouthLocationSelector
-          selectedCountry={selectedCountry}
-          selectedRegion={selectedRegion}
-          onLocationChange={handleLocationChange}
-          onCurrencyChange={handleCurrencyChange}
-        />
+        {/* Landlord Listing Info */}
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-8">
+          <h2 className="font-semibold text-green-800 mb-2">🏠 Rental Property Listing</h2>
+          <p className="text-green-700 text-sm">
+            You're creating a rental property listing. This will be marked as a rental property and displayed in the rental section of the website.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="price" className="block text-sm font-bold text-gray-900 mb-2">💰 Rent ({currencySymbol})</label>
-            <input 
-              type="number" 
-              name="price" 
-              value={form.price} 
-              onChange={handleChange} 
-              required 
-              className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* 1. BASIC INFO (What & Where) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              📍 Basic Information
+            </h3>
+            <div className="space-y-4">
+              <GlobalSouthLocationSelector
+                selectedCountry={selectedCountry}
+                selectedRegion={selectedRegion}
+                onLocationChange={handleLocationChange}
+                onCurrencyChange={handleCurrencyChange}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Title *</label>
+                <input 
+                  name="title" 
+                  type="text" 
+                  placeholder="e.g., Modern 2BR Apartment in Georgetown" 
+                  value={form.title} 
+                  onChange={handleChange} 
+                  required 
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 bg-white placeholder-gray-500" 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 2. LISTING DETAILS (Price & Type) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-green-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              💰 Rental Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Rent ({currencySymbol}) *</label>
+                <input 
+                  type="number" 
+                  name="price" 
+                  value={form.price} 
+                  onChange={handleChange} 
+                  required 
+                  placeholder="0"
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
+                <select 
+                  name="propertyType" 
+                  value={form.propertyType} 
+                  onChange={handleChange} 
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                >
+                  {PROPERTY_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rental Period *</label>
+                <select 
+                  name="rentalType" 
+                  value={form.rentalType} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                >
+                  <option value="monthly">Monthly</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="daily">Daily</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. PROPERTY SPECIFICATIONS (Key Features) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-purple-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              🏘️ Property Specifications
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms *</label>
+                <input 
+                  name="bedrooms" 
+                  type="number" 
+                  placeholder="0" 
+                  value={form.bedrooms} 
+                  onChange={handleChange} 
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms *</label>
+                <input 
+                  name="bathrooms" 
+                  type="number" 
+                  placeholder="0" 
+                  value={form.bathrooms} 
+                  onChange={handleChange} 
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Square Footage (Optional)</label>
+                <input 
+                  name="squareFootage" 
+                  type="number" 
+                  placeholder="1000" 
+                  value={form.squareFootage} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 4. LAND INFORMATION (All land details together!) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-orange-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              📐 Property Dimensions
+            </h3>
+            <LotDimensions
+              length={form.lotLength}
+              width={form.lotWidth}
+              unit={form.lotDimensionUnit as DimensionUnit}
+              onLengthChange={(length) => setForm(prev => ({ ...prev, lotLength: length }))}
+              onWidthChange={(width) => setForm(prev => ({ ...prev, lotWidth: width }))}
+              onUnitChange={(unit) => setForm(prev => ({ ...prev, lotDimensionUnit: unit }))}
+              onAreaCalculated={(areaSqFt) => {
+                // Auto-update squareFootage with calculated area for land size
+                setForm(prev => ({ ...prev, squareFootage: areaSqFt.toString() }));
+              }}
+              label="Property Lot Dimensions"
             />
           </div>
-          <div>
-            <label htmlFor="rentalType" className="block text-sm font-bold text-gray-900 mb-2">🗓️ Rental Period</label>
-            <select 
-              name="rentalType" 
-              value={form.rentalType} 
-              onChange={handleChange} 
-              className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white text-base"
-            >
-              <option value="monthly">Monthly</option>
-              <option value="weekly">Weekly</option>
-              <option value="daily">Daily</option>
-            </select>
+
+          {/* 5. DESCRIPTION & AI ASSISTANT (Content creation) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              📝 Property Description
+            </h3>
+            
+            {/* Description Field */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Property Description *</label>
+              <textarea 
+                name="description" 
+                placeholder="Describe your rental property's features, location, and what makes it special..." 
+                value={form.description} 
+                onChange={handleChange} 
+                required 
+                rows={6}
+                className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500" 
+              />
+            </div>
+            
+            {/* AI Assistant - RIGHT BELOW Description */}
+            <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+              <AIDescriptionAssistant
+                propertyData={{
+                  title: form.title,
+                  propertyType: form.propertyType,
+                  bedrooms: form.bedrooms,
+                  bathrooms: form.bathrooms,
+                  price: form.price,
+                  location: form.location,
+                  squareFootage: form.squareFootage,
+                  features: form.features,
+                  rentalType: "rental"
+                }}
+                currentDescription={form.description}
+                onDescriptionGenerated={(description) => setForm(prev => ({ ...prev, description }))}
+              />
+            </div>
           </div>
-        </div>
-        
-        <div className="space-y-2">
-          <input 
-            name="location" 
-            type="text" 
-            placeholder="Property address or specific location" 
-            value={form.location} 
-            onChange={handleChange} 
-            required
-            className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
-          />
-          <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded border-l-4 border-blue-400">
-            <span className="font-medium text-blue-800">🔒 Privacy Protected:</span> Address is required for property verification only. It will never be shown to renters until you approve them.
+
+          {/* 6. AMENITIES & FEATURES (What makes it special) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-teal-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              ✨ Amenities & Features
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {FEATURES.map(feature => (
+                <label key={feature} className="flex items-center gap-2 text-gray-900 font-medium cursor-pointer hover:bg-gray-50 p-2 rounded">
+                  <input 
+                    type="checkbox" 
+                    name="features" 
+                    value={feature} 
+                    checked={form.features.includes(feature)} 
+                    onChange={handleChange} 
+                    className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm">{feature}</span>
+                </label>
+              ))}
+            </div>
           </div>
-        </div>
-        
-        <select 
-          name="propertyType" 
-          value={form.propertyType} 
-          onChange={handleChange} 
-          className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white text-base"
-        >
-          {PROPERTY_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-        </select>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <input 
-            name="bedrooms" 
-            type="number" 
-            placeholder="Bedrooms*" 
-            value={form.bedrooms} 
-            onChange={handleChange} 
-            className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
-            required 
-          />
-          <input 
-            name="bathrooms" 
-            type="number" 
-            placeholder="Bathrooms*" 
-            value={form.bathrooms} 
-            onChange={handleChange} 
-            className="border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
-            required 
-          />
-        </div>
-        
-        <input 
-          name="squareFootage" 
-          type="number" 
-          placeholder="Square Footage (Optional)" 
-          value={form.squareFootage} 
-          onChange={handleChange} 
-          className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
-        />
-        
-        <LotDimensions
-          length={form.lotLength}
-          width={form.lotWidth}
-          unit={form.lotDimensionUnit as DimensionUnit}
-          onLengthChange={(length) => setForm(prev => ({ ...prev, lotLength: length }))}
-          onWidthChange={(width) => setForm(prev => ({ ...prev, lotWidth: width }))}
-          onUnitChange={(unit) => setForm(prev => ({ ...prev, lotDimensionUnit: unit }))}
-          onAreaCalculated={(areaSqFt) => {
-            // Auto-update squareFootage with calculated area for land size
-            setForm(prev => ({ ...prev, squareFootage: areaSqFt.toString() }));
-          }}
-          label="Property Lot Dimensions"
-        />
-        
-        <div className="mb-3 text-lg font-bold text-gray-900 border-b border-gray-200 pb-2">✨ Features/Amenities:</div>
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {FEATURES.map(feature => (
-            <label key={feature} className="flex items-center gap-2 text-gray-900 font-medium">
+
+          {/* 7. LOCATION DETAILS (Specific address info) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-pink-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              📍 Property Address
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Address *</label>
+                <input 
+                  name="location" 
+                  type="text" 
+                  placeholder="Property address or specific location" 
+                  value={form.location} 
+                  onChange={handleChange} 
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500" 
+                />
+              </div>
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                <div className="flex items-start gap-2">
+                  <span className="text-blue-500">🔒</span>
+                  <div>
+                    <div className="font-medium text-blue-800 text-sm">Privacy Protected</div>
+                    <div className="text-blue-700 text-xs mt-1">
+                      Address is required for property verification only. It will never be shown to renters until you approve them.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* 8. PROPERTY IMAGES (Visual proof) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-yellow-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              📸 Property Images
+            </h3>
+            <p className="text-gray-600 mb-6">Upload high-quality photos to attract quality tenants. First image will be the main photo.</p>
+            <EnhancedImageUpload
+              images={form.images}
+              setImages={handleImagesChange}
+              maxImages={imageLimit}
+            />
+          </div>
+
+          {/* 9. LEGAL ATTESTATION */}
+          <div className="bg-red-50 p-6 rounded-lg shadow-sm border-l-4 border-red-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-red-800">
+              ⚖️ Legal Attestation
+            </h3>
+            <label className="flex items-start gap-3 cursor-pointer">
               <input 
                 type="checkbox" 
-                name="features" 
-                value={feature} 
-                checked={form.features.includes(feature)} 
+                name="attestation" 
+                checked={form.attestation} 
                 onChange={handleChange} 
-                className="w-4 h-4 text-blue-600 border-2 border-gray-400 rounded focus:ring-blue-500"
+                required 
+                className="w-5 h-5 text-red-600 border-2 border-red-300 rounded focus:ring-red-500 mt-1"
               />
-              {feature}
+              <span className="text-sm font-medium text-red-800 leading-relaxed">
+                By submitting this listing, I confirm under penalty of perjury that I am the legal owner of this property or have the legal authority to list it for rental.
+              </span>
             </label>
-          ))}
-        </div>
-        
-        <AIDescriptionAssistant
-          propertyData={{
-            title: form.title,
-            propertyType: form.propertyType,
-            bedrooms: form.bedrooms,
-            bathrooms: form.bathrooms,
-            price: form.price,
-            location: form.location,
-            squareFootage: form.squareFootage,
-            features: form.features,
-            rentalType: "rental"
-          }}
-          currentDescription={form.description}
-          onDescriptionGenerated={(description) => setForm(prev => ({ ...prev, description }))}
-        />
-        
-        <EnhancedImageUpload
-          images={form.images}
-          setImages={handleImagesChange}
-          maxImages={imageLimit}
-        />
-        
-        <label className="flex items-center gap-2 mt-4">
-          <input 
-            type="checkbox" 
-            name="attestation" 
-            checked={form.attestation} 
-            onChange={handleChange} 
-            required 
-          />
-          <span className="text-sm font-semibold text-red-700">
-            By submitting this listing, I confirm under penalty of perjury that I am the legal owner of this property or have the legal authority to list it for rental.
-          </span>
-        </label>
-        
-        {error && <div className="text-red-500 text-sm font-semibold animate-shake">{error}</div>}
-        {success && <div className="text-green-600 font-bold text-lg text-center">Property submitted! Redirecting to dashboard...</div>}
-        
-        <button 
-          type="submit" 
-          disabled={isSubmitting} 
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold text-lg shadow-lg hover:scale-105 transition-all duration-200"
-        >
-          {isSubmitting ? "Submitting..." : "Submit Rental Listing"}
-        </button>
-      </form>
-    </main>
+          </div>
+
+          {/* SUCCESS & ERROR MESSAGES */}
+          {success && (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-8 rounded-xl shadow-sm">
+              <div className="text-center">
+                <div className="text-4xl mb-4">🎉</div>
+                <div className="text-green-800 text-xl font-bold mb-2">Property submitted successfully!</div>
+                <div className="text-green-700 text-sm">Redirecting to dashboard...</div>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="bg-red-50 border-2 border-red-200 p-6 rounded-xl">
+              <div className="flex items-center gap-3">
+                <span className="text-red-500 text-2xl">⚠️</span>
+                <div className="text-red-800 font-medium">{error}</div>
+              </div>
+            </div>
+          )}
+          
+          {/* 10. SUBMIT BUTTON */}
+          {!success && (
+            <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent pt-6 mt-8 -mx-8 px-8 pb-8">
+              <button 
+                type="submit" 
+                disabled={isSubmitting} 
+                className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-green-600 hover:to-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin">⏳</span>
+                    Submitting Rental Listing...
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    🏡 Submit Rental Listing
+                  </span>
+                )}
+              </button>
+              <p className="text-center text-sm text-gray-500 mt-3">
+                Your rental property will be reviewed by our team before going live
+              </p>
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
   );
 }
