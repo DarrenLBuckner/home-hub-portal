@@ -8,6 +8,9 @@ import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
+import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
+import LotDimensions from "@/components/LotDimensions";
+import { DimensionUnit } from "@/lib/lotCalculations";
 
 const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Townhouse", "Studio", "Room"];
 const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym", "Gated", "Fruit Trees", "Farmland", "Backup Generator", "Solar", "Electric Gate"];
@@ -26,6 +29,9 @@ type PropertyForm = {
   images: File[];
   attestation: boolean;
   rentalType: string;
+  lotLength: string;
+  lotWidth: string;
+  lotDimensionUnit: string;
 };
 
 export default function CreateLandlordProperty() {
@@ -95,6 +101,9 @@ export default function CreateLandlordProperty() {
     images: [],
     attestation: false,
     rentalType: "monthly",
+    lotLength: "",
+    lotWidth: "",
+    lotDimensionUnit: "ft",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -221,6 +230,9 @@ export default function CreateLandlordProperty() {
           city: selectedRegion, // Use region as city for rentals
           propertyCategory: "rental", // Mark as rental property
           site_id: 'guyana',  // ADD THIS LINE ONLY
+          lot_length: form.lotLength ? Number(form.lotLength) : null,
+          lot_width: form.lotWidth ? Number(form.lotWidth) : null,
+          lot_dimension_unit: form.lotDimensionUnit,
         }),
       });
 
@@ -381,6 +393,20 @@ export default function CreateLandlordProperty() {
           className="w-full border-2 border-gray-400 focus:border-blue-500 rounded-lg px-4 py-3 text-gray-900 bg-white placeholder-gray-600 text-base" 
         />
         
+        <LotDimensions
+          length={form.lotLength}
+          width={form.lotWidth}
+          unit={form.lotDimensionUnit as DimensionUnit}
+          onLengthChange={(length) => setForm(prev => ({ ...prev, lotLength: length }))}
+          onWidthChange={(width) => setForm(prev => ({ ...prev, lotWidth: width }))}
+          onUnitChange={(unit) => setForm(prev => ({ ...prev, lotDimensionUnit: unit }))}
+          onAreaCalculated={(areaSqFt) => {
+            // Auto-update squareFootage with calculated area for land size
+            setForm(prev => ({ ...prev, squareFootage: areaSqFt.toString() }));
+          }}
+          label="Property Lot Dimensions"
+        />
+        
         <div className="mb-3 text-lg font-bold text-gray-900 border-b border-gray-200 pb-2">✨ Features/Amenities:</div>
         <div className="grid grid-cols-2 gap-2 mb-4">
           {FEATURES.map(feature => (
@@ -397,6 +423,22 @@ export default function CreateLandlordProperty() {
             </label>
           ))}
         </div>
+        
+        <AIDescriptionAssistant
+          propertyData={{
+            title: form.title,
+            propertyType: form.propertyType,
+            bedrooms: form.bedrooms,
+            bathrooms: form.bathrooms,
+            price: form.price,
+            location: form.location,
+            squareFootage: form.squareFootage,
+            features: form.features,
+            rentalType: "rental"
+          }}
+          currentDescription={form.description}
+          onDescriptionGenerated={(description) => setForm(prev => ({ ...prev, description }))}
+        />
         
         <EnhancedImageUpload
           images={form.images}

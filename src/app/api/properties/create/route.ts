@@ -428,6 +428,9 @@ export async function POST(req: NextRequest) {
         land_size_value: body.land_size_value ? parseInt(body.land_size_value) : null,
         land_size_unit: body.land_size_unit || 'sq ft',
         year_built: body.year_built ? parseInt(body.year_built) : null,
+        lot_length: body.lot_length ? parseFloat(body.lot_length) : null,
+        lot_width: body.lot_width ? parseFloat(body.lot_width) : null,
+        lot_dimension_unit: body.lot_dimension_unit || 'ft',
         amenities: normalizedPayload.amenities || null,
         features: body.features || null,
         
@@ -463,6 +466,9 @@ export async function POST(req: NextRequest) {
         bathrooms: parseInt(body.bathrooms),
         house_size_value: parseInt(body.squareFootage), // Map squareFootage to house_size_value
         house_size_unit: 'sqft',
+        lot_length: body.lot_length ? parseFloat(body.lot_length) : null,
+        lot_width: body.lot_width ? parseFloat(body.lot_width) : null,
+        lot_dimension_unit: body.lot_dimension_unit || 'ft',
         amenities: body.features || [], // Map features to amenities
         
         // Location - rental uses different structure
@@ -502,6 +508,9 @@ export async function POST(req: NextRequest) {
         land_size_value: body.land_size_value ? parseInt(body.land_size_value) : null,
         land_size_unit: body.land_size_unit,
         year_built: body.year_built ? parseInt(body.year_built) : null,
+        lot_length: body.lot_length ? parseFloat(body.lot_length) : null,
+        lot_width: body.lot_width ? parseFloat(body.lot_width) : null,
+        lot_dimension_unit: body.lot_dimension_unit || 'ft',
         amenities: normalizedPayload.amenities || [],
         
         // Step 3 - Location

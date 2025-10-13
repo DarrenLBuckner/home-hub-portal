@@ -1,3 +1,7 @@
+import AIDescriptionAssistant from '@/components/AIDescriptionAssistant';
+import LotDimensions from '@/components/LotDimensions';
+import { DimensionUnit } from '@/lib/lotCalculations';
+
 interface Step2DetailsProps {
   formData: any;
   setFormData: (data: any) => void;
@@ -128,6 +132,20 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
         />
       </div>
 
+      <LotDimensions
+        length={formData.lot_length || ''}
+        width={formData.lot_width || ''}
+        unit={(formData.lot_dimension_unit as DimensionUnit) || 'ft'}
+        onLengthChange={(length) => handleChange('lot_length', length)}
+        onWidthChange={(width) => handleChange('lot_width', width)}
+        onUnitChange={(unit) => handleChange('lot_dimension_unit', unit)}
+        onAreaCalculated={(areaSqFt) => {
+          // Auto-update land_size_value with calculated area
+          handleChange('land_size_value', areaSqFt.toString());
+          handleChange('land_size_unit', 'sq ft');
+        }}
+      />
+
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-3">
           Amenities & Features
@@ -146,6 +164,22 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
           ))}
         </div>
       </div>
+
+      <AIDescriptionAssistant
+        propertyData={{
+          title: formData.title,
+          propertyType: formData.property_type,
+          bedrooms: formData.bedrooms?.toString() || '',
+          bathrooms: formData.bathrooms?.toString() || '',
+          price: formData.price,
+          location: `${formData.region || ''}, ${formData.country || ''}`.trim().replace(/^,|,$/, ''),
+          squareFootage: formData.house_size_value?.toString() || '',
+          features: formData.amenities || [],
+          rentalType: "sale"
+        }}
+        currentDescription={formData.description}
+        onDescriptionGenerated={(description) => handleChange('description', description)}
+      />
     </div>
   );
 }

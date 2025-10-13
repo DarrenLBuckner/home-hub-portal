@@ -38,6 +38,11 @@ export default function CreateFSBOProperty() {
     year_built: '',
     amenities: [],
     
+    // Lot Dimensions
+    lot_length: '',
+    lot_width: '',
+    lot_dimension_unit: 'ft',
+    
     // Location
     region: '',
     city: '',
@@ -160,6 +165,9 @@ export default function CreateFSBOProperty() {
         land_size_unit: formData.land_size_unit || 'sq ft',
         year_built: formData.year_built ? Number(formData.year_built) : null,
         amenities: formData.amenities || [],
+        lot_length: formData.lot_length ? Number(formData.lot_length) : null,
+        lot_width: formData.lot_width ? Number(formData.lot_width) : null,
+        lot_dimension_unit: formData.lot_dimension_unit || 'ft',
         region: formData.region || '',
         city: formData.city || '',
         neighborhood: formData.neighborhood || null,
@@ -269,6 +277,11 @@ export default function CreateFSBOProperty() {
         land_size_value: Number(formData.land_size_value) || 0,
         land_size_unit: formData.land_size_unit || 'sq ft',
         year_built: Number(formData.year_built) || new Date().getFullYear(),
+        
+        // Lot dimensions
+        lot_length: formData.lot_length ? Number(formData.lot_length) : null,
+        lot_width: formData.lot_width ? Number(formData.lot_width) : null,
+        lot_dimension_unit: formData.lot_dimension_unit || 'ft',
         
         // Optional fields
         description: formData.description || '',

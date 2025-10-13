@@ -197,7 +197,7 @@ export async function POST(
     // Get the property to check permissions
     const { data: property, error: propertyError } = await adminSupabase
       .from('properties')
-      .select('id, country, status')
+      .select('id, country_id, status')
       .eq('id', propertyId)
       .single()
 
@@ -208,7 +208,7 @@ export async function POST(
 
     // Check country access for non-super admins
     if (!permissions.canViewAllCountries && permissions.countryFilter && 
-        (property as any).country !== permissions.countryFilter) {
+        (property as any).country_id !== permissions.countryFilter) {
       return NextResponse.json({ error: 'No access to properties from this country' }, { status: 403 })
     }
 

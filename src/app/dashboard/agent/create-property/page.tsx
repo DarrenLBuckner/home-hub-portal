@@ -9,6 +9,9 @@ import AmenitiesSelector from "@/components/AmenitiesSelector";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
+import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
+import LotDimensions from "@/components/LotDimensions";
+import { DimensionUnit } from "@/lib/lotCalculations";
 
 
 interface FormData {
@@ -30,6 +33,9 @@ interface FormData {
   region: string;
   city: string;
   neighborhood: string;
+  lot_length: string;
+  lot_width: string;
+  lot_dimension_unit: string;
 }
 
 export default function CreatePropertyPage() {
@@ -53,6 +59,9 @@ export default function CreatePropertyPage() {
     region: "",
     city: "",
     neighborhood: "",
+    lot_length: "",
+    lot_width: "",
+    lot_dimension_unit: "ft",
   });
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -208,6 +217,9 @@ export default function CreatePropertyPage() {
           country: selectedCountry,
           currency: currencyCode,
           images: imagesForUpload,
+          lot_length: form.lot_length ? Number(form.lot_length) : null,
+          lot_width: form.lot_width ? Number(form.lot_width) : null,
+          lot_dimension_unit: form.lot_dimension_unit,
           // userId will be extracted server-side from authenticated session
           propertyCategory: form.listing_type === 'sale' ? 'sale' : 'rental', // Map to API format
           site_id: 'guyana',  // ADD THIS LINE ONLY
@@ -353,6 +365,40 @@ export default function CreatePropertyPage() {
               }}
             />
           </div>
+          
+          <LotDimensions
+            length={form.lot_length}
+            width={form.lot_width}
+            unit={form.lot_dimension_unit as DimensionUnit}
+            onLengthChange={(length) => setForm(prev => ({ ...prev, lot_length: length }))}
+            onWidthChange={(width) => setForm(prev => ({ ...prev, lot_width: width }))}
+            onUnitChange={(unit) => setForm(prev => ({ ...prev, lot_dimension_unit: unit }))}
+            onAreaCalculated={(areaSqFt) => {
+              // Auto-update land_size_value with calculated area
+              setForm(prev => ({ 
+                ...prev, 
+                land_size_value: areaSqFt.toString(),
+                land_size_unit: 'sq ft' 
+              }));
+            }}
+          />
+          
+          <AIDescriptionAssistant
+            propertyData={{
+              title: form.title,
+              propertyType: form.property_type,
+              bedrooms: form.bedrooms.toString(),
+              bathrooms: form.bathrooms.toString(),
+              price: form.price,
+              location: form.location,
+              squareFootage: form.house_size_value?.toString() || '',
+              features: form.amenities || [],
+              rentalType: "sale"
+            }}
+            currentDescription={form.description}
+            onDescriptionGenerated={(description) => setForm(prev => ({ ...prev, description }))}
+          />
+          
           <CompletionIncentive 
             fieldName="amenities"
             fieldType="amenities" 
