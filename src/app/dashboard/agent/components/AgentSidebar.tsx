@@ -9,9 +9,15 @@ type SidebarProps = {
 
 export default function AgentSidebar({ activeSection, onSectionChange, userType, isAgent }: SidebarProps) {
   const handleSectionChange = (section: string) => {
-    // Allow access to dashboard and settings for all users
-    if (section === 'dashboard' || section === 'settings') {
+    // Allow access to dashboard for all users
+    if (section === 'dashboard') {
       onSectionChange(section);
+      return;
+    }
+    
+    // Settings redirects to dedicated settings page
+    if (section === 'settings') {
+      window.location.href = '/dashboard/agent/settings';
       return;
     }
     

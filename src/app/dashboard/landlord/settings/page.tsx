@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/supabase";
 
-export default function OwnerSettings() {
+export default function LandlordSettings() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<{
     first_name?: string;
@@ -31,23 +31,23 @@ export default function OwnerSettings() {
         return;
       }
 
-      // Check if user is FSBO
+      // Check if user is landlord
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', authUser.id)
         .single();
 
-      if (!profileData || profileData.user_type !== 'owner') {
+      if (!profileData || profileData.user_type !== 'landlord') {
         window.location.href = '/dashboard';
         return;
       }
 
       setUser(authUser);
       setProfile(profileData);
-      setOriginalProfile({ ...profileData }); // Store original for comparison
+      setOriginalProfile({ ...profileData });
       
-      // Get user's property count for sync confirmation
+      // Get landlord's property count for sync confirmation
       const { data: properties } = await supabase
         .from('properties')
         .select('id')
@@ -129,7 +129,7 @@ export default function OwnerSettings() {
   if (loading) {
     return (
       <main className="max-w-2xl mx-auto py-12 px-4 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
         <p className="mt-4 text-gray-600">Loading settings...</p>
       </main>
     );
@@ -138,12 +138,12 @@ export default function OwnerSettings() {
   return (
     <main className="max-w-2xl mx-auto py-12 px-4">
       <div className="mb-6">
-        <Link href="/dashboard/owner" className="text-blue-600 hover:underline text-sm">
+        <Link href="/dashboard/landlord" className="text-purple-600 hover:underline text-sm">
           ← Back to Dashboard
         </Link>
       </div>
 
-      <h1 className="text-3xl font-bold text-orange-700 mb-6">Profile Settings</h1>
+      <h1 className="text-3xl font-bold text-purple-700 mb-6">Profile Settings</h1>
       
       <div className="bg-white rounded-xl shadow-lg p-6">
         <form onSubmit={handleSave} className="space-y-6">
@@ -169,7 +169,7 @@ export default function OwnerSettings() {
                 type="text"
                 value={profile?.first_name || ""}
                 onChange={(e) => setProfile(prev => ({ ...prev, first_name: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 required
               />
             </div>
@@ -182,7 +182,7 @@ export default function OwnerSettings() {
                 type="text"
                 value={profile?.last_name || ""}
                 onChange={(e) => setProfile(prev => ({ ...prev, last_name: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 required
               />
             </div>
@@ -196,7 +196,7 @@ export default function OwnerSettings() {
               type="tel"
               value={profile?.phone || ""}
               onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="e.g., +592 123 4567"
             />
           </div>
@@ -207,7 +207,7 @@ export default function OwnerSettings() {
             </label>
             <input
               type="text"
-              value="For Sale By Owner (FSBO)"
+              value="Property Landlord"
               disabled
               className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-500"
             />
@@ -223,7 +223,7 @@ export default function OwnerSettings() {
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition disabled:opacity-50"
+              className="px-6 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
@@ -239,8 +239,8 @@ export default function OwnerSettings() {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Account Status:</span>
-              <span className={profile?.subscription_status === 'active' ? 'text-green-600' : 'text-red-600'}>
-                {profile?.subscription_status === 'active' ? 'Active' : 'Requires Setup'}
+              <span className={profile?.subscription_status === 'active' ? 'text-green-600' : 'text-blue-600'}>
+                {profile?.subscription_status === 'active' ? 'Active' : 'Pay Per Property'}
               </span>
             </div>
           </div>
@@ -252,8 +252,8 @@ export default function OwnerSettings() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-md mx-4 shadow-2xl">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-orange-600 text-2xl">⚠️</span>
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-purple-600 text-2xl">⚠️</span>
               </div>
               <h3 className="text-lg font-bold text-gray-900 mb-2">
                 Sync Contact Information?
@@ -262,7 +262,7 @@ export default function OwnerSettings() {
                 You changed your phone number. This will update the contact information across <strong>all {propertyCount} of your property listings</strong>. 
               </p>
               <p className="text-gray-600 text-sm mt-2">
-                Buyers will see your new contact information on all listings.
+                Tenants will see your new contact information on all listings.
               </p>
             </div>
             
@@ -270,7 +270,7 @@ export default function OwnerSettings() {
               <button
                 onClick={() => performSave(true)}
                 disabled={saving}
-                className="flex-1 px-4 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition disabled:opacity-50"
+                className="flex-1 px-4 py-3 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition disabled:opacity-50"
               >
                 {saving ? 'Syncing...' : 'Yes, Update All Properties'}
               </button>

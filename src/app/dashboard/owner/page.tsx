@@ -135,6 +135,12 @@ export default function OwnerDashboard() {
                 <div className="text-sm text-gray-500">Welcome back,</div>
                 <div className="font-medium">{user?.email}</div>
               </div>
+              <Link
+                href="/dashboard/owner/settings"
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded hover:bg-blue-700 transition-colors"
+              >
+                Settings
+              </Link>
               <button
                 onClick={handleLogout}
                 className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"

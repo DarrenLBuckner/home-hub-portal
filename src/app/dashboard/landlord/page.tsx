@@ -169,6 +169,12 @@ export default function LandlordDashboard() {
                   <div className="text-sm text-green-100">Welcome back,</div>
                   <div className="font-medium text-white">{user?.email}</div>
                 </div>
+                <Link
+                  href="/dashboard/landlord/settings"
+                  className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded hover:bg-purple-700 transition-colors"
+                >
+                  Settings
+                </Link>
                 <button
                   onClick={handleLogout}
                   className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
