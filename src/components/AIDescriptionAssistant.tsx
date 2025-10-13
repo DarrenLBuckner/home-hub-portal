@@ -117,7 +117,7 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
                 }`}
               >
                 <div className="font-medium capitalize">{tone}</div>
-                <div className="text-xs text-gray-500">{description}</div>
+                <div className="text-xs text-gray-700">{description}</div>
               </button>
             ))}
           </div>
@@ -165,7 +165,7 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
         )}
       </div>
 
-      <div className="mt-3 text-xs text-gray-500">
+      <div className="mt-3 text-xs text-gray-700">
         💡 Tip: Fill in more details (features, location, size) for better descriptions
       </div>
     </div>

@@ -34,7 +34,7 @@ export default function AmenitiesSelector({ value = [], onChange }: AmenitiesSel
   return (
     <div className="amenities-selector">
       <h3 className="text-lg font-medium mb-2">Amenities</h3>
-      <p className="text-sm text-gray-500 mb-4">Select all that apply</p>
+      <p className="text-sm text-gray-700 mb-4">Select all that apply</p>
       
       {AMENITIES_CATEGORIES.map(category => (
         <div key={category.id} className="category-section mb-4">

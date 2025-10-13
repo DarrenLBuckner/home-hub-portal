@@ -166,7 +166,7 @@ export default function EnhancedImageUpload({
             }`}>
               <svg 
                 className={`w-10 h-10 transition-colors ${
-                  dragActive ? 'text-blue-500' : 'text-gray-400 group-hover:text-blue-500'
+                  dragActive ? 'text-blue-500' : 'text-gray-700 group-hover:text-blue-500'
                 }`} 
                 fill="none" 
                 stroke="currentColor" 
@@ -219,7 +219,7 @@ export default function EnhancedImageUpload({
           </div>
 
           {/* Global South Optimization Note */}
-          <div className="mt-4 text-xs text-gray-500 bg-gray-50 rounded-lg p-3">
+          <div className="mt-4 text-xs text-gray-700 bg-gray-50 rounded-lg p-3">
             <p className="flex items-center justify-center">
               <span className="mr-1">🌍</span>
               Optimized for mobile upload • Low bandwidth friendly

@@ -469,7 +469,7 @@ export default function CreatePropertyPage() {
                   <option value="hectares">hectares</option>
                 </select>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-700 mt-1">
                 Editable for irregular lots or manual override
               </p>
             </div>
@@ -478,7 +478,7 @@ export default function CreatePropertyPage() {
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 📅 Year Built
-                <span className="text-gray-500 text-xs ml-2">Optional - Builds buyer confidence</span>
+                <span className="text-gray-700 text-xs ml-2">Optional - Builds buyer confidence</span>
               </label>
               <input 
                 name="year_built" 
@@ -663,7 +663,7 @@ export default function CreatePropertyPage() {
                   </span>
                 )}
               </button>
-              <p className="text-center text-sm text-gray-500 mt-3">
+              <p className="text-center text-sm text-gray-700 mt-3">
                 Your property will be reviewed by our team before going live
               </p>
             </div>

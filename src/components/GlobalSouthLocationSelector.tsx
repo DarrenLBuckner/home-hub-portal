@@ -246,7 +246,7 @@ export default function GlobalSouthLocationSelector({
                 </span>
               )}
               {selectedRegionData.population && (
-                <span className="text-gray-500">
+                <span className="text-gray-600">
                   Population: {selectedRegionData.population.toLocaleString()}
                 </span>
               )}

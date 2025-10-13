@@ -206,7 +206,7 @@ export default function AdminTrialExtensions() {
                     <div className="font-medium text-gray-900">
                       {user.first_name} {user.last_name}
                     </div>
-                    <div className="text-sm text-gray-500">{user.email}</div>
+                    <div className="text-sm text-gray-700">{user.email}</div>
                   </div>
                 </td>
                 <td className="px-4 py-3">
@@ -238,7 +238,7 @@ export default function AdminTrialExtensions() {
                         {isTrialExpired(user.free_trial_end_date) ? 'Expired' : 'Active'}
                       </span>
                       {!isTrialExpired(user.free_trial_end_date) && (
-                        <div className="text-xs text-gray-500 mt-1">
+                        <div className="text-xs text-gray-700 mt-1">
                           {getDaysRemaining(user.free_trial_end_date)} days left
                         </div>
                       )}
@@ -271,7 +271,7 @@ export default function AdminTrialExtensions() {
       </div>
 
       {users.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-700">
           No users found requiring trial extensions
         </div>
       )}

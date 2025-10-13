@@ -209,7 +209,7 @@ export default function LocationSelector({
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-500"
           />
         )}
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-gray-700 mt-1">
           {selectedRegion 
             ? (cities.length > 0 
                 ? `Choose from ${cities.length} areas in this ${getRegionLabel().toLowerCase()}`

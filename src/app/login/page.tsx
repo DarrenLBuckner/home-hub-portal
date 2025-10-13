@@ -125,27 +125,29 @@ function LoginContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-full max-w-md">
-    <h2 className="text-2xl font-bold mb-6 text-center">Portal Home Hub Login</h2>
+    <h2 className="text-3xl font-bold mb-6 text-center text-gray-900">Portal Home Hub Login</h2>
         <div className="mb-4">
-          <label className="block mb-2 font-semibold">Email</label>
+          <label className="block mb-2 text-gray-800 font-semibold">Email <span className="text-red-600">*</span></label>
           <input
             type="email"
-            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="w-full p-3 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
             autoComplete="email"
+            placeholder="Enter your email address"
           />
         </div>
         <div className="mb-4 relative">
-          <label className="block mb-2 font-semibold">Password</label>
+          <label className="block mb-2 text-gray-800 font-semibold">Password <span className="text-red-600">*</span></label>
           <input
             type={showPassword ? 'text' : 'password'}
-            className="w-full p-3 border rounded focus:outline-none focus:ring-2 focus:ring-blue-200"
+            className="w-full p-3 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
             autoComplete="current-password"
+            placeholder="Enter your password"
           />
           <button
             type="button"

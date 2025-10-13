@@ -596,7 +596,7 @@ export default function CreateLandlordProperty() {
                   </span>
                 )}
               </button>
-              <p className="text-center text-sm text-gray-500 mt-3">
+              <p className="text-center text-sm text-gray-700 mt-3">
                 Your rental property will be reviewed by our team before going live
               </p>
             </div>

@@ -122,7 +122,7 @@ export function RegistrationForm({ formData, setFormData, onSubmit, isSubmitting
           )}
         </button>
       </div>
-      <div className="text-xs text-gray-500 mt-1">
+      <div className="text-xs text-gray-700 mt-1">
         Password requirements:<br />
         &bull; Minimum 8 characters<br />
         &bull; At least one special character (e.g., !@#$%^&*)
@@ -184,7 +184,7 @@ export function PlanSelection({ selectedPlan, setSelectedPlan, onContinue, isCon
       >
         Registration & Continue
       </button>
-      <div className="text-center text-sm text-gray-700 mt-2">
+      <div className="text-center text-sm text-gray-800 mt-2">
         Enter your information below and submit to unlock plan selection.
       </div>
     </div>
