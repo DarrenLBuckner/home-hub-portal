@@ -78,8 +78,8 @@ export function getAdminPermissions(
   if (adminLevel === 'owner') {
     return {
       canViewUsers: true,
-      canEditUsers: true,        // ENHANCED: Can edit user details within their country
-      canDeleteUsers: false,     // SECURITY: Still cannot delete users
+      canEditUsers: false,
+      canDeleteUsers: false,
       canViewPayments: true,
       canProcessPayments: true,
       canAcceptPayments: true,

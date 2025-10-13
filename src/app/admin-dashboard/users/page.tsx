@@ -179,16 +179,20 @@ export default function AdminUsers() {
               <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
                 <p className="text-amber-800 text-sm">
                   ⚠️ <strong>View-Only Access:</strong> You can view users but cannot edit or delete them. 
-                  Only Super Admin (mrdarrenbuckner@gmail.com) can modify user accounts.
+                  Only Super Admin and Country Owner Admin can modify user accounts.
                 </p>
               </div>
             )}
 
-            {/* Super Admin full access message */}
+            {/* Admin access message */}
             {permissions?.canEditUsers && (
               <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-green-800 text-sm">
-                  ✅ <strong>Super Admin Access:</strong> You have full access to view, edit, and manage all user accounts.
+                  ✅ <strong>{permissions?.canViewAllCountries ? 'Super Admin Access' : 'Country Admin Access'}:</strong> 
+                  {permissions?.canViewAllCountries 
+                    ? ' You have full access to view, edit, and manage all user accounts globally.'
+                    : ` You can view, edit, and manage user accounts in your assigned country (${permissions?.assignedCountryName || 'your country'}).`
+                  }
                 </p>
               </div>
             )}
