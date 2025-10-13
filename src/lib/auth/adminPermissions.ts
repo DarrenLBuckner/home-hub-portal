@@ -26,17 +26,17 @@ export interface AdminPermissions {
   canViewAllCountryPricing: boolean;    // View pricing for all countries - Super Admin only
   canViewCountryPricing: boolean;       // View pricing for assigned country - Super + Owner
   // Country-based access control
-  assignedCountryId: number | null;
+  assignedCountryId: string | null;
   assignedCountryName: string | null;
   canViewAllCountries: boolean;
-  countryFilter: number | null;
+  countryFilter: string | null;
 }
 
 export function getAdminPermissions(
   userType: string, 
   email: string, 
   adminLevel?: string | null,
-  countryId?: number | null, 
+  countryId?: string | null, 
   countryName?: string | null
 ): AdminPermissions {
   // Super Admin (mrdarrenbuckner@gmail.com) - Full access to everything, all countries
@@ -195,12 +195,7 @@ export async function getCountryAwareAdminPermissions(
     const { data: profile, error } = await supabase
       .from('profiles')
       .select(`
-        country_id,
-        countries:country_id (
-          id,
-          name,
-          code
-        )
+        country_id
       `)
       .eq('id', userId)
       .single();
@@ -212,7 +207,17 @@ export async function getCountryAwareAdminPermissions(
     }
 
     const countryId = profile?.country_id;
-    const countryName = profile?.countries?.name;
+    
+    // Get country name separately if needed
+    let countryName = null;
+    if (countryId) {
+      const { data: country } = await supabase
+        .from('countries')
+        .select('name')
+        .eq('id', countryId)
+        .single();
+      countryName = country?.name;
+    }
 
     return getAdminPermissions(userType, email, adminLevel, countryId, countryName);
   } catch (error) {
@@ -223,7 +228,7 @@ export async function getCountryAwareAdminPermissions(
 }
 
 // Helper function to check if user can access data from a specific country
-export function canAccessCountryData(permissions: AdminPermissions, targetCountryId: number): boolean {
+export function canAccessCountryData(permissions: AdminPermissions, targetCountryId: string): boolean {
   // Super admin can access all countries
   if (permissions.canViewAllCountries) {
     return true;
@@ -234,7 +239,7 @@ export function canAccessCountryData(permissions: AdminPermissions, targetCountr
 }
 
 // Helper function to filter data based on country permissions
-export function getCountryFilter(permissions: AdminPermissions): { countryId?: number; all: boolean } {
+export function getCountryFilter(permissions: AdminPermissions): { countryId?: string; all: boolean } {
   if (permissions.canViewAllCountries) {
     return { all: true };
   }

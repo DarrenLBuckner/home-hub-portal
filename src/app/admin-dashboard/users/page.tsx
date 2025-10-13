@@ -91,13 +91,7 @@ export default function AdminUsers() {
 
       let query = supabase
         .from('profiles')
-        .select(`
-          *,
-          countries:country_id (
-            name,
-            code
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // Apply country filtering if not super admin
