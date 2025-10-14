@@ -4,13 +4,13 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/supabase';
 
-// Reusing existing landlord create-property components
-import Step1BasicInfo from '../../create-property/components/Step1BasicInfo';
-import Step2Details from '../../create-property/components/Step2Details';
-import Step3Location from '../../create-property/components/Step3Location';
-import Step4Photos from '../../create-property/components/Step4Photos';
-import Step5Contact from '../../create-property/components/Step5Contact';
-import Step6Review from '../../create-property/components/Step6Review';
+// Reusing existing owner create-property components (landlord components don't exist)
+import Step1BasicInfo from '../../../owner/create-property/components/Step1BasicInfo';
+import Step2Details from '../../../owner/create-property/components/Step2Details';
+import Step3Location from '../../../owner/create-property/components/Step3Location';
+import Step4Photos from '../../../owner/create-property/components/Step4Photos';
+import Step5Contact from '../../../owner/create-property/components/Step5Contact';
+import Step6Review from '../../../owner/create-property/components/Step6Review';
 
 export default function EditLandlordProperty() {
   const router = useRouter();

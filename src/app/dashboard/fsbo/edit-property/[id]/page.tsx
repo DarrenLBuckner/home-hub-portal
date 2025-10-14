@@ -6,13 +6,13 @@ import { createClient } from '@/supabase';
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
 
-// Step components - reusing existing components from create-property
-import Step1BasicInfo from '../../create-property/components/Step1BasicInfo';
-import Step2Details from '../../create-property/components/Step2Details';
-import Step3Location from '../../create-property/components/Step3Location';
-import Step4Photos from '../../create-property/components/Step4Photos';
-import Step5Contact from '../../create-property/components/Step5Contact';
-import Step6Review from '../../create-property/components/Step6Review';
+// Step components - reusing existing components from owner create-property
+import Step1BasicInfo from '../../../owner/create-property/components/Step1BasicInfo';
+import Step2Details from '../../../owner/create-property/components/Step2Details';
+import Step3Location from '../../../owner/create-property/components/Step3Location';
+import Step4Photos from '../../../owner/create-property/components/Step4Photos';
+import Step5Contact from '../../../owner/create-property/components/Step5Contact';
+import Step6Review from '../../../owner/create-property/components/Step6Review';
 
 export default function EditFSBOProperty() {
   const router = useRouter();
