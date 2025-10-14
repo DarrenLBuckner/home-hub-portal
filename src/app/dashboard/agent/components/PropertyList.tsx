@@ -61,7 +61,7 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
   };
 
   const handleEdit = (id: string) => {
-    alert('Edit property: ' + id);
+    window.location.href = `/dashboard/agent/edit-property/${id}`;
   };
 
   const updatePropertyStatus = async (propertyId: string, newStatus: string) => {

@@ -196,6 +196,13 @@ export default function FSBODashboard() {
             {/* Property Status Management */}
             <div className="pt-3 border-t border-gray-200">
               <div className="flex gap-2 flex-wrap">
+                {/* Edit button - always available */}
+                <Link href={`/dashboard/fsbo/edit-property/${property.id}`}>
+                  <button className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition">
+                    ✏️ Edit Property
+                  </button>
+                </Link>
+                
                 {property.status === 'available' && (
                   <>
                     <button 
