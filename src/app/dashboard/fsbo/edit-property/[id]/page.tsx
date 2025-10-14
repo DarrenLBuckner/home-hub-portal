@@ -1,66 +1,64 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/supabase';
-import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
-import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
+import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
+import EnhancedImageUpload from "@/components/EnhancedImageUpload";
+import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 
-// Step components - reusing existing components from owner create-property
-import Step1BasicInfo from '../../../owner/create-property/components/Step1BasicInfo';
-import Step2Details from '../../../owner/create-property/components/Step2Details';
-import Step3Location from '../../../owner/create-property/components/Step3Location';
-import Step4Photos from '../../../owner/create-property/components/Step4Photos';
-import Step5Contact from '../../../owner/create-property/components/Step5Contact';
-import Step6Review from '../../../owner/create-property/components/Step6Review';
+const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Townhouse", "Studio", "Room"];
+const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym", "Gated", "Fruit Trees", "Farmland", "Backup Generator", "Solar", "Electric Gate"];
+
+type PropertyForm = {
+  title: string;
+  description: string;
+  price: string;
+  location: string;
+  propertyType: string;
+  bedrooms: string;
+  bathrooms: string;
+  squareFootage: string;
+  features: string[];
+  status: string;
+  images: File[];
+  attestation: boolean;
+  listingType: string;
+};
 
 export default function EditFSBOProperty() {
   const router = useRouter();
   const params = useParams();
   const propertyId = params.id as string;
   
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
   const [error, setError] = useState('');
-  const [formData, setFormData] = useState({
-    // Basic Info
+  const [success, setSuccess] = useState('');
+  
+  const [selectedCountry, setSelectedCountry] = useState<string>("GY");
+  const [selectedRegion, setSelectedRegion] = useState<string>("");
+  const [currencyCode, setCurrencyCode] = useState<string>("GYD");
+  const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
+  const [existingImages, setExistingImages] = useState<string[]>([]);
+
+  const [formData, setFormData] = useState<PropertyForm>({
     title: '',
     description: '',
     price: '',
-    property_type: 'Single Family Home',
-    
-    // Property Details
+    location: 'GY',
+    propertyType: 'House',
     bedrooms: '',
     bathrooms: '',
-    house_size_value: '',
-    house_size_unit: 'sq ft',
-    land_size_value: '',
-    land_size_unit: 'sq ft',
-    year_built: '',
-    amenities: [],
-    
-    // Lot Dimensions
-    lot_length: '',
-    lot_width: '',
-    lot_dimension_unit: 'ft',
-    
-    // Location
-    region: '',
-    city: '',
-    neighborhood: '',
-    address: '',
-    location: '',
-    
-    // Contact - populated from user profile
-    contact_name: '',
-    contact_phone: '',
-    contact_email: '',
+    squareFootage: '',
+    features: [],
+    status: 'off_market',
+    images: [],
+    attestation: true,
+    listingType: 'sale',
   });
 
-  const [images, setImages] = useState([]);
-  const [existingImages, setExistingImages] = useState([]);
   const supabase = createClient();
 
   // Load existing property data
@@ -101,27 +99,23 @@ export default function EditFSBOProperty() {
             title: property.title || '',
             description: property.description || '',
             price: property.price?.toString() || '',
-            property_type: property.property_type || 'Single Family Home',
+            location: property.location || 'GY',
+            propertyType: property.property_type || 'House',
             bedrooms: property.bedrooms?.toString() || '',
             bathrooms: property.bathrooms?.toString() || '',
-            house_size_value: property.house_size_value?.toString() || '',
-            house_size_unit: property.house_size_unit || 'sq ft',
-            land_size_value: property.land_size_value?.toString() || '',
-            land_size_unit: property.land_size_unit || 'sq ft',
-            year_built: property.year_built?.toString() || '',
-            amenities: Array.isArray(property.amenities) ? property.amenities : [],
-            lot_length: property.lot_length?.toString() || '',
-            lot_width: property.lot_width?.toString() || '',
-            lot_dimension_unit: property.lot_dimension_unit || 'ft',
-            region: property.region || '',
-            city: property.city || '',
-            neighborhood: property.neighborhood || '',
-            address: property.address || '',
-            location: property.location || '',
-            contact_name: property.contact_name || '',
-            contact_phone: property.contact_phone || '',
-            contact_email: property.contact_email || '',
+            squareFootage: property.house_size_value?.toString() || '',
+            features: Array.isArray(property.amenities) ? property.amenities : [],
+            status: property.status || 'off_market',
+            images: [],
+            attestation: true,
+            listingType: property.listing_type || 'sale',
           });
+
+          // Set location and currency info
+          setSelectedCountry(property.location || 'GY');
+          setSelectedRegion(property.region || '');
+          setCurrencyCode(property.currency || 'GYD');
+          setCurrencySymbol(getCurrencySymbol(property.currency || 'GYD'));
 
           // Set existing images
           const propertyImages = property.property_media
@@ -149,34 +143,46 @@ export default function EditFSBOProperty() {
     }
   }, [propertyId, router, supabase]);
 
-  // Calculate completion score
-  const completionAnalysis = calculateCompletionScore({
-    ...formData,
-    images: [...existingImages, ...images],
-    amenities: Array.isArray(formData.amenities) ? formData.amenities : []
-  });
-
-  const userMotivation = getUserMotivation('owner');
-
-  const nextStep = () => {
-    if (currentStep < 6) {
-      setCurrentStep(currentStep + 1);
-      setError('');
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  const prevStep = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-      setError('');
+  const handleLocationChange = (field: 'country' | 'region', value: string) => {
+    if (field === 'country') {
+      setSelectedCountry(value);
+      setSelectedRegion('');
+      setFormData(prev => ({ ...prev, location: value }));
+    } else {
+      setSelectedRegion(value);
     }
   };
 
-  const updateFormData = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleCurrencyChange = (code: string, symbol: string) => {
+    setCurrencyCode(code);
+    setCurrencySymbol(symbol);
   };
 
-  const handleSubmit = async () => {
+  const handleFeatureChange = (feature: string) => {
+    setFormData(prev => ({
+      ...prev,
+      features: prev.features.includes(feature)
+        ? prev.features.filter(f => f !== feature)
+        : [...prev.features, feature]
+    }));
+  };
+
+  const handleImagesChange = (images: File[]) => {
+    setFormData(prev => ({ ...prev, images }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (submittingRef.current || isSubmitting) {
       console.log('⚠️ Double-submit blocked');
       return;
@@ -197,27 +203,15 @@ export default function EditFSBOProperty() {
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price) || 0,
-        property_type: formData.property_type,
+        location: formData.location,
+        property_type: formData.propertyType,
         bedrooms: parseInt(formData.bedrooms) || null,
         bathrooms: parseFloat(formData.bathrooms) || null,
-        house_size_value: parseFloat(formData.house_size_value) || null,
-        house_size_unit: formData.house_size_unit,
-        land_size_value: parseFloat(formData.land_size_value) || null,
-        land_size_unit: formData.land_size_unit,
-        year_built: parseInt(formData.year_built) || null,
-        amenities: formData.amenities,
-        lot_length: parseFloat(formData.lot_length) || null,
-        lot_width: parseFloat(formData.lot_width) || null,
-        lot_dimension_unit: formData.lot_dimension_unit,
-        region: formData.region,
-        city: formData.city,
-        neighborhood: formData.neighborhood,
-        address: formData.address,
-        location: formData.location,
-        contact_name: formData.contact_name,
-        contact_phone: formData.contact_phone,
-        contact_email: formData.contact_email,
+        house_size_value: parseFloat(formData.squareFootage) || null,
+        house_size_unit: 'sq ft',
+        amenities: formData.features,
         listing_type: 'sale', // FSBO properties are always for sale
+        currency: currencyCode,
         updated_at: new Date().toISOString(),
       };
 
@@ -229,7 +223,7 @@ export default function EditFSBOProperty() {
         },
         body: JSON.stringify({
           ...propertyData,
-          images: images // New images to upload
+          images: formData.images // New images to upload
         }),
       });
 
@@ -239,8 +233,12 @@ export default function EditFSBOProperty() {
         throw new Error(result.error || 'Failed to update property');
       }
 
-      // Success! Redirect back to dashboard
-      router.push('/dashboard/fsbo?updated=true');
+      setSuccess('Property updated successfully!');
+      
+      // Redirect back to dashboard after a short delay
+      setTimeout(() => {
+        router.push('/dashboard/fsbo');
+      }, 2000);
 
     } catch (error) {
       console.error('Update error:', error);
@@ -293,33 +291,17 @@ export default function EditFSBOProperty() {
               ← Back to Dashboard
             </button>
           </div>
-          
-          {/* Progress bar */}
-          <div className="mt-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm text-gray-600">Step {currentStep} of 6</span>
-              <span className="text-sm text-gray-600">{Math.round((currentStep / 6) * 100)}% Complete</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-orange-600 h-2 rounded-full transition-all duration-300" 
-                style={{ width: `${(currentStep / 6) * 100}%` }}
-              ></div>
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Form Content */}
       <div className="max-w-4xl mx-auto px-6 py-8">
         
-        {/* Completion Incentive */}
-        <div className="mb-6">
-          <CompletionProgress 
-            completionAnalysis={completionAnalysis}
-            userMotivation={userMotivation}
-          />
-        </div>
+        {success && (
+          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-green-600 font-medium">{success}</p>
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -327,81 +309,170 @@ export default function EditFSBOProperty() {
           </div>
         )}
 
-        {/* Step Content */}
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          {currentStep === 1 && (
-            <Step1BasicInfo 
-              formData={formData}
-              updateFormData={updateFormData}
-            />
-          )}
+        <form onSubmit={handleSubmit} className="space-y-8">
           
-          {currentStep === 2 && (
-            <Step2Details 
-              formData={formData}
-              updateFormData={updateFormData}
+          {/* Basic Information */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="text-xl font-semibold mb-4 text-orange-700">Basic Information</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Title *</label>
+                <input 
+                  name="title" 
+                  type="text" 
+                  placeholder="Beautiful 3BR House for Sale" 
+                  value={formData.title} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-orange-500 rounded-lg text-gray-900"
+                  required 
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
+                <select 
+                  name="propertyType" 
+                  value={formData.propertyType} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-orange-500 rounded-lg text-gray-900"
+                  required
+                >
+                  {PROPERTY_TYPES.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price ({currencySymbol}) *</label>
+                <input 
+                  name="price" 
+                  type="number" 
+                  placeholder="250000" 
+                  value={formData.price} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-orange-500 rounded-lg text-gray-900" 
+                  required 
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                <textarea 
+                  name="description" 
+                  placeholder="Describe your property..." 
+                  value={formData.description} 
+                  onChange={handleChange} 
+                  rows={4}
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-orange-500 rounded-lg text-gray-900 resize-none" 
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Property Details */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="text-xl font-semibold mb-4 text-orange-700">Property Details</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
+                <input 
+                  name="bedrooms" 
+                  type="number" 
+                  placeholder="3" 
+                  value={formData.bedrooms} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-orange-500 rounded-lg text-gray-900" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
+                <input 
+                  name="bathrooms" 
+                  type="number" 
+                  placeholder="2" 
+                  value={formData.bathrooms} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-orange-500 rounded-lg text-gray-900" 
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Square Footage</label>
+                <input 
+                  name="squareFootage" 
+                  type="number" 
+                  placeholder="2000" 
+                  value={formData.squareFootage} 
+                  onChange={handleChange} 
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-orange-500 rounded-lg text-gray-900" 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="text-xl font-semibold mb-4 text-orange-700">Location</h3>
+            <GlobalSouthLocationSelector
+              selectedCountry={selectedCountry}
+              selectedRegion={selectedRegion}
+              onLocationChange={handleLocationChange}
+              onCurrencyChange={handleCurrencyChange}
             />
-          )}
-          
-          {currentStep === 3 && (
-            <Step3Location 
-              formData={formData}
-              updateFormData={updateFormData}
-            />
-          )}
-          
-          {currentStep === 4 && (
-            <Step4Photos 
-              images={images}
-              setImages={setImages}
+          </div>
+
+          {/* Features */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="text-xl font-semibold mb-4 text-orange-700">Features & Amenities</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {FEATURES.map(feature => (
+                <label key={feature} className="flex items-center space-x-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.features.includes(feature)}
+                    onChange={() => handleFeatureChange(feature)}
+                    className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                  />
+                  <span className="text-sm text-gray-700">{feature}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Photos */}
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <h3 className="text-xl font-semibold mb-4 text-orange-700">Property Photos</h3>
+            <EnhancedImageUpload
+              onImagesChange={handleImagesChange}
               existingImages={existingImages}
-              isEdit={true}
+              maxImages={15}
             />
-          )}
-          
-          {currentStep === 5 && (
-            <Step5Contact 
-              formData={formData}
-              updateFormData={updateFormData}
-            />
-          )}
-          
-          {currentStep === 6 && (
-            <Step6Review 
-              formData={formData}
-              images={[...existingImages, ...images]}
-              isEdit={true}
-            />
-          )}
-        </div>
+          </div>
 
-        {/* Navigation */}
-        <div className="mt-6 flex justify-between">
-          <button
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            ← Previous
-          </button>
-
-          {currentStep < 6 ? (
-            <button
-              onClick={nextStep}
-              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
-            >
-              Next →
-            </button>
-          ) : (
-            <button
-              onClick={handleSubmit}
+          {/* Submit */}
+          <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
+            <button 
+              type="submit" 
               disabled={isSubmitting}
-              className="px-6 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-8 py-4 bg-orange-600 text-white rounded-lg font-semibold text-lg hover:bg-orange-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSubmitting ? 'Updating...' : 'Update Property'}
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  Updating Property...
+                </span>
+              ) : (
+                'Update Property'
+              )}
             </button>
-          )}
-        </div>
+            <p className="text-center text-sm text-gray-700 mt-3">
+              Your property updates will be saved
+            </p>
+          </div>
+        </form>
       </div>
     </div>
   );
