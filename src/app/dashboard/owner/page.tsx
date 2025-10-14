@@ -204,12 +204,23 @@ export default function OwnerDashboard() {
       <ul>
         {properties.filter(p => !countryFilter || p.country === countryFilter).map(property => (
           <li key={property.id} className="border p-4 mb-4 rounded-lg">
-            <span className={`px-2 py-1 rounded text-xs font-bold ${property.status === "available" ? "bg-green-100 text-green-700" : property.status === "pending" ? "bg-blue-100 text-blue-700" : property.status === "off_market" ? "bg-yellow-100 text-yellow-700" : "bg-purple-100 text-purple-700"}`}>
-              {property.status || 'Unknown'}
-            </span>
-            <span className="ml-2 font-semibold">{property.title || 'Untitled Property'}</span>
-            <span className="ml-2">({property.country || property.region || 'Unknown Location'})</span>
-            <span className="ml-2">{typeof property.price === 'number' ? property.price : 'N/A'} {property.currency || 'USD'}</span>
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <span className={`px-2 py-1 rounded text-xs font-bold ${property.status === "available" ? "bg-green-100 text-green-700" : property.status === "pending" ? "bg-blue-100 text-blue-700" : property.status === "off_market" ? "bg-yellow-100 text-yellow-700" : "bg-purple-100 text-purple-700"}`}>
+                  {property.status || 'Unknown'}
+                </span>
+                <span className="ml-2 font-semibold">{property.title || 'Untitled Property'}</span>
+                <span className="ml-2">({property.country || property.region || 'Unknown Location'})</span>
+                <span className="ml-2">{typeof property.price === 'number' ? property.price : 'N/A'} {property.currency || 'USD'}</span>
+              </div>
+              <div className="ml-4">
+                <Link href={`/dashboard/owner/edit-property/${property.id}`}>
+                  <button className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition">
+                    ✏️ Edit Property
+                  </button>
+                </Link>
+              </div>
+            </div>
           </li>
         ))}
       </ul>
