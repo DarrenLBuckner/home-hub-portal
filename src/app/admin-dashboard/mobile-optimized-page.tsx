@@ -59,6 +59,8 @@ export default function MobileOptimizedAdminDashboard() {
   const router = useRouter();
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
+  const [approvedProperties, setApprovedProperties] = useState<Property[]>([]);
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved'>('pending');
   const [statistics, setStatistics] = useState<Statistics>({
     totalPending: 0,
     todaySubmissions: 0,
@@ -134,6 +136,34 @@ export default function MobileOptimizedAdminDashboard() {
       }
 
       setPendingProperties(properties || []);
+
+      // Load approved/active properties for editing
+      let approvedQuery = supabase
+        .from('properties')
+        .select(`
+          *,
+          owner:profiles!user_id (
+            id,
+            email,
+            first_name,
+            last_name,
+            user_type
+          )
+        `)
+        .in('status', ['available', 'approved']);
+
+      // Apply same country filter
+      if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
+        approvedQuery = approvedQuery.eq('country_id', permissions.countryFilter);
+      }
+
+      const { data: approvedProps, error: approvedError } = await approvedQuery;
+
+      if (approvedError) {
+        console.error('Approved properties error:', approvedError);
+      } else {
+        setApprovedProperties(approvedProps || []);
+      }
 
       // Load basic statistics without join to avoid errors
       const { data: stats, error: statsError } = await supabase
@@ -402,6 +432,138 @@ export default function MobileOptimizedAdminDashboard() {
     );
   };
 
+  const ApprovedPropertyCard = ({ property }: { property: Property }) => {
+    const primaryImage = property.property_media?.find(media => media.is_primary);
+    
+    // Helper function to determine edit URL based on user type
+    const getEditUrl = (property: Property) => {
+      const userType = property.owner?.user_type || property.listed_by_type;
+      switch (userType) {
+        case 'agent':
+          return `/dashboard/agent/edit-property/${property.id}`;
+        case 'owner':
+          return `/dashboard/owner/edit-property/${property.id}`;
+        case 'landlord':
+          return `/dashboard/landlord/edit-property/${property.id}`;
+        default:
+          return `/dashboard/owner/edit-property/${property.id}`; // fallback
+      }
+    };
+    
+    return (
+      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+        {/* Mobile-First Image with Overlays */}
+        <div className="relative w-full h-56 sm:h-48 bg-gradient-to-br from-gray-100 to-gray-200">
+          {primaryImage ? (
+            <img 
+              src={primaryImage.media_url} 
+              alt={property.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              <div className="text-center">
+                <div className="text-4xl mb-2">🏡</div>
+                <div className="text-sm font-medium">No Image</div>
+              </div>
+            </div>
+          )}
+          
+          {/* Mobile Overlay Labels */}
+          <div className="absolute top-3 left-3 flex flex-wrap gap-2">
+            <span className="bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">
+              ACTIVE
+            </span>
+            <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md uppercase">
+              {property.owner ? displayUserType(property.owner.user_type) : 'Unknown'}
+            </span>
+          </div>
+          
+          <div className="absolute top-3 right-3 bg-black bg-opacity-75 text-white text-sm font-bold px-3 py-1 rounded-full shadow-md">
+            ${property.price.toLocaleString()}
+          </div>
+        </div>
+
+        {/* Content Section */}
+        <div className="p-4">
+          {/* Title and Type */}
+          <div className="mb-3">
+            <h3 className="font-bold text-lg text-gray-900 leading-tight mb-1">{property.title}</h3>
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <span>{property.property_type}</span>
+              <span>📍 {property.region}</span>
+            </div>
+          </div>
+
+          {/* Property Details */}
+          <div className="flex items-center justify-between mb-3 py-2 px-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center space-x-4 text-sm text-gray-700">
+              <span className="flex items-center">🛏 {property.bedrooms}</span>
+              <span className="flex items-center">🚿 {property.bathrooms}</span>
+            </div>
+          </div>
+
+          {/* Description Preview */}
+          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+            {property.description.length > 100 ? `${property.description.substring(0, 100)}...` : property.description}
+          </p>
+
+          {/* Owner Info Card */}
+          <div className="bg-green-50 rounded-lg p-3 mb-4">
+            <div className="text-xs font-medium text-green-800 mb-1">Property Owner</div>
+            <div className="text-sm text-green-700">
+              <div className="flex items-center justify-between">
+                <span className="truncate">📧 {property.owner_email}</span>
+                {property.owner_whatsapp && (
+                  <span className="ml-2">📱 {property.owner_whatsapp}</span>
+                )}
+              </div>
+              <div className="mt-1 text-xs text-green-600">
+                Listed {new Date(property.created_at).toLocaleDateString()} by {
+                  property.owner ?
+                    [property.owner.first_name, property.owner.last_name].filter(Boolean).join(' ') || 'Unknown User'
+                    : 'Unknown User'
+                }
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons - Mobile Optimized with PROMINENT EDIT */}
+          <div className="space-y-2">
+            {/* PRIMARY EDIT BUTTON - Most Prominent */}
+            <Link href={getEditUrl(property)} className="block">
+              <button className="w-full px-4 py-4 bg-yellow-500 text-black text-sm font-black rounded-xl hover:bg-yellow-400 transition-colors shadow-lg transform hover:scale-[1.02] active:scale-[0.98] touch-manipulation border-2 border-yellow-600">
+                ✏️ EDIT PROPERTY
+              </button>
+            </Link>
+            
+            {/* Secondary Actions */}
+            <div className="grid grid-cols-2 gap-2">
+              <Link href={`/admin-dashboard/property/${property.id}`} className="block">
+                <button className="w-full px-4 py-3 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors touch-manipulation">
+                  👁 View Details
+                </button>
+              </Link>
+              <a 
+                href={`https://guyanahomehub.com/properties/${property.id}`} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <button className="w-full px-4 py-3 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-colors touch-manipulation">
+                  🌐 View Live
+                </button>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   if (adminLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -569,33 +731,90 @@ export default function MobileOptimizedAdminDashboard() {
           </div>
         </div>
 
-        {/* Properties Section */}
+        {/* Properties Section with Tabs */}
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
+          {/* Tab Navigation */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Properties Awaiting Approval</h2>
-              <p className="text-sm text-gray-600">{statistics.totalPending} properties need your review</p>
+              <h2 className="text-lg font-bold text-gray-900">Property Management</h2>
+              <p className="text-sm text-gray-600">Review pending & manage approved properties</p>
+            </div>
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setActiveTab('pending')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'pending'
+                    ? 'bg-white text-yellow-700 shadow'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                ⏳ Pending ({statistics.totalPending})
+              </button>
+              <button
+                onClick={() => setActiveTab('approved')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  activeTab === 'approved'
+                    ? 'bg-white text-green-700 shadow'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                ✅ Approved ({approvedProperties.length})
+              </button>
             </div>
           </div>
 
-          {/* Property Cards */}
-          {!pendingProperties || pendingProperties.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">🎉</div>
-              <h3 className="text-xl font-bold text-gray-700 mb-2">All caught up!</h3>
-              <p className="text-gray-600 mb-6">No properties waiting for review. Excellent work!</p>
-              <Link href="/admin-dashboard/pricing">
-                <button className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors">
-                  💰 View Pricing Dashboard
-                </button>
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pendingProperties.map((property) => (
-                <MobilePropertyCard key={property.id} property={property} />
-              ))}
-            </div>
+          {/* Tab Content */}
+          {activeTab === 'pending' && (
+            <>
+              {!pendingProperties || pendingProperties.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="text-6xl mb-4">🎉</div>
+                  <h3 className="text-xl font-bold text-gray-700 mb-2">All caught up!</h3>
+                  <p className="text-gray-600 mb-6">No properties waiting for review. Excellent work!</p>
+                  <button
+                    onClick={() => setActiveTab('approved')}
+                    className="px-6 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-colors mr-4"
+                  >
+                    ✅ View Approved Properties
+                  </button>
+                  <Link href="/admin-dashboard/pricing">
+                    <button className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors">
+                      💰 Pricing Dashboard
+                    </button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {pendingProperties.map((property) => (
+                    <MobilePropertyCard key={property.id} property={property} />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {activeTab === 'approved' && (
+            <>
+              {!approvedProperties || approvedProperties.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="text-4xl mb-4">📋</div>
+                  <h3 className="text-xl font-bold text-gray-700 mb-2">No Approved Properties</h3>
+                  <p className="text-gray-600 mb-6">Approved properties will appear here for management and editing.</p>
+                  <button
+                    onClick={() => setActiveTab('pending')}
+                    className="px-6 py-3 bg-yellow-600 text-white font-bold rounded-xl hover:bg-yellow-700 transition-colors"
+                  >
+                    ⏳ Check Pending Properties
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {approvedProperties.map((property) => (
+                    <ApprovedPropertyCard key={property.id} property={property} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

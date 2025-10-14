@@ -51,10 +51,17 @@ export default function OwnerDashboard() {
         });
 
         // Fetch user properties
-        const { data: userProperties } = await supabase
+        console.log('🔍 Fetching properties for user:', authUser.id);
+        const { data: userProperties, error: propertiesError } = await supabase
           .from("properties")
           .select("*")
           .eq("user_id", authUser.id);
+        
+        console.log('📊 Properties query result:', {
+          userProperties,
+          propertiesError,
+          count: userProperties?.length || 0
+        });
         
         setProperties(userProperties || []);
         
@@ -201,29 +208,90 @@ export default function OwnerDashboard() {
           </select>
         </div>
       </div>
-      <ul>
-        {properties.filter(p => !countryFilter || p.country === countryFilter).map(property => (
-          <li key={property.id} className="border p-4 mb-4 rounded-lg">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <span className={`px-2 py-1 rounded text-xs font-bold ${property.status === "available" ? "bg-green-100 text-green-700" : property.status === "pending" ? "bg-blue-100 text-blue-700" : property.status === "off_market" ? "bg-yellow-100 text-yellow-700" : "bg-purple-100 text-purple-700"}`}>
-                  {property.status || 'Unknown'}
-                </span>
-                <span className="ml-2 font-semibold">{property.title || 'Untitled Property'}</span>
-                <span className="ml-2">({property.country || property.region || 'Unknown Location'})</span>
-                <span className="ml-2">{typeof property.price === 'number' ? property.price : 'N/A'} {property.currency || 'USD'}</span>
-              </div>
-              <div className="ml-4">
-                <Link href={`/dashboard/owner/edit-property/${property.id}`}>
-                  <button className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition">
-                    ✏️ Edit Property
-                  </button>
-                </Link>
-              </div>
+      
+      {/* Debug info */}
+      <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+        <div className="text-sm">
+          <strong>Debug Info:</strong><br/>
+          Total properties loaded: {properties.length}<br/>
+          Country filter: "{countryFilter}"<br/>
+          Filtered properties: {properties.filter(p => !countryFilter || p.country === countryFilter).length}<br/>
+          {properties.length > 0 && (
+            <>
+              Sample property: {JSON.stringify({
+                id: properties[0].id,
+                title: properties[0].title,
+                status: properties[0].status,
+                country: properties[0].country,
+                region: properties[0].region
+              }, null, 2)}
+            </>
+          )}
+        </div>
+      </div>
+      
+      {/* Properties List */}
+      {properties.length === 0 ? (
+        <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+          <div className="text-4xl mb-4">🏠</div>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">No Properties Found</h3>
+          <p className="text-gray-500 mb-4">You haven't uploaded any properties yet, or there may be a loading issue.</p>
+          <Link href="/dashboard/owner/create-property">
+            <button className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition">
+              Upload Your First Property
+            </button>
+          </Link>
+        </div>
+      ) : (
+        <>
+          {properties.filter(p => !countryFilter || p.country === countryFilter).length === 0 ? (
+            <div className="text-center py-8 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div className="text-2xl mb-2">🔍</div>
+              <h3 className="text-lg font-semibold text-gray-600 mb-2">No Properties Match Filter</h3>
+              <p className="text-gray-500 mb-4">Try changing the country filter to see your properties.</p>
+              <button 
+                onClick={() => setCountryFilter('')}
+                className="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition"
+              >
+                Clear Filter
+              </button>
             </div>
-          </li>
-        ))}
-      </ul>
+          ) : (
+            <ul className="space-y-4">
+              {properties.filter(p => !countryFilter || p.country === countryFilter).map(property => (
+                <li key={property.id} className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="mb-3">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${property.status === "available" ? "bg-green-100 text-green-700" : property.status === "pending" ? "bg-blue-100 text-blue-700" : property.status === "off_market" ? "bg-yellow-100 text-yellow-700" : "bg-purple-100 text-purple-700"}`}>
+                          {property.status || 'Unknown'}
+                        </span>
+                      </div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{property.title || 'Untitled Property'}</h3>
+                      <p className="text-gray-600 mb-2">📍 {property.country || property.region || 'Unknown Location'}</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        {typeof property.price === 'number' ? property.price.toLocaleString() : 'N/A'} {property.currency || 'USD'}
+                      </p>
+                    </div>
+                    <div className="ml-6 flex flex-col gap-2">
+                      <Link href={`/dashboard/owner/edit-property/${property.id}`}>
+                        <button className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
+                          ✏️ Edit Property
+                        </button>
+                      </Link>
+                      <Link href={`/property/${property.id}`} target="_blank">
+                        <button className="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition flex items-center gap-2">
+                          👁️ View Live
+                        </button>
+                      </Link>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
+      )}
     </main>
     </div>
   );
