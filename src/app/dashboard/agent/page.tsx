@@ -105,7 +105,7 @@ export default function AgentPage() {
             isAgent ? (
               <div>
                 <h2 className="text-2xl font-bold mb-4">Active Listings</h2>
-                <p>Show active property listings here.</p>
+                <MyPropertiesTab userId={userId || ''} />
               </div>
             ) : (
               <div className="max-w-2xl mx-auto text-center py-12">
