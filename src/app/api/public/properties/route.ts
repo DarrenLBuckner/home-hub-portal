@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           is_primary
         )
       `)
-      .in('status', ['active', 'pending']) // Look for active and pending properties
+      .eq('status', 'active') // Only show approved/active properties
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     let countQuery = supabase
       .from('properties')
       .select('*', { count: 'exact', head: true })
-      .in('status', ['active', 'pending'])
+      .eq('status', 'active')
     
     if (site) {
       countQuery = countQuery.eq('site_id', site)
