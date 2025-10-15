@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { RegistrationForm, PlanSelection } from "@/components/FSBORegistration";
+import FSBORegistrationNew from "@/components/FSBORegistrationNew";
 
 export default function FSBORegistrationPage() {
   const [step, setStep] = useState<'register' | 'plan'>('register');
@@ -12,7 +12,7 @@ export default function FSBORegistrationPage() {
     password: '',
     confirmPassword: '',
   });
-  const [selectedPlan, setSelectedPlan] = useState('extended');
+  const [selectedPlan, setSelectedPlan] = useState('featured');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -74,22 +74,22 @@ export default function FSBORegistrationPage() {
     alert(`Plan selected: ${selectedPlan}`);
   }
   return (
-    <div className="max-w-2xl mx-auto bg-white p-6 rounded-2xl shadow-xl space-y-8">
-      <h1 className="text-3xl font-extrabold text-center text-orange-600 mb-2 tracking-tight drop-shadow-lg animate-fade-in">For Sale By Owner Listing Plans & Registration</h1>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-100">
+      <div className="max-w-md mx-auto lg:max-w-4xl bg-white lg:bg-transparent p-4 lg:p-6 lg:rounded-2xl lg:shadow-xl space-y-6 lg:space-y-8">
+        <h1 className="text-2xl lg:text-3xl font-extrabold text-center text-orange-600 mb-2 tracking-tight drop-shadow-lg">For Sale By Owner Registration</h1>
       {/* Always show plan cards at the top */}
       {/* Registration step */}
       {step === 'register' && (
         <>
           <div className="mb-8">
-            <PlanSelection
+            <FSBORegistrationNew.PlanSelection
               selectedPlan={selectedPlan}
               setSelectedPlan={setSelectedPlan}
               onContinue={() => {}}
               isContinueEnabled={false}
-              enterpriseStyle={true}
             />
           </div>
-          <RegistrationForm
+          <FSBORegistrationNew.RegistrationForm
             formData={formData}
             setFormData={setFormData}
             onSubmit={handleRegistrationSubmit}
@@ -101,15 +101,15 @@ export default function FSBORegistrationPage() {
       {/* Plan selection step */}
       {step === 'plan' && (
         <div className="mt-6">
-          <PlanSelection
+          <FSBORegistrationNew.PlanSelection
             selectedPlan={selectedPlan}
             setSelectedPlan={setSelectedPlan}
             onContinue={() => window.location.href = '/register/payment'}
             isContinueEnabled={!!selectedPlan}
-            enterpriseStyle={true}
           />
         </div>
       )}
+      </div>
     </div>
   );
 }
