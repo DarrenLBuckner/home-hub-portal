@@ -21,7 +21,9 @@
       "Read(//mnt/c/LocalFiles/**)",
       "Bash(find:*)",
       "Bash(mkdir:*)",
-      "Bash(npx supabase db reset:*)"
+      "Bash(npx supabase db reset:*)",
+      "Bash(node:*)",
+      "WebFetch(domain:guyanahomehub.com)"
     ],
     "deny": [],
     "ask": []

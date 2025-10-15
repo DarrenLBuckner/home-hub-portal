@@ -165,10 +165,10 @@ export default function MobileOptimizedAdminDashboard() {
         setApprovedProperties(approvedProps || []);
       }
 
-      // Load basic statistics without join to avoid errors
+      // Load basic statistics including listed_by_type for proper counting
       const { data: stats, error: statsError } = await supabase
         .from('properties')
-        .select('status, created_at, user_id');
+        .select('status, created_at, user_id, listed_by_type');
 
       if (statsError) {
         console.error('Stats error:', statsError);
@@ -180,25 +180,17 @@ export default function MobileOptimizedAdminDashboard() {
         p.created_at.startsWith(today)
       ).length || 0;
 
-      // Get user type counts with a separate query to avoid join issues
-      const { data: userTypeCounts, error: userTypeError } = await supabase
-        .from('profiles')
-        .select('user_type, id');
-
+      // Count properties by listed_by_type (this is the key field for the portal)
       let byUserType = { fsbo: 0, agent: 0, landlord: 0 };
       
-      if (!userTypeError && userTypeCounts && stats) {
-        // Match users with their properties
-        const userTypeMap = new Map();
-        userTypeCounts.forEach((profile: any) => {
-          userTypeMap.set(profile.id, profile.user_type);
-        });
-
+      if (stats) {
         stats.forEach((property: any) => {
-          const userType = userTypeMap.get(property.user_id);
-          if (userType === 'owner') byUserType.fsbo++;
-          else if (userType === 'agent') byUserType.agent++;
-          else if (userType === 'landlord') byUserType.landlord++;
+          // Count active properties only by their listed_by_type
+          if (property.status === 'active') {
+            if (property.listed_by_type === 'owner') byUserType.fsbo++;
+            else if (property.listed_by_type === 'agent') byUserType.agent++;
+            else if (property.listed_by_type === 'landlord') byUserType.landlord++;
+          }
         });
       }
 
