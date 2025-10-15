@@ -69,7 +69,11 @@ export default function CompletionIncentive({
   userType 
 }: CompletionIncentiveProps) {
   const benefit = COMPLETION_BENEFITS[fieldType];
-  const motivation = USER_MOTIVATIONS[userType];
+  const motivation = USER_MOTIVATIONS[userType] || {
+    primary: "improve your listing",
+    secondary: "attract more buyers", 
+    cta: "Complete your listing"
+  };
 
   if (isCompleted) {
     return (
@@ -106,17 +110,48 @@ export default function CompletionIncentive({
 
 // Completion Progress Component
 interface CompletionProgressProps {
-  completionPercentage: number;
-  userType: 'agent' | 'landlord' | 'fsbo';
-  missingFields: string[];
+  completionPercentage?: number;
+  userType?: 'agent' | 'landlord' | 'fsbo';
+  missingFields?: string[];
+  // Support for the alternative interface used in edit pages
+  completionAnalysis?: {
+    percentage: number;
+    missingFields: string[];
+    completedFields: string[];
+    recommendations: any[];
+  };
+  userMotivation?: {
+    primary: string;
+    urgency?: string;
+    social?: string;
+  };
 }
 
 export function CompletionProgress({ 
   completionPercentage, 
   userType, 
-  missingFields 
+  missingFields,
+  completionAnalysis,
+  userMotivation
 }: CompletionProgressProps) {
-  const motivation = USER_MOTIVATIONS[userType];
+  // Handle both interface types
+  const actualPercentage = completionPercentage ?? completionAnalysis?.percentage ?? 0;
+  const actualMissingFields = missingFields ?? completionAnalysis?.missingFields ?? [];
+  
+  // Get motivation from either source
+  let motivation;
+  if (userMotivation) {
+    motivation = userMotivation;
+  } else if (userType && USER_MOTIVATIONS[userType]) {
+    motivation = USER_MOTIVATIONS[userType];
+  } else {
+    // Fallback motivation to prevent crashes
+    motivation = {
+      primary: "Improve your listing",
+      secondary: "Attract more buyers",
+      cta: "Complete your listing"
+    };
+  }
   
   const getPerformanceLevel = (percentage: number) => {
     if (percentage >= 90) return { level: 'Excellent', color: 'green', icon: '🚀' };
@@ -125,7 +160,7 @@ export function CompletionProgress({
     return { level: 'Basic', color: 'red', icon: '💡' };
   };
 
-  const performance = getPerformanceLevel(completionPercentage);
+  const performance = getPerformanceLevel(actualPercentage);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 mb-6">
@@ -140,11 +175,11 @@ export function CompletionProgress({
         <div className="flex-1 bg-gray-200 rounded-full h-3">
           <div 
             className={`h-3 rounded-full bg-${performance.color}-500 transition-all duration-500`}
-            style={{ width: `${completionPercentage}%` }}
+            style={{ width: `${actualPercentage}%` }}
           />
         </div>
         <span className="text-lg font-bold text-gray-900">
-          {completionPercentage}%
+          {actualPercentage}%
         </span>
       </div>
 
@@ -157,13 +192,13 @@ export function CompletionProgress({
         </span>
       </div>
 
-      {completionPercentage < 90 && missingFields.length > 0 && (
+      {actualPercentage < 90 && actualMissingFields.length > 0 && (
         <div className="mt-4 p-3 bg-blue-50 rounded-lg">
           <p className="text-sm font-medium text-blue-800 mb-2">
             Quick wins to boost your score:
           </p>
           <div className="flex flex-wrap gap-2">
-            {missingFields.slice(0, 3).map((field, index) => (
+            {actualMissingFields.slice(0, 3).map((field, index) => (
               <span 
                 key={index}
                 className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"
