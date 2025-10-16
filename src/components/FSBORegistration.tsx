@@ -147,7 +147,7 @@ export function PlanSelection({ selectedPlan, setSelectedPlan, onContinue, isCon
         <div className={`flex-1 rounded-2xl shadow-xl border-4 p-6 transition-all duration-200 cursor-pointer ${selectedPlan === "basic" ? "border-orange-600 bg-gradient-to-br from-orange-100 to-orange-300" : "border-gray-200 bg-white"}`} onClick={() => setSelectedPlan("basic")}> 
           <div className="text-4xl text-orange-600 mb-2">&#128176;</div>
           <div className="font-bold text-xl text-orange-700 mb-1">FSBO Flat Rate</div>
-          <div className="text-lg font-bold text-gray-900 mb-2">G$420 / 60 days ($2.00 USD - TEST)</div>
+          <div className="text-lg font-bold text-gray-900 mb-2">G$20,000 / Single Listing</div>
           <ul className="text-sm text-gray-700 mb-2 list-disc list-inside">
             <li>All features included</li>
             <li>5 photos per property</li>
@@ -158,7 +158,7 @@ export function PlanSelection({ selectedPlan, setSelectedPlan, onContinue, isCon
           <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-4 py-1 bg-blue-600 text-white text-xs font-bold rounded-full shadow-lg z-10">Most Popular</div>
           <div className="text-4xl text-blue-600 mb-2">&#128200;</div>
           <div className="font-bold text-xl text-blue-700 mb-1">Extended Listing</div>
-          <div className="text-lg font-bold text-gray-900 mb-2">G$420 / 90 days ($2.00 USD - TEST)</div>
+          <div className="text-lg font-bold text-gray-900 mb-2">G$35,000 / 90 Day Access</div>
           <ul className="text-sm text-gray-700 mb-2 list-disc list-inside">
             <li>All features included</li>
             <li>10 photos per property</li>
@@ -168,7 +168,7 @@ export function PlanSelection({ selectedPlan, setSelectedPlan, onContinue, isCon
         <div className={`flex-1 rounded-2xl shadow-xl border-4 p-6 transition-all duration-200 cursor-pointer ${selectedPlan === "premium" ? "border-yellow-500 bg-gradient-to-br from-yellow-100 to-yellow-300" : "border-gray-200 bg-white"}`} onClick={() => setSelectedPlan("premium")}> 
           <div className="text-4xl text-yellow-500 mb-2">&#11088;</div>
           <div className="font-bold text-xl text-yellow-700 mb-1">Premium Listing</div>
-          <div className="text-lg font-bold text-gray-900 mb-2">G$420 / 180 days ($2.00 USD - TEST)</div>
+          <div className="text-lg font-bold text-gray-900 mb-2">G$65,000 / 180 Day Access</div>
           <ul className="text-sm text-gray-700 mb-2 list-disc list-inside">
             <li>All features included</li>
             <li>15 photos per property</li>

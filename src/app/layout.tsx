@@ -4,20 +4,30 @@ import type { Metadata } from "next";
 import "./globals.css";
 import AuthNavBar from '../components/AuthNavBar';
 import Link from 'next/link';
+import { CountryThemeProvider } from '@/components/CountryThemeProvider';
+import { getCountryFromHeaders } from '@/lib/country-detection';
 
-export const metadata: Metadata = {
-  title: "Portal Home Hub - Real Estate Portal",
-  description: "Portal Home Hub - Real estate portal for agents, landlords, and FSBO. Find and list properties in Guyana and beyond.",
-  keywords: "real estate, property, homes, agents, landlords, FSBO, Guyana, Portal Home Hub",
-  authors: [{ name: "Portal Home Hub" }],
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const country = await getCountryFromHeaders();
+  const countryName = country === 'JM' ? 'Jamaica' : 'Guyana';
+  const siteName = country === 'JM' ? 'Jamaica Home Hub' : 'Guyana Home Hub';
+  
+  return {
+    title: `${siteName} - Real Estate Portal`,
+    description: `${siteName} - Real estate portal for agents, landlords, and FSBO. Find and list properties in ${countryName}.`,
+    keywords: `real estate, property, homes, agents, landlords, FSBO, ${countryName}, ${siteName}`,
+    authors: [{ name: siteName }],
+  };
+}
 
 export const viewport = {
   width: "device-width",
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const country = await getCountryFromHeaders();
+  
   return (
     <html lang="en">
       <head>
@@ -55,27 +65,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="antialiased">
-        <AuthNavBar />
-        <main>
-          {children}
-        </main>
-        
-        <footer className="bg-gray-100 border-t">
-          {/* Admin access - subtle link at the very bottom */}
-          <div className="border-t border-gray-200 mt-8 pt-4">
-            <div className="max-w-7xl mx-auto px-4 pb-4">
-              <div className="flex justify-between items-center text-xs text-gray-400">
-                <span>© 2024 Portal Home Hub</span>
-                <Link 
-                  href="/admin-login" 
-                  className="hover:text-gray-600 transition-colors"
-                >
-                  Staff Access
-                </Link>
+        <CountryThemeProvider initialCountry={country}>
+          <AuthNavBar />
+          <main>
+            {children}
+          </main>
+          
+          <footer className="bg-gray-100 border-t">
+            {/* Admin access - subtle link at the very bottom */}
+            <div className="border-t border-gray-200 mt-8 pt-4">
+              <div className="max-w-7xl mx-auto px-4 pb-4">
+                <div className="flex justify-between items-center text-xs text-gray-400">
+                  <span>© 2024 Portal Home Hub</span>
+                  <Link 
+                    href="/admin-login" 
+                    className="hover:text-gray-600 transition-colors"
+                  >
+                    Staff Access
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
-        </footer>
+          </footer>
+        </CountryThemeProvider>
       </body>
     </html>
   );

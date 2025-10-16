@@ -2,12 +2,27 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// Country detection helper
+function getCountryFromHost(hostname: string): 'GY' | 'JM' {
+  if (hostname.includes('jamaica') || hostname.includes('jm')) {
+    return 'JM';
+  }
+  return 'GY'; // Default to Guyana
+}
+
 export async function middleware(request: NextRequest) {
+  // Detect country from hostname
+  const country = getCountryFromHost(request.nextUrl.hostname);
+  console.log(`🌍 MIDDLEWARE: Detected country: ${country} from hostname: ${request.nextUrl.hostname}`);
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
+
+  // Add country header for server components
+  response.headers.set('x-country-code', country);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

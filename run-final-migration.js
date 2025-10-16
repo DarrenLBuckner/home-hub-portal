@@ -1,14 +1,14 @@
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: '.env.local' });
 
-async function runFixedMigration() {
+async function runCorrectMigration() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
   try {
-    console.log('🔒 STEP 1: Backing up existing FSBO pricing (final attempt)...');
+    console.log('🔒 STEP 1: Backing up existing FSBO pricing...');
     
     // Get current FSBO plans for backup
     const { data: backupPlans, error: backupError } = await supabase
@@ -21,12 +21,16 @@ async function runFixedMigration() {
       return;
     }
 
-    console.log(`✅ Backing up ${backupPlans.length} existing FSBO plans:`);
+    console.log(`✅ Backed up ${backupPlans.length} existing FSBO plans:`);
     backupPlans.forEach((plan, index) => {
       console.log(`  ${index + 1}. ${plan.plan_name}: $${(plan.price / 100).toFixed(2)} USD (${plan.listing_duration_days} days)`);
     });
 
-    console.log('\n🔄 STEP 2: Applying new 4-tier FSBO pricing (using valid plan_type values)...');
+    // Store backup data
+    require('fs').writeFileSync('./fsbo-backup-final-20251014.json', JSON.stringify(backupPlans, null, 2));
+    console.log('✅ Backup saved to fsbo-backup-final-20251014.json');
+
+    console.log('\n🔄 STEP 2: Applying new FSBO pricing structure with correct schema...');
 
     // Delete existing FSBO plans
     const { error: deleteError } = await supabase
@@ -39,12 +43,12 @@ async function runFixedMigration() {
       return;
     }
 
-    // Insert new 4-tier pricing with valid plan_type values
+    // Insert new 4-tier pricing with correct column names
     const newPlans = [
       {
         plan_name: 'Single Property',
         user_type: 'fsbo',
-        plan_type: 'per_property', // Use valid type
+        plan_type: 'per_property',
         price: 1500000, // G$15,000 in cents
         original_price: null,
         max_properties: 1,
@@ -57,8 +61,7 @@ async function runFixedMigration() {
           photos: 8,
           search_visibility: true,
           mobile_optimized: true,
-          currency: 'GYD',
-          tier: 'single'
+          currency: 'GYD'
         },
         is_active: true,
         is_popular: false,
@@ -67,7 +70,7 @@ async function runFixedMigration() {
       {
         plan_name: 'Featured Listing',
         user_type: 'fsbo',
-        plan_type: 'per_property', // Use valid type
+        plan_type: 'per_property',
         price: 2500000, // G$25,000 in cents
         original_price: null,
         max_properties: 1,
@@ -81,8 +84,7 @@ async function runFixedMigration() {
           badge: 'featured',
           homepage_feature: true,
           social_sharing: true,
-          currency: 'GYD',
-          tier: 'featured'
+          currency: 'GYD'
         },
         is_active: true,
         is_popular: true, // Most popular
@@ -91,7 +93,7 @@ async function runFixedMigration() {
       {
         plan_name: 'Premium Listing',
         user_type: 'fsbo',
-        plan_type: 'per_property', // Use valid type
+        plan_type: 'per_property',
         price: 3500000, // G$35,000 in cents
         original_price: null,
         max_properties: 1,
@@ -105,8 +107,7 @@ async function runFixedMigration() {
           social_promo: true,
           virtual_tour: true,
           priority_placement: true,
-          currency: 'GYD',
-          tier: 'premium'
+          currency: 'GYD'
         },
         is_active: true,
         is_popular: false,
@@ -115,11 +116,11 @@ async function runFixedMigration() {
       {
         plan_name: 'Enterprise',
         user_type: 'fsbo',
-        plan_type: 'yearly', // Use valid type for enterprise (yearly makes sense)
+        plan_type: 'enterprise',
         price: 15000000, // G$150,000 in cents (starting price)
         original_price: null,
         max_properties: 25,
-        featured_listings_included: 999, // Unlimited represented as high number
+        featured_listings_included: 999, // Unlimited
         listing_duration_days: 365,
         features: {
           placement: 'custom',
@@ -131,8 +132,7 @@ async function runFixedMigration() {
           api_access: true,
           requires_contact: true,
           free_setup: true,
-          currency: 'GYD',
-          tier: 'enterprise'
+          currency: 'GYD'
         },
         is_active: true,
         is_popular: false,
@@ -162,7 +162,7 @@ async function runFixedMigration() {
       return;
     }
 
-    console.log('🎉 NEW 4-TIER FSBO PRICING SUCCESSFULLY APPLIED!');
+    console.log('✅ New pricing plans inserted successfully!');
 
     console.log('\n📊 NEW FSBO PRICING STRUCTURE:');
     insertedPlans.forEach((plan, index) => {
@@ -171,25 +171,20 @@ async function runFixedMigration() {
       console.log(`  ${index + 1}. ${plan.plan_name}: G$${priceGYD} (${plan.listing_duration_days} days, ${photosText})`);
     });
 
-    console.log('\n✅ Database migration completed successfully!');
-    console.log('📱 Contact number verified: +592 762-9797');
+    console.log('\n🎉 FSBO Pricing Migration Completed Successfully!');
+    console.log('📱 Main contact number: +592 762-9797');
     
     // Final verification
     const { data: verifyPlans, error: verifyError } = await supabase
       .from('pricing_plans')
-      .select('plan_name, price, listing_duration_days, features')
+      .select('plan_name, price, listing_duration_days, is_active')
       .eq('user_type', 'fsbo')
-      .eq('is_active', true)
-      .order('display_order');
+      .eq('is_active', true);
 
-    console.log(`\n🔍 VERIFICATION: ${verifyPlans?.length || 0}/4 FSBO plans active`);
+    console.log(`\n✅ VERIFICATION: ${verifyPlans?.length || 0}/4 FSBO plans active`);
     
     if (verifyPlans?.length === 4) {
-      console.log('🎯 Database ready! Moving to frontend component creation...');
-      
-      verifyPlans.forEach((plan, index) => {
-        console.log(`  ✅ ${plan.plan_name}: G$${(plan.price / 100).toLocaleString()} (${plan.features.tier} tier)`);
-      });
+      console.log('🎯 Ready to update frontend component!');
     }
 
   } catch (error) {
@@ -197,4 +192,4 @@ async function runFixedMigration() {
   }
 }
 
-runFixedMigration();
+runCorrectMigration();

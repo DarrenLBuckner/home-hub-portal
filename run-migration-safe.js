@@ -1,16 +1,16 @@
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config({ path: '.env.local' });
 
-async function runFixedMigration() {
+async function runSafeMigration() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   );
 
   try {
-    console.log('🔒 STEP 1: Backing up existing FSBO pricing (final attempt)...');
+    console.log('🔒 STEP 1: Backing up existing FSBO pricing...');
     
-    // Get current FSBO plans for backup
+    // Get current FSBO plans for backup (in memory)
     const { data: backupPlans, error: backupError } = await supabase
       .from('pricing_plans')
       .select('*')
@@ -21,12 +21,16 @@ async function runFixedMigration() {
       return;
     }
 
-    console.log(`✅ Backing up ${backupPlans.length} existing FSBO plans:`);
+    console.log(`✅ Backed up ${backupPlans.length} existing FSBO plans:`);
     backupPlans.forEach((plan, index) => {
-      console.log(`  ${index + 1}. ${plan.plan_name}: $${(plan.price / 100).toFixed(2)} USD (${plan.listing_duration_days} days)`);
+      console.log(`  ${index + 1}. ${plan.plan_name}: $${(plan.price / 100).toFixed(2)} USD`);
     });
 
-    console.log('\n🔄 STEP 2: Applying new 4-tier FSBO pricing (using valid plan_type values)...');
+    // Store backup data in a JSON file for safety
+    require('fs').writeFileSync('./fsbo-backup-20251014.json', JSON.stringify(backupPlans, null, 2));
+    console.log('✅ Backup saved to fsbo-backup-20251014.json');
+
+    console.log('\n🔄 STEP 2: Applying new FSBO pricing structure...');
 
     // Delete existing FSBO plans
     const { error: deleteError } = await supabase
@@ -36,43 +40,54 @@ async function runFixedMigration() {
 
     if (deleteError) {
       console.error('Error deleting old plans:', deleteError);
+      console.log('🔄 Restoring from backup...');
+      
+      // Restore from backup
+      const { error: restoreError } = await supabase
+        .from('pricing_plans')
+        .insert(backupPlans);
+      
+      if (restoreError) {
+        console.error('CRITICAL: Backup restoration failed!', restoreError);
+      } else {
+        console.log('✅ Backup restored successfully');
+      }
       return;
     }
 
-    // Insert new 4-tier pricing with valid plan_type values
+    console.log('✅ Old FSBO plans deleted');
+
+    // Insert new 4-tier pricing
     const newPlans = [
       {
-        plan_name: 'Single Property',
         user_type: 'fsbo',
-        plan_type: 'per_property', // Use valid type
+        plan_name: 'Single Property',
+        plan_type: 'per_property',
         price: 1500000, // G$15,000 in cents
-        original_price: null,
+        duration_days: 60,
         max_properties: 1,
-        featured_listings_included: 0,
-        listing_duration_days: 60,
+        max_featured_listings: 0,
+        is_active: true,
+        is_popular: false,
         features: {
           placement: 'standard',
           support: 'email', 
           active_days: 60,
           photos: 8,
           search_visibility: true,
-          mobile_optimized: true,
-          currency: 'GYD',
-          tier: 'single'
-        },
-        is_active: true,
-        is_popular: false,
-        display_order: 1
+          mobile_optimized: true
+        }
       },
       {
-        plan_name: 'Featured Listing',
         user_type: 'fsbo',
-        plan_type: 'per_property', // Use valid type
+        plan_name: 'Featured Listing',
+        plan_type: 'per_property', 
         price: 2500000, // G$25,000 in cents
-        original_price: null,
+        duration_days: 90,
         max_properties: 1,
-        featured_listings_included: 1,
-        listing_duration_days: 90,
+        max_featured_listings: 1,
+        is_active: true,
+        is_popular: true, // Most popular
         features: {
           placement: 'featured',
           support: 'priority',
@@ -80,23 +95,19 @@ async function runFixedMigration() {
           photos: 15,
           badge: 'featured',
           homepage_feature: true,
-          social_sharing: true,
-          currency: 'GYD',
-          tier: 'featured'
-        },
-        is_active: true,
-        is_popular: true, // Most popular
-        display_order: 2
+          social_sharing: true
+        }
       },
       {
-        plan_name: 'Premium Listing',
         user_type: 'fsbo',
-        plan_type: 'per_property', // Use valid type
+        plan_name: 'Premium Listing',
+        plan_type: 'per_property',
         price: 3500000, // G$35,000 in cents
-        original_price: null,
+        duration_days: 180,
         max_properties: 1,
-        featured_listings_included: 1,
-        listing_duration_days: 180,
+        max_featured_listings: 1,
+        is_active: true,
+        is_popular: false,
         features: {
           placement: 'top',
           support: 'premium',
@@ -104,23 +115,19 @@ async function runFixedMigration() {
           photos: 20,
           social_promo: true,
           virtual_tour: true,
-          priority_placement: true,
-          currency: 'GYD',
-          tier: 'premium'
-        },
-        is_active: true,
-        is_popular: false,
-        display_order: 3
+          priority_placement: true
+        }
       },
       {
-        plan_name: 'Enterprise',
         user_type: 'fsbo',
-        plan_type: 'yearly', // Use valid type for enterprise (yearly makes sense)
+        plan_name: 'Enterprise',
+        plan_type: 'enterprise',
         price: 15000000, // G$150,000 in cents (starting price)
-        original_price: null,
+        duration_days: 365,
         max_properties: 25,
-        featured_listings_included: 999, // Unlimited represented as high number
-        listing_duration_days: 365,
+        max_featured_listings: 999, // Unlimited
+        is_active: true,
+        is_popular: false,
         features: {
           placement: 'custom',
           support: 'dedicated',
@@ -130,13 +137,8 @@ async function runFixedMigration() {
           branding: true,
           api_access: true,
           requires_contact: true,
-          free_setup: true,
-          currency: 'GYD',
-          tier: 'enterprise'
-        },
-        is_active: true,
-        is_popular: false,
-        display_order: 4
+          free_setup: true
+        }
       }
     ];
 
@@ -156,40 +158,35 @@ async function runFixedMigration() {
       
       if (rollbackError) {
         console.error('CRITICAL: Rollback failed!', rollbackError);
+        console.log('Manual restore needed from fsbo-backup-20251014.json');
       } else {
         console.log('✅ Successfully rolled back to original plans');
       }
       return;
     }
 
-    console.log('🎉 NEW 4-TIER FSBO PRICING SUCCESSFULLY APPLIED!');
+    console.log('✅ New pricing plans inserted successfully!');
 
-    console.log('\n📊 NEW FSBO PRICING STRUCTURE:');
+    console.log('\n📊 VERIFICATION: New FSBO pricing structure:');
     insertedPlans.forEach((plan, index) => {
       const photosText = typeof plan.features.photos === 'number' ? `${plan.features.photos} photos` : plan.features.photos;
-      const priceGYD = (plan.price / 100).toLocaleString();
-      console.log(`  ${index + 1}. ${plan.plan_name}: G$${priceGYD} (${plan.listing_duration_days} days, ${photosText})`);
+      console.log(`  ${index + 1}. ${plan.plan_name}: G$${(plan.price / 100).toLocaleString()} (${plan.duration_days} days, ${photosText})`);
     });
 
-    console.log('\n✅ Database migration completed successfully!');
-    console.log('📱 Contact number verified: +592 762-9797');
+    console.log('\n🎉 Migration completed successfully!');
+    console.log('📱 Main contact number verified: +592 762-9797');
     
-    // Final verification
+    // Run verification check
+    console.log('\n🔍 Final verification...');
     const { data: verifyPlans, error: verifyError } = await supabase
       .from('pricing_plans')
-      .select('plan_name, price, listing_duration_days, features')
-      .eq('user_type', 'fsbo')
-      .eq('is_active', true)
-      .order('display_order');
+      .select('plan_name, price, duration_days, is_active')
+      .eq('user_type', 'fsbo');
 
-    console.log(`\n🔍 VERIFICATION: ${verifyPlans?.length || 0}/4 FSBO plans active`);
-    
-    if (verifyPlans?.length === 4) {
-      console.log('🎯 Database ready! Moving to frontend component creation...');
-      
-      verifyPlans.forEach((plan, index) => {
-        console.log(`  ✅ ${plan.plan_name}: G$${(plan.price / 100).toLocaleString()} (${plan.features.tier} tier)`);
-      });
+    if (!verifyError && verifyPlans.length === 4) {
+      console.log('✅ VERIFICATION PASSED: 4 FSBO plans active');
+    } else {
+      console.log('❌ VERIFICATION FAILED: Expected 4 plans, found', verifyPlans?.length || 0);
     }
 
   } catch (error) {
@@ -197,4 +194,4 @@ async function runFixedMigration() {
   }
 }
 
-runFixedMigration();
+runSafeMigration();

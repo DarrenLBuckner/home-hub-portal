@@ -17,7 +17,7 @@ export const CURRENCY_DATA: Record<string, CurrencyInfo> = {
   // Caribbean Markets
   GYD: {
     code: 'GYD',
-    symbol: 'GY$',
+    symbol: 'G$',
     name: 'Guyanese Dollar',
     symbolPosition: 'before',
     decimalPlaces: 2,
@@ -246,6 +246,15 @@ export function getAvailableCurrencies(): Array<{ code: string; name: string; sy
     name: currency.name,
     symbol: currency.symbol
   }));
+}
+
+/**
+ * Quick helper for Jamaica expansion - format price with country detection
+ */
+export function formatPrice(amountInCents: number, countryCode: 'GY' | 'JM'): string {
+  const amount = amountInCents / 100;
+  const symbol = countryCode === 'JM' ? 'J$' : 'G$';
+  return `${symbol}${amount.toLocaleString()}`;
 }
 
 /**

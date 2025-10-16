@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jamaica Theme Test</title>
+    <style>
+        :root {
+            --background: #ffffff;
+            --foreground: #171717;
+            --primary: #2563eb;
+            --secondary: #059669;
+            --accent: #dc2626;
+        }
+
+        /* Jamaica theme override */
+        :root[data-country="JM"] {
+            --primary: #009639;
+            --secondary: #FFD700;
+            --accent: #0077BE;
+            --foreground: #000000;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--background);
+            color: var(--foreground);
+            padding: 20px;
+        }
+
+        .theme-demo {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .color-box {
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+            display: inline-block;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+        }
+
+        .primary { background-color: var(--primary); }
+        .secondary { background-color: var(--secondary); }
+        .accent { background-color: var(--accent); }
+
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+
+        .card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="theme-demo">
+        <div class="header">
+            <h1 id="site-title">🇬🇾 Guyana Home Hub</h1>
+            <p>Real Estate Portal</p>
+        </div>
+
+        <div class="card">
+            <h2>Theme Colors</h2>
+            <div class="color-box primary"></div>
+            <div class="color-box secondary"></div>
+            <div class="color-box accent"></div>
+            <p>Primary • Secondary • Accent</p>
+        </div>
+
+        <div class="card">
+            <h2>Theme Test Controls</h2>
+            <button onclick="switchToGuyana()">🇬🇾 Switch to Guyana</button>
+            <button onclick="switchToJamaica()">🇯🇲 Switch to Jamaica</button>
+        </div>
+
+        <div class="card">
+            <h2>Sample UI Elements</h2>
+            <button>Primary Button</button>
+            <p style="color: var(--primary)">Primary colored text</p>
+            <p style="color: var(--secondary)">Secondary colored text</p>
+            <p style="color: var(--accent)">Accent colored text</p>
+        </div>
+    </div>
+
+    <script>
+        function switchToGuyana() {
+            document.documentElement.removeAttribute('data-country');
+            document.getElementById('site-title').textContent = '🇬🇾 Guyana Home Hub';
+            console.log('Switched to Guyana theme');
+        }
+
+        function switchToJamaica() {
+            document.documentElement.setAttribute('data-country', 'JM');
+            document.getElementById('site-title').textContent = '🇯🇲 Jamaica Home Hub';
+            console.log('Switched to Jamaica theme');
+        }
+    </script>
+</body>
+</html>
