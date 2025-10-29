@@ -10,10 +10,19 @@ function getCountryFromHost(hostname: string): 'GY' | 'JM' {
   return 'GY'; // Default to Guyana
 }
 
+// Site type detection helper
+function getSiteTypeFromHost(hostname: string): 'portal' | 'public' {
+  if (hostname.includes('portal')) {
+    return 'portal';
+  }
+  return 'public'; // Default to public site
+}
+
 export async function middleware(request: NextRequest) {
-  // Detect country from hostname
+  // Detect country and site type from hostname
   const country = getCountryFromHost(request.nextUrl.hostname);
-  console.log(`🌍 MIDDLEWARE: Detected country: ${country} from hostname: ${request.nextUrl.hostname}`);
+  const siteType = getSiteTypeFromHost(request.nextUrl.hostname);
+  console.log(`🌍 MIDDLEWARE: Detected country: ${country}, site: ${siteType} from hostname: ${request.nextUrl.hostname}`);
 
   let response = NextResponse.next({
     request: {
@@ -21,7 +30,7 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  // Set country cookie for both server and client access
+  // Set country and site type cookies for both server and client access
   response.cookies.set('country-code', country, {
     httpOnly: false, // Allow client-side access
     sameSite: 'lax',
@@ -29,7 +38,14 @@ export async function middleware(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 365 // 1 year
   });
 
-  console.log(`🍪 MIDDLEWARE: Set country-code cookie to: ${country}`);
+  response.cookies.set('site-type', siteType, {
+    httpOnly: false, // Allow client-side access
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365 // 1 year
+  });
+
+  console.log(`🍪 MIDDLEWARE: Set country-code cookie to: ${country}, site-type: ${siteType}`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

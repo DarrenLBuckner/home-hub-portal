@@ -1,8 +1,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import styles from './landing/landing.module.css';
 
-export default function LandingPage() {
+// Portal Home Hub Component (Backend/Admin site)
+function PortalHomePage() {
   return (
     <div className={styles.container}>
       {/* Mobile-Optimized Header */}
@@ -12,7 +15,7 @@ export default function LandingPage() {
         <p className={styles.mobileSubtitle}>Professional Real Estate Management</p>
       </div>
 
-      {/* Mobile-Optimized Registration Cards */}
+      {/* Mobile-Optimized Registration Cards - BACKEND ONLY */}
       <section className={styles.mobileActions}>
         <div className={styles.registrationGrid}>
           
@@ -51,7 +54,55 @@ export default function LandingPage() {
 
         </div>
 
-        {/* Browse Properties Section */}
+        {/* NO BROWSE PROPERTIES BUTTONS ON PORTAL */}
+        
+        {/* Existing User Section */}
+        <div className={styles.existingUserSection}>
+          <p className="text-white text-base font-semibold mb-4">Already have an account?</p>
+          <Link href="/login" className="inline-block bg-transparent text-yellow-300 border-2 border-yellow-300 hover:bg-yellow-300 hover:text-gray-900 px-6 py-3 rounded-xl font-bold text-base transition-all duration-200 min-h-[48px] flex items-center justify-center">
+            🔑 Sign In
+          </Link>
+        </div>
+      </section>
+
+      {/* Mobile-Friendly Footer */}
+      <footer className={styles.mobileFooter}>
+        <div className={styles.footerContent}>
+          <p>© 2025 Portal Home Hub - Professional Real Estate Management</p>
+          <div className="mt-4">
+            <a 
+              href="https://wa.me/5927629797?text=Hello%20Portal%20Home%20Hub!%20I%20need%20help%20with..." 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 mb-3"
+            >
+              <span className="mr-2">💬</span>
+              WhatsApp Support
+            </a>
+            <p className="text-yellow-200 text-sm font-medium">Chat for fastest response • +592 762-9797</p>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+// Public Site Component (Guyana/Jamaica Home Hub)
+function PublicHomePage({ country }: { country: string }) {
+  const siteName = country === 'JM' ? 'Jamaica Home Hub' : 'Guyana Home Hub';
+  const flag = country === 'JM' ? '🇯🇲' : '🇬🇾';
+  
+  return (
+    <div className={styles.container}>
+      {/* Mobile-Optimized Header */}
+      <div className={styles.mobileHeader}>
+        <Image src="/globe.svg" alt={`${siteName} Logo`} width={48} height={48} className={styles.logo} />
+        <h1 className={styles.mobileTitle}>{flag} {siteName}</h1>
+        <p className={styles.mobileSubtitle}>Find Your Dream Home</p>
+      </div>
+
+      {/* Browse Properties Section - PUBLIC ONLY */}
+      <section className={styles.mobileActions}>
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row gap-4">
             
@@ -86,9 +137,9 @@ export default function LandingPage() {
 
         {/* Existing User Section */}
         <div className={styles.existingUserSection}>
-          <p className="text-white text-base font-semibold mb-4">Already have an account?</p>
+          <p className="text-white text-base font-semibold mb-4">Have a property to list?</p>
           <Link href="/login" className="inline-block bg-transparent text-yellow-300 border-2 border-yellow-300 hover:bg-yellow-300 hover:text-gray-900 px-6 py-3 rounded-xl font-bold text-base transition-all duration-200 min-h-[48px] flex items-center justify-center">
-            🔑 Sign In
+            🔑 Property Owner Sign In
           </Link>
         </div>
       </section>
@@ -96,10 +147,10 @@ export default function LandingPage() {
       {/* Mobile-Friendly Footer */}
       <footer className={styles.mobileFooter}>
         <div className={styles.footerContent}>
-          <p>© 2025 Caribbean Home Hub</p>
+          <p>© 2025 {siteName}</p>
           <div className="mt-4">
             <a 
-              href="https://wa.me/5927629797?text=Hello%20Portal%20Home%20Hub!%20I%20need%20help%20with..." 
+              href="https://wa.me/5927629797?text=Hello%20I%20need%20help%20finding%20a%20property..." 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 mb-3"
@@ -113,5 +164,19 @@ export default function LandingPage() {
       </footer>
     </div>
   );
+}
+
+export default async function LandingPage() {
+  const cookieStore = await cookies();
+  const siteType = cookieStore.get('site-type')?.value || 'public';
+  const country = cookieStore.get('country-code')?.value || 'GY';
+
+  // Portal Home Hub (backend) - should redirect to dashboard if logged in
+  if (siteType === 'portal') {
+    return <PortalHomePage />;
+  }
+
+  // Public site (Guyana/Jamaica Home Hub)
+  return <PublicHomePage country={country} />;
 }
 
