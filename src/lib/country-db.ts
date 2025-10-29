@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from './supabase/server';
 
 export type CountryCode = 'GY' | 'JM';
 

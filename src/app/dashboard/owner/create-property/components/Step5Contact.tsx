@@ -63,18 +63,24 @@ export default function Step5Contact({ formData, setFormData }: Step5ContactProp
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          WhatsApp Number (Optional)
+          WhatsApp Number <span className="text-red-500">*</span>
         </label>
         <input
           type="tel"
           value={formData.owner_whatsapp}
           onChange={(e) => handleChange('owner_whatsapp', e.target.value)}
-          placeholder="592-xxx-xxxx"
+          placeholder="+592-XXX-XXXX"
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          required
         />
         <p className="text-sm text-gray-500 mt-1">
-          Include country code (e.g., +592 for Guyana). WhatsApp is popular for quick communication.
+          <strong>Required:</strong> Include country code (+592 for Guyana). Most customers prefer WhatsApp for instant contact.
         </p>
+        <div className="bg-green-50 p-3 rounded mt-2">
+          <p className="text-sm text-green-800">
+            <strong>💬 Why WhatsApp?</strong> 90% of property inquiries in Guyana happen via WhatsApp. This ensures you get contacted quickly by serious buyers.
+          </p>
+        </div>
       </div>
 
       <div className="bg-yellow-50 p-4 rounded-lg">

@@ -1,16 +1,4 @@
-import { headers } from 'next/headers';
 import { CountryCode } from './country-theme';
-
-export async function getCountryFromHeaders(): Promise<CountryCode> {
-  const headersList = await headers();
-  const host = headersList.get('host') || '';
-  
-  if (host.includes('jamaica')) {
-    return 'JM';
-  }
-  
-  return 'GY'; // Default to Guyana
-}
 
 export function getCountryFromDomain(hostname: string): CountryCode {
   if (hostname.includes('jamaica')) {
@@ -18,4 +6,21 @@ export function getCountryFromDomain(hostname: string): CountryCode {
   }
   
   return 'GY'; // Default to Guyana
+}
+
+// Client-side cookie reading function
+export function getCountryFromCookies(): CountryCode {
+  if (typeof window === 'undefined') return 'GY';
+  
+  const cookieValue = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('country-code='))
+    ?.split('=')[1];
+    
+  if (cookieValue === 'JM' || cookieValue === 'GY') {
+    return cookieValue as CountryCode;
+  }
+  
+  // Fallback to hostname detection
+  return getCountryFromDomain(window.location.hostname);
 }

@@ -1,10 +1,26 @@
-# Guyana Home Hub Portal
+# Portal Home Hub - Multi-Country Real Estate Platform
 
-This is the agent portal for Guyana Home Hub, built with [Next.js](https://nextjs.org) and bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+**Status:** ✅ PRODUCTION READY | **Last Updated:** October 18, 2025  
+**Live URL:** https://portal-home-4607t8apw-darren-lb-uckner-s-projects.vercel.app
 
-## About
+A Next.js-based multi-country real estate management portal built for Jamaica and Guyana markets.
 
-The Guyana Home Hub Portal (portalghh.com) is the backend management system for real estate agents, FSBO sellers, and landlords to manage their property listings. Properties created here sync automatically to the public Guyana Home Hub website (guyanaHomehub.com).
+## 🌍 About
+
+Portal Home Hub is the backend management system for real estate agents, FSBO sellers, and landlords across multiple Caribbean markets. Features complete data isolation, currency support, and country-specific theming.
+
+### **Live Markets:**
+- 🇯🇲 **Jamaica:** Ready to launch (domain setup pending)
+- 🇬🇾 **Guyana:** Fully operational
+
+### **Key Features:**
+- Multi-country database isolation
+- Country-specific pricing (JMD/GYD)  
+- Theme switching (Jamaica green/Guyana blue)
+- Featuring prices system (aligned with live markets)
+- Mobile-responsive design
+- Admin permission system
+- Stripe payment integration
 
 ## Getting Started
 
@@ -28,17 +44,52 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+## 📋 Quick Resume Guide
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**If you need to pick up where you left off:**
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. **Current Status:** Check `CURRENT_STATUS_OCT18_2025.md` for complete overview
+2. **Jamaica Launch:** See `JAMAICA-LAUNCH-READY.md` for domain setup steps  
+3. **Architecture:** Review `COMPLETE_ARCHITECTURE_ANALYSIS.md` for system design
 
-## Deploy on Vercel
+## 🔧 Development Commands
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# Start development server
+npm run dev
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# Guyana-Home-Hub-Portal
-# Portal Home Hub - Production Ready
+# Build for production  
+npm run build
+
+# Deploy to production
+vercel --prod
+
+# Database operations
+node run-featuring-prices-alignment.js
+node verify-featuring-prices-alignment.js
+```
+
+## 🌐 Key URLs
+
+- **Jamaica Pricing:** `/pricing?site=jamaica`
+- **Guyana Pricing:** `/pricing?site=guyana`  
+- **Admin Dashboard:** `/admin-dashboard`
+- **Agent Dashboard:** `/dashboard/agent`
+
+## 📞 Emergency Info
+
+- **Database:** Supabase (opjnizbtppkynxzssijy.supabase.co)
+- **Deployment:** Vercel (portal-home-hub project)
+- **Domain Status:** guyanahomehub.com (live), jamaicahomehub.com (pending)
+
+## 📚 Documentation Files
+
+Recent status files in root directory:
+- `CURRENT_STATUS_OCT18_2025.md` - Latest comprehensive status
+- `JAMAICA-LAUNCH-READY.md` - Jamaica implementation details  
+- `COMPLETE_ARCHITECTURE_ANALYSIS.md` - System architecture
+
+---
+
+**🏆 SYSTEM STATUS: PRODUCTION READY**  
+Multi-country platform fully operational for Jamaica and Guyana markets.

@@ -5,7 +5,7 @@ import "./globals.css";
 import AuthNavBar from '../components/AuthNavBar';
 import Link from 'next/link';
 import { CountryThemeProvider } from '@/components/CountryThemeProvider';
-import { getCountryFromHeaders } from '@/lib/country-detection';
+import { getCountryFromHeaders } from '@/lib/country-detection-server';
 
 export async function generateMetadata(): Promise<Metadata> {
   const country = await getCountryFromHeaders();

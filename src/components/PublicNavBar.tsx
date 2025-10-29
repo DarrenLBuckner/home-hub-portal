@@ -31,6 +31,18 @@ export default function PublicNavBar() {
       </Link>
       
       <ul className="flex flex-col sm:flex-row gap-4 sm:gap-6 relative items-center">
+        {/* Property Browsing Links */}
+        <li>
+          <Link href="/properties/buy" className="hover:underline flex items-center">
+            🏡 For Sale
+          </Link>
+        </li>
+        <li>
+          <Link href="/properties/rent" className="hover:underline flex items-center">
+            🏠 For Rent
+          </Link>
+        </li>
+        
         {/* Consumer Sites Dropdown */}
         <li className="relative">
           <button

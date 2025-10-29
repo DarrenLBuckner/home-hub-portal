@@ -21,8 +21,15 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  // Add country header for server components
-  response.headers.set('x-country-code', country);
+  // Set country cookie for both server and client access
+  response.cookies.set('country-code', country, {
+    httpOnly: false, // Allow client-side access
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365 // 1 year
+  });
+
+  console.log(`🍪 MIDDLEWARE: Set country-code cookie to: ${country}`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

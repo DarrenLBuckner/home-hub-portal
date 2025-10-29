@@ -25,6 +25,12 @@ interface Property {
   created_at: string;
 }
 
+export const metadata = {
+  title: 'Properties for Sale - Guyana Home Hub',
+  description: 'Browse properties for sale in Guyana. Find houses, apartments, and land for purchase.',
+  keywords: 'properties for sale, Guyana real estate, houses for sale, buy property Guyana'
+};
+
 export default function BuyPropertiesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);

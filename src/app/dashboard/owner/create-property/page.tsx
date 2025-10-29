@@ -123,6 +123,10 @@ export default function CreateFSBOProperty() {
           setError('Valid email is required');
           return false;
         }
+        if (!formData.owner_whatsapp.trim()) {
+          setError('WhatsApp number is required for customer contact');
+          return false;
+        }
         break;
     }
     return true;

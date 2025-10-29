@@ -51,6 +51,39 @@ export default function LandingPage() {
 
         </div>
 
+        {/* Browse Properties Section */}
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          <div className="flex flex-col md:flex-row gap-4">
+            
+            {/* Button 1: Browse Properties for Sale */}
+            <Link 
+              href="/properties/buy"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-8 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 text-center"
+            >
+              🏠 Browse Properties for Sale
+            </Link>
+
+            {/* Button 2: Browse Properties for Rent */}
+            <Link 
+              href="/properties/rent"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 text-center"
+            >
+              🏘️ Browse Properties for Rent
+            </Link>
+
+          </div>
+          
+          {/* List Property Button - Secondary Style */}
+          <div className="mt-6">
+            <Link 
+              href="/register"
+              className="w-full md:w-auto mx-auto block bg-white border-2 border-amber-500 text-amber-600 hover:bg-amber-50 font-semibold py-3 px-8 rounded-lg shadow transition-all duration-300 text-center"
+            >
+              📝 List My Property (Free)
+            </Link>
+          </div>
+        </div>
+
         {/* Existing User Section */}
         <div className={styles.existingUserSection}>
           <p className="text-white text-base font-semibold mb-4">Already have an account?</p>

@@ -23,6 +23,12 @@ interface Property {
   created_at: string;
 }
 
+export const metadata = {
+  title: 'Properties for Rent - Guyana Home Hub', 
+  description: 'Browse rental properties in Guyana. Find apartments, houses, and rooms for rent.',
+  keywords: 'properties for rent, Guyana rentals, apartments for rent, houses for rent'
+};
+
 export default function RentPropertiesPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [properties, setProperties] = useState<Property[]>([]);

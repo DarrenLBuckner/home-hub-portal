@@ -36,6 +36,7 @@ interface FormData {
   lot_length: string;
   lot_width: string;
   lot_dimension_unit: string;
+  owner_whatsapp: string;
 }
 
 export default function CreatePropertyPage() {
@@ -62,6 +63,7 @@ export default function CreatePropertyPage() {
     lot_length: "",
     lot_width: "",
     lot_dimension_unit: "ft",
+    owner_whatsapp: "",
   });
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -71,6 +73,33 @@ export default function CreatePropertyPage() {
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
+
+  // Auto-populate WhatsApp from user profile
+  useEffect(() => {
+    const getUserProfile = async () => {
+      try {
+        const { createClient } = await import('@/supabase');
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user?.id && !form.owner_whatsapp) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('phone')
+            .eq('id', user.id)
+            .single();
+            
+          if (profile?.phone) {
+            setForm(prev => ({ ...prev, owner_whatsapp: profile.phone }));
+          }
+        }
+      } catch (error) {
+        console.warn('Could not auto-populate WhatsApp:', error);
+      }
+    };
+    
+    getUserProfile();
+  }, []);
 
   // Calculate completion score in real-time
   const completionAnalysis = calculateCompletionScore({
@@ -111,7 +140,8 @@ export default function CreatePropertyPage() {
   };
 
   const handleCreateAnother = () => {
-    // Reset form to initial state
+    // Reset form to initial state (keep WhatsApp from profile)
+    const currentWhatsapp = form.owner_whatsapp;
     setForm({
       location: "",
       title: "",
@@ -131,6 +161,10 @@ export default function CreatePropertyPage() {
       region: "",
       city: "",
       neighborhood: "",
+      lot_length: "",
+      lot_width: "",
+      lot_dimension_unit: "ft",
+      owner_whatsapp: currentWhatsapp, // Keep WhatsApp for convenience
     });
     setImages([]);
     setSuccess("");
@@ -220,6 +254,7 @@ export default function CreatePropertyPage() {
           lot_length: form.lot_length ? Number(form.lot_length) : null,
           lot_width: form.lot_width ? Number(form.lot_width) : null,
           lot_dimension_unit: form.lot_dimension_unit,
+          owner_whatsapp: form.owner_whatsapp,
           // userId will be extracted server-side from authenticated session
           propertyCategory: form.listing_type === 'sale' ? 'sale' : 'rental', // Map to API format
           site_id: 'guyana',  // ADD THIS LINE ONLY
@@ -594,7 +629,42 @@ export default function CreatePropertyPage() {
             </div>
           </div>
 
-          {/* 8. PROPERTY IMAGES (Visual proof) */}
+          {/* 8. CONTACT INFORMATION */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-emerald-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              📞 Contact Information
+            </h3>
+            <div className="bg-blue-50 p-4 rounded-lg mb-6">
+              <h4 className="font-medium text-blue-900 mb-2">How buyers will contact you</h4>
+              <p className="text-sm text-blue-800">
+                Interested buyers will be able to contact you through WhatsApp. Your contact details will only be shown to serious inquiries.
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                WhatsApp Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                name="owner_whatsapp"
+                value={form.owner_whatsapp}
+                onChange={handleChange}
+                placeholder="+592-XXX-XXXX"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                <strong>Required:</strong> Include country code (+592 for Guyana). Most customers prefer WhatsApp for instant contact.
+              </p>
+              <div className="bg-green-50 p-3 rounded mt-2">
+                <p className="text-sm text-green-800">
+                  <strong>💬 Why WhatsApp?</strong> 90% of property inquiries in Guyana happen via WhatsApp. This ensures you get contacted quickly by serious buyers.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 9. PROPERTY IMAGES (Visual proof) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-yellow-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
               📸 Property Images
@@ -606,7 +676,7 @@ export default function CreatePropertyPage() {
               maxImages={10}
             />
           </div>
-          {/* 9. SUBMIT */}
+          {/* 10. SUBMIT */}
           {/* Success message with options */}
           {success && (
             <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-8 rounded-xl shadow-sm">
