@@ -1,0 +1,15 @@
+# Only ignore SQL files and development/debugging files
+# Keep ALL TypeScript files needed for build
+
+# SQL files only - not the TypeScript client files
+supabase/*.sql
+
+# Specific development debugging file
+src/app/dashboard/owner/create-property/debug-supabase.tsx
+
+# Local environment files
+.env.local
+
+# Logs and OS files
+*.log
+.DS_Store
