@@ -1,8 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from 'next/navigation';
 import FSBORegistrationNew from "@/components/FSBORegistrationNew";
 
-export default function FSBORegistrationPage() {
+function FSBORegistrationContent() {
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<'register' | 'plan'>('register');
   const [formData, setFormData] = useState({
     firstName: '',
@@ -15,6 +17,19 @@ export default function FSBORegistrationPage() {
   const [selectedPlan, setSelectedPlan] = useState('featured');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Handle URL parameters on component mount
+  useEffect(() => {
+    if (!searchParams) return;
+    
+    const countryParam = searchParams.get('country');
+    
+    // Could add country handling here if FSBO component supports it
+    // For now, just note the country parameter is available
+    if (countryParam) {
+      console.log('FSBO Registration - Country selected:', countryParam);
+    }
+  }, [searchParams]);
 
   // Registration form handlers
 
@@ -111,5 +126,13 @@ export default function FSBORegistrationPage() {
       )}
       </div>
     </div>
+  );
+}
+
+export default function FSBORegistrationPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <FSBORegistrationContent />
+    </Suspense>
   );
 }

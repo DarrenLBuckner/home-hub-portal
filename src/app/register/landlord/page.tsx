@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from 'next/navigation';
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -49,7 +50,8 @@ const landlordPlans = [
   }
 ];
 
-export default function LandlordRegistrationPage() {
+function LandlordRegistrationContent() {
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [selectedPlan, setSelectedPlan] = useState('featured');
@@ -71,6 +73,22 @@ export default function LandlordRegistrationPage() {
     password: '',
     confirmPassword: '',
   });
+
+  // Handle URL parameters on component mount
+  useEffect(() => {
+    if (!searchParams) return;
+    
+    const countryParam = searchParams.get('country');
+    
+    // Pre-fill country if provided
+    if (countryParam) {
+      const country = countries.find(c => c.code === countryParam);
+      if (country) {
+        setSelectedCountry(country);
+        setFormData(prev => ({ ...prev, country: countryParam }));
+      }
+    }
+  }, [searchParams]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
@@ -466,5 +484,13 @@ export default function LandlordRegistrationPage() {
         © 2025 Caribbean Home Hub
       </div>
     </div>
+  );
+}
+
+export default function LandlordRegistrationPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <LandlordRegistrationContent />
+    </Suspense>
   );
 }

@@ -1,182 +1,245 @@
-import Link from 'next/link';
-import Image from 'next/image';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import styles from './landing/landing.module.css';
+import { createClient } from '@/lib/supabase/server';
+import { Suspense } from 'react';
+import Link from 'next/link';
 
-// Portal Home Hub Component (Backend/Admin site)
-function PortalHomePage() {
-  return (
-    <div className={styles.container}>
-      {/* Mobile-Optimized Header */}
-      <div className={styles.mobileHeader}>
-        <Image src="/globe.svg" alt="Portal Home Hub Logo" width={48} height={48} className={styles.logo} />
-        <h1 className={styles.mobileTitle}>Portal Home Hub</h1>
-        <p className={styles.mobileSubtitle}>Professional Real Estate Management</p>
-      </div>
+export const metadata = {
+  title: 'Portal Home Hub - Property Management Platform',
+  description: 'Professional real estate management tools for agents, landlords, and property owners.',
+};
 
-      {/* Mobile-Optimized Registration Cards - BACKEND ONLY */}
-      <section className={styles.mobileActions}>
-        <div className={styles.registrationGrid}>
-          
-          {/* Agent Registration Card */}
-          <div className={styles.registrationCard}>
-            <div className={styles.cardIcon}>🏢</div>
-            <h3 className={styles.cardTitle}>Real Estate Agent</h3>
-            <p className={styles.cardDescription}>Manage sales & rentals with professional tools</p>
-            <Link href="/register" className={styles.primaryButton}>
-              Get Started
-            </Link>
-            <span className={styles.pricing}>Subscription: $49-99/month</span>
-          </div>
+export default async function PortalHomePage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
-          {/* Landlord Registration Card */}
-          <div className={styles.registrationCard}>
-            <div className={styles.cardIcon}>🏠</div>
-            <h3 className={styles.cardTitle}>Property Owner</h3>
-            <p className={styles.cardDescription}>Rent out your properties easily</p>
-            <Link href="/register/landlord" className={styles.primaryButton}>
-              Get Started
-            </Link>
-            <span className={styles.pricing}>Per listing: $79-149</span>
-          </div>
-
-          {/* FSBO Registration Card */}
-          <div className={styles.registrationCard}>
-            <div className={styles.cardIcon}>🏆</div>
-            <h3 className={styles.cardTitle}>Sell By Owner</h3>
-            <p className={styles.cardDescription}>Sell your property without an agent</p>
-            <Link href="/register/fsbo" className={styles.primaryButton}>
-              Get Started
-            </Link>
-            <span className={styles.pricing}>Per listing: $99-199</span>
-          </div>
-
-        </div>
-
-        {/* NO BROWSE PROPERTIES BUTTONS ON PORTAL */}
-        
-        {/* Existing User Section */}
-        <div className={styles.existingUserSection}>
-          <p className="text-white text-base font-semibold mb-4">Already have an account?</p>
-          <Link href="/login" className="inline-block bg-transparent text-yellow-300 border-2 border-yellow-300 hover:bg-yellow-300 hover:text-gray-900 px-6 py-3 rounded-xl font-bold text-base transition-all duration-200 min-h-[48px] flex items-center justify-center">
-            🔑 Sign In
-          </Link>
-        </div>
-      </section>
-
-      {/* Mobile-Friendly Footer */}
-      <footer className={styles.mobileFooter}>
-        <div className={styles.footerContent}>
-          <p>© 2025 Portal Home Hub - Professional Real Estate Management</p>
-          <div className="mt-4">
-            <a 
-              href="https://wa.me/5927629797?text=Hello%20Portal%20Home%20Hub!%20I%20need%20help%20with..." 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 mb-3"
-            >
-              <span className="mr-2">💬</span>
-              WhatsApp Support
-            </a>
-            <p className="text-yellow-200 text-sm font-medium">Chat for fastest response • +592 762-9797</p>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-// Public Site Component (Guyana/Jamaica Home Hub)
-function PublicHomePage({ country }: { country: string }) {
-  const siteName = country === 'JM' ? 'Jamaica Home Hub' : 'Guyana Home Hub';
-  const flag = country === 'JM' ? '🇯🇲' : '🇬🇾';
-  
-  return (
-    <div className={styles.container}>
-      {/* Mobile-Optimized Header */}
-      <div className={styles.mobileHeader}>
-        <Image src="/globe.svg" alt={`${siteName} Logo`} width={48} height={48} className={styles.logo} />
-        <h1 className={styles.mobileTitle}>{flag} {siteName}</h1>
-        <p className={styles.mobileSubtitle}>Find Your Dream Home</p>
-      </div>
-
-      {/* Browse Properties Section - PUBLIC ONLY */}
-      <section className={styles.mobileActions}>
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row gap-4">
-            
-            {/* Button 1: Browse Properties for Sale */}
-            <Link 
-              href="/properties/buy"
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-8 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 text-center"
-            >
-              🏠 Browse Properties for Sale
-            </Link>
-
-            {/* Button 2: Browse Properties for Rent */}
-            <Link 
-              href="/properties/rent"
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 text-center"
-            >
-              🏘️ Browse Properties for Rent
-            </Link>
-
-          </div>
-          
-          {/* List Property Button - Secondary Style */}
-          <div className="mt-6">
-            <Link 
-              href="/register"
-              className="w-full md:w-auto mx-auto block bg-white border-2 border-amber-500 text-amber-600 hover:bg-amber-50 font-semibold py-3 px-8 rounded-lg shadow transition-all duration-300 text-center"
-            >
-              📝 List My Property (Free)
-            </Link>
-          </div>
-        </div>
-
-        {/* Existing User Section */}
-        <div className={styles.existingUserSection}>
-          <p className="text-white text-base font-semibold mb-4">Have a property to list?</p>
-          <Link href="/login" className="inline-block bg-transparent text-yellow-300 border-2 border-yellow-300 hover:bg-yellow-300 hover:text-gray-900 px-6 py-3 rounded-xl font-bold text-base transition-all duration-200 min-h-[48px] flex items-center justify-center">
-            🔑 Property Owner Sign In
-          </Link>
-        </div>
-      </section>
-
-      {/* Mobile-Friendly Footer */}
-      <footer className={styles.mobileFooter}>
-        <div className={styles.footerContent}>
-          <p>© 2025 {siteName}</p>
-          <div className="mt-4">
-            <a 
-              href="https://wa.me/5927629797?text=Hello%20I%20need%20help%20finding%20a%20property..." 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 mb-3"
-            >
-              <span className="mr-2">💬</span>
-              WhatsApp Support
-            </a>
-            <p className="text-yellow-200 text-sm font-medium">Chat for fastest response • +592 762-9797</p>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
-
-export default async function LandingPage() {
-  const cookieStore = await cookies();
-  const siteType = cookieStore.get('site-type')?.value || 'public';
-  const country = cookieStore.get('country-code')?.value || 'GY';
-
-  // Portal Home Hub (backend) - should redirect to dashboard if logged in
-  if (siteType === 'portal') {
-    return <PortalHomePage />;
+  // If logged in, redirect to dashboard
+  if (user) {
+    redirect('/dashboard');
   }
 
-  // Public site (Guyana/Jamaica Home Hub)
-  return <PublicHomePage country={country} />;
+  // Show marketing page with pricing cards
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <PortalMarketingContent />
+    </Suspense>
+  );
+}
+
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900 flex items-center justify-center">
+      <div className="text-white text-xl">Loading...</div>
+    </div>
+  );
+}
+
+// Marketing content for agents/landlords/FSBO to sign up
+function PortalMarketingContent() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
+      
+      {/* Hero Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <div className="text-center mb-16">
+          <div className="flex justify-center mb-6">
+            <div className="p-4 bg-blue-600 rounded-full">
+              <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+              </svg>
+            </div>
+          </div>
+          
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+            Portal Home Hub
+          </h1>
+          <p className="text-xl md:text-2xl text-slate-300 mb-8">
+            Professional Real Estate Management
+          </p>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Manage your property listings, connect with customers, and grow your real estate business across the Caribbean, Africa and beyond
+          </p>
+        </div>
+
+        {/* Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+          <FeatureCard 
+            icon="📸"
+            title="Professional Listings"
+            description="Create beautiful property listings with galleries and detailed information"
+          />
+          <FeatureCard 
+            icon="💬"
+            title="WhatsApp Integration"
+            description="Get instant customer inquiries directly via WhatsApp"
+          />
+          <FeatureCard 
+            icon="📊"
+            title="Real-time Analytics"
+            description="Track views, inquiries, and performance of your listings"
+          />
+        </div>
+      </div>
+
+      {/* Pricing Cards Section */}
+      <div className="bg-white/5 backdrop-blur-sm py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-12">
+            Choose Your Plan
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            
+            {/* Real Estate Agent */}
+            <PricingCard
+              icon="🏢"
+              title="Real Estate Agent"
+              description="Manage sales & rentals with professional tools"
+              price="$49-99/month"
+              priceLabel="Subscription"
+              features={[
+                'Up to 10 active listings',
+                'Professional profile page',
+                'WhatsApp integration',
+                'Priority support',
+                'Advanced analytics'
+              ]}
+              buttonText="Get Started"
+              buttonLink="/register?type=agent"
+            />
+
+            {/* Property Owner */}
+            <PricingCard
+              icon="🏠"
+              title="Property Owner"
+              description="Rent out your properties easily"
+              price="$79-149"
+              priceLabel="Per listing"
+              features={[
+                '1 rental property listing',
+                'WhatsApp integration',
+                'Photo gallery',
+                'Tenant inquiries',
+                'Property management tools'
+              ]}
+              buttonText="Get Started"
+              buttonLink="/register/landlord?type=landlord"
+              highlighted
+            />
+
+            {/* Sell By Owner */}
+            <PricingCard
+              icon="🏆"
+              title="Sell By Owner"
+              description="Sell your property without an agent"
+              price="$99-199"
+              priceLabel="Per listing"
+              features={[
+                '1 property for sale',
+                'Full platform exposure',
+                'Direct buyer contact',
+                'Marketing support',
+                'Sales tools'
+              ]}
+              buttonText="Get Started"
+              buttonLink="/register/fsbo?type=fsbo"
+            />
+          </div>
+
+          {/* Already have account */}
+          <div className="text-center mt-12">
+            <p className="text-slate-300 mb-4">Already have an account?</p>
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-semibold text-lg"
+            >
+              Sign in to your dashboard
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom CTA */}
+      <div className="max-w-4xl mx-auto px-4 py-16 text-center">
+        <p className="text-slate-400 mb-2">Need help?</p>
+        <a href="tel:+5927629797" className="text-blue-400 hover:text-blue-300 text-lg font-medium">
+          Call +592-762-9797
+        </a>
+      </div>
+    </div>
+  );
+}
+
+// Feature Card Component
+function FeatureCard({ icon, title, description }: { icon: string; title: string; description: string }) {
+  return (
+    <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-lg p-6 text-center">
+      <div className="text-4xl mb-3">{icon}</div>
+      <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+      <p className="text-slate-300 text-sm">{description}</p>
+    </div>
+  );
+}
+
+// Pricing Card Component
+function PricingCard({ 
+  icon, 
+  title, 
+  description, 
+  price, 
+  priceLabel,
+  features, 
+  buttonText, 
+  buttonLink,
+  highlighted = false
+}: {
+  icon: string;
+  title: string;
+  description: string;
+  price: string;
+  priceLabel: string;
+  features: string[];
+  buttonText: string;
+  buttonLink: string;
+  highlighted?: boolean;
+}) {
+  return (
+    <div className={`bg-white rounded-xl shadow-2xl p-8 flex flex-col ${highlighted ? 'ring-4 ring-emerald-500 transform scale-105' : ''}`}>
+      <div className="text-center mb-6">
+        <div className="text-5xl mb-4">{icon}</div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">{title}</h3>
+        <p className="text-gray-600">{description}</p>
+      </div>
+
+      <div className="mb-6">
+        <ul className="space-y-3">
+          {features.map((feature, index) => (
+            <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+              <svg className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              {feature}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="mt-auto">
+        <Link
+          href={buttonLink}
+          className="block w-full bg-emerald-600 hover:bg-emerald-700 text-white text-center font-semibold py-3 px-6 rounded-lg transition-colors mb-4"
+        >
+          {buttonText}
+        </Link>
+        <p className="text-center">
+          <span className="text-sm text-gray-600">{priceLabel}:</span>
+          <span className="text-lg font-bold text-gray-900 ml-1">{price}</span>
+        </p>
+      </div>
+    </div>
+  );
 }
 

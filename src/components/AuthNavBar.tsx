@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@/supabase";
-import PublicNavBar from "./PublicNavBar";
+import PortalMarketingNav from "./PortalMarketingNav";
 import BackendNavBar from "./BackendNavBar";
 
 type UserType = "agent" | "landlord" | "fsbo" | "admin" | "super_admin";
@@ -38,7 +38,7 @@ export default function AuthNavBar() {
     getUser();
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
       console.log('🔄 Auth state change:', event, !!session?.user);
       
       if (event === 'SIGNED_OUT' || !session?.user) {
@@ -60,19 +60,13 @@ export default function AuthNavBar() {
   }, []);
 
   if (loading) {
-    // Simple loading navbar
-    return (
-      <nav className="bg-blue-900 text-white px-4 py-3 flex justify-between items-center shadow-md w-full">
-        <div className="font-bold text-lg">Portal Home Hub</div>
-        <div>Loading...</div>
-      </nav>
-    );
+    return <PortalMarketingNav />;
   }
 
-  // Show backend navbar for authenticated users, public navbar for everyone else
+  // Show backend navbar for authenticated users, marketing navbar for logged-out users
   if (user && userType) {
     return <BackendNavBar userType={userType} />;
   } else {
-    return <PublicNavBar />;
+    return <PortalMarketingNav />;
   }
 }

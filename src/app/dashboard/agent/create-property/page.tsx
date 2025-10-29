@@ -12,6 +12,10 @@ import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUti
 import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
 import LotDimensions from "@/components/LotDimensions";
 import { DimensionUnit } from "@/lib/lotCalculations";
+// Duplicate Prevention System
+import { usePropertySubmission } from "@/hooks/usePropertySubmission";
+import DuplicateWarningDialog from "@/components/DuplicateWarningDialog";
+import PropertySuccessScreen from "@/components/PropertySuccessScreen";
 
 
 interface FormData {
@@ -73,6 +77,18 @@ export default function CreatePropertyPage() {
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
+
+  // Comprehensive submission system with duplicate prevention
+  const propertySubmission = usePropertySubmission({
+    onSuccess: () => {
+      setSuccess("✅ Property created successfully!");
+      setLoading(false);
+    },
+    onError: (error) => {
+      setError(error);
+      setLoading(false);
+    },
+  });
 
   // Auto-populate WhatsApp from user profile
   useEffect(() => {
@@ -180,28 +196,38 @@ export default function CreatePropertyPage() {
   };
 
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, bypassDuplicateCheck: boolean = false) => {
     e.preventDefault();
+    
+    // Prevent double submission
+    if (propertySubmission.isSubmitting) {
+      console.log('🚫 Already submitting, ignoring duplicate click');
+      return;
+    }
+
+    // Check for duplicates unless bypassed
+    if (!bypassDuplicateCheck && form.title && form.title.length > 5) {
+      const hasDuplicate = await propertySubmission.duplicateDetection.checkForDuplicates(form.title, true);
+      if (hasDuplicate) {
+        return; // Stop submission, show warning dialog
+      }
+    }
+    
+    // Original submission logic starts here
     setLoading(true);
     setError("");
 
     // Validate required fields
     if (!form.property_type) {
-      setError('Please select a Property Type.');
-      setLoading(false);
-      return;
+      throw new Error('Please select a Property Type.');
     }
     
     if (!form.listing_type) {
-      setError('Please select a Listing Type (For Sale or For Rent).');
-      setLoading(false);
-      return;
+      throw new Error('Please select a Listing Type (For Sale or For Rent).');
     }
 
     if (images.length < 1) {
-      setError("Please upload at least one image.");
-      setLoading(false);
-      return;
+      throw new Error("Please upload at least one image.");
     }
 
     try {
@@ -739,6 +765,33 @@ export default function CreatePropertyPage() {
             </div>
           )}
         </form>
+
+        {/* Duplicate Warning Dialog */}
+        {propertySubmission.duplicateDetection.showDuplicateWarning && 
+         propertySubmission.duplicateDetection.potentialDuplicate && (
+          <DuplicateWarningDialog
+            potentialDuplicate={propertySubmission.duplicateDetection.potentialDuplicate}
+            onConfirm={() => {
+              propertySubmission.duplicateDetection.setShowDuplicateWarning(false);
+              // Trigger form submission bypassing duplicate check
+              const form = document.querySelector('form');
+              if (form) {
+                const event = new Event('submit', { bubbles: true, cancelable: true });
+                Object.defineProperty(event, 'preventDefault', { value: () => {} });
+                handleSubmit(event as any, true); // bypass duplicate check
+              }
+            }}
+            onCancel={() => propertySubmission.duplicateDetection.setShowDuplicateWarning(false)}
+          />
+        )}
+
+        {/* Success Screen */}
+        {success && (
+          <PropertySuccessScreen
+            redirectPath="/dashboard/agent"
+            userType="agent"
+          />
+        )}
       </div>
     </div>
   );

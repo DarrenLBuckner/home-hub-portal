@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 const countries = [
@@ -44,7 +45,8 @@ const agentPlans = [
   }
 ];
 
-export default function RegistrationPage() {
+function RegistrationContent() {
+  const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [selectedPlan, setSelectedPlan] = useState('pro');
@@ -79,6 +81,29 @@ export default function RegistrationPage() {
     reference2_email: "",
   });
 
+  // Handle URL parameters on component mount
+  useEffect(() => {
+    if (!searchParams) return;
+    
+    const typeParam = searchParams.get('type');
+    const countryParam = searchParams.get('country');
+    
+    // Pre-fill country if provided
+    if (countryParam) {
+      const country = countries.find(c => c.code === countryParam);
+      if (country) {
+        setSelectedCountry(country);
+        setForm(prev => ({ ...prev, country: countryParam }));
+      }
+    }
+    
+    // Pre-fill plan based on type
+    if (typeParam === 'agent') {
+      setSelectedPlan('pro'); // Default to Pro for agents
+      setForm(prev => ({ ...prev, selected_plan: 'pro' }));
+    }
+  }, [searchParams]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -92,11 +117,11 @@ export default function RegistrationPage() {
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
-        return form.selected_plan && form.country;
+        return !!(form.selected_plan && form.country);
       case 2:
-        return form.first_name && form.last_name && form.phone && form.email && form.years_experience;
+        return !!(form.first_name && form.last_name && form.phone && form.email && form.years_experience);
       case 3:
-        return form.company_name && form.license_number;
+        return !!(form.company_name && form.license_number);
       default:
         return true;
     }
@@ -535,5 +560,13 @@ export default function RegistrationPage() {
         © 2025 Caribbean Home Hub
       </div>
     </div>
+  );
+}
+
+export default function RegistrationPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RegistrationContent />
+    </Suspense>
   );
 }
