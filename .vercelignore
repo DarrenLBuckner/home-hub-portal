@@ -1,9 +1,14 @@
-# Supabase CLI and development files
-supabase/
-*.sql
+# Supabase SQL files only (keep TypeScript client files)
+supabase/*.sql
+supabase/migrations/
+supabase/functions/
 
 # Development and debugging files
 src/app/dashboard/owner/create-property/debug-supabase.tsx
+
+# Documentation and session notes
+docs/session-notes/
+*.md
 
 # Local environment files
 .env.local
