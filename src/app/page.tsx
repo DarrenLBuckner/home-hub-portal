@@ -108,11 +108,11 @@ function PortalMarketingContent() {
               buttonLink="/register?type=agent"
             />
 
-            {/* Property Owner */}
+            {/* Landlord Services */}
             <PricingCard
               icon="🏠"
-              title="Property Owner"
-              description="Rent out your properties easily"
+              title="Landlord Services"
+              description="Professional rental property management"
               price="$79-149"
               priceLabel="Per listing"
               features={[
