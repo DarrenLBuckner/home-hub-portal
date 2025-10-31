@@ -86,7 +86,7 @@ export default function AdminPropertyDetailsPage() {
       setUser({ ...authUser, admin: adminUser });
       
       // Check if user is super admin (only super admin can delete properties)
-      setIsSuperAdmin(authUser.email === 'qumar@realalert.info');
+      setIsSuperAdmin(authUser.email === 'mrdarrenbuckner@gmail.com');
 
       // Load property with all details
       const { data: propertyData, error: propertyError } = await supabase

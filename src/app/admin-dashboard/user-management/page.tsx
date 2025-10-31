@@ -18,6 +18,7 @@ interface User {
 
 export default function UserManagement() {
   const router = useRouter();
+  const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
@@ -29,48 +30,57 @@ export default function UserManagement() {
   const [addingAdmin, setAddingAdmin] = useState(false);
 
   useEffect(() => {
-    async function checkSuperAdminAccess() {
-      console.log('🔍 USER MANAGEMENT: Checking super admin access...');
-      const { data: { user: authUser } } = await supabase.auth.getUser();
+    async function checkUserManagementAccess() {
+      console.log('🔍 USER MANAGEMENT: Checking admin access...');
       
-      if (!authUser) {
-        console.log('❌ No authenticated user, redirecting to admin login');
-        window.location.href = '/admin-login';
+      if (adminLoading) {
+        console.log('⏳ Admin data still loading...');
         return;
       }
-
-      // Check if user is super admin
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_type, admin_level, first_name, last_name, email')
-        .eq('id', authUser.id)
-        .single();
-
-      console.log('User management profile check:', { profile, profileError });
-
-      if (profileError || !profile || (profile.admin_level !== 'super' && profile.admin_level !== 'owner')) {
-        console.log('Not authorized for user management. Admin level:', profile?.admin_level);
-        alert('Access denied. Super Admin or Owner Admin privileges required.');
+      
+      if (adminError) {
+        console.error('❌ Admin data error:', adminError);
+        alert('Error loading admin data. Please try again.');
+        router.push('/admin-login');
+        return;
+      }
+      
+      if (!isAdmin) {
+        console.log('❌ Not authorized for user management - not admin');
+        alert('Access denied. Admin privileges required.');
+        router.push('/admin-login');
+        return;
+      }
+      
+      if (!permissions?.canAccessUserManagement) {
+        console.log('❌ Not authorized for user management - insufficient permissions');
+        alert('Access denied. Insufficient permissions to manage users.');
         router.push('/admin-dashboard');
         return;
       }
-
-      const displayName = [profile.first_name, profile.last_name]
-        .filter(Boolean)
-        .join(' ') || profile.email?.split('@')[0] || 'User';
       
-      const adminLevelDisplay = profile.admin_level === 'super' 
+      if (!adminData) {
+        console.log('❌ Admin data not available');
+        setError('Admin data not available. Please refresh the page.');
+        return;
+      }
+
+      const displayName = [adminData.first_name, adminData.last_name]
+        .filter(Boolean)
+        .join(' ') || adminData.email?.split('@')[0] || 'User';
+      
+      const adminLevelDisplay = adminData.admin_level === 'super' 
         ? 'Super Admin'
-        : profile.admin_level === 'owner'
+        : adminData.admin_level === 'owner'
         ? 'Owner Admin' 
         : 'Admin';
 
       setUser({ 
-        ...authUser, 
+        id: adminData.id,
         name: displayName,
-        email: profile.email,
-        role: profile.user_type,
-        admin_level: profile.admin_level,
+        email: adminData.email,
+        role: adminData.user_type,
+        admin_level: adminData.admin_level,
         admin_level_display: adminLevelDisplay
       });
 
@@ -78,8 +88,8 @@ export default function UserManagement() {
       setLoading(false);
     }
 
-    checkSuperAdminAccess();
-  }, []);
+    checkUserManagementAccess();
+  }, [adminLoading, adminError, isAdmin, permissions, adminData]);
 
   async function loadUsers() {
     try {
