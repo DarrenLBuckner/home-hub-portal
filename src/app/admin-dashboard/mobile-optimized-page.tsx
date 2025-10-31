@@ -428,19 +428,10 @@ export default function MobileOptimizedAdminDashboard() {
   const ApprovedPropertyCard = ({ property }: { property: Property }) => {
     const primaryImage = property.property_media?.find(media => media.is_primary);
     
-    // Helper function to determine edit URL based on user type
+    // Helper function for admin context - always use admin property route
     const getEditUrl = (property: Property) => {
-      const userType = property.owner?.user_type || property.listed_by_type;
-      switch (userType) {
-        case 'agent':
-          return `/dashboard/agent/edit-property/${property.id}`;
-        case 'owner':
-          return `/dashboard/owner/edit-property/${property.id}`;
-        case 'landlord':
-          return `/dashboard/landlord/edit-property/${property.id}`;
-        default:
-          return `/dashboard/owner/edit-property/${property.id}`; // fallback
-      }
+      // In admin dashboard context, always use admin property route for super admin access
+      return `/admin-dashboard/property/${property.id}`;
     };
     
     return (

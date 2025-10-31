@@ -57,6 +57,8 @@ export default function AdminPropertyDetailsPage() {
   const [processingAction, setProcessingAction] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectModal, setShowRejectModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     async function loadProperty() {
@@ -82,6 +84,9 @@ export default function AdminPropertyDetailsPage() {
       }
 
       setUser({ ...authUser, admin: adminUser });
+      
+      // Check if user is super admin (only super admin can delete properties)
+      setIsSuperAdmin(authUser.email === 'qumar@realalert.info');
 
       // Load property with all details
       const { data: propertyData, error: propertyError } = await supabase
@@ -177,6 +182,40 @@ export default function AdminPropertyDetailsPage() {
       setError('Failed to reject property: ' + err.message);
     }
     setProcessingAction(false);
+  }
+  
+  async function deleteProperty() {
+    if (!property || !isSuperAdmin) return;
+    
+    setProcessingAction(true);
+    const supabase = createClient();
+
+    try {
+      // Delete property media first
+      if (property.property_media && property.property_media.length > 0) {
+        const { error: mediaError } = await supabase
+          .from('property_media')
+          .delete()
+          .eq('property_id', property.id);
+          
+        if (mediaError) throw mediaError;
+      }
+      
+      // Delete the property
+      const { error: propertyError } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', property.id);
+
+      if (propertyError) throw propertyError;
+
+      // Redirect back to admin dashboard
+      router.push('/admin-dashboard?message=Property deleted successfully');
+      
+    } catch (err: any) {
+      setError('Failed to delete property: ' + err.message);
+      setProcessingAction(false);
+    }
   }
 
   if (loading) {
@@ -388,6 +427,17 @@ export default function AdminPropertyDetailsPage() {
           >
             ❌ Reject Property
           </button>
+          
+          {/* Super Admin Only: Delete Property Button */}
+          {isSuperAdmin && (
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              disabled={processingAction}
+              className="w-full px-4 py-3 bg-red-800 text-white font-medium rounded hover:bg-red-900 transition-colors disabled:opacity-50 border-2 border-red-900"
+            >
+              🗑️ DELETE PROPERTY (Super Admin Only)
+            </button>
+          )}
         </div>
       </div>
     );
@@ -630,6 +680,40 @@ export default function AdminPropertyDetailsPage() {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50"
               >
                 {processingAction ? 'Processing...' : (property.status === 'active' ? 'Revoke' : 'Reject')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Super Admin Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h2 className="text-xl font-bold text-red-900 mb-4">⚠️ DELETE PROPERTY</h2>
+            <div className="mb-6">
+              <p className="text-gray-700 mb-4">
+                <strong>WARNING:</strong> This will permanently delete the property and all associated media files. This action cannot be undone.
+              </p>
+              <div className="bg-red-50 border border-red-200 p-3 rounded text-red-800 text-sm">
+                <strong>Property:</strong> {property?.title}<br />
+                <strong>Owner:</strong> {property?.owner_email}
+              </div>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={processingAction}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={deleteProperty}
+                disabled={processingAction}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors disabled:opacity-50"
+              >
+                {processingAction ? 'Deleting...' : 'DELETE FOREVER'}
               </button>
             </div>
           </div>
