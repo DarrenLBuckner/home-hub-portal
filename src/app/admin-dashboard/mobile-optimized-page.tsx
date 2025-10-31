@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
 import { useAdminData, getAdminDisplayName } from '@/hooks/useAdminData';
+import UniversalPropertyManager from '@/components/UniversalPropertyManager';
 
 interface Property {
   id: string;
@@ -60,7 +61,7 @@ export default function MobileOptimizedAdminDashboard() {
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
   const [approvedProperties, setApprovedProperties] = useState<Property[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'all'>('pending');
   const [statistics, setStatistics] = useState<Statistics>({
     totalPending: 0,
     todaySubmissions: 0,
@@ -729,12 +730,12 @@ export default function MobileOptimizedAdminDashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
             <div>
               <h2 className="text-lg font-bold text-gray-900">Property Management</h2>
-              <p className="text-sm text-gray-600">Review pending & manage approved properties</p>
+              <p className="text-sm text-gray-600">Review pending, manage approved & view all properties</p>
             </div>
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
                 onClick={() => setActiveTab('pending')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                   activeTab === 'pending'
                     ? 'bg-white text-yellow-700 shadow'
                     : 'text-gray-600 hover:text-gray-900'
@@ -744,13 +745,23 @@ export default function MobileOptimizedAdminDashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('approved')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
                   activeTab === 'approved'
                     ? 'bg-white text-green-700 shadow'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 ✅ Approved ({approvedProperties.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+                  activeTab === 'all'
+                    ? 'bg-white text-blue-700 shadow'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                📋 All Properties
               </button>
             </div>
           </div>
@@ -814,6 +825,24 @@ export default function MobileOptimizedAdminDashboard() {
                 </div>
               )}
             </>
+          )}
+
+          {/* All Properties Tab - Full Property Management */}
+          {activeTab === 'all' && (
+            <div className="mt-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">🔧 Complete Property Management</h3>
+                <p className="text-sm text-blue-800">
+                  View all properties across all statuses. Delete properties, see rejections, and manage property lifecycle.
+                </p>
+              </div>
+              {adminData && (
+                <UniversalPropertyManager 
+                  userId={adminData.id} 
+                  userType="admin"
+                />
+              )}
+            </div>
           )}
         </div>
       </div>
