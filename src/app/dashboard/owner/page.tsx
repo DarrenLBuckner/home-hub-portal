@@ -42,6 +42,19 @@ export default function OwnerDashboard() {
         .single();
 
       if (profile) {
+        // Check if user is authorized for Owner dashboard
+        // Allow: Owner users, Super Admins, and Owner Admins
+        const isAuthorizedForOwner = profile.user_type === 'owner' || 
+                                    profile.admin_level === 'super' || 
+                                    profile.admin_level === 'owner';
+        
+        if (!isAuthorizedForOwner) {
+          console.log('❌ Unauthorized access to Owner dashboard. User type:', profile.user_type, 'Admin level:', profile.admin_level);
+          alert('Access denied. Owner dashboard is only for property owners and authorized administrators.');
+          window.location.href = '/dashboard'; // Redirect to general dashboard
+          return;
+        }
+
         setUser(authUser);
         // FSBO uses per-property payments, not subscriptions
         setSubscription({

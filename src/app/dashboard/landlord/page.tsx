@@ -40,10 +40,16 @@ export default function LandlordDashboard() {
         .single();
 
       if (profile) {
-        // Verify user is a landlord
-        if (profile.user_type !== 'landlord') {
-          // Show error message instead of redirect
-          setLoading(false);
+        // Check if user is authorized for Landlord dashboard
+        // Allow: Landlord users, Super Admins, and Owner Admins
+        const isAuthorizedForLandlord = profile.user_type === 'landlord' || 
+                                       profile.admin_level === 'super' || 
+                                       profile.admin_level === 'owner';
+        
+        if (!isAuthorizedForLandlord) {
+          console.log('❌ Unauthorized access to Landlord dashboard. User type:', profile.user_type, 'Admin level:', profile.admin_level);
+          alert('Access denied. Landlord dashboard is only for landlords and authorized administrators.');
+          window.location.href = '/dashboard'; // Redirect to general dashboard
           return;
         }
 
