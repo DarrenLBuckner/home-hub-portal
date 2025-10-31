@@ -150,7 +150,7 @@ export default function MobileOptimizedAdminDashboard() {
             user_type
           )
         `)
-        .in('status', ['available', 'approved']);
+        .eq('status', 'active');
 
       // Apply same country filter
       if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
@@ -792,12 +792,19 @@ export default function MobileOptimizedAdminDashboard() {
                   <div className="text-4xl mb-4">📋</div>
                   <h3 className="text-xl font-bold text-gray-700 mb-2">No Approved Properties</h3>
                   <p className="text-gray-600 mb-6">Approved properties will appear here for management and editing.</p>
-                  <button
-                    onClick={() => setActiveTab('pending')}
-                    className="px-6 py-3 bg-yellow-600 text-white font-bold rounded-xl hover:bg-yellow-700 transition-colors"
-                  >
-                    ⏳ Check Pending Properties
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button
+                      onClick={() => setActiveTab('pending')}
+                      className="px-6 py-3 bg-yellow-600 text-white font-bold rounded-xl hover:bg-yellow-700 transition-colors"
+                    >
+                      ⏳ View Pending Properties ({statistics.totalPending})
+                    </button>
+                    <Link href="/admin-dashboard/pricing">
+                      <button className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors">
+                        💰 Pricing Dashboard
+                      </button>
+                    </Link>
+                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

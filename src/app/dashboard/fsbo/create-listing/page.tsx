@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "@/supabase";
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
+import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 
 const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Townhouse", "Studio", "Room"];
@@ -263,6 +264,23 @@ export default function CreateFSBOListing() {
           className="w-full border rounded-lg px-4 py-2" 
           required 
           rows={4} 
+        />
+        
+        {/* AI Description Assistant */}
+        <AIDescriptionAssistant
+          propertyData={{
+            title: form.title,
+            propertyType: form.propertyType,
+            bedrooms: form.bedrooms,
+            bathrooms: form.bathrooms,
+            price: form.price,
+            location: form.location,
+            squareFootage: form.squareFootage,
+            features: form.features,
+            rentalType: "sale"
+          }}
+          currentDescription={form.description}
+          onDescriptionGenerated={(description) => setForm(prev => ({ ...prev, description }))}
         />
         
         <GlobalSouthLocationSelector

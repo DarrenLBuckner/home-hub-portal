@@ -1,3 +1,5 @@
+import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
+
 interface Step1BasicInfoProps {
   formData: any;
   setFormData: (data: any) => void;
@@ -150,6 +152,23 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
           maxLength={1000}
         />
         <p className="text-sm text-gray-500 mt-1">{formData.description.length}/1000 characters</p>
+        
+        {/* AI Description Assistant */}
+        <AIDescriptionAssistant
+          propertyData={{
+            title: formData.title,
+            propertyType: formData.property_type,
+            bedrooms: formData.bedrooms?.toString() || '',
+            bathrooms: formData.bathrooms?.toString() || '',
+            price: formData.price,
+            location: formData.region || formData.city || formData.neighborhood,
+            squareFootage: formData.house_size_value?.toString() || '',
+            features: formData.amenities || [],
+            rentalType: "sale"
+          }}
+          currentDescription={formData.description}
+          onDescriptionGenerated={(description) => setFormData((prev: any) => ({ ...prev, description }))}
+        />
       </div>
     </div>
   );
