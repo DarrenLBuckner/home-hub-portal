@@ -724,6 +724,78 @@ export default function MobileOptimizedAdminDashboard() {
           </div>
         </div>
 
+        {/* Property Management Hub - Prominent Section */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-2xl p-6">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">🏠 Property Management Hub</h2>
+              <p className="text-gray-700">Complete property oversight & management tools</p>
+            </div>
+            
+            {/* Property Status Action Buttons */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+              {/* Rejected Properties - Most Important */}
+              <button
+                onClick={() => setActiveTab('all')}
+                className="bg-red-500 hover:bg-red-600 text-white p-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+              >
+                <div className="text-3xl mb-2">❌</div>
+                <div className="text-2xl font-bold">{statistics.totalRejected || 0}</div>
+                <div className="text-sm opacity-90">Rejected Properties</div>
+                <div className="text-xs mt-1 opacity-75">View & Manage</div>
+              </button>
+
+              {/* Pending Properties */}
+              <button
+                onClick={() => setActiveTab('pending')}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white p-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+              >
+                <div className="text-3xl mb-2">⏳</div>
+                <div className="text-2xl font-bold">{statistics.totalPending}</div>
+                <div className="text-sm opacity-90">Pending Review</div>
+                <div className="text-xs mt-1 opacity-75">Need Action</div>
+              </button>
+
+              {/* Active Properties */}
+              <button
+                onClick={() => setActiveTab('approved')}
+                className="bg-green-500 hover:bg-green-600 text-white p-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+              >
+                <div className="text-3xl mb-2">✅</div>
+                <div className="text-2xl font-bold">{approvedProperties?.length || 0}</div>
+                <div className="text-sm opacity-90">Active Properties</div>
+                <div className="text-xs mt-1 opacity-75">Live on Site</div>
+              </button>
+
+              {/* All Properties */}
+              <button
+                onClick={() => setActiveTab('all')}
+                className="bg-blue-500 hover:bg-blue-600 text-white p-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+              >
+                <div className="text-3xl mb-2">📋</div>
+                <div className="text-2xl font-bold">ALL</div>
+                <div className="text-sm opacity-90">Complete Manager</div>
+                <div className="text-xs mt-1 opacity-75">Full Control</div>
+              </button>
+            </div>
+
+            {/* Quick Action Buttons */}
+            <div className="flex flex-wrap gap-3 justify-center">
+              <Link href="/admin-dashboard/pricing">
+                <button className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors shadow-lg">
+                  💰 Pricing Dashboard
+                </button>
+              </Link>
+              <button
+                onClick={() => setActiveTab('all')}
+                className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-lg"
+              >
+                🔧 Advanced Property Tools
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Properties Section with Tabs */}
         <div className="mb-6">
           {/* Tab Navigation */}
@@ -840,6 +912,8 @@ export default function MobileOptimizedAdminDashboard() {
                 <UniversalPropertyManager 
                   userId={adminData.id} 
                   userType="admin"
+                  editPropertyPath="/admin-dashboard/property"
+                  createPropertyPath="/properties/create"
                 />
               )}
             </div>
