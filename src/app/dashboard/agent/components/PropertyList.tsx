@@ -3,10 +3,13 @@ import { createClient } from '@/supabase';
 
 const statusColors: { [key: string]: string } = {
   off_market: 'bg-gray-200 text-gray-700',
+  active: 'bg-green-100 text-green-700',
   available: 'bg-green-100 text-green-700',
   sold: 'bg-red-100 text-red-700',
   rented: 'bg-purple-100 text-purple-700',
   pending: 'bg-yellow-100 text-yellow-700',
+  rejected: 'bg-red-200 text-red-800',
+  draft: 'bg-blue-100 text-blue-700',
 };
 
 const typeIcons: { [key: string]: string } = {

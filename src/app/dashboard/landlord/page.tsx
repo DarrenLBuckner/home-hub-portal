@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/supabase";
 import { getActiveCountries } from "@/lib/countries";
+import UniversalPropertyManager from "@/components/UniversalPropertyManager";
 
 export default function LandlordDashboard() {
   const router = useRouter();
