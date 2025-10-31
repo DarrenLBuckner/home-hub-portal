@@ -217,7 +217,8 @@ export async function POST(req: NextRequest) {
       
       // Only check limits if propertyLimit is not NULL (super admin has NULL = unlimited)
       if (propertyLimit !== null) {
-        // Count total existing properties (all types) for owner admin with limits
+        // Count only live/pending properties for owner admin with limits
+        // Rejected properties don't count since they're not actual listings on the site
         const { count: totalCount, error: totalCountError } = await supabase
           .from('properties')
           .select('*', { count: 'exact', head: true })
