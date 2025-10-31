@@ -57,6 +57,13 @@ const statusConfig = {
     icon: '📝',
     description: 'Incomplete property listings that need to be finished'
   },
+  off_market: {
+    label: 'Off Market',
+    color: 'bg-gray-100 text-gray-700',
+    badgeText: 'HIDDEN',
+    icon: '👁️‍🗨️',
+    description: 'Properties hidden from public view by owner choice'
+  },
   sold: {
     label: 'Sold',
     color: 'bg-red-100 text-red-700',
@@ -131,7 +138,10 @@ export default function UniversalPropertyManager({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) return;
+    const message = 'Are you sure you want to PERMANENTLY delete this property?\n\n' +
+                   '⚠️ This action cannot be undone!\n\n' + 
+                   'Alternative: You can "Take Off Market" to hide it instead of deleting.';
+    if (!confirm(message)) return;
     
     setDeletingId(id);
     try {
@@ -435,13 +445,40 @@ export default function UniversalPropertyManager({
                           </div>
                         )}
 
+                        {/* Off Market Properties */}
+                        {property.status === 'off_market' && (
+                          <div className="space-y-2">
+                            <div className="text-xs text-gray-700 bg-gray-50 p-2 rounded border border-gray-200">
+                              <strong>Hidden from Public:</strong> Your property is not visible to potential {property.propertyCategory === 'rental' ? 'renters' : 'buyers'}
+                            </div>
+                            <div className="flex gap-2 text-xs">
+                              <button 
+                                onClick={() => {
+                                  if (confirm('This will make your property visible to the public again.')) {
+                                    updatePropertyStatus(property.id, 'active');
+                                  }
+                                }}
+                                className="flex-1 px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                              >
+                                ✅ Put Back on Market
+                              </button>
+                              <button 
+                                onClick={() => updatePropertyStatus(property.id, property.propertyCategory === 'rental' ? 'rented' : 'sold')}
+                                className="flex-1 px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+                              >
+                                {property.propertyCategory === 'rental' ? '🏠 Rented' : '🏆 Sold'}
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Active Properties - Status Management */}
                         {property.status === 'active' && (
                           <div className="space-y-2">
                             <div className="text-xs text-green-700 bg-green-50 p-2 rounded border border-green-200">
                               <strong>Live Listing:</strong> Your property is visible to potential {property.propertyCategory === 'rental' ? 'renters' : 'buyers'}
                             </div>
-                            <div className="flex gap-2 text-xs">
+                            <div className="grid grid-cols-2 gap-2 text-xs">
                               <button 
                                 onClick={() => updatePropertyStatus(property.id, 'pending')}
                                 className="px-2 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition"
@@ -454,6 +491,17 @@ export default function UniversalPropertyManager({
                                 className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
                               >
                                 {property.propertyCategory === 'rental' ? '🏠 Rented' : '🏆 Sold'}
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  if (confirm('This will hide your property from public view. You can put it back on market anytime.')) {
+                                    updatePropertyStatus(property.id, 'off_market');
+                                  }
+                                }}
+                                className="px-2 py-1 bg-gray-600 text-white rounded hover:bg-gray-700 transition col-span-2"
+                                title="Hide property from public view"
+                              >
+                                👁️‍🗨️ Take Off Market
                               </button>
                             </div>
                           </div>

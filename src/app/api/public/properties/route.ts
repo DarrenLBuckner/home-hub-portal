@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     
     console.log(`🔍 Fetching properties - site: ${site}, listing_type: ${listing_type}`)
     
-    // Build the query - look for active properties
+    // Build the query - only show active properties (exclude off_market, draft, pending, etc.)
     let query = supabase
       .from('properties')
       .select(`
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
           is_primary
         )
       `)
-      .eq('status', 'active') // Only show approved/active properties
+      .eq('status', 'active') // Only show approved/active properties to the public
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     
@@ -52,16 +52,14 @@ export async function GET(request: NextRequest) {
     let countQuery = supabase
       .from('properties')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'active')
-    
+      .eq('status', 'active') // Only count active properties visible to public
+
     if (site) {
       countQuery = countQuery.eq('site_id', site)
     }
     if (listing_type) {
       countQuery = countQuery.eq('listing_type', listing_type)
-    }
-    
-    const { count, error: countError } = await countQuery
+    }    const { count, error: countError } = await countQuery
     
     if (countError) {
       console.error('Count error:', countError)
