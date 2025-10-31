@@ -151,106 +151,118 @@ export default function LandlordDashboard() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50">
-      {/* Header Section */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-8 shadow-xl">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">🏠 Landlord Portal</h1>
-              <p className="text-green-100 text-lg">Manage your rental properties with ease</p>
-              <p className="text-xs text-green-200">[DEBUG: landlord/page.tsx loaded]</p>
+      {/* Mobile-First Sticky Header */}
+      <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-4 sm:py-6 lg:py-8 shadow-xl sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          {/* Mobile-First Header Layout */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2">🏠 Landlord Portal</h1>
+              <p className="text-green-100 text-sm sm:text-base lg:text-lg">Manage your rental properties with ease</p>
+              <p className="text-xs text-green-200 hidden lg:block">[DEBUG: landlord/page.tsx loaded]</p>
             </div>
-            <div className="flex items-center space-x-6">
-              <div className="text-right">
-                <div className="text-2xl font-bold">{subscription?.totalProperties || 0}</div>
-                <div className="text-green-100 text-sm">Total Properties</div>
+            
+            {/* Mobile-Optimized Actions */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6">
+              {/* Property Count - Mobile Card Style */}
+              <div className="bg-green-500/20 rounded-xl p-3 text-center sm:text-right">
+                <div className="text-xl sm:text-2xl font-bold">{subscription?.totalProperties || 0}</div>
+                <div className="text-green-100 text-xs sm:text-sm">Total Properties</div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-right">
-                  <div className="text-sm text-green-100">Welcome back,</div>
-                  <div className="font-medium text-white">{user?.email}</div>
+              
+              {/* User Info & Actions */}
+              <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+                {/* Welcome Message - Hidden on smallest screens */}
+                <div className="text-center sm:text-right hidden sm:block">
+                  <div className="text-xs sm:text-sm text-green-100">Welcome back,</div>
+                  <div className="font-medium text-white text-sm truncate max-w-32 sm:max-w-none">{user?.email}</div>
                 </div>
-                <Link
-                  href="/dashboard/landlord/settings"
-                  className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded hover:bg-purple-700 transition-colors"
-                >
-                  Settings
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
-                >
-                  Logout
-                </button>
+                
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                  <Link
+                    href="/dashboard/landlord/settings"
+                    className="px-3 py-2 bg-purple-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    ⚙️ Settings
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="px-3 py-2 bg-red-600 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    🚪 Logout
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        {/* Quick Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {/* Mobile-First Quick Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border-l-4 border-green-500 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Active Listings</p>
-                <p className="text-3xl font-bold text-green-600">{subscription?.activeListings || 0}</p>
+                <p className="text-gray-600 text-xs sm:text-sm font-medium">Active Listings</p>
+                <p className="text-2xl sm:text-3xl font-bold text-green-600">{subscription?.activeListings || 0}</p>
               </div>
-              <div className="text-4xl">🟢</div>
+              <div className="text-3xl sm:text-4xl">🟢</div>
             </div>
           </div>
           
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border-l-4 border-blue-500 hover:shadow-xl transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Total Properties</p>
-                <p className="text-3xl font-bold text-blue-600">{subscription?.totalProperties || 0}</p>
+                <p className="text-gray-600 text-xs sm:text-sm font-medium">Total Properties</p>
+                <p className="text-2xl sm:text-3xl font-bold text-blue-600">{subscription?.totalProperties || 0}</p>
               </div>
-              <div className="text-4xl">🏘️</div>
+              <div className="text-3xl sm:text-4xl">🏘️</div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-emerald-500">
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border-l-4 border-emerald-500 hover:shadow-xl transition-shadow sm:col-span-2 lg:col-span-1">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Account Status</p>
-                <p className={`text-lg font-bold ${subscription?.status === 'active' ? 'text-emerald-600' : 'text-red-600'}`}>
+                <p className="text-gray-600 text-xs sm:text-sm font-medium">Account Status</p>
+                <p className={`text-base sm:text-lg font-bold ${subscription?.status === 'active' ? 'text-emerald-600' : 'text-red-600'}`}>
                   {subscription?.status === 'active' ? 'Active' : 'Pending'}
                 </p>
               </div>
-              <div className="text-4xl">{subscription?.status === 'active' ? '✅' : '⏳'}</div>
+              <div className="text-3xl sm:text-4xl">{subscription?.status === 'active' ? '✅' : '⏳'}</div>
             </div>
           </div>
         </div>
 
-        {/* Main Action Section */}
-        <div className="bg-white rounded-xl shadow-xl p-8 mb-8">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">Rental Property Management</h2>
-            <p className="text-gray-600">Create and manage your rental listings on Guyana Home Hub</p>
+        {/* Mobile-First Main Action Section */}
+        <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
+          <div className="text-center mb-4 sm:mb-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Rental Property Management</h2>
+            <p className="text-sm sm:text-base text-gray-600">Create and manage your rental listings on Guyana Home Hub</p>
           </div>
           
           {subscription?.status === "active" ? (
-            <div className="flex flex-col items-center space-y-4">
+            <div className="flex flex-col items-center space-y-3 sm:space-y-4">
               <Link href="/dashboard/landlord/create-property" className="w-full max-w-md">
-                <button className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2">
+                <button className="w-full px-6 sm:px-8 py-3 sm:py-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold text-base sm:text-lg shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex items-center justify-center space-x-2">
                   <span>🏠</span>
-                  <span>Create New Rental Listing</span>
+                  <span className="hidden sm:inline">Create New Rental Listing</span>
+                  <span className="sm:hidden">New Rental</span>
                 </button>
               </Link>
               
-              <div className="text-center text-sm text-gray-500 max-w-md">
+              <div className="text-center text-xs sm:text-sm text-gray-500 max-w-md px-2">
                 <p>💡 <strong>Landlord Focus:</strong> Create rental property listings with lease terms, deposits, and rental-specific features</p>
               </div>
             </div>
           ) : (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
-              <div className="text-4xl mb-3">⚠️</div>
-              <h3 className="text-xl font-bold text-yellow-800 mb-2">Account Activation Required</h3>
-              <p className="text-yellow-700 mb-4">Complete your registration and payment to start listing rental properties.</p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 sm:p-6 text-center">
+              <div className="text-3xl sm:text-4xl mb-3">⚠️</div>
+              <h3 className="text-lg sm:text-xl font-bold text-yellow-800 mb-2">Account Activation Required</h3>
+              <p className="text-sm sm:text-base text-yellow-700 mb-4">Complete your registration and payment to start listing rental properties.</p>
               <Link href="/register/landlord">
-                <button className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold rounded-xl hover:shadow-lg transition-all duration-200">
+                <button className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white font-bold text-sm sm:text-base rounded-xl hover:shadow-lg transition-all duration-200">
                   Complete Registration
                 </button>
               </Link>
@@ -258,22 +270,23 @@ export default function LandlordDashboard() {
           )}
         </div>
 
-        {/* Properties Section */}
-        <div className="bg-white rounded-xl shadow-xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-800 flex items-center">
+        {/* Mobile-First Properties Section */}
+        <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-800 flex items-center">
               <span className="mr-2">🏘️</span>
-              Your Rental Properties
+              <span className="hidden sm:inline">Your Rental Properties</span>
+              <span className="sm:hidden">Properties</span>
             </h2>
             
-            {/* Country Filter */}
+            {/* Mobile-Optimized Country Filter */}
             <div className="flex items-center space-x-2">
-              <label htmlFor="countryFilter" className="text-sm font-medium text-gray-700">Filter:</label>
+              <label htmlFor="countryFilter" className="text-xs sm:text-sm font-medium text-gray-700">Filter:</label>
               <select 
                 name="countryFilter" 
                 value={countryFilter} 
                 onChange={e => setCountryFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="border border-gray-300 rounded-lg px-2 sm:px-3 py-1 sm:py-2 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
               >
                 <option value="">All Countries</option>
                 {countries.map(c => (
@@ -284,14 +297,15 @@ export default function LandlordDashboard() {
           </div>
 
           {properties.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">🏠</div>
-              <h3 className="text-xl font-bold text-gray-600 mb-2">No rental properties yet</h3>
-              <p className="text-gray-500 mb-4">Start building your rental portfolio today!</p>
+            <div className="text-center py-8 sm:py-12">
+              <div className="text-4xl sm:text-6xl mb-3 sm:mb-4">🏠</div>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-600 mb-2">No rental properties yet</h3>
+              <p className="text-sm sm:text-base text-gray-500 mb-4 px-4">Start building your rental portfolio today!</p>
               {subscription?.status === "active" && (
                 <Link href="/dashboard/landlord/create-property">
-                  <button className="px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition">
-                    Create Your First Rental Listing
+                  <button className="px-4 sm:px-6 py-2 sm:py-3 bg-green-500 text-white font-semibold text-sm sm:text-base rounded-lg hover:bg-green-600 transition">
+                    <span className="hidden sm:inline">Create Your First Rental Listing</span>
+                    <span className="sm:hidden">Create Listing</span>
                   </button>
                 </Link>
               )}
@@ -402,6 +416,24 @@ export default function LandlordDashboard() {
                   </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Enhanced Property Management */}
+          {subscription?.status === "active" && properties.length > 0 && (
+            <div className="mt-6 sm:mt-8">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 sm:p-4 mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-green-900 mb-1">🔧 Advanced Property Tools</h3>
+                <p className="text-xs sm:text-sm text-green-800">
+                  Manage property status, view rejections, and control listing visibility
+                </p>
+              </div>
+              <UniversalPropertyManager 
+                userId={user?.id || 'landlord'} 
+                userType="landlord"
+                editPropertyPath="/dashboard/landlord/edit"
+                createPropertyPath="/dashboard/landlord/create-property"
+              />
             </div>
           )}
         </div>
