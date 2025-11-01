@@ -33,7 +33,8 @@ export default function DashboardPage() {
             super: '/admin-dashboard', // Super admin uses admin dashboard
             agent: '/dashboard/agent',
             owner: '/dashboard/owner',  // Points to renamed directory
-            landlord: '/dashboard/landlord'  // DEBUG: landlord should go here
+            landlord: '/dashboard/landlord',  // DEBUG: landlord should go here
+            fsbo: '/dashboard/fsbo'  // FSBO users go to FSBO dashboard
           };
           
           const redirectUrl = dashboardRoutes[profile.user_type as keyof typeof dashboardRoutes];
