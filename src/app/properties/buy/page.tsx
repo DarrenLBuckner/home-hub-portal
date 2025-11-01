@@ -26,28 +26,10 @@ export const metadata = {
   keywords: 'properties for sale, Guyana real estate, houses for sale, buy property Guyana'
 };
 
-// Server-side data fetching
-async function getProperties(): Promise<Property[]> {
-  try {
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/public/properties?site=guyana&listing_type=sale&limit=50`, {
-      next: { revalidate: 300 } // Revalidate every 5 minutes
-    });
-    
-    if (!response.ok) {
-      throw new Error('Failed to fetch properties');
-    }
-    
-    const data = await response.json();
-    return data.properties || [];
-  } catch (error) {
-    console.error('Error fetching properties:', error);
-    return [];
-  }
-}
-
-export default async function BuyPropertiesPage() {
-  const properties = await getProperties();
+// Skip server-side data fetching during build to avoid connection errors
+// Data will be fetched client-side by PropertiesListClient component  
+export default function BuyPropertiesPage() {
+  // No server-side data fetching - handled by client component
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -64,7 +46,7 @@ export default async function BuyPropertiesPage() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <PropertiesListClient 
-          initialProperties={properties}
+          initialProperties={[]}
           listingType="sale"
         />
       </div>
