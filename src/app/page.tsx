@@ -105,7 +105,7 @@ function PortalMarketingContent() {
                 'Advanced analytics'
               ]}
               buttonText="Get Started"
-              buttonLink="/register?type=agent"
+              buttonLink="/register/select-country"
             />
 
             {/* Landlord Services */}
@@ -123,7 +123,7 @@ function PortalMarketingContent() {
                 'Property management tools'
               ]}
               buttonText="Get Started"
-              buttonLink="/register/landlord?type=landlord"
+              buttonLink="/register/select-country"
               highlighted
             />
 
@@ -142,7 +142,7 @@ function PortalMarketingContent() {
                 'Sales tools'
               ]}
               buttonText="Get Started"
-              buttonLink="/register/fsbo?type=fsbo"
+              buttonLink="/register/select-country"
             />
           </div>
 
