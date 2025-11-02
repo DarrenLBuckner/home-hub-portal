@@ -256,33 +256,6 @@ export default function CreateFSBOListing() {
           required 
         />
         
-        <textarea 
-          name="description" 
-          placeholder="Detailed description of your property*" 
-          value={form.description} 
-          onChange={handleChange} 
-          className="w-full border rounded-lg px-4 py-2" 
-          required 
-          rows={4} 
-        />
-        
-        {/* AI Description Assistant */}
-        <AIDescriptionAssistant
-          propertyData={{
-            title: form.title,
-            propertyType: form.propertyType,
-            bedrooms: form.bedrooms,
-            bathrooms: form.bathrooms,
-            price: form.price,
-            location: form.location,
-            squareFootage: form.squareFootage,
-            features: form.features,
-            rentalType: "sale"
-          }}
-          currentDescription={form.description}
-          onDescriptionGenerated={(description) => setForm(prev => ({ ...prev, description }))}
-        />
-        
         <GlobalSouthLocationSelector
           selectedCountry={selectedCountry}
           selectedRegion={selectedRegion}
@@ -365,22 +338,79 @@ export default function CreateFSBOListing() {
           className="w-full border rounded-lg px-4 py-2" 
           required 
         />
+
+        {/* Features/Amenities Section - Moved to before description */}
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+          <div className="flex items-start gap-3">
+            <div className="text-blue-500 text-lg">💡</div>
+            <div>
+              <h4 className="font-medium text-blue-900 mb-1">Pro Tip: Select features first!</h4>
+              <p className="text-sm text-blue-800">
+                The more features you select here, the better our AI will generate your property description. 
+                Each feature gives the AI more context to create compelling, detailed descriptions for buyers.
+              </p>
+            </div>
+          </div>
+        </div>
         
         <div className="mb-2 font-semibold">Features/Amenities:</div>
-        <div className="grid grid-cols-2 gap-2 mb-4">
+        <div className="grid grid-cols-2 gap-2 mb-6">
           {FEATURES.map(feature => (
-            <label key={feature} className="flex items-center gap-2">
+            <label key={feature} className="flex items-center gap-2 text-gray-900 font-medium cursor-pointer hover:bg-gray-50 p-2 rounded">
               <input 
                 type="checkbox" 
                 name="features" 
                 value={feature} 
                 checked={form.features.includes(feature)} 
                 onChange={handleChange} 
+                className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
               />
-              {feature}
+              <span className="text-sm">{feature}</span>
             </label>
           ))}
         </div>
+
+        {/* Property Description - Moved to after features */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Property Description *</label>
+          <textarea 
+            name="description" 
+            placeholder="Write at least 30-50 words about your property... OR use the AI assistant below for professional descriptions! The more details you provide, the better the AI can help. Describe what makes this property special for buyers." 
+            value={form.description} 
+            onChange={handleChange} 
+            className="w-full border rounded-lg px-4 py-2 placeholder-gray-400" 
+            required 
+            rows={6} 
+          />
+          <div className="mt-2 text-xs text-gray-500 flex justify-between">
+            <span>💡 Tip: {form.description.trim().split(/\s+/).filter(word => word.length > 0).length < 30 ? `Add ${30 - form.description.trim().split(/\s+/).filter(word => word.length > 0).length} more words for better AI results` : 'Great! AI can now generate excellent descriptions'}</span>
+            <span className={form.description.trim().split(/\s+/).filter(word => word.length > 0).length >= 30 ? 'text-green-600' : 'text-amber-600'}>{form.description.trim().split(/\s+/).filter(word => word.length > 0).length} words</span>
+          </div>
+        </div>
+        
+        {/* AI Description Assistant */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200 mb-6">
+          <div className="mb-3 text-sm text-blue-800">
+            <span className="font-medium">🤖 AI Power Boost:</span> You've selected {form.features.length} features above - this gives the AI more context to create amazing descriptions!
+          </div>
+          <AIDescriptionAssistant
+            propertyData={{
+              title: form.title,
+              propertyType: form.propertyType,
+              bedrooms: form.bedrooms,
+              bathrooms: form.bathrooms,
+              price: form.price,
+              location: form.location,
+              squareFootage: form.squareFootage,
+              features: form.features,
+              rentalType: "sale"
+            }}
+            currentDescription={form.description}
+            onDescriptionGenerated={(description) => setForm(prev => ({ ...prev, description }))}
+          />
+        </div>
+        
+
         
         <EnhancedImageUpload
           images={form.images}

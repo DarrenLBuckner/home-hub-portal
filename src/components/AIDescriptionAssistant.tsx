@@ -168,6 +168,11 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
       <div className="mt-3 text-xs text-gray-700">
         💡 Tip: Fill in more details (features, location, size) for better descriptions
       </div>
+      {currentDescription && (
+        <div className="mt-2 text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+          ⚡ After generating: Review and select matching amenities below to ensure they align with your description
+        </div>
+      )}
     </div>
   );
 };

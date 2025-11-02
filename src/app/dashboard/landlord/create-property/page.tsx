@@ -461,7 +461,44 @@ export default function CreateLandlordProperty() {
             />
           </div>
 
-          {/* 5. DESCRIPTION & AI ASSISTANT (Content creation) */}
+          {/* 5. AMENITIES & FEATURES (What makes it special) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-teal-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              ✨ Amenities & Features
+            </h3>
+            
+            {/* Helpful hint about amenities and AI */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="text-blue-500 text-lg">💡</div>
+                <div>
+                  <h4 className="font-medium text-blue-900 mb-1">Pro Tip: Select amenities first!</h4>
+                  <p className="text-sm text-blue-800">
+                    The more amenities you select here, the better our AI will generate your property description. 
+                    Each amenity gives the AI more context to create compelling, detailed rental descriptions.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {FEATURES.map(feature => (
+                <label key={feature} className="flex items-center gap-2 text-gray-900 font-medium cursor-pointer hover:bg-gray-50 p-2 rounded">
+                  <input 
+                    type="checkbox" 
+                    name="features" 
+                    value={feature} 
+                    checked={form.features.includes(feature)} 
+                    onChange={handleChange} 
+                    className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-sm">{feature}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* 6. DESCRIPTION & AI ASSISTANT (Content creation) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
               📝 Property Description
@@ -472,17 +509,24 @@ export default function CreateLandlordProperty() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Property Description *</label>
               <textarea 
                 name="description" 
-                placeholder="Describe your rental property's features, location, and what makes it special..." 
+                placeholder="Write at least 30-50 words about your rental property... OR use the AI assistant below for professional descriptions! The more details you provide, the better the AI can help. Describe what makes this property special for tenants." 
                 value={form.description} 
                 onChange={handleChange} 
                 required 
                 rows={6}
-                className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500" 
+                className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-400" 
               />
+              <div className="mt-2 text-xs text-gray-500 flex justify-between">
+                <span>💡 Tip: {form.description.trim().split(/\s+/).filter(word => word.length > 0).length < 30 ? `Add ${30 - form.description.trim().split(/\s+/).filter(word => word.length > 0).length} more words for better AI results` : 'Great! AI can now generate excellent descriptions'}</span>
+                <span className={form.description.trim().split(/\s+/).filter(word => word.length > 0).length >= 30 ? 'text-green-600' : 'text-amber-600'}>{form.description.trim().split(/\s+/).filter(word => word.length > 0).length} words</span>
+              </div>
             </div>
             
             {/* AI Assistant - RIGHT BELOW Description */}
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+              <div className="mb-3 text-sm text-blue-800">
+                <span className="font-medium">🤖 AI Power Boost:</span> You've selected {form.features.length} amenities above - this gives the AI more context to create amazing rental descriptions!
+              </div>
               <AIDescriptionAssistant
                 propertyData={{
                   title: form.title,
@@ -498,28 +542,6 @@ export default function CreateLandlordProperty() {
                 currentDescription={form.description}
                 onDescriptionGenerated={(description) => setForm(prev => ({ ...prev, description }))}
               />
-            </div>
-          </div>
-
-          {/* 6. AMENITIES & FEATURES (What makes it special) */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-teal-500">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              ✨ Amenities & Features
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {FEATURES.map(feature => (
-                <label key={feature} className="flex items-center gap-2 text-gray-900 font-medium cursor-pointer hover:bg-gray-50 p-2 rounded">
-                  <input 
-                    type="checkbox" 
-                    name="features" 
-                    value={feature} 
-                    checked={form.features.includes(feature)} 
-                    onChange={handleChange} 
-                    className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm">{feature}</span>
-                </label>
-              ))}
             </div>
           </div>
 

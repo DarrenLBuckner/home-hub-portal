@@ -37,6 +37,7 @@ interface FormData {
   lot_length: string;
   lot_width: string;
   lot_dimension_unit: string;
+  owner_whatsapp: string;
 }
 
 export default function EditAgentProperty() {
@@ -72,6 +73,7 @@ export default function EditAgentProperty() {
     lot_length: "",
     lot_width: "",
     lot_dimension_unit: "ft",
+    owner_whatsapp: "",
   });
 
   const [images, setImages] = useState<File[]>([]);
@@ -139,6 +141,7 @@ export default function EditAgentProperty() {
             lot_length: property.lot_length?.toString() || '',
             lot_width: property.lot_width?.toString() || '',
             lot_dimension_unit: property.lot_dimension_unit || 'ft',
+            owner_whatsapp: property.owner_whatsapp || '',
           });
 
           // Set location and currency info
@@ -251,6 +254,7 @@ export default function EditAgentProperty() {
         region: form.region,
         city: form.city,
         neighborhood: form.neighborhood,
+        owner_whatsapp: form.owner_whatsapp,
         currency: currencyCode,
         updated_at: new Date().toISOString(),
       };
@@ -636,7 +640,42 @@ export default function EditAgentProperty() {
             />
           </div>
 
-          {/* 6. PHOTOS */}
+          {/* 6. CONTACT INFORMATION */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-emerald-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              📞 Contact Information
+            </h3>
+            <div className="bg-blue-50 p-4 rounded-lg mb-6">
+              <h4 className="font-medium text-blue-900 mb-2">How clients will contact you</h4>
+              <p className="text-sm text-blue-800">
+                Interested buyers and sellers will be able to contact you through WhatsApp. Your contact details will only be shown to serious inquiries.
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                WhatsApp Number <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="tel"
+                name="owner_whatsapp"
+                value={form.owner_whatsapp}
+                onChange={handleChange}
+                placeholder="+592-XXX-XXXX"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+              <p className="text-sm text-gray-500 mt-1">
+                <strong>Required:</strong> Include country code (+592 for Guyana). Most clients prefer WhatsApp for instant contact.
+              </p>
+              <div className="bg-green-50 p-3 rounded mt-2">
+                <p className="text-sm text-green-800">
+                  <strong>💬 Why WhatsApp?</strong> 90% of real estate inquiries in Guyana happen via WhatsApp. This ensures you get contacted quickly by serious clients.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* 7. PHOTOS */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-pink-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
               📸 Property Photos

@@ -1,4 +1,4 @@
-import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
+
 
 interface Step1BasicInfoProps {
   formData: any;
@@ -139,36 +139,18 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
         )}
       </div>
 
-      <div>
-        <label className="block text-base font-bold text-gray-900 mb-3">
-          📝 Property Description *
-        </label>
-        <textarea
-          value={formData.description}
-          onChange={(e) => handleChange('description', e.target.value)}
-          placeholder="Describe your property's features, condition, and what makes it special..."
-          rows={6}
-          className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white placeholder-gray-600 text-base"
-          maxLength={1000}
-        />
-        <p className="text-sm text-gray-500 mt-1">{formData.description.length}/1000 characters</p>
-        
-        {/* AI Description Assistant */}
-        <AIDescriptionAssistant
-          propertyData={{
-            title: formData.title,
-            propertyType: formData.property_type,
-            bedrooms: formData.bedrooms?.toString() || '',
-            bathrooms: formData.bathrooms?.toString() || '',
-            price: formData.price,
-            location: formData.region || formData.city || formData.neighborhood,
-            squareFootage: formData.house_size_value?.toString() || '',
-            features: formData.amenities || [],
-            rentalType: "sale"
-          }}
-          currentDescription={formData.description}
-          onDescriptionGenerated={(description) => setFormData((prev: any) => ({ ...prev, description }))}
-        />
+      {/* Description moved to Step 2 after amenities for better UX flow */}
+      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+        <div className="flex items-start gap-3">
+          <div className="text-green-500 text-lg">📋</div>
+          <div>
+            <h4 className="font-medium text-green-900 mb-1">What's Next?</h4>
+            <p className="text-sm text-green-800">
+              After you provide the basic info above, you'll add property details and select amenities. 
+              Then our AI can help create an amazing description using all the information you've provided!
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
