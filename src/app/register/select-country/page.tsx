@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getCountryFromDomain } from '@/lib/country-detection';
@@ -168,7 +168,7 @@ const countries = [
   },
 ];
 
-export default function SelectCountryPage() {
+function SelectCountryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
@@ -501,5 +501,13 @@ export default function SelectCountryPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SelectCountryPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+      <SelectCountryContent />
+    </Suspense>
   );
 }
