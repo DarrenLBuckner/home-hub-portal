@@ -12,6 +12,8 @@ export default function AgentSettings() {
     user_type?: string;
     subscription_status?: string;
     created_at?: string;
+    profile_image?: string;
+    company?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -118,6 +120,8 @@ export default function AgentSettings() {
           first_name: profile?.first_name,
           last_name: profile?.last_name,
           phone: profile?.phone,
+          profile_image: profile?.profile_image,
+          company: profile?.company,
         })
         .eq('id', user.id);
 
@@ -220,7 +224,7 @@ export default function AgentSettings() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Phone Number
+              Phone Number (WhatsApp)
             </label>
             <input
               type="tel"
@@ -229,6 +233,57 @@ export default function AgentSettings() {
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               placeholder="e.g., +592 123 4567"
             />
+            <p className="text-sm text-gray-500 mt-1">This will be used for WhatsApp contact on property listings</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Company/Brokerage (Optional)
+            </label>
+            <input
+              type="text"
+              value={profile?.company || ""}
+              onChange={(e) => setProfile(prev => ({ ...prev, company: e.target.value }))}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              placeholder="e.g., ABC Real Estate, XYZ Realty"
+            />
+            <p className="text-sm text-gray-500 mt-1">Will be displayed under your name on property listings</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Profile Picture (Optional)
+            </label>
+            <div className="space-y-3">
+              {profile?.profile_image && (
+                <div className="flex items-center space-x-3">
+                  <img 
+                    src={profile.profile_image} 
+                    alt="Current profile"
+                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setProfile(prev => ({ ...prev, profile_image: "" }))}
+                    className="text-red-600 text-sm hover:underline"
+                  >
+                    Remove Picture
+                  </button>
+                </div>
+              )}
+              <input
+                type="url"
+                value={profile?.profile_image || ""}
+                onChange={(e) => setProfile(prev => ({ ...prev, profile_image: e.target.value }))}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                placeholder="https://example.com/your-photo.jpg"
+              />
+              <p className="text-sm text-gray-500">
+                Enter a URL to your profile photo. This will be displayed on your property listings to help clients identify you.
+                <br />
+                <span className="text-blue-600">💡 Tip:</span> Upload to Google Drive, Dropbox, or similar and use the direct link.
+              </p>
+            </div>
           </div>
 
           <div>

@@ -14,6 +14,8 @@ export default function AdminSettings() {
     admin_level?: string;
     display_name?: string;
     created_at?: string;
+    profile_image?: string;
+    company?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -37,7 +39,7 @@ export default function AdminSettings() {
       // Check if user is admin
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('user_type, admin_level, first_name, last_name, phone, display_name, created_at')
+        .select('user_type, admin_level, first_name, last_name, phone, display_name, created_at, profile_image, company')
         .eq('id', authUser.id)
         .single();
 
@@ -103,6 +105,8 @@ export default function AdminSettings() {
           last_name: profile?.last_name,
           phone: profile?.phone,
           display_name: profile?.display_name,
+          profile_image: profile?.profile_image,
+          company: profile?.company,
         })
         .eq('id', user.id);
 
@@ -239,7 +243,7 @@ export default function AdminSettings() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phone Number
+                    Phone Number (WhatsApp)
                   </label>
                   <input
                     type="tel"
@@ -248,6 +252,57 @@ export default function AdminSettings() {
                     className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="e.g., +592 123 4567"
                   />
+                  <p className="text-sm text-gray-500 mt-1">This will be used for WhatsApp contact on property listings</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Company/Organization (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={profile?.company || ""}
+                    onChange={(e) => setProfile(prev => ({ ...prev, company: e.target.value }))}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Guyana Home Hub, ABC Real Estate"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">Will be displayed under your name on property listings</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Profile Picture (Optional)
+                  </label>
+                  <div className="space-y-3">
+                    {profile?.profile_image && (
+                      <div className="flex items-center space-x-3">
+                        <img 
+                          src={profile.profile_image} 
+                          alt="Current profile"
+                          className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setProfile(prev => ({ ...prev, profile_image: "" }))}
+                          className="text-red-600 text-sm hover:underline"
+                        >
+                          Remove Picture
+                        </button>
+                      </div>
+                    )}
+                    <input
+                      type="url"
+                      value={profile?.profile_image || ""}
+                      onChange={(e) => setProfile(prev => ({ ...prev, profile_image: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="https://example.com/your-photo.jpg"
+                    />
+                    <p className="text-sm text-gray-500">
+                      Enter a URL to your profile photo. This will be displayed on property listings where you are the listing agent/owner.
+                      <br />
+                      <span className="text-blue-600">💡 Tip:</span> Upload to Google Drive, Dropbox, or similar and use the direct link.
+                    </p>
+                  </div>
                 </div>
 
                 <div>

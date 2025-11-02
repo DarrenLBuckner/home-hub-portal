@@ -13,7 +13,7 @@ export async function GET(
   try {
     const { id } = await params
 
-    // Get single property by ID with status 'active'
+    // Get single property by ID with status 'active' and include agent profile for agents only
     const { data, error } = await supabase
       .from('properties')
       .select(`
@@ -23,6 +23,15 @@ export async function GET(
           media_type,
           display_order,
           is_primary
+        ),
+        profiles!properties_user_id_fkey (
+          id,
+          first_name,
+          last_name,
+          phone,
+          user_type,
+          profile_image,
+          company
         )
       `)
       .eq('id', id)
@@ -55,10 +64,24 @@ export async function GET(
       })
       ?.map((media: any) => media.media_url) || []
 
+    // Extract agent profile data if user is an agent OR admin (owner admins can also have photos)
+    const canShowProfile = data.profiles?.user_type === 'agent' || data.profiles?.user_type === 'admin'
+    const agentProfile = canShowProfile ? {
+      id: data.profiles.id,
+      first_name: data.profiles.first_name,
+      last_name: data.profiles.last_name,
+      phone: data.profiles.phone,
+      profile_image: data.profiles.profile_image,
+      company: data.profiles.company,
+      user_type: data.profiles.user_type // Include user_type to distinguish agents from admins
+    } : null
+
     const transformedProperty = {
       ...data,
       images,
-      property_media: undefined // Remove the nested object
+      agent_profile: agentProfile, // Only include if user is an agent
+      property_media: undefined, // Remove the nested object
+      profiles: undefined // Remove the nested profiles object
     }
 
     return NextResponse.json(transformedProperty, {
