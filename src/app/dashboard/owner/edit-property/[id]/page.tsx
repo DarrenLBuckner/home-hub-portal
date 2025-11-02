@@ -17,7 +17,7 @@ import Step6Review from '../../create-property/components/Step6Review';
 export default function EditFSBOProperty() {
   const router = useRouter();
   const params = useParams();
-  const propertyId = params.id as string;
+  const propertyId = params?.id as string;
   
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,8 +59,8 @@ export default function EditFSBOProperty() {
     contact_email: '',
   });
 
-  const [images, setImages] = useState([]);
-  const [existingImages, setExistingImages] = useState([]);
+  const [images, setImages] = useState<File[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   const supabase = createClient();
 
   // Load existing property data
@@ -125,13 +125,13 @@ export default function EditFSBOProperty() {
 
           // Set existing images
           const propertyImages = property.property_media
-            ?.filter(media => media.media_type === 'image')
-            ?.sort((a, b) => {
+            ?.filter((media: any) => media.media_type === 'image')
+            ?.sort((a: any, b: any) => {
               if (a.is_primary && !b.is_primary) return -1;
               if (!a.is_primary && b.is_primary) return 1;
               return a.display_order - b.display_order;
             })
-            ?.map(media => media.media_url) || [];
+            ?.map((media: any) => media.media_url) || [];
           
           setExistingImages(propertyImages);
         }
@@ -152,11 +152,11 @@ export default function EditFSBOProperty() {
   // Calculate completion score
   const completionAnalysis = calculateCompletionScore({
     ...formData,
-    images: [...existingImages, ...images],
+    images: images as File[],
     amenities: Array.isArray(formData.amenities) ? formData.amenities : []
   });
 
-  const userMotivation = getUserMotivation('owner');
+  const userMotivation = getUserMotivation('fsbo');
 
   const nextStep = () => {
     if (currentStep < 6) {
@@ -172,7 +172,7 @@ export default function EditFSBOProperty() {
     }
   };
 
-  const updateFormData = (field, value) => {
+  const updateFormData = (field: any, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -243,7 +243,7 @@ export default function EditFSBOProperty() {
 
     } catch (error) {
       console.error('Update error:', error);
-      setError(error.message || 'Failed to update property. Please try again.');
+      setError((error as Error).message || 'Failed to update property. Please try again.');
     } finally {
       setIsSubmitting(false);
       submittingRef.current = false;
@@ -331,21 +331,21 @@ export default function EditFSBOProperty() {
           {currentStep === 1 && (
             <Step1BasicInfo 
               formData={formData}
-              updateFormData={updateFormData}
+              setFormData={setFormData}
             />
           )}
           
           {currentStep === 2 && (
             <Step2Details 
               formData={formData}
-              updateFormData={updateFormData}
+              setFormData={setFormData}
             />
           )}
           
           {currentStep === 3 && (
             <Step3Location 
               formData={formData}
-              updateFormData={updateFormData}
+              setFormData={setFormData}
             />
           )}
           
@@ -353,23 +353,20 @@ export default function EditFSBOProperty() {
             <Step4Photos 
               images={images}
               setImages={setImages}
-              existingImages={existingImages}
-              isEdit={true}
             />
           )}
           
           {currentStep === 5 && (
             <Step5Contact 
               formData={formData}
-              updateFormData={updateFormData}
+              setFormData={setFormData}
             />
           )}
           
           {currentStep === 6 && (
             <Step6Review 
               formData={formData}
-              images={[...existingImages, ...images]}
-              isEdit={true}
+              images={images}
             />
           )}
         </div>

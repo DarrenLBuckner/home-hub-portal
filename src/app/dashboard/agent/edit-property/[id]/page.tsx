@@ -42,7 +42,7 @@ interface FormData {
 export default function EditAgentProperty() {
   const router = useRouter();
   const params = useParams();
-  const propertyId = params.id as string;
+  const propertyId = params?.id as string;
   
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -149,13 +149,13 @@ export default function EditAgentProperty() {
 
           // Set existing images
           const propertyImages = property.property_media
-            ?.filter(media => media.media_type === 'image')
-            ?.sort((a, b) => {
+            ?.filter((media: any) => media.media_type === 'image')
+            ?.sort((a: any, b: any) => {
               if (a.is_primary && !b.is_primary) return -1;
               if (!a.is_primary && b.is_primary) return 1;
               return a.display_order - b.display_order;
             })
-            ?.map(media => media.media_url) || [];
+            ?.map((media: any) => media.media_url) || [];
           
           setExistingImages(propertyImages);
         }
@@ -176,7 +176,7 @@ export default function EditAgentProperty() {
   // Calculate completion score in real-time
   const completionAnalysis = calculateCompletionScore({
     ...form,
-    images: [...existingImages, ...images],
+    images: images as File[],
     amenities: Array.isArray(form.amenities) ? form.amenities : []
   });
 
@@ -282,7 +282,7 @@ export default function EditAgentProperty() {
 
     } catch (error) {
       console.error('Update error:', error);
-      setError(error.message || 'Failed to update property. Please try again.');
+      setError((error as Error).message || 'Failed to update property. Please try again.');
     } finally {
       setIsSubmitting(false);
       submittingRef.current = false;
@@ -434,14 +434,20 @@ export default function EditAgentProperty() {
                   <AIDescriptionAssistant 
                     onDescriptionGenerated={(description) => setForm({...form, description})}
                     currentDescription={form.description}
-                    propertyDetails={{
+                    propertyData={{
                       title: form.title,
-                      property_type: form.property_type,
+                      propertyType: form.property_type,
                       bedrooms: form.bedrooms,
                       bathrooms: form.bathrooms,
-                      house_size_value: form.house_size_value,
-                      location: form.city || form.region,
-                      amenities: form.amenities
+                      price: form.price,
+                      location: `${form.city || ''}, ${form.region || ''}`.replace(/^, |, $/, ''),
+                      squareFootage: form.house_size_value ? `${form.house_size_value} ${form.house_size_unit}` : '',
+                      features: [
+                        ...(form.amenities || []),
+                        form.year_built ? `Built in ${form.year_built}` : '',
+                        form.land_size_value ? `${form.land_size_value} ${form.land_size_unit} lot` : '',
+                        form.lot_length && form.lot_width ? `Lot dimensions: ${form.lot_length}' x ${form.lot_width}'` : ''
+                      ].filter(Boolean)
                     }}
                   />
                 </div>
@@ -625,7 +631,7 @@ export default function EditAgentProperty() {
               ✨ Features & Amenities
             </h3>
             <AmenitiesSelector
-              selectedAmenities={form.amenities}
+              value={form.amenities}
               onChange={(amenities) => setForm({ ...form, amenities })}
             />
           </div>
@@ -636,8 +642,8 @@ export default function EditAgentProperty() {
               📸 Property Photos
             </h3>
             <EnhancedImageUpload
-              onImagesChange={handleImagesChange}
-              existingImages={existingImages}
+              images={images}
+              setImages={setImages}
               maxImages={25}
             />
           </div>

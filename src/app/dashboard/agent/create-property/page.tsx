@@ -589,9 +589,14 @@ export default function CreatePropertyPage() {
                   bedrooms: form.bedrooms.toString(),
                   bathrooms: form.bathrooms.toString(),
                   price: form.price,
-                  location: form.location,
-                  squareFootage: form.house_size_value?.toString() || '',
-                  features: form.amenities || [],
+                  location: `${form.city || ''}, ${form.region || ''}`.replace(/^, |, $/, ''),
+                  squareFootage: form.house_size_value ? `${form.house_size_value} ${form.house_size_unit}` : '',
+                  features: [
+                    ...(form.amenities || []),
+                    form.year_built ? `Built in ${form.year_built}` : '',
+                    form.land_size_value ? `${form.land_size_value} ${form.land_size_unit} lot` : '',
+                    form.lot_length && form.lot_width ? `Lot dimensions: ${form.lot_length}' x ${form.lot_width}'` : ''
+                  ].filter(Boolean),
                   rentalType: "sale"
                 }}
                 currentDescription={form.description}

@@ -29,7 +29,7 @@ type PropertyForm = {
 export default function EditFSBOProperty() {
   const router = useRouter();
   const params = useParams();
-  const propertyId = params.id as string;
+  const propertyId = params?.id as string;
   
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,6 +42,7 @@ export default function EditFSBOProperty() {
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
   const [existingImages, setExistingImages] = useState<string[]>([]);
+  const [images, setImages] = useState<File[]>([]);
 
   const [formData, setFormData] = useState<PropertyForm>({
     title: '',
@@ -119,13 +120,13 @@ export default function EditFSBOProperty() {
 
           // Set existing images
           const propertyImages = property.property_media
-            ?.filter(media => media.media_type === 'image')
-            ?.sort((a, b) => {
+            ?.filter((media: any) => media.media_type === 'image')
+            ?.sort((a: any, b: any) => {
               if (a.is_primary && !b.is_primary) return -1;
               if (!a.is_primary && b.is_primary) return 1;
               return a.display_order - b.display_order;
             })
-            ?.map(media => media.media_url) || [];
+            ?.map((media: any) => media.media_url) || [];
           
           setExistingImages(propertyImages);
         }
@@ -242,7 +243,7 @@ export default function EditFSBOProperty() {
 
     } catch (error) {
       console.error('Update error:', error);
-      setError(error.message || 'Failed to update property. Please try again.');
+      setError((error as Error).message || 'Failed to update property. Please try again.');
     } finally {
       setIsSubmitting(false);
       submittingRef.current = false;
@@ -446,8 +447,8 @@ export default function EditFSBOProperty() {
           <div className="bg-white rounded-lg shadow-sm border p-6">
             <h3 className="text-xl font-semibold mb-4 text-orange-700">Property Photos</h3>
             <EnhancedImageUpload
-              onImagesChange={handleImagesChange}
-              existingImages={existingImages}
+              images={images}
+              setImages={setImages}
               maxImages={15}
             />
           </div>

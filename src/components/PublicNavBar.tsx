@@ -14,7 +14,7 @@ const consumerSites = [
   { label: "Rwanda Home Hub", active: false, flag: "🇷🇼" },
   { label: "South Africa Home Hub", active: false, flag: "🇿🇦" },
   { label: "Trinidad Home Hub", active: false, flag: "🇹🇹" },
-  { label: "Jamaica Home Hub", active: false, flag: "🇯🇲" },
+  { label: "Jamaica Home Hub", href: "https://jamaicahomehub.com", active: true, flag: "🇯🇲" },
   { label: "Namibia Home Hub", active: false, flag: "🇳🇦" },
   { label: "DR Home Hub", active: false, flag: "🇩🇴" },
   { label: "Caribbean Home Hub", active: false, flag: "🏝️" },

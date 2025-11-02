@@ -26,6 +26,7 @@ interface Property {
   city: string;
   region: string;
   propertyCategory: string;
+  listed_by_type: string;
 }
 
 const statusConfig = {
@@ -163,7 +164,29 @@ export default function UniversalPropertyManager({
   };
 
   const handleEdit = (id: string) => {
-    window.location.href = `${editPropertyPath}/${id}`;
+    // Find the property to get its listed_by_type
+    const property = properties.find(p => p.id === id);
+    if (!property) {
+      console.error('Property not found for editing:', id);
+      return;
+    }
+
+    // Route to user-specific edit form based on property's listed_by_type
+    let editUrl: string;
+    if (property.listed_by_type === 'agent') {
+      editUrl = `/dashboard/agent/edit-property/${id}`;
+    } else if (property.listed_by_type === 'landlord') {
+      editUrl = `/dashboard/landlord/edit-property/${id}`;
+    } else if (property.listed_by_type === 'fsbo') {
+      editUrl = `/dashboard/fsbo/edit-property/${id}`;
+    } else if (property.listed_by_type === 'owner') {
+      editUrl = `/dashboard/owner/edit-property/${id}`;
+    } else {
+      // Fallback to owner for unknown types
+      editUrl = `/dashboard/owner/edit-property/${id}`;
+    }
+    
+    window.location.href = editUrl;
   };
 
   const updatePropertyStatus = async (propertyId: string, newStatus: string) => {
