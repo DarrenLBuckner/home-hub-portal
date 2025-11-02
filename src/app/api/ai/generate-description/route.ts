@@ -23,11 +23,27 @@ interface PropertyData {
 
 export async function POST(request: Request) {
   try {
+    // Log API key status (without exposing the key)
+    const hasApiKey = !!process.env.OPENAI_API_KEY;
+    console.log('🔑 OpenAI API Key Status:', hasApiKey ? 'Present' : 'Missing');
+    
     if (!process.env.OPENAI_API_KEY) {
+      console.error('❌ OpenAI API key not configured in environment variables');
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
     }
 
     const propertyData: PropertyData = await request.json();
+    
+    // Log incoming property data for debugging (without sensitive info)
+    console.log('📝 AI Description Request:', {
+      propertyType: propertyData.propertyType,
+      bedrooms: propertyData.bedrooms,
+      bathrooms: propertyData.bathrooms,
+      hasPrice: !!propertyData.price,
+      hasLocation: !!propertyData.location,
+      featuresCount: propertyData.features?.length || 0,
+      tone: propertyData.tone || 'professional'
+    });
     
     // Validate required fields
     if (!propertyData.propertyType || !propertyData.bedrooms || !propertyData.bathrooms) {
@@ -95,18 +111,59 @@ Do not include pricing information in the description as this will be displayed 
     });
 
   } catch (error: any) {
-    console.error('AI Description Generation Error:', error);
+    console.error('AI Description Generation Error:', {
+      message: error.message,
+      code: error?.error?.code,
+      type: error?.error?.type,
+      param: error?.error?.param,
+      statusCode: error?.status,
+      fullError: error
+    });
     
+    // Enhanced error messages for better debugging
     if (error?.error?.code === 'invalid_api_key') {
-      return NextResponse.json({ error: 'Invalid OpenAI API key' }, { status: 401 });
+      console.error('❌ OpenAI API Key Error: Invalid API key provided');
+      return NextResponse.json({ 
+        error: 'Invalid OpenAI API key. Please check configuration.' 
+      }, { status: 401 });
     }
     
     if (error?.error?.code === 'insufficient_quota') {
-      return NextResponse.json({ error: 'OpenAI quota exceeded' }, { status: 429 });
+      console.error('❌ OpenAI Quota Error: Account quota exceeded');
+      return NextResponse.json({ 
+        error: 'OpenAI quota exceeded. Please check your account billing.' 
+      }, { status: 429 });
     }
 
+    // Rate limiting error
+    if (error?.error?.code === 'rate_limit_exceeded') {
+      console.error('❌ OpenAI Rate Limit: Too many requests');
+      return NextResponse.json({ 
+        error: 'Rate limit exceeded. Please try again in a moment.' 
+      }, { status: 429 });
+    }
+
+    // Model overloaded
+    if (error?.error?.code === 'model_overloaded') {
+      console.error('❌ OpenAI Model Overloaded: Service temporarily unavailable');
+      return NextResponse.json({ 
+        error: 'AI service temporarily overloaded. Please try again.' 
+      }, { status: 503 });
+    }
+
+    // Network or connection error
+    if (error.code === 'ECONNRESET' || error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+      console.error('❌ Network Error:', error.code);
+      return NextResponse.json({ 
+        error: 'Network connection error. Please check your internet and try again.' 
+      }, { status: 503 });
+    }
+
+    // Generic error with more info
+    console.error('❌ Generic AI Error - Full details:', JSON.stringify(error, null, 2));
     return NextResponse.json({ 
-      error: 'Failed to generate description. Please try again.' 
+      error: `AI generation failed: ${error.message || 'Unknown error'}. Please try again.`,
+      debug: process.env.NODE_ENV === 'development' ? error.message : undefined
     }, { status: 500 });
   }
 }
