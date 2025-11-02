@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/supabase";
+import ProfileImageUpload from "@/components/ProfileImageUpload";
 
 export default function AgentSettings() {
   const [user, setUser] = useState<any>(null);
@@ -254,36 +255,22 @@ export default function AgentSettings() {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Profile Picture (Optional)
             </label>
-            <div className="space-y-3">
-              {profile?.profile_image && (
-                <div className="flex items-center space-x-3">
-                  <img 
-                    src={profile.profile_image} 
-                    alt="Current profile"
-                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setProfile(prev => ({ ...prev, profile_image: "" }))}
-                    className="text-red-600 text-sm hover:underline"
-                  >
-                    Remove Picture
-                  </button>
-                </div>
-              )}
-              <input
-                type="url"
-                value={profile?.profile_image || ""}
-                onChange={(e) => setProfile(prev => ({ ...prev, profile_image: e.target.value }))}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="https://example.com/your-photo.jpg"
-              />
-              <p className="text-sm text-gray-500">
-                Enter a URL to your profile photo. This will be displayed on your property listings to help clients identify you.
-                <br />
-                <span className="text-blue-600">💡 Tip:</span> Upload to Google Drive, Dropbox, or similar and use the direct link.
-              </p>
-            </div>
+            <ProfileImageUpload
+              currentImageUrl={profile?.profile_image || ''}
+              onImageSelect={(file) => {
+                // File handling is done internally by the component
+                // The URL will be set via onImageUrlChange when upload completes
+              }}
+              onImageUrlChange={(url) => {
+                setProfile(prev => ({ ...prev, profile_image: url }));
+              }}
+              className="mt-2"
+            />
+            <p className="text-sm text-gray-500 mt-2">
+              This photo will be displayed on your property listings to help clients identify you.
+              <br />
+              <span className="text-green-600">✨ Tip:</span> Take a clear, professional headshot for the best results!
+            </p>
           </div>
 
           <div>

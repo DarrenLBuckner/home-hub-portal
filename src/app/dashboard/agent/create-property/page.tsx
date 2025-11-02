@@ -560,6 +560,45 @@ export default function CreatePropertyPage() {
             />
           </div>
 
+          {/* 5. AMENITIES & FEATURES (What makes it special) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-teal-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              ✨ Amenities & Features
+            </h3>
+            
+            {/* Helpful hint about amenities and AI */}
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="text-blue-500 text-lg">💡</div>
+                <div>
+                  <h4 className="font-medium text-blue-900 mb-1">Pro Tip: Select amenities first!</h4>
+                  <p className="text-sm text-blue-800">
+                    The more amenities you select here, the better our AI will generate your property description. 
+                    Each amenity gives the AI more context to create compelling, detailed descriptions.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="mb-4">
+              <AmenitiesSelector
+                value={form.amenities || []}
+                onChange={(amenities) => {
+                  setForm({
+                    ...form,
+                    amenities
+                  });
+                }}
+              />
+            </div>
+            <CompletionIncentive 
+              fieldName="amenities"
+              fieldType="amenities" 
+              isCompleted={Array.isArray(form.amenities) && form.amenities.length > 0}
+              userType="agent"
+            />
+          </div>
+
           {/* 6. DESCRIPTION & AI ASSISTANT (Content creation) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -610,45 +649,6 @@ export default function CreatePropertyPage() {
                 onDescriptionGenerated={(description) => setForm(prev => ({ ...prev, description }))}
               />
             </div>
-          </div>
-
-          {/* 5. AMENITIES & FEATURES (What makes it special) */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-teal-500">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              ✨ Amenities & Features
-            </h3>
-            
-            {/* Helpful hint about amenities and AI */}
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
-              <div className="flex items-start gap-3">
-                <div className="text-blue-500 text-lg">💡</div>
-                <div>
-                  <h4 className="font-medium text-blue-900 mb-1">Pro Tip: Select amenities first!</h4>
-                  <p className="text-sm text-blue-800">
-                    The more amenities you select here, the better our AI will generate your property description. 
-                    Each amenity gives the AI more context to create compelling, detailed descriptions.
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mb-4">
-              <AmenitiesSelector
-                value={form.amenities || []}
-                onChange={(amenities) => {
-                  setForm({
-                    ...form,
-                    amenities
-                  });
-                }}
-              />
-            </div>
-            <CompletionIncentive 
-              fieldName="amenities"
-              fieldType="amenities" 
-              isCompleted={Array.isArray(form.amenities) && form.amenities.length > 0}
-              userType="agent"
-            />
           </div>
           {/* 7. LOCATION DETAILS (Specific address info) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-pink-500">
