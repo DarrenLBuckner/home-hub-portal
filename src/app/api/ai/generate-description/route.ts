@@ -84,7 +84,7 @@ Instructions:
 Do not include pricing information in the description as this will be displayed separately.`;
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
