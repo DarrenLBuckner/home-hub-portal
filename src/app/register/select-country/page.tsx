@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getCountryFromDomain } from '@/lib/country-detection';
 
 // Available countries with their details
@@ -170,12 +170,19 @@ const countries = [
 
 export default function SelectCountryPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
   const [userType, setUserType] = useState<'agent' | 'landlord' | 'owner' | null>(null);
 
-  // Auto-detect country from domain and cookies
+  // Auto-detect country from domain and cookies, plus handle URL type parameter
   useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Handle URL type parameter from GuyanaHomeHub links
+      const typeParam = searchParams?.get('type');
+      if (typeParam && ['agent', 'landlord', 'fsbo'].includes(typeParam)) {
+        setUserType(typeParam === 'fsbo' ? 'owner' : typeParam as 'agent' | 'landlord');
+      }
+      
       // Try domain-based detection first
       const detectedCountryCode = getCountryFromDomain(window.location.hostname);
       const detectedCountry = countries.find(c => c.code === detectedCountryCode);
@@ -194,7 +201,7 @@ export default function SelectCountryPage() {
         setSelectedCountry(cookieValue);
       }
     }
-  }, []);
+  }, [searchParams]);
 
   const handleCountrySelect = (countryCode: string, type: 'agent' | 'landlord' | 'owner') => {
     const country = countries.find(c => c.code === countryCode);
