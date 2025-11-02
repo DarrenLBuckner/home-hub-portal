@@ -76,6 +76,96 @@ const countries = [
     active: false, // Coming soon
     comingSoon: true
   },
+  {
+    code: 'GH',
+    name: 'Ghana',
+    fullName: 'Republic of Ghana',
+    currency: 'GHS',
+    symbol: 'GH₵',
+    flag: '🇬🇭',
+    domain: 'ghanahomehub.com',
+    description: 'Gateway to Africa - Rapidly growing economy with emerging real estate opportunities',
+    features: ['Growing economy', 'English speaking', 'Political stability'],
+    samplePrices: {
+      agent: 'GH₵180/month',
+      landlord: 'GH₵250-400/listing',
+      owner: 'GH₵300-600/listing'
+    },
+    active: false, // Coming soon
+    comingSoon: true
+  },
+  {
+    code: 'RW',
+    name: 'Rwanda',
+    fullName: 'Republic of Rwanda',
+    currency: 'RWF',
+    symbol: 'RF',
+    flag: '🇷🇼',
+    domain: 'rwandahomehub.com',
+    description: 'Land of a Thousand Hills - East Africa\'s rising economic star',
+    features: ['Fast-growing economy', 'Investment friendly', 'Clean & safe'],
+    samplePrices: {
+      agent: 'RF35,000/month',
+      landlord: 'RF45,000-75,000/listing',
+      owner: 'RF60,000-120,000/listing'
+    },
+    active: false, // Coming soon
+    comingSoon: true
+  },
+  {
+    code: 'ZA',
+    name: 'South Africa',
+    fullName: 'Republic of South Africa',
+    currency: 'ZAR',
+    symbol: 'R',
+    flag: '🇿🇦',
+    domain: 'southafricahomehub.com',
+    description: 'Rainbow Nation - Africa\'s most developed real estate market',
+    features: ['Developed market', 'Multiple languages', 'Investment hub'],
+    samplePrices: {
+      agent: 'R750/month',
+      landlord: 'R1,000-1,800/listing',
+      owner: 'R1,200-2,500/listing'
+    },
+    active: false, // Coming soon
+    comingSoon: true
+  },
+  {
+    code: 'NA',
+    name: 'Namibia',
+    fullName: 'Republic of Namibia',
+    currency: 'NAD',
+    symbol: 'N$',
+    flag: '🇳🇦',
+    domain: 'namibiahomehub.com',
+    description: 'Land of the Brave - Southern Africa\'s diamond in the rough',
+    features: ['Mining economy', 'English speaking', 'Tourism potential'],
+    samplePrices: {
+      agent: 'N$450/month',
+      landlord: 'N$600-1,000/listing',
+      owner: 'N$750-1,500/listing'
+    },
+    active: false, // Coming soon
+    comingSoon: true
+  },
+  {
+    code: 'DO',
+    name: 'Dominican Republic',
+    fullName: 'Dominican Republic',
+    currency: 'DOP',
+    symbol: 'RD$',
+    flag: '🇩🇴',
+    domain: 'dominicanrepublichomehub.com',
+    description: 'Caribbean Paradise - Premier Caribbean real estate destination',
+    features: ['Tourism economy', 'Spanish speaking', 'Beach properties'],
+    samplePrices: {
+      agent: 'RD$2,800/month',
+      landlord: 'RD$3,500-6,000/listing',
+      owner: 'RD$4,500-8,500/listing'
+    },
+    active: false, // Coming soon
+    comingSoon: true
+  },
 ];
 
 export default function SelectCountryPage() {
@@ -170,9 +260,111 @@ export default function SelectCountryPage() {
           </div>
         </div>
 
-        {/* Country Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {countries.map((country) => (
+        {/* Active Countries Section */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">
+            🚀 Available Now
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            {countries.filter(country => country.active).map((country) => (
+              <div 
+                key={country.code}
+                className={`bg-white rounded-2xl shadow-lg border-2 transition-all duration-300 ${
+                  selectedCountry === country.code 
+                    ? 'border-blue-500 ring-2 ring-blue-200' 
+                    : 'border-gray-200 hover:border-blue-300'
+                }`}
+              >
+                {/* Country Header */}
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center space-x-4">
+                      <span className="text-4xl">{country.flag}</span>
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">{country.name}</h3>
+                        <p className="text-sm text-gray-500">{country.fullName}</p>
+                      </div>
+                    </div>
+                    <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                      Available Now
+                    </div>
+                  </div>
+                  
+                  <p className="text-gray-600 mb-4">{country.description}</p>
+                  
+                  {/* Features */}
+                  <div className="flex flex-wrap gap-2">
+                    {country.features.map((feature, idx) => (
+                      <span 
+                        key={idx}
+                        className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium"
+                      >
+                        {feature}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Pricing Preview */}
+                <div className="p-6">
+                  <div className="mb-4">
+                    <h4 className="font-semibold text-gray-900 mb-2">Sample Pricing in {country.currency}:</h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Real Estate Agent:</span>
+                        <span className="font-medium text-gray-900">{country.samplePrices.agent}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Landlord Services:</span>
+                        <span className="font-medium text-gray-900">{country.samplePrices.landlord}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Sell By Owner:</span>
+                        <span className="font-medium text-gray-900">{country.samplePrices.owner}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    <button
+                      onClick={() => handleCountrySelect(country.code, 'agent')}
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200"
+                    >
+                      Start as Real Estate Agent
+                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        onClick={() => handleCountrySelect(country.code, 'landlord')}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+                      >
+                        Landlord Services
+                      </button>
+                      <button
+                        onClick={() => handleCountrySelect(country.code, 'owner')}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+                      >
+                        Sell By Owner
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Coming Soon Countries Section */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 text-center mb-4">
+            🚧 Coming Soon
+          </h2>
+          <p className="text-gray-600 text-center mb-8 max-w-2xl mx-auto">
+            We're working hard to expand Portal Home Hub to these exciting markets. 
+            Stay tuned for launch announcements!
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+            {countries.filter(country => country.comingSoon).map((country) => (
             <div 
               key={country.code}
               className={`bg-white rounded-2xl shadow-lg border-2 transition-all duration-300 ${
@@ -277,7 +469,8 @@ export default function SelectCountryPage() {
                 )}
               </div>
             </div>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Additional Info */}
