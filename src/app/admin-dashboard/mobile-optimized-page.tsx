@@ -428,10 +428,21 @@ export default function MobileOptimizedAdminDashboard() {
   const ApprovedPropertyCard = ({ property }: { property: Property }) => {
     const primaryImage = property.property_media?.find(media => media.is_primary);
     
-    // Helper function for admin context - always use admin property route
+    // Helper function for editing properties - route to user-specific edit forms based on property owner
     const getEditUrl = (property: Property) => {
-      // In admin dashboard context, always use admin property route for super admin access
-      return `/admin-dashboard/property/${property.id}`;
+      // Route based on the property's listed_by_type to the appropriate edit form  
+      if (property.listed_by_type === 'agent') {
+        return `/dashboard/agent/edit-property/${property.id}`;
+      } else if (property.listed_by_type === 'landlord') {
+        return `/dashboard/landlord/edit-property/${property.id}`;
+      } else if (property.listed_by_type === 'fsbo') {
+        return `/dashboard/fsbo/edit-property/${property.id}`;
+      } else if (property.listed_by_type === 'owner') {
+        return `/dashboard/owner/edit-property/${property.id}`;
+      } else {
+        // Fallback to owner for unknown types
+        return `/dashboard/owner/edit-property/${property.id}`;
+      }
     };
     
     return (
