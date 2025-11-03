@@ -188,7 +188,7 @@ function LoginContent() {
             Forgot your password?
           </button>
           <a
-            href="https://portalhomehub.com/register"
+            href="https://www.portalhomehub.com/register/select-country"
             className="text-green-700 hover:underline text-sm font-semibold"
             target="_blank"
             rel="noopener noreferrer"
@@ -196,12 +196,12 @@ function LoginContent() {
             Register as Agent
           </a>
            <div className="mt-2 text-center">
-             <a href="/register/landlord" className="text-blue-700 hover:underline font-semibold">
+             <a href="https://www.portalhomehub.com/register/select-country" className="text-blue-700 hover:underline font-semibold">
                Register as Landlord
              </a>
            </div>
            <div className="mt-2 text-center">
-             <a href="/register/fsbo" className="text-orange-700 hover:underline font-semibold">
+             <a href="https://www.portalhomehub.com/register/select-country" className="text-orange-700 hover:underline font-semibold">
                Register as For Sale By Owner
              </a>
            </div>
