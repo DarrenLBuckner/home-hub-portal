@@ -77,7 +77,8 @@ export default function ProfileImageUpload({
       onImageSelect(file);
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('Upload failed. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Upload failed. Please try again.';
+      alert(errorMessage);
       // Reset on error
       setPreviewUrl(null);
       setUploadedFile(null);

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/supabase';
+import { createClient } from '@/lib/supabase/server';
+import { createClient as createServiceClient } from '@supabase/supabase-js';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get authenticated user
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -42,8 +43,18 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload to Supabase Storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    // Log authentication status for debugging
+    console.log('User authenticated:', !!user, user?.id);
+    console.log('Attempting upload for file:', fileName);
+    
+    // Create service client for storage operations (to bypass RLS)
+    const serviceSupabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
+    // Upload to Supabase Storage using service client
+    const { data: uploadData, error: uploadError } = await serviceSupabase.storage
       .from('property-images') // Using existing bucket
       .upload(`profiles/${fileName}`, buffer, {
         contentType: file.type,
@@ -52,13 +63,25 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Supabase upload error:', uploadError);
+      
+      // Provide more specific error information
+      let errorMessage = 'Upload failed: ' + uploadError.message;
+      
+      if (uploadError.message.includes('unauthorized')) {
+        errorMessage = 'Storage access denied. Please check permissions.';
+      } else if (uploadError.message.includes('not found')) {
+        errorMessage = 'Storage bucket not found or not accessible.';
+      } else if (uploadError.message.includes('payload too large')) {
+        errorMessage = 'File too large. Please use a smaller image.';
+      }
+      
       return NextResponse.json({ 
-        error: 'Upload failed: ' + uploadError.message 
+        error: errorMessage 
       }, { status: 500 });
     }
 
     // Get public URL
-    const { data: publicData } = supabase.storage
+    const { data: publicData } = serviceSupabase.storage
       .from('property-images')
       .getPublicUrl(`profiles/${fileName}`);
 
@@ -97,15 +120,21 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get authenticated user
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
+    // Create service client for storage operations
+    const serviceSupabase = createServiceClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    
     // Delete from Supabase Storage
-    const { error: deleteError } = await supabase.storage
+    const { error: deleteError } = await serviceSupabase.storage
       .from('property-images')
       .remove([`profiles/${fileName}`]);
 
