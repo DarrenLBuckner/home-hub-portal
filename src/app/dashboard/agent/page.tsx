@@ -8,6 +8,7 @@ import MyPropertiesTab from './components/MyPropertiesTab';
 // ...existing code...
 import AgentProfileSettings from './components/AgentProfileSettings';
 import AgentDashboardWelcome from './components/AgentDashboardWelcome';
+import PropertyEngagementMetrics from './components/PropertyEngagementMetrics';
 
 // Temporary: Hardcoded WhatsApp number for demo. Replace with agent profile integration.
 
@@ -124,6 +125,9 @@ export default function AgentPage() {
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
               <ListingOverview />
             </div>
+            {userId && (
+              <PropertyEngagementMetrics userId={userId} />
+            )}
           </div>
         )}
         

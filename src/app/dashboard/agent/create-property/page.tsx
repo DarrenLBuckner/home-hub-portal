@@ -16,6 +16,8 @@ import { DimensionUnit } from "@/lib/lotCalculations";
 import { usePropertySubmission } from "@/hooks/usePropertySubmission";
 import DuplicateWarningDialog from "@/components/DuplicateWarningDialog";
 import PropertySuccessScreen from "@/components/PropertySuccessScreen";
+// Video Upload Access Control
+import { canUploadVideo, getVideoUpgradeMessage, getUserProfile } from "@/lib/subscription-utils";
 
 
 interface FormData {
@@ -41,6 +43,7 @@ interface FormData {
   lot_width: string;
   lot_dimension_unit: string;
   owner_whatsapp: string;
+  video_url: string; // YouTube/Vimeo video URL for premium tiers
 }
 
 export default function CreatePropertyPage() {
@@ -68,6 +71,7 @@ export default function CreatePropertyPage() {
     lot_width: "",
     lot_dimension_unit: "ft",
     owner_whatsapp: "",
+    video_url: "",
   });
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,6 +81,10 @@ export default function CreatePropertyPage() {
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
+  
+  // Video upload access control
+  const [canUserUploadVideo, setCanUserUploadVideo] = useState(false);
+  const [videoUpgradeMessage, setVideoUpgradeMessage] = useState("");
 
   // Comprehensive submission system with duplicate prevention
   const propertySubmission = usePropertySubmission({
@@ -115,6 +123,32 @@ export default function CreatePropertyPage() {
     };
     
     getUserProfile();
+  }, []);
+
+  // Check video upload permissions
+  useEffect(() => {
+    const checkVideoAccess = async () => {
+      try {
+        const { createClient } = await import('@/supabase');
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const userProfile = await getUserProfile(user);
+          if (userProfile) {
+            const hasVideoAccess = canUploadVideo(userProfile);
+            setCanUserUploadVideo(hasVideoAccess);
+            setVideoUpgradeMessage(getVideoUpgradeMessage(userProfile));
+            console.log('Portal Hub - Video access:', hasVideoAccess, 'for user:', userProfile.email);
+          }
+        }
+      } catch (error) {
+        console.warn('Could not check video access:', error);
+        setCanUserUploadVideo(false);
+      }
+    };
+    
+    checkVideoAccess();
   }, []);
 
   // Calculate completion score in real-time
@@ -181,6 +215,7 @@ export default function CreatePropertyPage() {
       lot_width: "",
       lot_dimension_unit: "ft",
       owner_whatsapp: currentWhatsapp, // Keep WhatsApp for convenience
+      video_url: "",
     });
     setImages([]);
     setSuccess("");
@@ -281,6 +316,7 @@ export default function CreatePropertyPage() {
           lot_width: form.lot_width ? Number(form.lot_width) : null,
           lot_dimension_unit: form.lot_dimension_unit,
           owner_whatsapp: form.owner_whatsapp,
+          video_url: form.video_url.trim() || null, // Only include video URL if user has access and provided one
           // userId will be extracted server-side from authenticated session
           propertyCategory: form.listing_type === 'sale' ? 'sale' : 'rental', // Map to API format
           site_id: 'guyana',  // ADD THIS LINE ONLY
@@ -692,6 +728,61 @@ export default function CreatePropertyPage() {
               />
             </div>
           </div>
+
+          {/* 6.5. VIDEO UPLOAD (Premium Tier Feature) */}
+          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-purple-500">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              🎥 Property Video
+              {canUserUploadVideo && (
+                <span className="text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white px-2 py-1 rounded-full">PREMIUM</span>
+              )}
+            </h3>
+            
+            {canUserUploadVideo ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    YouTube or Vimeo Video URL
+                  </label>
+                  <input
+                    name="video_url"
+                    type="url"
+                    placeholder="https://www.youtube.com/watch?v=... or https://vimeo.com/..."
+                    value={form.video_url}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-purple-500 rounded-lg text-gray-900 placeholder-gray-500"
+                  />
+                  <div className="mt-2 text-xs text-gray-600 space-y-1">
+                    <p><strong>📱 Recommended length:</strong> 2-3 minutes for optimal engagement</p>
+                    <p><strong>💡 Best practices:</strong> Show key features, lighting, and neighborhood highlights</p>
+                    <p><strong>📍 Tip:</strong> Include exterior shots and mention nearby amenities</p>
+                  </div>
+                </div>
+                
+                {form.video_url && (
+                  <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+                    <p className="text-green-800 text-sm">
+                      ✅ Video URL added! This will help your property stand out and get 3x more engagement.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 p-6 rounded-xl">
+                <div className="text-center">
+                  <span className="text-4xl mb-4 block">🚀</span>
+                  <h4 className="text-lg font-semibold text-purple-800 mb-2">Upgrade to Add Videos!</h4>
+                  <p className="text-purple-700 mb-4">{videoUpgradeMessage}</p>
+                  <div className="space-y-2 text-sm text-purple-600">
+                    <p>✨ Properties with videos get <strong>3x more views</strong></p>
+                    <p>⚡ Video listings sell <strong>faster</strong> and for <strong>better prices</strong></p>
+                    <p>💼 Stand out from competitors with professional video tours</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 7. LOCATION DETAILS (Specific address info) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-pink-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">

@@ -67,6 +67,12 @@ export async function POST(req: NextRequest) {
     
     const userType = userProfile.user_type;
     
+    // Auto-approval for admins and owner admins  
+    const shouldAutoApprove = (userType: string): boolean => {
+      const adminTypes = ['admin', 'superadmin', 'owner'];
+      return adminTypes.includes(userType?.toLowerCase() || '');
+    };
+    
     // Read the request body once
     const body = await req.json();
     
@@ -446,9 +452,12 @@ export async function POST(req: NextRequest) {
         currency: body.currency || 'GYD',
         listed_by_type: 'agent',
         
+        // Video URL (for Pro/Elite tier agents)
+        video_url: body.video_url || null,
+        
         // System fields
         user_id: userId,
-        status: body.status || 'draft',
+        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'draft'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
         country_id: userProfile?.country_id || 'GY',  // ✅ Use 'GY' not 1
         created_at: new Date().toISOString(),
@@ -482,11 +491,14 @@ export async function POST(req: NextRequest) {
         rental_type: body.rentalType || 'monthly',
         currency: body.currency || 'GYD',
         
+        // Video URL (for Pro/Elite tier landlords)
+        video_url: body.video_url || null,
+        
         // System fields
         user_id: userId,
         listing_type: 'rent',
         listed_by_type: 'landlord',
-        status: body.status || 'off_market',
+        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'off_market'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
         country_id: userProfile?.country_id || 'GY',  // ✅ Use 'GY' not 1
         propertyCategory: 'rental',
@@ -523,11 +535,14 @@ export async function POST(req: NextRequest) {
         owner_email: body.owner_email,
         owner_whatsapp: body.owner_whatsapp,
         
+        // Video URL (for Pro/Elite tier FSBO)
+        video_url: body.video_url || null,
+        
         // System fields (auto-populated)
         user_id: userId,
         listing_type: 'sale',
         listed_by_type: 'owner',
-        status: body.status || 'off_market',
+        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'off_market'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
         country_id: userProfile?.country_id || 'GY',  // ✅ Use 'GY' not 1
         
@@ -601,10 +616,18 @@ export async function POST(req: NextRequest) {
       console.log('✅ Property media inserted successfully');
     }
 
+    // Determine success message based on user type and status
+    let successMessage = 'Property submitted for review';
+    if (body.status === 'draft') {
+      successMessage = 'Property saved as draft';
+    } else if (shouldAutoApprove(userType)) {
+      successMessage = 'Property automatically approved and published! ✅';
+    }
+
     return NextResponse.json({ 
       success: true, 
       propertyId: propertyResult.id,
-      message: body.status === 'draft' ? 'Property saved as draft' : 'Property submitted for review'
+      message: successMessage
     });
     
   } catch (err: any) {

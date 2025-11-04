@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
 import { useAdminData, getAdminDisplayName } from '@/hooks/useAdminData';
 import UniversalPropertyManager from '@/components/UniversalPropertyManager';
+import EngagementOverview from './components/EngagementOverview';
 
 interface Property {
   id: string;
@@ -61,7 +62,7 @@ export default function MobileOptimizedAdminDashboard() {
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
   const [approvedProperties, setApprovedProperties] = useState<Property[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'all'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'all' | 'engagement'>('pending');
   const [statistics, setStatistics] = useState<Statistics>({
     totalPending: 0,
     todaySubmissions: 0,
@@ -735,7 +736,7 @@ export default function MobileOptimizedAdminDashboard() {
             </div>
             
             {/* Property Status Action Buttons */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
               {/* Rejected Properties - Most Important */}
               <button
                 onClick={() => setActiveTab('all')}
@@ -778,6 +779,17 @@ export default function MobileOptimizedAdminDashboard() {
                 <div className="text-2xl font-bold">ALL</div>
                 <div className="text-sm opacity-90">Complete Manager</div>
                 <div className="text-xs mt-1 opacity-75">Full Control</div>
+              </button>
+
+              {/* Engagement Overview */}
+              <button
+                onClick={() => setActiveTab('engagement')}
+                className="bg-purple-500 hover:bg-purple-600 text-white p-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
+              >
+                <div className="text-3xl mb-2">📊</div>
+                <div className="text-2xl font-bold">LIKES</div>
+                <div className="text-sm opacity-90">Engagement</div>
+                <div className="text-xs mt-1 opacity-75">Analytics</div>
               </button>
             </div>
 
@@ -918,6 +930,13 @@ export default function MobileOptimizedAdminDashboard() {
                   createPropertyPath="/properties/create"
                 />
               )}
+            </div>
+          )}
+
+          {/* Engagement Overview Tab */}
+          {activeTab === 'engagement' && (
+            <div className="mt-4">
+              <EngagementOverview />
             </div>
           )}
         </div>

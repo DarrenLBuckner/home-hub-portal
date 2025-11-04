@@ -12,7 +12,13 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
     
-    console.log(`🔍 Fetching properties - site: ${site}, listing_type: ${listing_type}`)
+    // Search parameters
+    const searchQuery = searchParams.get('search') || ''
+    const locationQuery = searchParams.get('location') || ''
+    const locationExact = searchParams.get('location_exact') || ''
+    const propertyType = searchParams.get('property_type') || ''
+    
+    console.log(`🔍 Fetching properties - site: ${site}, listing_type: ${listing_type}, search: "${searchQuery}", location: "${locationQuery}"`)
     
     // Build the query - only show active properties (exclude off_market, draft, pending, etc.)
     let query = supabase
@@ -39,6 +45,25 @@ export async function GET(request: NextRequest) {
     // Add listing type filtering if provided
     if (listing_type) {
       query = query.eq('listing_type', listing_type)
+    }
+    
+    // Add search filtering with performance optimization
+    if (searchQuery) {
+      // Search in title, description, and location using case-insensitive LIKE
+      // For better performance, prioritize title matches first
+      query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%`)
+    }
+    
+    // Add location filtering
+    if (locationExact) {
+      query = query.ilike('location', `%${locationExact}%`)
+    } else if (locationQuery && !searchQuery) {
+      query = query.ilike('location', `%${locationQuery}%`)
+    }
+    
+    // Add property type filtering
+    if (propertyType) {
+      query = query.eq('property_type', propertyType)
     }
     
     const { data: properties, error } = await query
@@ -93,13 +118,16 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         limit,
         offset,
-        site: site || 'all'
+        site: site || 'all',
+        search_query: searchQuery || null
       },
       {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, x-site-id',
+          // Add cache headers for better performance
+          'Cache-Control': searchQuery ? 'public, max-age=300' : 'public, max-age=600' // 5min for search, 10min for browse
         }
       }
     )
