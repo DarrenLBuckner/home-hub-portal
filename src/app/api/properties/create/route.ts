@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     // Get user profile for permissions
     const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_type, email, property_limit, country_id')
+      .select('user_type, email, country_id')
       .eq('id', user.id)
       .single();
       
@@ -216,10 +216,9 @@ export async function POST(req: NextRequest) {
         userType: userProfile.user_type
       });
       
-      // Get property_limit from database for admin users
-      // NULL property_limit = unlimited (for super admin)
-      // Number property_limit = limited (for owner admin)
-      const propertyLimit = userProfile.property_limit;
+      // For admin users, check if there's a specific property limit
+      // Default to unlimited for admin users (can be overridden by additional admin settings)
+      let propertyLimit = null; // null = unlimited by default for admins
       
       // Only check limits if propertyLimit is not NULL (super admin has NULL = unlimited)
       if (propertyLimit !== null) {
