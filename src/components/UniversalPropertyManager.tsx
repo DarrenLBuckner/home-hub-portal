@@ -163,6 +163,61 @@ export default function UniversalPropertyManager({
     }
   };
 
+  const handleBulkDeleteRejected = async () => {
+    const rejectedProperties = properties.filter(p => p.status === 'rejected');
+    
+    if (rejectedProperties.length === 0) {
+      alert('No rejected properties to delete.');
+      return;
+    }
+
+    const confirmMessage = `⚠️ BULK DELETE CONFIRMATION\n\n` +
+      `Are you sure you want to PERMANENTLY DELETE all ${rejectedProperties.length} rejected properties?\n\n` +
+      `This will:\n` +
+      `• Delete all rejected property listings\n` +
+      `• Remove all associated images and data\n` +
+      `• Clean up your admin dashboard\n\n` +
+      `⚠️ THIS ACTION CANNOT BE UNDONE!\n\n` +
+      `Type "DELETE ALL" below to confirm:`;
+    
+    const userInput = prompt(confirmMessage);
+    if (userInput !== 'DELETE ALL') {
+      alert('Bulk delete cancelled. Properties were not deleted.');
+      return;
+    }
+
+    setDeletingId('bulk');
+    try {
+      console.log(`🗑️ Bulk deleting ${rejectedProperties.length} rejected properties...`);
+      
+      // Use dedicated bulk delete API endpoint
+      const response = await fetch('/api/properties/bulk-delete-rejected', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to bulk delete rejected properties');
+      }
+
+      // Update local state to remove deleted properties
+      setProperties(prev => prev.filter(p => p.status !== 'rejected'));
+      
+      alert(`✅ Successfully deleted ${result.deletedCount} rejected properties!\n\nYour dashboard has been cleaned up. No more clutter from rejected listings.`);
+      
+      console.log('✅ Bulk delete completed:', result);
+    } catch (err: any) {
+      alert(`❌ Error during bulk delete: ${err.message}\n\nSome properties may not have been deleted. Please try again or contact support.`);
+      console.error('Bulk delete error:', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const handleEdit = (id: string) => {
     // Find the property to get its listed_by_type
     const property = properties.find(p => p.id === id);
@@ -332,6 +387,38 @@ export default function UniversalPropertyManager({
               <span>{statusConfig[activeTab as keyof typeof statusConfig]?.description}</span>
             </div>
           </div>
+
+          {/* Bulk Delete Section - Only for Admin viewing Rejected Properties */}
+          {activeTab === 'rejected' && userType === 'admin' && filteredProperties.length > 0 && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 rounded-lg shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex-1">
+                  <h4 className="font-bold text-red-900 flex items-center gap-2 text-lg">
+                    🗑️ Bulk Delete Rejected Properties
+                  </h4>
+                  <p className="text-sm text-red-700 mt-1">
+                    Remove all <span className="font-semibold">{filteredProperties.length}</span> rejected properties to clean up your dashboard. 
+                    This will permanently delete all rejected listings and their associated data.
+                  </p>
+                  <p className="text-xs text-red-600 mt-2 font-medium">
+                    ⚠️ This action cannot be undone! Use this to prevent dashboard clutter.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={handleBulkDeleteRejected}
+                    disabled={deletingId === 'bulk'}
+                    className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                  >
+                    {deletingId === 'bulk' ? '⏳ Deleting All...' : `🗑️ Empty Trash (${filteredProperties.length})`}
+                  </button>
+                  <p className="text-xs text-gray-600 text-center">
+                    "Empty Trash" Feature
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Properties Grid */}
           {filteredProperties.length === 0 ? (
