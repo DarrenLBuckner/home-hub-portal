@@ -19,6 +19,20 @@ function getSiteTypeFromHost(hostname: string): 'portal' | 'public' {
 }
 
 export async function middleware(request: NextRequest) {
+  // Handle OPTIONS preflight requests FIRST, before any other logic
+  if (request.method === 'OPTIONS') {
+    console.log(`🔀 MIDDLEWARE: Handling OPTIONS preflight for: ${request.nextUrl.pathname}`);
+    return new NextResponse(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-site-id',
+        'Access-Control-Max-Age': '86400', // 24 hours
+      },
+    });
+  }
+
   // Detect country and site type from hostname
   const country = getCountryFromHost(request.nextUrl.hostname);
   const siteType = getSiteTypeFromHost(request.nextUrl.hostname);
