@@ -23,7 +23,8 @@
       "Bash(mkdir:*)",
       "Bash(npx supabase db reset:*)",
       "Bash(node:*)",
-      "WebFetch(domain:guyanahomehub.com)"
+      "WebFetch(domain:guyanahomehub.com)",
+      "Read(//home/DarrenLBuckner/**)"
     ],
     "deny": [],
     "ask": []
