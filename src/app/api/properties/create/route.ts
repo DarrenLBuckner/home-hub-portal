@@ -76,6 +76,12 @@ export async function POST(req: NextRequest) {
     // Read the request body once
     const body = await req.json();
     
+    // Check if this is a draft save operation
+    const isDraftSave = body._isDraftSave === true || body.status === 'draft';
+    const isPublishDraft = body._isPublishDraft === true;
+    
+    console.log('📋 Request type:', { isDraftSave, isPublishDraft, status: body.status });
+    
     // Add this where the request payload is processed
     const propertyType = body.property_type || body.propertyType;
     
@@ -96,8 +102,8 @@ export async function POST(req: NextRequest) {
                 (typeof body.amenities === 'string' ? body.amenities.split(',').map((a: string) => a.trim()) : []),
       // Ensure user_id is set correctly
       user_id: user.id,
-      // Set default status
-      status: 'pending'
+      // Set status based on operation type
+      status: isDraftSave ? 'draft' : (shouldAutoApprove(userType) ? 'approved' : 'pending')
     };
     
     const userId = user.id;
@@ -116,36 +122,52 @@ export async function POST(req: NextRequest) {
     const isSale = body.propertyCategory === "sale";
     const isAgent = userType === "agent";
     
-    if (!isRental && !isSale) {
+    // Skip validation for drafts
+    if (!isDraftSave && !isRental && !isSale) {
       return NextResponse.json({ error: "Invalid propertyCategory. Must be 'rental' or 'sale'" }, { status: 400 });
     }
     
-    // Validate required fields for all property types
-    let requiredFields = [
-      "title", "description", "price", "property_type",
-      "listing_type", "bedrooms", "bathrooms", "region", "city"
-    ];
-    
-    // Add user-type specific required fields
-    if (userType === 'fsbo') {
-      requiredFields = [
-        ...requiredFields,
-        "owner_email", "owner_whatsapp"
+    // Validate required fields - more lenient for drafts
+    if (!isDraftSave) {
+      let requiredFields = [
+        "title", "description", "price", "property_type",
+        "listing_type", "bedrooms", "bathrooms", "region", "city"
       ];
-    }
-    
-    // Always require images
-    requiredFields.push("images");
-    
-    // Check required fields using normalized payload
-    const missingFields = requiredFields.filter(field => {
-      return !normalizedPayload[field] && normalizedPayload[field] !== 0;
-    });
-    
-    if (missingFields.length > 0) {
-      return NextResponse.json({
-        error: `Missing required fields: ${missingFields.join(', ')}`,
-      }, { status: 400 });
+      
+      // Add user-type specific required fields
+      if (userType === 'fsbo') {
+        requiredFields = [
+          ...requiredFields,
+          "owner_email", "owner_whatsapp"
+        ];
+      }
+      
+      // Always require images for full submissions
+      requiredFields.push("images");
+      
+      // Check required fields using normalized payload
+      const missingFields = requiredFields.filter(field => {
+        return !normalizedPayload[field] && normalizedPayload[field] !== 0;
+      });
+      
+      if (missingFields.length > 0) {
+        return NextResponse.json({
+          error: `Missing required fields: ${missingFields.join(', ')}`,
+        }, { status: 400 });
+      }
+    } else {
+      // For drafts, only require minimal fields to prevent completely empty saves
+      const minimalFields = ['property_type', 'listing_type'];
+      const missingMinimalFields = minimalFields.filter(field => {
+        return !normalizedPayload[field] && normalizedPayload[field] !== '';
+      });
+      
+      if (missingMinimalFields.length > 0) {
+        console.log('⚠️ Draft save with minimal validation - missing:', missingMinimalFields);
+        // Don't fail, just ensure we have some basic structure
+        normalizedPayload.property_type = normalizedPayload.property_type || 'house';
+        normalizedPayload.listing_type = normalizedPayload.listing_type || 'sale';
+      }
     }
 
     // BULLETPROOF ADMIN DETECTION - Based on working emergency bypass
@@ -319,14 +341,22 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // Enforce image limits (15 for rental, 20 for FSBO)
-    const maxImages = isRental ? 15 : 20;
-    if (body.images.length > maxImages) {
-      return NextResponse.json({ error: `Image limit exceeded (${maxImages} allowed)` }, { status: 400 });
+    // Enforce image limits (15 for rental, 20 for FSBO) - skip for drafts
+    if (!isDraftSave && body.images && body.images.length > 0) {
+      const maxImages = isRental ? 15 : 20;
+      if (body.images.length > maxImages) {
+        return NextResponse.json({ error: `Image limit exceeded (${maxImages} allowed)` }, { status: 400 });
+      }
     }
     
-    if (body.images.length < 1) {
+    // Require at least one image for full submissions, optional for drafts
+    if (!isDraftSave && (!body.images || body.images.length < 1)) {
       return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
+    }
+    
+    // Ensure images array exists (empty for drafts without images)
+    if (!body.images) {
+      body.images = [];
     }
 
     // Upload images to Supabase Storage
@@ -615,10 +645,15 @@ export async function POST(req: NextRequest) {
       console.log('✅ Property media inserted successfully');
     }
 
-    // Determine success message based on user type and status
+    // Determine success message based on operation type and user status
     let successMessage = 'Property submitted for review';
-    if (body.status === 'draft') {
-      successMessage = 'Property saved as draft';
+    
+    if (isDraftSave) {
+      successMessage = '💾 Draft saved successfully';
+    } else if (isPublishDraft) {
+      successMessage = shouldAutoApprove(userType) 
+        ? '🚀 Draft published and automatically approved!' 
+        : '🚀 Draft submitted for review';
     } else if (shouldAutoApprove(userType)) {
       successMessage = 'Property automatically approved and published! ✅';
     }
