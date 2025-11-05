@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseBackend } from '@/lib/supabase-backend';
 
+// CORS headers for cross-origin requests from country-specific Home Hub sites
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*', // Allow all origins for public API
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400', // 24 hours
+};
+
 /**
  * Public Ads API for Consumer Sites
  * GET /api/public/ads/[country] - Get ads for a specific country
@@ -272,10 +280,22 @@ export async function GET(
       country: countryCode,
       placement: placementSlug,
       total_available: ads.length
+    }, {
+      headers: corsHeaders
     });
 
   } catch (error) {
     console.error('Error in public ads API:', error);
-    return NextResponse.json({ ads: [] });
+    return NextResponse.json({ ads: [] }, {
+      headers: corsHeaders
+    });
   }
+}
+
+// Handle CORS preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return new Response(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
 }

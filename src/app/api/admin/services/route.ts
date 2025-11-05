@@ -130,6 +130,7 @@ export async function POST(request: NextRequest) {
       shortDescription,
       icon,
       category,
+      serviceType = 'free',
       basePrice,
       currency = 'USD',
       isActive = true,
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create service
+    // Create service  
     const { data: service, error: serviceError } = await supabaseBackend
       .from('services')
       .insert({
@@ -154,7 +155,8 @@ export async function POST(request: NextRequest) {
         short_description: shortDescription,
         icon,
         category,
-        base_price: basePrice,
+        service_type: serviceType,
+        base_price: serviceType === 'free' ? 0 : basePrice,
         currency,
         is_active: isActive,
         sort_order: sortOrder

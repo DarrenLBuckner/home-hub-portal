@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseBackend } from '@/lib/supabase-backend';
 
+// CORS headers for cross-origin requests from country-specific Home Hub sites
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*', // Allow all origins for public API
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Max-Age': '86400', // 24 hours
+};
+
 // Type definitions
 interface Service {
   id: string;
@@ -194,13 +202,26 @@ export async function GET(
       packages: formattedPackages,
       featuredPackage: formattedPackages.find(pkg => pkg.isFeatured) || null,
       lastUpdated: new Date().toISOString()
+    }, {
+      headers: corsHeaders
     });
 
   } catch (error) {
     console.error('API Error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: corsHeaders
+      }
     );
   }
+}
+
+// Handle CORS preflight requests
+export async function OPTIONS(request: NextRequest) {
+  return new Response(null, {
+    status: 200,
+    headers: corsHeaders,
+  });
 }

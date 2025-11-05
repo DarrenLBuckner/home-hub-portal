@@ -15,6 +15,7 @@ interface Service {
   short_description: string;
   icon: string;
   category: string;
+  service_type: 'free' | 'card' | 'banner';
   base_price: number;
   currency: string;
   is_active: boolean;
@@ -40,6 +41,7 @@ interface NewService {
   shortDescription: string;
   icon: string;
   category: string;
+  serviceType: 'free' | 'card' | 'banner';
   basePrice: number;
   currency: string;
   isActive: boolean;
@@ -57,6 +59,7 @@ export default function AdminServicesPage() {
     shortDescription: '',
     icon: '',
     category: 'photography',
+    serviceType: 'free',
     basePrice: 0,
     currency: 'USD',
     isActive: true
@@ -70,10 +73,25 @@ export default function AdminServicesPage() {
   ];
 
   const categories = [
+    // Real Estate Services  
     { value: 'photography', label: 'Photography' },
     { value: 'virtual', label: 'Virtual Tours' },
     { value: 'placement', label: 'Equipment Placement' },
-    { value: 'packages', label: 'Service Packages' }
+    { value: 'packages', label: 'Service Packages' },
+    
+    // Business Directory Categories
+    { value: 'renovations', label: 'Renovations & Repairs' },
+    { value: 'electrical', label: 'Electrical & Plumbing' },
+    { value: 'interior', label: 'Interior & Furniture' },
+    { value: 'landscaping', label: 'Landscaping & Garden' },
+    { value: 'building-materials', label: 'Building Materials & Hardware' },
+    { value: 'moving-storage', label: 'Moving & Storage' },
+    { value: 'cleaning', label: 'Cleaning Services' },
+    { value: 'security', label: 'Security & Safety' },
+    { value: 'legal-financial', label: 'Legal & Financial' },
+    { value: 'insurance', label: 'Insurance & Banking' },
+    { value: 'inspection', label: 'Inspection Services' },
+    { value: 'general-contractors', label: 'General Contractors' }
   ];
 
   const icons = [
@@ -133,6 +151,7 @@ export default function AdminServicesPage() {
           shortDescription: '',
           icon: '',
           category: 'photography',
+          serviceType: 'free',
           basePrice: 0,
           currency: 'USD',
           isActive: true
@@ -245,11 +264,34 @@ export default function AdminServicesPage() {
 
                   <div className="mt-4 space-y-2">
                     <div className="text-sm">
-                      <span className="font-medium text-gray-700">Base Price:</span>
-                      <span className="ml-2 text-gray-600">
-                        {formatPrice(service.base_price, service.currency)}
+                      <span className="font-medium text-gray-700">Listing Type:</span>
+                      <span className="ml-2">
+                        {service.service_type === 'free' && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            🆓 FREE
+                          </span>
+                        )}
+                        {service.service_type === 'card' && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            💳 PAID CARD
+                          </span>
+                        )}
+                        {service.service_type === 'banner' && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            ⭐ PREMIUM
+                          </span>
+                        )}
                       </span>
                     </div>
+                    
+                    {service.service_type !== 'free' && (
+                      <div className="text-sm">
+                        <span className="font-medium text-gray-700">Base Price:</span>
+                        <span className="ml-2 text-gray-600">
+                          {formatPrice(service.base_price, service.currency)}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Country Availability */}
                     <div className="text-sm">
@@ -350,6 +392,27 @@ export default function AdminServicesPage() {
                 </div>
 
                 <div>
+                  <label htmlFor="serviceType" className="block text-sm font-medium text-gray-700">
+                    Listing Type
+                  </label>
+                  <select
+                    id="serviceType"
+                    value={newService.serviceType}
+                    onChange={(e) => setNewService({ ...newService, serviceType: e.target.value as 'free' | 'card' | 'banner' })}
+                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  >
+                    <option value="free">FREE - Basic Text Listing</option>
+                    <option value="card">PAID - Property-Style Card</option>
+                    <option value="banner">PREMIUM - Top Banner Placement</option>
+                  </select>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {newService.serviceType === 'free' && '🆓 Basic contact info, no payment required'}
+                    {newService.serviceType === 'card' && '💳 Enhanced listing with photos & details'}
+                    {newService.serviceType === 'banner' && '⭐ Maximum visibility at top of page'}
+                  </p>
+                </div>
+
+                <div>
                   <label htmlFor="icon" className="block text-sm font-medium text-gray-700">
                     Icon
                   </label>
@@ -366,36 +429,53 @@ export default function AdminServicesPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label htmlFor="basePrice" className="block text-sm font-medium text-gray-700">
-                    Base Price
-                  </label>
-                  <input
-                    type="number"
-                    id="basePrice"
-                    step="0.01"
-                    value={newService.basePrice}
-                    onChange={(e) => setNewService({ ...newService, basePrice: parseFloat(e.target.value) || 0 })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  />
-                </div>
+                {newService.serviceType !== 'free' && (
+                  <div>
+                    <label htmlFor="basePrice" className="block text-sm font-medium text-gray-700">
+                      Base Price
+                    </label>
+                    <input
+                      type="number"
+                      id="basePrice"
+                      step="0.01"
+                      value={newService.basePrice}
+                      onChange={(e) => setNewService({ ...newService, basePrice: parseFloat(e.target.value) || 0 })}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      required
+                    />
+                  </div>
+                )}
+                
+                {newService.serviceType === 'free' && (
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <div className="flex items-center">
+                      <span className="text-2xl mr-2">🆓</span>
+                      <div>
+                        <p className="text-sm font-medium text-green-800">FREE Listing</p>
+                        <p className="text-xs text-green-600">No payment required for basic text listings</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-                <div>
-                  <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
-                    Currency
-                  </label>
-                  <select
-                    id="currency"
-                    value={newService.currency}
-                    onChange={(e) => setNewService({ ...newService, currency: e.target.value })}
-                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  >
-                    <option value="USD">USD</option>
-                    <option value="GYD">GYD</option>
-                    <option value="JMD">JMD</option>
-                    <option value="BBD">BBD</option>
-                  </select>
-                </div>
+                {newService.serviceType !== 'free' && (
+                  <div>
+                    <label htmlFor="currency" className="block text-sm font-medium text-gray-700">
+                      Currency
+                    </label>
+                    <select
+                      id="currency"
+                      value={newService.currency}
+                      onChange={(e) => setNewService({ ...newService, currency: e.target.value })}
+                      className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    >
+                      <option value="USD">USD</option>
+                      <option value="GYD">GYD</option>
+                      <option value="JMD">JMD</option>
+                      <option value="BBD">BBD</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div>
