@@ -18,6 +18,10 @@ import DuplicateWarningDialog from "@/components/DuplicateWarningDialog";
 import PropertySuccessScreen from "@/components/PropertySuccessScreen";
 // Video Upload Access Control
 import { canUploadVideo, getVideoUpgradeMessage, getUserProfile } from "@/lib/subscription-utils";
+// Auto-save and Draft Management
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { saveDraft, loadUserDrafts, loadDraft, deleteDraft } from "@/lib/draftManager";
+import { isAutoSaveEligible, getAutoSaveSettings } from "@/lib/autoSaveEligibility";
 
 
 interface FormData {
@@ -85,6 +89,15 @@ export default function CreatePropertyPage() {
   // Video upload access control
   const [canUserUploadVideo, setCanUserUploadVideo] = useState(false);
   const [videoUpgradeMessage, setVideoUpgradeMessage] = useState("");
+  
+  // Auto-save and Draft Management
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [availableDrafts, setAvailableDrafts] = useState<any[]>([]);
+  const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
 
   // Comprehensive submission system with duplicate prevention
   const propertySubmission = usePropertySubmission({
@@ -98,31 +111,54 @@ export default function CreatePropertyPage() {
     },
   });
 
-  // Auto-populate WhatsApp from user profile
+  // Get user profile and set up auto-save eligibility
   useEffect(() => {
-    const getUserProfile = async () => {
+    const loadUserProfile = async () => {
       try {
         const { createClient } = await import('@/supabase');
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
         
-        if (user?.id && !form.owner_whatsapp) {
+        if (user?.id) {
+          // Get user profile data
           const { data: profile } = await supabase
             .from('profiles')
-            .select('phone')
+            .select('phone, user_type, email')
             .eq('id', user.id)
             .single();
             
-          if (profile?.phone) {
-            setForm(prev => ({ ...prev, owner_whatsapp: profile.phone }));
+          if (profile) {
+            // Set user profile and check auto-save eligibility
+            const profileData = {
+              email: user.email || profile.email,
+              user_type: profile.user_type,
+              phone: profile.phone
+            };
+            
+            setUserProfile(profileData);
+            
+            // Check if user is eligible for auto-save
+            const eligible = isAutoSaveEligible(profileData);
+            setAutoSaveEnabled(eligible);
+            
+            console.log('User profile loaded:', {
+              email: profileData.email,
+              user_type: profileData.user_type,
+              autoSaveEligible: eligible
+            });
+            
+            // Auto-populate WhatsApp if not already set
+            if (profile.phone && !form.owner_whatsapp) {
+              setForm(prev => ({ ...prev, owner_whatsapp: profile.phone }));
+            }
           }
         }
       } catch (error) {
-        console.warn('Could not auto-populate WhatsApp:', error);
+        console.warn('Could not load user profile:', error);
       }
     };
     
-    getUserProfile();
+    loadUserProfile();
   }, []);
 
   // Check video upload permissions
@@ -151,6 +187,52 @@ export default function CreatePropertyPage() {
     checkVideoAccess();
   }, []);
 
+  // Load drafts when auto-save becomes enabled
+  useEffect(() => {
+    const loadDrafts = async () => {
+      if (!autoSaveEnabled) return;
+      
+      try {
+        const drafts = await loadUserDrafts();
+        setAvailableDrafts(drafts);
+        
+        // Show draft dialog if there are available drafts and no current form data
+        if (drafts.length > 0 && !form.title && !form.description) {
+          setShowDraftDialog(true);
+        }
+      } catch (error) {
+        console.warn('Could not load drafts:', error);
+      }
+    };
+    
+    loadDrafts();
+  }, [autoSaveEnabled]);
+
+  // Auto-save hook integration with eligibility-based settings
+  const autoSaveSettings = userProfile ? getAutoSaveSettings(userProfile) : { enabled: false, interval: 0, minFieldsRequired: 0 };
+  
+  const autoSave = useAutoSave({
+    data: { ...form, images },
+    onSave: async (data, isDraft) => {
+      return await saveDraft(data);
+    },
+    interval: autoSaveSettings.interval,
+    enabled: autoSaveSettings.enabled && !loading && !success,
+    minFieldsRequired: autoSaveSettings.minFieldsRequired,
+    onSaveStart: () => setAutoSaveStatus('saving'),
+    onSaveComplete: (success, draftId) => {
+      if (success) {
+        setAutoSaveStatus('saved');
+        setLastSavedTime(new Date());
+        if (draftId && !currentDraftId) {
+          setCurrentDraftId(draftId);
+        }
+      } else {
+        setAutoSaveStatus('error');
+      }
+    }
+  });
+
   // Calculate completion score in real-time
   const completionAnalysis = calculateCompletionScore({
     ...form,
@@ -159,6 +241,101 @@ export default function CreatePropertyPage() {
   });
 
   const userMotivation = getUserMotivation('agent');
+
+  // Auto-save UI visibility check
+  const shouldEnableAutoSave = autoSaveEnabled && userProfile;
+
+  // Draft management functions
+  const handleLoadDraft = async (draftId: string) => {
+    try {
+      setLoading(true);
+      const draftData = await loadDraft(draftId);
+      
+      if (draftData) {
+        // Populate form with draft data
+        setForm({
+          location: draftData.location || "",
+          title: draftData.title || "",
+          description: draftData.description || "",
+          price: draftData.price?.toString() || "",
+          status: "draft",
+          property_type: draftData.property_type || "House",
+          listing_type: draftData.listing_type || "sale",
+          bedrooms: draftData.bedrooms?.toString() || "",
+          bathrooms: draftData.bathrooms?.toString() || "",
+          house_size_value: draftData.house_size_value?.toString() || "",
+          house_size_unit: draftData.house_size_unit || "sq ft",
+          land_size_value: draftData.land_size_value?.toString() || "",
+          land_size_unit: draftData.land_size_unit || "sq ft",
+          year_built: draftData.year_built?.toString() || "",
+          amenities: draftData.amenities || [],
+          region: draftData.region || "",
+          city: draftData.city || "",
+          neighborhood: draftData.neighborhood || "",
+          lot_length: draftData.lot_length?.toString() || "",
+          lot_width: draftData.lot_width?.toString() || "",
+          lot_dimension_unit: draftData.lot_dimension_unit || "ft",
+          owner_whatsapp: draftData.owner_whatsapp || "",
+          video_url: draftData.video_url || "",
+        });
+        
+        // Set location/currency data
+        if (draftData.location) {
+          setSelectedCountry(draftData.location);
+        }
+        if (draftData.region) {
+          setSelectedRegion(draftData.region);
+        }
+        
+        // Handle images if available
+        if (draftData.images && Array.isArray(draftData.images)) {
+          // Note: Can't set File objects from URLs, but we can show existing images
+          console.log('Draft has images:', draftData.images.length);
+        }
+        
+        setCurrentDraftId(draftId);
+        setShowDraftDialog(false);
+        setError("");
+        
+        console.log('✅ Draft loaded successfully:', draftId);
+      }
+    } catch (error) {
+      console.error('❌ Error loading draft:', error);
+      setError('Failed to load draft. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteDraft = async (draftId: string) => {
+    try {
+      const success = await deleteDraft(draftId);
+      if (success) {
+        setAvailableDrafts(prev => prev.filter(d => d.id !== draftId));
+        if (currentDraftId === draftId) {
+          setCurrentDraftId(null);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error deleting draft:', error);
+    }
+  };
+
+  const handleManualSave = async () => {
+    try {
+      setAutoSaveStatus('saving');
+      const success = await autoSave.triggerSave();
+      if (success) {
+        setAutoSaveStatus('saved');
+        setLastSavedTime(new Date());
+      } else {
+        setAutoSaveStatus('error');
+      }
+    } catch (error) {
+      console.error('❌ Manual save error:', error);
+      setAutoSaveStatus('error');
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
@@ -399,6 +576,65 @@ export default function CreatePropertyPage() {
         </div>
         
         <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Auto-save Status Bar - Only for Agents and Landlords */}
+          {shouldEnableAutoSave && (
+            <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 rounded-lg border border-gray-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                {autoSaveStatus === 'saving' && (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    <span className="text-sm text-gray-600">Saving draft...</span>
+                  </>
+                )}
+                {autoSaveStatus === 'saved' && (
+                  <>
+                    <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                      </svg>
+                    </div>
+                    <span className="text-sm text-green-600">
+                      Draft saved {lastSavedTime && `at ${lastSavedTime.toLocaleTimeString()}`}
+                    </span>
+                  </>
+                )}
+                {autoSaveStatus === 'error' && (
+                  <>
+                    <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">!</span>
+                    </div>
+                    <span className="text-sm text-red-600">Save failed</span>
+                  </>
+                )}
+                {autoSaveStatus === 'idle' && autoSave.hasUnsavedChanges && (
+                  <span className="text-sm text-gray-500">Unsaved changes</span>
+                )}
+              </div>
+              
+              {currentDraftId && (
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                  Editing Draft
+                </span>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                {autoSave.filledFieldsCount} fields completed
+              </span>
+              <button
+                type="button"
+                onClick={handleManualSave}
+                disabled={autoSaveStatus === 'saving'}
+                className="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md transition-colors disabled:opacity-50"
+              >
+                Save Now
+              </button>
+            </div>
+          </div>
+          )}
+
           {/* 1. BASIC INFO (What & Where) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -925,6 +1161,66 @@ export default function CreatePropertyPage() {
             </div>
           )}
         </form>
+
+        {/* Draft Recovery Dialog */}
+        {showDraftDialog && availableDrafts.length > 0 && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  📋 Continue Previous Work?
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  We found {availableDrafts.length} unfinished propert{availableDrafts.length === 1 ? 'y' : 'ies'}. 
+                  Would you like to continue where you left off?
+                </p>
+                
+                <div className="space-y-3 mb-6 max-h-64 overflow-y-auto">
+                  {availableDrafts.map((draft) => (
+                    <div 
+                      key={draft.id}
+                      className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
+                      onClick={() => handleLoadDraft(draft.id)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-gray-900 text-sm">
+                            {draft.title || 'Untitled Property'}
+                          </h4>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {draft.summary}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            Last saved: {new Date(draft.last_saved).toLocaleString()}
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteDraft(draft.id);
+                          }}
+                          className="ml-3 text-red-500 hover:text-red-700 text-xs p-1"
+                          title="Delete draft"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowDraftDialog(false)}
+                    className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Start Fresh
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Duplicate Warning Dialog */}
         {propertySubmission.duplicateDetection.showDuplicateWarning && 
