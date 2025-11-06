@@ -408,24 +408,8 @@ export default function CreatePropertyPage() {
   };
 
 
-  const handleSubmit = async (e: React.FormEvent, bypassDuplicateCheck: boolean = false) => {
-    e.preventDefault();
-    
-    // Prevent double submission
-    if (propertySubmission.isSubmitting) {
-      console.log('🚫 Already submitting, ignoring duplicate click');
-      return;
-    }
-
-    // Check for duplicates unless bypassed
-    if (!bypassDuplicateCheck && form.title && form.title.length > 5) {
-      const hasDuplicate = await propertySubmission.duplicateDetection.checkForDuplicates(form.title, true);
-      if (hasDuplicate) {
-        return; // Stop submission, show warning dialog
-      }
-    }
-    
-    // Original submission logic starts here
+  // Extract the actual submission logic that can be called by usePropertySubmission
+  const performActualSubmission = async () => {
     setLoading(true);
     setError("");
 
@@ -523,10 +507,12 @@ export default function CreatePropertyPage() {
       // Immediate redirect to prevent double submission
       setTimeout(() => router.push('/dashboard/agent'), 1000);
       
-    } catch (authError) {
+    } catch (authError: any) {
       console.error('❌ Property creation failed:', authError);
-      setError("Failed to create property. Please try again.");
+      const errorMessage = authError.message || "Failed to create property. Please try again.";
+      setError(errorMessage);
       setLoading(false);
+      throw new Error(errorMessage); // Re-throw so usePropertySubmission can handle it
     }
   };
 
@@ -575,7 +561,7 @@ export default function CreatePropertyPage() {
           />
         </div>
         
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={(e) => propertySubmission.handleSubmit(e, () => performActualSubmission(), false, form.title)} className="space-y-8">
           {/* Auto-save Status Bar - Only for Agents and Landlords */}
           {shouldEnableAutoSave && (
             <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 rounded-lg border border-gray-200 flex items-center justify-between">
@@ -1229,13 +1215,9 @@ export default function CreatePropertyPage() {
             potentialDuplicate={propertySubmission.duplicateDetection.potentialDuplicate}
             onConfirm={() => {
               propertySubmission.duplicateDetection.setShowDuplicateWarning(false);
-              // Trigger form submission bypassing duplicate check
-              const form = document.querySelector('form');
-              if (form) {
-                const event = new Event('submit', { bubbles: true, cancelable: true });
-                Object.defineProperty(event, 'preventDefault', { value: () => {} });
-                handleSubmit(event as any, true); // bypass duplicate check
-              }
+              // Trigger submission bypassing duplicate check
+              const event = new Event('submit', { bubbles: true, cancelable: true });
+              propertySubmission.handleSubmit(event as any, () => performActualSubmission(), true, form.title);
             }}
             onCancel={() => propertySubmission.duplicateDetection.setShowDuplicateWarning(false)}
           />

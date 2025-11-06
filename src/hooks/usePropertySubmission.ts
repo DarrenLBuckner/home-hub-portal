@@ -11,7 +11,7 @@ interface UsePropertySubmissionReturn {
   submitError: string | null;
   submitSuccess: boolean;
   duplicateDetection: ReturnType<typeof useDuplicateDetection>;
-  handleSubmit: (e: React.FormEvent, submissionCallback: () => Promise<void>, bypassDuplicate?: boolean) => Promise<void>;
+  handleSubmit: (e: React.FormEvent, submissionCallback: () => Promise<void>, bypassDuplicate?: boolean, title?: string) => Promise<void>;
   resetSubmissionState: () => void;
 }
 
@@ -28,7 +28,8 @@ export function usePropertySubmission({
   const handleSubmit = async (
     e: React.FormEvent,
     submissionCallback: () => Promise<void>,
-    bypassDuplicate: boolean = false
+    bypassDuplicate: boolean = false,
+    title?: string
   ) => {
     e.preventDefault();
     
@@ -42,6 +43,14 @@ export function usePropertySubmission({
     setSubmitError(null);
     duplicateDetection.setShowDuplicateWarning(false);
 
+    // Check for duplicates unless bypassed
+    if (!bypassDuplicate && title && title.length > 5) {
+      const hasDuplicate = await duplicateDetection.checkForDuplicates(title, true);
+      if (hasDuplicate) {
+        return; // Stop submission, show warning dialog
+      }
+    }
+
     // Start submission process
     setIsSubmitting(true);
     console.log('🚀 Starting property submission...');
@@ -52,6 +61,7 @@ export function usePropertySubmission({
       // Success!
       setSubmitSuccess(true);
       onSuccess();
+      setIsSubmitting(false);
       
     } catch (error: any) {
       console.error('❌ Error during property submission:', error);
