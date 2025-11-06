@@ -39,6 +39,10 @@ export async function saveDraft(formData: any): Promise<DraftSaveResponse> {
     const draftTitle = formData.title || 
       `${formData.property_type || 'Property'} - ${new Date().toLocaleDateString()}`;
 
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+
     const response = await fetch('/api/properties/create', {
       method: 'POST',
       headers: {
@@ -49,7 +53,10 @@ export async function saveDraft(formData: any): Promise<DraftSaveResponse> {
         title: draftTitle,
         _isDraftSave: true // Internal flag to indicate this is a draft save
       }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const result = await response.json();
 
@@ -66,11 +73,19 @@ export async function saveDraft(formData: any): Promise<DraftSaveResponse> {
         error: result.error || 'Failed to save draft'
       };
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Draft save error:', error);
+    
+    let errorMessage = 'Network error while saving draft';
+    if (error.name === 'AbortError') {
+      errorMessage = 'Draft save timed out - please try again';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
     return {
       success: false,
-      error: 'Network error while saving draft'
+      error: errorMessage
     };
   }
 }

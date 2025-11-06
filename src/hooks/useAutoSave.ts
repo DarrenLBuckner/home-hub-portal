@@ -82,45 +82,65 @@ export function useAutoSave({
     });
   }, []);
 
-  // Debounced save function to avoid too frequent saves
-  const debouncedSave = useCallback(
-    debounce(async (formData: any) => {
-      if (isSaving.current || !enabled) return;
-      
-      const filledFields = countFilledFields(formData);
-      if (filledFields < minFieldsRequired) {
-        console.log('⏸️ Auto-save skipped: insufficient data', { filledFields, minFieldsRequired });
-        return;
-      }
-      
-      if (!hasSignificantChanges(formData, lastSavedData.current)) {
-        console.log('⏸️ Auto-save skipped: no significant changes');
-        return;
-      }
-      
-      console.log('💾 Auto-saving draft...', { filledFields });
-      isSaving.current = true;
-      onSaveStart?.();
-      
-      try {
-        const result = await onSave(formData, true); // true = isDraft
-        
-        if (result.success) {
-          lastSavedData.current = { ...formData };
-          console.log('✅ Auto-save successful', { draftId: result.draftId });
-          onSaveComplete?.(true, result.draftId);
-        } else {
-          console.error('❌ Auto-save failed:', result.error);
-          onSaveComplete?.(false);
-        }
-      } catch (error) {
-        console.error('❌ Auto-save error:', error);
-        onSaveComplete?.(false);
-      } finally {
+  // Core save function with timeout protection
+  const performSave = useCallback(async (formData: any) => {
+    if (isSaving.current || !enabled) {
+      console.log('⏸️ Auto-save skipped: already saving or disabled');
+      return;
+    }
+    
+    const filledFields = countFilledFields(formData);
+    if (filledFields < minFieldsRequired) {
+      console.log('⏸️ Auto-save skipped: insufficient data', { filledFields, minFieldsRequired });
+      return;
+    }
+    
+    if (!hasSignificantChanges(formData, lastSavedData.current)) {
+      console.log('⏸️ Auto-save skipped: no significant changes');
+      return;
+    }
+    
+    console.log('💾 Auto-saving draft...', { filledFields });
+    isSaving.current = true;
+    onSaveStart?.();
+    
+    // Set up timeout to prevent stuck saves
+    const saveTimeout = setTimeout(() => {
+      if (isSaving.current) {
+        console.warn('⚠️ Auto-save timeout - resetting save state');
         isSaving.current = false;
+        onSaveComplete?.(false);
       }
+    }, 30000); // 30 second timeout
+    
+    try {
+      const result = await onSave(formData, true); // true = isDraft
+      
+      clearTimeout(saveTimeout);
+      
+      if (result.success) {
+        lastSavedData.current = { ...formData };
+        console.log('✅ Auto-save successful', { draftId: result.draftId });
+        onSaveComplete?.(true, result.draftId);
+      } else {
+        console.error('❌ Auto-save failed:', result.error);
+        onSaveComplete?.(false);
+      }
+    } catch (error) {
+      clearTimeout(saveTimeout);
+      console.error('❌ Auto-save error:', error);
+      onSaveComplete?.(false);
+    } finally {
+      isSaving.current = false;
+    }
+  }, [enabled, onSave, onSaveStart, onSaveComplete, countFilledFields, hasSignificantChanges, minFieldsRequired]);
+
+  // Debounced save function for data changes
+  const debouncedSave = useCallback(
+    debounce((formData: any) => {
+      performSave(formData);
     }, 2000), // 2 second debounce
-    [enabled, onSave, onSaveStart, onSaveComplete, countFilledFields, hasSignificantChanges, minFieldsRequired]
+    [performSave]
   );
 
   // Set up auto-save timer
@@ -132,9 +152,9 @@ export function useAutoSave({
       clearInterval(autoSaveTimer.current);
     }
     
-    // Set up new timer
+    // Set up new timer - use performSave directly to avoid debounce conflicts
     autoSaveTimer.current = setInterval(() => {
-      debouncedSave(data);
+      performSave(data);
     }, interval);
     
     return () => {
@@ -142,7 +162,7 @@ export function useAutoSave({
         clearInterval(autoSaveTimer.current);
       }
     };
-  }, [data, enabled, interval, debouncedSave]);
+  }, [data, enabled, interval, performSave]);
 
   // Trigger auto-save when data changes (with debounce)
   useEffect(() => {
@@ -180,15 +200,13 @@ export function useAutoSave({
     
     try {
       debouncedSave.cancel(); // Cancel any pending debounced saves
-      const result = await onSave(data, true);
-      if (result.success) {
-        lastSavedData.current = { ...data };
-      }
-      return result.success;
-    } catch {
+      await performSave(data);
+      return true;
+    } catch (error) {
+      console.error('❌ Manual save error:', error);
       return false;
     }
-  }, [data, onSave, debouncedSave]);
+  }, [data, performSave, debouncedSave]);
 
   return {
     triggerSave,
