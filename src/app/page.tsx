@@ -172,9 +172,22 @@ function PortalMarketingContent() {
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             Expand Portal Home Hub to Your Country
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+          <p className="text-xl text-blue-100 mb-6 max-w-3xl mx-auto">
             Ready to bring professional real estate services to your market? Partner with us to launch your own Portal Home Hub franchise.
           </p>
+          
+          {/* Quick Regional Overview */}
+          <div className="flex flex-wrap justify-center gap-4 mb-8 max-w-4xl mx-auto">
+            <div className="bg-white/10 backdrop-blur rounded-lg px-4 py-2 text-blue-100 text-sm">
+              <span className="font-medium">🏝️ Caribbean:</span> Trinidad, Barbados, Bahamas +12 more
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg px-4 py-2 text-blue-100 text-sm">
+              <span className="font-medium">🌍 Africa:</span> Kenya, Rwanda, Uganda, Namibia, Tanzania
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg px-4 py-2 text-blue-100 text-sm">
+              <span className="font-medium">🌎 Latin America:</span> Colombia, Panama, Costa Rica +3 more
+            </div>
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
             <div className="bg-white/10 backdrop-blur rounded-lg p-4">

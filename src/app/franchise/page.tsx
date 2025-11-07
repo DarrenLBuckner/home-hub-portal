@@ -103,27 +103,94 @@ export default function FranchisePage() {
           </div>
         </div>
 
-        {/* Target Countries */}
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-white mb-6">Priority Markets</h2>
-          <p className="text-slate-300 mb-8 max-w-2xl mx-auto">
-            We're particularly interested in partners for these high-potential markets:
+        {/* Target Markets by Region */}
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-white mb-6 text-center">Priority Markets</h2>
+          <p className="text-slate-300 mb-12 max-w-2xl mx-auto text-center">
+            We're particularly interested in partners for these high-potential markets across three key regions:
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            {[
-              '🇹🇹 Trinidad & Tobago',
-              '🇧🇧 Barbados', 
-              '🇱🇨 Saint Lucia',
-              '🇬🇩 Grenada',
-              '🇰🇳 St. Kitts & Nevis',
-              '🇦🇬 Antigua & Barbuda',
-              '🇩🇲 Dominica',
-              '🇻🇨 St. Vincent'
-            ].map((country, index) => (
-              <div key={index} className="bg-slate-800/50 rounded-lg p-3 text-white text-sm">
-                {country}
-              </div>
-            ))}
+
+          {/* Caribbean Region */}
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold text-blue-400 mb-6 text-center">🏝️ Caribbean</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
+              {[
+                '🇹🇹 Trinidad & Tobago',
+                '🇧🇧 Barbados', 
+                '🇱🇨 Saint Lucia',
+                '🇬🇩 Grenada',
+                '🇰🇳 St. Kitts & Nevis',
+                '🇦🇬 Antigua & Barbuda',
+                '🇩🇲 Dominica',
+                '🇻🇨 St. Vincent',
+                '🇧🇸 Bahamas',
+                '🇧🇿 Belize',
+                '🇸🇷 Suriname',
+                '🇦🇼 Aruba',
+                '🇨🇼 Curaçao',
+                '🇹🇨 Turks & Caicos',
+                '🇰🇾 Cayman Islands'
+              ].map((country, index) => (
+                <div key={index} className="bg-slate-800/50 rounded-lg p-3 text-white text-sm text-center">
+                  {country}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Africa Region */}
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold text-green-400 mb-6 text-center">🌍 Afrika / Africa</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
+              {[
+                { flag: '🇰🇪', name: 'Kenya', local: 'Kenya' },
+                { flag: '🇷🇼', name: 'Rwanda', local: 'Rwanda' },
+                { flag: '🇺🇬', name: 'Uganda', local: 'Uganda' },
+                { flag: '🇳🇦', name: 'Namibia', local: 'Namibië' },
+                { flag: '🇹🇿', name: 'Tanzania', local: 'Tanzania' }
+              ].map((country, index) => (
+                <div key={index} className="bg-slate-800/50 rounded-lg p-3 text-white text-sm text-center">
+                  <div className="font-medium">{country.flag} {country.name}</div>
+                  {country.local !== country.name && (
+                    <div className="text-xs text-slate-400 mt-1">{country.local}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Latin America Region */}
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold text-yellow-400 mb-6 text-center">🌎 América Latina / Latin America</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
+              {[
+                { flag: '🇨🇴', name: 'Colombia', spanish: 'Oportunidades de Franquicia' },
+                { flag: '🇵🇦', name: 'Panamá', spanish: 'Socios Comerciales' },
+                { flag: '🇨🇷', name: 'Costa Rica', spanish: 'Expandir Negocio' },
+                { flag: '🇪🇨', name: 'Ecuador', spanish: 'Portal Inmobiliario' },
+                { flag: '🇺🇾', name: 'Uruguay', spanish: 'Franquicia Disponible' },
+                { flag: '🇧🇷', name: 'Brasil', spanish: 'Oportunidade de Negócio' }
+              ].map((country, index) => (
+                <div key={index} className="bg-slate-800/50 rounded-lg p-3 text-white text-sm text-center">
+                  <div className="font-medium">{country.flag} {country.name}</div>
+                  <div className="text-xs text-yellow-200 mt-1">{country.spanish}</div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    {country.name === 'Brasil' ? 'Business Opportunity' : 'Franchise Opportunity'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Open to All */}
+          <div className="text-center">
+            <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 rounded-lg p-6 border border-purple-400/30">
+              <h4 className="text-xl font-bold text-white mb-3">🌐 Open to All Markets</h4>
+              <p className="text-slate-300 text-sm">
+                Don't see your country listed? We're open to partnerships worldwide. 
+                <br />Contact us to discuss opportunities in your market.
+              </p>
+            </div>
           </div>
         </div>
 
