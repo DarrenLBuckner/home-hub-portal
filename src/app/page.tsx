@@ -52,8 +52,11 @@ function PortalMarketingContent() {
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
             Portal Home Hub
           </h1>
-          <p className="text-xl md:text-2xl text-slate-300 mb-8">
+          <p className="text-xl md:text-2xl text-slate-300 mb-2">
             Professional Real Estate Management
+          </p>
+          <p className="text-lg text-slate-400 mb-8">
+            Property Management Platform
           </p>
           <p className="text-lg text-slate-400 max-w-2xl mx-auto">
             Manage your property listings, connect with customers, and grow your real estate business across the Caribbean, Africa and beyond

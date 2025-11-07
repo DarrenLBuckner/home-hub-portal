@@ -25,9 +25,6 @@ export default function PortalMarketingNav() {
               >
                 Professional Services
               </Link>
-              <span className="text-sm text-slate-400">
-                Property Management Platform
-              </span>
             </div>
           </div>
 
