@@ -112,6 +112,21 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </div>
             
+            {/* Legal Links */}
+            <div className="border-t border-gray-200 pt-4">
+              <div className="max-w-7xl mx-auto px-4 pb-2">
+                <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-600 mb-4">
+                  <Link href="/terms" className="hover:text-gray-800">Terms of Use</Link>
+                  <Link href="/privacy" className="hover:text-gray-800">Privacy Policy</Link>
+                  <Link href="/cookies" className="hover:text-gray-800">Cookie Policy</Link>
+                  <Link href="/acceptable-use" className="hover:text-gray-800">Acceptable Use</Link>
+                  <Link href="/professional-services" className="hover:text-gray-800">Service Agreement</Link>
+                  <span className="text-gray-400">|</span>
+                  <a href="mailto:legal@portalhomehub.com" className="hover:text-gray-800">Legal</a>
+                </div>
+              </div>
+            </div>
+            
             {/* Admin access - subtle link at the very bottom */}
             <div className="border-t border-gray-200 pt-4">
               <div className="max-w-7xl mx-auto px-4 pb-4">

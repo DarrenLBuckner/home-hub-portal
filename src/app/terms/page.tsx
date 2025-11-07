@@ -1,55 +1,127 @@
-"use client";
-import React from "react";
+import { Metadata } from 'next';
 
-export default function TermsPage() {
+export const metadata: Metadata = {
+  title: 'Terms of Use - Portal Home Hub',
+  description: 'Terms of Use for Portal Home Hub property management platform and services.',
+};
+
+export default function TermsOfUsePage() {
   return (
-    <div className="max-w-3xl mx-auto p-8 bg-white rounded-lg shadow-md">
-  <h1 className="text-3xl font-bold mb-6 text-gray-800">Terms of Service</h1>
-  <p className="mb-4 text-gray-700">Effective Date: July 5, 2025</p>
-  <h2 className="text-xl font-semibold mt-6 mb-2">1. Acceptance of Terms</h2>
-  <p>By using Guyana Home Hub and all other countries we operate in (a subsidiary of Caribbean Home Hub), you agree to these Terms of Service and our Privacy Policy. If you do not agree, you may not access or use our services.</p>
-      <h2 className="text-xl font-semibold mt-6 mb-2">2. Eligibility</h2>
-      <p>You must be at least 18 years of age to use this site. By using the platform, you affirm that you are of legal age and are capable of entering into this agreement.</p>
-      <h2 className="text-xl font-semibold mt-6 mb-2">3. Use of Services</h2>
-      <p>You agree to use this site only for lawful purposes. You must not misuse or attempt to disrupt our platform. We reserve the right to suspend or terminate your access if we believe you are violating any terms.</p>
-      <h2 className="text-xl font-semibold mt-6 mb-2">4. User Accounts</h2>
-      <p>You are responsible for safeguarding your account credentials. We are not liable for any loss or damage resulting from unauthorized access to your account.</p>
-      <h2 className="text-xl font-semibold mt-6 mb-2">5. Listing & Content Policy</h2>
-      <p>You may post property listings or development information in accordance with our rules. Listings must be accurate and not misleading. We reserve the right to remove any content at our discretion.</p>
-      <h2 className="text-xl font-semibold mt-6 mb-2">6. Payments</h2>
-      <p>All payments for premium listings, featured placements, or other paid services are non-refundable unless otherwise stated. Secure third-party providers may process transactions.</p>
-      <h2 className="text-xl font-semibold mt-6 mb-2">7. Intellectual Property</h2>
-      <p>All content on this platform, including text, branding, and logos, is the intellectual property of Caribbean Home Hub and its subsidiaries. You may not reuse or redistribute this content without permission.</p>
-      <h2 className="text-xl font-semibold mt-6 mb-2">8. Disclaimers</h2>
-      <p>We make no guarantees regarding property accuracy, agent performance, or user conduct. You use this platform at your own risk. Listings and other data are provided "as is" without warranties of any kind.</p>
-      <h2 className="text-xl font-semibold mt-6 mb-2">9. Limitation of Liability</h2>
-      <p>Under no circumstances shall the owners, founders, team members, or affiliates of Caribbean Home Hub be liable for indirect, incidental, or consequential damages resulting from your use of this platform.</p>
-  <h2 className="text-xl font-semibold mt-6 mb-2">10. Governing Law</h2>
-  <p>These terms are governed by the laws of the United States and all other countries we operate in. If you access the service from other countries, you are responsible for compliance with local laws.</p>
-      <h2 className="text-xl font-semibold mt-6 mb-2">11. EU GDPR Compliance</h2>
-      <p>For users in the European Union, we adhere to GDPR principles. You may request to access, rectify, or delete your data. Contact us at info@guyanahomehub.com for inquiries.</p>
-      <h2 className="text-xl font-semibold mt-6 mb-2">12. Updates</h2>
-      <p>We may update these Terms of Service from time to time. Continued use after updates means you accept the revised terms.</p>
-  <h2 className="text-xl font-semibold mt-6 mb-2">13. Contact</h2>
-  <div className="space-y-4">
-    <p className="mb-4">For questions or concerns, contact us:</p>
-    <div className="flex flex-col gap-3">
-      <a 
-        href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20I%20have%20a%20question%20about%20your%20terms%20of%20service." 
-        target="_blank" 
-        rel="noopener noreferrer"
-        className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg w-fit"
-      >
-        <span className="mr-2">💬</span>
-        WhatsApp Support
-      </a>
-      <div className="text-sm text-gray-600">
-        <p>Preferred method for fastest response • +592 762-9797</p>
-        <p>✉️ Email: <a href="mailto:info@guyanahomehub.com" className="text-blue-600 underline">info@guyanahomehub.com</a></p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="bg-white rounded-lg shadow-lg p-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">PORTAL HOME HUB</h1>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">TERMS OF USE</h2>
+          <p className="text-gray-600 mb-8">Last Updated: November 6, 2025</p>
+
+          <div className="prose prose-lg max-w-none">
+            <p className="text-gray-700 mb-6">
+              Welcome to Portal Home Hub. By accessing or using our Services (as defined below), you agree to be bound by these Terms of Use. If you do not agree to these terms, please do not use our Services.
+            </p>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-4">1. DEFINITIONS AND SCOPE OF SERVICES</h3>
+            
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">1.1 Definitions</h4>
+            <ul className="list-disc list-inside text-gray-700 mb-4 space-y-2">
+              <li><strong>"Services"</strong> means the Portal Home Hub platform, all associated websites, mobile applications, software, and services provided by Portal Home Hub, Inc.</li>
+              <li><strong>"We," "Us," or "Our"</strong> refers to Portal Home Hub, Inc., a United States company.</li>
+              <li><strong>"User," "You," or "Your"</strong> refers to any individual or entity accessing or using the Services.</li>
+              <li><strong>"Property Professional"</strong> means real estate agents, brokers, landlords, property managers, or other individuals acting in a professional capacity.</li>
+              <li><strong>"User Content"</strong> means any information, data, text, photos, videos, or other materials uploaded or submitted by Users through the Services.</li>
+            </ul>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">1.2 Nature of Services</h4>
+            <p className="text-gray-700 mb-6">
+              Portal Home Hub operates a multi-tenant software platform that enables property listings, searches, and connections between property seekers and Property Professionals across multiple markets. We provide technology infrastructure but are not a real estate broker, agent, landlord, property manager, or financial advisor.
+            </p>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-4">2. ELIGIBILITY AND ACCOUNT REGISTRATION</h3>
+            
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">2.1 Eligibility Requirements</h4>
+            <p className="text-gray-700 mb-4">
+              You must be at least 18 years of age to use the Services. By using the Services, you represent and warrant that you meet this age requirement and have the legal capacity to enter into these Terms of Use.
+            </p>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">2.2 Account Registration</h4>
+            <p className="text-gray-700 mb-4">
+              To access certain features of the Services, you may be required to create an account. You agree to provide accurate, current, and complete information during registration and to keep this information up to date. You are responsible for maintaining the confidentiality of your account credentials and for all activities that occur under your account.
+            </p>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">2.3 Account Security</h4>
+            <p className="text-gray-700 mb-6">
+              You may not share your account with others or allow others to access your account. If you become aware of any unauthorized use of your account, you must notify us immediately.
+            </p>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-4">3. USER RESPONSIBILITIES AND ACCEPTABLE USE</h3>
+            
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">3.1 General Conduct</h4>
+            <p className="text-gray-700 mb-3">
+              You agree to use the Services only for lawful purposes and in accordance with these Terms of Use. You agree not to:
+            </p>
+            <ul className="list-disc list-inside text-gray-700 mb-4 space-y-1">
+              <li>Violate any applicable local, state, national, or international law or regulation</li>
+              <li>Engage in any discriminatory practices prohibited by fair housing or anti-discrimination laws</li>
+              <li>Upload, post, or transmit any content that is fraudulent, misleading, false, or inaccurate</li>
+              <li>Impersonate any person or entity or misrepresent your affiliation with any person or entity</li>
+              <li>Interfere with or disrupt the Services or servers or networks connected to the Services</li>
+              <li>Attempt to gain unauthorized access to any portion of the Services, other user accounts, or systems</li>
+              <li>Use any automated means (including bots, scrapers, or crawlers) to access the Services without our prior written consent</li>
+              <li>Upload viruses, malware, or any other malicious code</li>
+              <li>Collect or harvest personal information about other Users without their consent</li>
+            </ul>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">3.2 Property Professional Responsibilities</h4>
+            <p className="text-gray-700 mb-3">
+              If you are a Property Professional using the Services, you additionally agree to:
+            </p>
+            <ul className="list-disc list-inside text-gray-700 mb-6 space-y-1">
+              <li>Maintain all required licenses and certifications in your jurisdiction</li>
+              <li>Comply with all applicable real estate laws and regulations</li>
+              <li>Provide accurate and truthful information about properties</li>
+              <li>Obtain necessary permissions and rights to list properties on the Services</li>
+              <li>Respond promptly to inquiries from potential clients</li>
+            </ul>
+
+            {/* Contact Section - moved to end for better flow */}
+            <div className="bg-gray-100 p-6 rounded-lg mt-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">CONTACT INFORMATION</h3>
+              <p className="text-gray-700 mb-4">
+                If you have any questions about these Terms of Use, please contact us at:
+              </p>
+              <div className="space-y-2">
+                <p className="text-gray-800 font-semibold">Portal Home Hub, Inc.</p>
+                <p className="text-gray-700">Email: legal@portalhomehub.com</p>
+                <p className="text-gray-700">Website: www.portalhomehub.com</p>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                <a 
+                  href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20I%20have%20a%20question%20about%20your%20terms%20of%20use." 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  <span className="mr-2">💬</span>
+                  WhatsApp Support
+                </a>
+                <p className="text-sm text-gray-600">
+                  Preferred method for fastest response • +592 762-9797
+                </p>
+              </div>
+            </div>
+
+            <hr className="my-8" />
+
+            <p className="text-center text-gray-600 font-medium">
+              By using Portal Home Hub, you acknowledge that you have read, understood, and agree to be bound by these Terms of Use.
+            </p>
+            
+            <div className="text-center text-xs text-gray-500 mt-4">
+              © 2025 Portal Home Hub, Inc. All rights reserved.
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-  <div className="mt-8 text-xs text-gray-500">© 2025 Guyana Home Hub and all other countries we operate in. All rights reserved. A subsidiary of Caribbean Home Hub LLC, a registered company in Missouri, USA.</div>
     </div>
   );
 }
