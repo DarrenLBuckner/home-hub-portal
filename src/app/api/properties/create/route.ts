@@ -488,7 +488,7 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'draft'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
-        country_id: userProfile?.country_id || 'GY',  // ✅ Use 'GY' not 1
+        country_id: userProfile?.country_id || 1,  // ✅ Use integer 1 for Guyana
         created_at: new Date().toISOString(),
       };
     } else if (isRental) {
@@ -529,7 +529,7 @@ export async function POST(req: NextRequest) {
         listed_by_type: 'landlord',
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'off_market'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
-        country_id: userProfile?.country_id || 'GY',  // ✅ Use 'GY' not 1
+        country_id: userProfile?.country_id || 1,  // ✅ Use integer 1 for Guyana
         propertyCategory: 'rental',
         created_at: new Date().toISOString(),
       };
@@ -573,7 +573,7 @@ export async function POST(req: NextRequest) {
         listed_by_type: 'owner',
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'off_market'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
-        country_id: userProfile?.country_id || 'GY',  // ✅ Use 'GY' not 1
+        country_id: userProfile?.country_id || 1,  // ✅ Use integer 1 for Guyana
         
         // Legacy/additional fields
         propertyCategory: 'sale',
