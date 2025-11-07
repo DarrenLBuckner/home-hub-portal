@@ -218,6 +218,78 @@ export default function UniversalPropertyManager({
     }
   };
 
+  const handleBulkDeleteDrafts = async () => {
+    const draftProperties = properties.filter(p => p.status === 'draft');
+    
+    if (draftProperties.length === 0) {
+      alert('No draft properties to delete.');
+      return;
+    }
+
+    const confirmMessage = `⚠️ BULK DELETE DRAFTS CONFIRMATION\n\n` +
+      `Are you sure you want to PERMANENTLY DELETE all ${draftProperties.length} draft properties?\n\n` +
+      `This will:\n` +
+      `• Delete all draft property listings\n` +
+      `• Remove all associated images and data\n` +
+      `• Clean up your workspace\n\n` +
+      `⚠️ THIS ACTION CANNOT BE UNDONE!\n\n` +
+      `Type "DELETE DRAFTS" below to confirm:`;
+    
+    const userInput = prompt(confirmMessage);
+    if (userInput !== 'DELETE DRAFTS') {
+      alert('Bulk delete cancelled. Draft properties were not deleted.');
+      return;
+    }
+
+    setDeletingId('bulk-drafts');
+    try {
+      console.log(`🗑️ Bulk deleting ${draftProperties.length} draft properties...`);
+      
+      // Delete drafts one by one using the existing individual delete logic
+      let successCount = 0;
+      let errorCount = 0;
+      
+      for (const draft of draftProperties) {
+        try {
+          const supabase = createClient();
+          const { error } = await supabase
+            .from('properties')
+            .delete()
+            .eq('id', draft.id)
+            .eq('user_id', userId); // Additional security: only delete user's own properties
+
+          if (error) {
+            console.error(`Failed to delete draft ${draft.id}:`, error);
+            errorCount++;
+          } else {
+            successCount++;
+          }
+        } catch (err) {
+          console.error(`Error deleting draft ${draft.id}:`, err);
+          errorCount++;
+        }
+      }
+
+      // Update local state to remove successfully deleted properties
+      if (successCount > 0) {
+        setProperties(prev => prev.filter(p => p.status !== 'draft' || !draftProperties.find(dp => dp.id === p.id)));
+      }
+      
+      if (errorCount === 0) {
+        alert(`✅ Successfully deleted all ${successCount} draft properties!\n\nYour workspace has been cleaned up.`);
+      } else {
+        alert(`⚠️ Partial success: ${successCount} drafts deleted, ${errorCount} failed.\n\nSome drafts may not have been deleted. Please try again or contact support.`);
+      }
+      
+      console.log('✅ Bulk delete drafts completed:', { successCount, errorCount });
+    } catch (err: any) {
+      alert(`❌ Error during bulk delete: ${err.message}\n\nDrafts may not have been deleted. Please try again or contact support.`);
+      console.error('Bulk delete drafts error:', err);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const handleEdit = (id: string) => {
     // Find the property to get its listed_by_type
     const property = properties.find(p => p.id === id);
@@ -388,7 +460,7 @@ export default function UniversalPropertyManager({
             </div>
           </div>
 
-          {/* Bulk Delete Section - Only for Admin viewing Rejected Properties */}
+          {/* Bulk Delete Section - Admin viewing Rejected Properties */}
           {activeTab === 'rejected' && userType === 'admin' && filteredProperties.length > 0 && (
             <div className="mb-6 p-4 bg-gradient-to-r from-red-50 to-red-100 border-2 border-red-200 rounded-lg shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -414,6 +486,38 @@ export default function UniversalPropertyManager({
                   </button>
                   <p className="text-xs text-gray-600 text-center">
                     "Empty Trash" Feature
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Agent/FSBO/Admin Bulk Delete Drafts Section */}
+          {activeTab === 'draft' && (userType === 'agent' || userType === 'fsbo' || userType === 'admin') && filteredProperties.length > 0 && (
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex-1">
+                  <h4 className="font-bold text-blue-900 flex items-center gap-2 text-lg">
+                    🗑️ Clear All Draft Properties
+                  </h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    Remove all <span className="font-semibold">{filteredProperties.length}</span> draft properties to clean up your workspace. 
+                    This will permanently delete all unfinished listings and their associated data.
+                  </p>
+                  <p className="text-xs text-blue-600 mt-2 font-medium">
+                    ⚠️ This action cannot be undone! Only use this to clear old drafts you no longer need.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={handleBulkDeleteDrafts}
+                    disabled={deletingId === 'bulk-drafts'}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
+                  >
+                    {deletingId === 'bulk-drafts' ? '⏳ Clearing All...' : `🧹 Clear All Drafts (${filteredProperties.length})`}
+                  </button>
+                  <p className="text-xs text-gray-600 text-center">
+                    "Clear Drafts" Feature
                   </p>
                 </div>
               </div>
