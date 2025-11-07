@@ -182,7 +182,7 @@ function PortalMarketingContent() {
               <span className="font-medium">🏝️ Caribbean:</span> Trinidad, Barbados, Bahamas +12 more
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg px-4 py-2 text-blue-100 text-sm">
-              <span className="font-medium">🌍 Africa:</span> Kenya, Rwanda, Uganda, Namibia, Tanzania
+              <span className="font-medium">🌍 Africa:</span> Ghana, Kenya, Rwanda, Uganda, Namibia, Tanzania
             </div>
             <div className="bg-white/10 backdrop-blur rounded-lg px-4 py-2 text-blue-100 text-sm">
               <span className="font-medium">🌎 Latin America:</span> Colombia, Panama, Costa Rica +3 more
