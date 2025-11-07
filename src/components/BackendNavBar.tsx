@@ -20,24 +20,28 @@ const navLinks: Record<UserType, NavLink[]> = {
 	agent: [
 		{ label: "Dashboard", href: "/dashboard/agent" },
 		{ label: "Applications", href: "/admin-dashboard" },
+		{ label: "Professional Services", href: "/services" },
 		{ label: "Profile/Settings", href: "/dashboard/agent" },
 		{ label: "Register", href: "/register", dropdown: true },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
 	landlord: [
 		{ label: "Dashboard", href: "/dashboard/landlord" },
+		{ label: "Professional Services", href: "/services" },
 		{ label: "Profile/Settings", href: "/dashboard/landlord" },
 		{ label: "Register", href: "/register", dropdown: true },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
 	owner: [
 		{ label: "Dashboard", href: "/dashboard/owner" },
+		{ label: "Professional Services", href: "/services" },
 		{ label: "Profile/Settings", href: "/dashboard/owner/settings" },
 		{ label: "Register", href: "/register", dropdown: true },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
 	fsbo: [
 		{ label: "Dashboard", href: "/dashboard/fsbo" },
+		{ label: "Professional Services", href: "/services" },
 		{ label: "Profile/Settings", href: "/dashboard/fsbo" },
 		{ label: "Register", href: "/register", dropdown: true },
 		{ label: "Logout", href: "/logout", isButton: true },

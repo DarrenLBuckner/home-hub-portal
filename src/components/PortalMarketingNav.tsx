@@ -8,7 +8,7 @@ export default function PortalMarketingNav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           
-          {/* Left Side - Logo & Info */}
+          {/* Left Side - Logo & Navigation */}
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center">
               <svg className="w-8 h-8 text-blue-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -17,10 +17,18 @@ export default function PortalMarketingNav() {
               <span className="text-xl font-bold text-white">Portal Home Hub</span>
             </Link>
 
-            {/* Info tag */}
-            <span className="hidden md:block text-sm text-slate-400">
-              Property Management Platform
-            </span>
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center space-x-6">
+              <Link
+                href="/services"
+                className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Professional Services
+              </Link>
+              <span className="text-sm text-slate-400">
+                Property Management Platform
+              </span>
+            </div>
           </div>
 
           {/* Right Side - Auth Links Only */}
