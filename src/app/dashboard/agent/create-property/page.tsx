@@ -677,12 +677,8 @@ export default function CreatePropertyPage() {
                 >
                   <option value="House">🏠 House</option>
                   <option value="Apartment">🏢 Apartment</option>
-                  <option value="Condo">🏘️ Condo</option>
                   <option value="Land">🌿 Land</option>
                   <option value="Commercial">🏢 Commercial</option>
-                  <option value="Townhouse">🏘️ Townhouse</option>
-                  <option value="Villa">🏛️ Villa</option>
-                  <option value="Studio">🏠 Studio</option>
                 </select>
               </div>
               <div>
