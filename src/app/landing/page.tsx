@@ -12,7 +12,7 @@ export default function LandingPage() {
       </header>
       <section className={styles.actions}>
         <Link href="/login" className={styles.button}>Login</Link>
-        <Link href="/register" className={styles.buttonSecondary}>Register</Link>
+        <Link href="/register/select-country" className={styles.buttonSecondary}>Register</Link>
       </section>
       <footer className={styles.footer}>
         <span>© 2025 Caribbean Home Hub</span>

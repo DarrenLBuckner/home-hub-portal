@@ -31,7 +31,7 @@ export default function PortalMarketingNav() {
           {/* Right Side - Auth Links Only */}
           <div className="flex items-center space-x-4">
             <Link
-              href="/register"
+              href="/register/select-country"
               className="text-slate-300 hover:text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
             >
               Sign Up

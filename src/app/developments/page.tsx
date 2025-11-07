@@ -117,7 +117,7 @@ export default function DevelopmentsPage() {
             <p className="text-gray-600 mb-6">We're working on bringing you the latest development projects. Check back soon!</p>
             <div className="space-y-2">
               <p className="text-sm text-gray-500">Are you a developer?</p>
-              <Link href="/register" className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700">
+              <Link href="/register/select-country" className="inline-block bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700">
                 List Your Development
               </Link>
             </div>
