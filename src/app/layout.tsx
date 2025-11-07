@@ -72,11 +72,51 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           </main>
           
           <footer className="bg-gray-100 border-t">
+            <div className="max-w-7xl mx-auto px-4 py-8">
+              {/* Main Footer Links */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div>
+                  <h3 className="font-bold text-gray-800 mb-3">Platform</h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <Link href="/services" className="block hover:text-gray-800">Professional Services</Link>
+                    <Link href="/login" className="block hover:text-gray-800">Login</Link>
+                    <Link href="/register/select-country" className="block hover:text-gray-800">Sign Up</Link>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-bold text-gray-800 mb-3">Business</h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <Link href="/franchise" className="block hover:text-gray-800 font-medium">Partner With Us</Link>
+                    <a href="mailto:partnerships@portalhomehub.com" className="block hover:text-gray-800">Franchise Opportunities</a>
+                    <a href="mailto:support@portalhomehub.com" className="block hover:text-gray-800">Support</a>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-bold text-gray-800 mb-3">Countries</h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <a href="https://guyanahomehub.com" className="block hover:text-gray-800">🇬🇾 Guyana</a>
+                    <a href="https://jamaicahomehub.com" className="block hover:text-gray-800">🇯🇲 Jamaica</a>
+                    <span className="block text-gray-400">More coming soon...</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-bold text-gray-800 mb-3">Contact</h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <a href="tel:+5927629797" className="block hover:text-gray-800">+592-762-9797</a>
+                    <a href="mailto:info@portalhomehub.com" className="block hover:text-gray-800">info@portalhomehub.com</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
             {/* Admin access - subtle link at the very bottom */}
-            <div className="border-t border-gray-200 mt-8 pt-4">
+            <div className="border-t border-gray-200 pt-4">
               <div className="max-w-7xl mx-auto px-4 pb-4">
                 <div className="flex justify-between items-center text-xs text-gray-400">
-                  <span>© 2024 Portal Home Hub</span>
+                  <span>© 2025 Portal Home Hub</span>
                   <Link 
                     href="/admin-login" 
                     className="hover:text-gray-600 transition-colors"

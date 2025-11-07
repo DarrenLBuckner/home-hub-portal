@@ -165,6 +165,52 @@ function PortalMarketingContent() {
         </div>
       </div>
 
+      {/* Franchise Opportunity Section */}
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 py-16">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <div className="text-5xl mb-6">🌍</div>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+            Expand Portal Home Hub to Your Country
+          </h2>
+          <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+            Ready to bring professional real estate services to your market? Partner with us to launch your own Portal Home Hub franchise.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <div className="text-2xl mb-2">🚀</div>
+              <h3 className="font-bold text-white mb-2">Proven Platform</h3>
+              <p className="text-blue-100 text-sm">Operating successfully in multiple countries</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <div className="text-2xl mb-2">⚡</div>
+              <h3 className="font-bold text-white mb-2">Fast Launch</h3>
+              <p className="text-blue-100 text-sm">Launch in weeks with our proven infrastructure</p>
+            </div>
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4">
+              <div className="text-2xl mb-2">📈</div>
+              <h3 className="font-bold text-white mb-2">Full Support</h3>
+              <p className="text-blue-100 text-sm">Marketing, training, and ongoing assistance</p>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row gap-4 justify-center">
+            <Link
+              href="/franchise"
+              className="bg-white text-purple-600 px-8 py-3 rounded-lg font-bold hover:bg-blue-50 transition-colors"
+            >
+              Learn More About Partnership
+            </Link>
+            <a 
+              href="mailto:partnerships@portalhomehub.com?subject=Franchise Opportunity Inquiry"
+              className="bg-purple-800 text-white px-8 py-3 rounded-lg font-bold hover:bg-purple-900 transition-colors"
+            >
+              Contact Partnerships Team
+            </a>
+          </div>
+        </div>
+      </div>
+
       {/* Bottom CTA */}
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
         <p className="text-slate-400 mb-2">Need help?</p>

@@ -25,6 +25,12 @@ export default function PortalMarketingNav() {
               >
                 Professional Services
               </Link>
+              <Link
+                href="/franchise"
+                className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Partnership Opportunities
+              </Link>
             </div>
           </div>
 
