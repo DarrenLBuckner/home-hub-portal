@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       // Ensure user_id is set correctly
       user_id: user.id,
       // Set status based on operation type
-      status: isDraftSave ? 'draft' : (shouldAutoApprove(userType) ? 'approved' : 'pending')
+      status: isDraftSave ? 'draft' : (shouldAutoApprove(userType) ? 'active' : 'pending')
     };
     
     const userId = user.id;
@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
       if (missingMinimalFields.length > 0) {
         console.log('⚠️ Draft save with minimal validation - missing:', missingMinimalFields);
         // Don't fail, just ensure we have some basic structure
-        normalizedPayload.property_type = normalizedPayload.property_type || 'house';
+        normalizedPayload.property_type = normalizedPayload.property_type || 'House';
         normalizedPayload.listing_type = normalizedPayload.listing_type || 'sale';
       }
     }
@@ -527,7 +527,7 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         listing_type: 'rent',
         listed_by_type: 'landlord',
-        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'off_market'),
+        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
         country_id: userProfile?.country_id || 1,  // ✅ Use integer 1 for Guyana
         propertyCategory: 'rental',
@@ -570,8 +570,8 @@ export async function POST(req: NextRequest) {
         // System fields (auto-populated)
         user_id: userId,
         listing_type: 'sale',
-        listed_by_type: 'owner',
-        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'off_market'),
+        listed_by_type: 'fsbo',
+        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
         country_id: userProfile?.country_id || 1,  // ✅ Use integer 1 for Guyana
         
