@@ -73,7 +73,7 @@ export default function AdminPropertyDetailsPage() {
 
       // Check if user is admin using server API (same approach as admin dashboard)
       try {
-        const adminResponse = await fetch('/api/admin/data', {
+        const adminResponse = await fetch('/api/admin/dashboard', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
