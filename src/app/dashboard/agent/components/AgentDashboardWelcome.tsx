@@ -9,6 +9,7 @@ interface DashboardWelcomeProps {
 
 export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWelcomeProps) {
   const [agentName, setAgentName] = useState('');
+  const [accountCode, setAccountCode] = useState('');
   const [stats, setStats] = useState({
     active: 0,
     draft: 0,
@@ -19,8 +20,22 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
     const fetchAgentAndStats = async () => {
       const supabase = createClientComponentClient();
       const { data: userData } = await supabase.auth.getUser();
-      setAgentName(userData?.user?.user_metadata?.name || 'Agent');
+      
       if (userData?.user?.id) {
+        // Fetch user profile with account code
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name, account_code, display_name')
+          .eq('id', userData.user.id)
+          .single();
+        
+        if (profile) {
+          const fullName = profile.display_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
+          setAgentName(fullName || 'Agent');
+          setAccountCode(profile.account_code || '');
+        }
+        
+        // Fetch property stats
         const { data: properties } = await supabase
           .from('properties')
           .select('status')
@@ -44,7 +59,18 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold mb-2">🏢 Welcome to Portal Home Hub!</h1>
-            <p className="text-blue-100 text-lg">Your Property Management Dashboard – Manage, Buy, Sell, or Rent with Ease</p>
+            <div className="flex items-center gap-4 mb-2">
+              <div>
+                <p className="text-blue-100 text-lg">Hello, {agentName}!</p>
+                <p className="text-blue-100 text-sm">Your Property Management Dashboard</p>
+              </div>
+              {accountCode && (
+                <div className="bg-white/20 backdrop-blur-sm border border-white/30 px-4 py-2 rounded-lg">
+                  <div className="text-xs text-blue-100 uppercase tracking-wide font-medium">Account ID</div>
+                  <div className="text-lg font-bold text-white">{accountCode}</div>
+                </div>
+              )}
+            </div>
           </div>
           <div className="text-right">
             <div className="text-2xl font-bold">{stats.active + stats.draft}</div>

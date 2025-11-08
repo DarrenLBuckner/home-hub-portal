@@ -87,8 +87,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <div>
                   <h3 className="font-bold text-gray-800 mb-3">Business</h3>
                   <div className="space-y-2 text-sm text-gray-600">
-                    <Link href="/franchise" className="block hover:text-gray-800 font-medium">Partner With Us</Link>
-                    <a href="mailto:partnerships@portalhomehub.com" className="block hover:text-gray-800">Franchise Opportunities</a>
+                    <Link href="/franchise" className="block hover:text-gray-800 font-medium">Franchise Opportunities</Link>
+                    <a href="mailto:partnerships@portalhomehub.com" className="block hover:text-gray-800">Partnership Inquiries</a>
                     <a href="mailto:support@portalhomehub.com" className="block hover:text-gray-800">Support</a>
                   </div>
                 </div>

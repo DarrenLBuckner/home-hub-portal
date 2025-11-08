@@ -13,6 +13,7 @@ interface AdminData {
   last_name: string | null;
   created_by_admin: string | null;
   admin_created_at: string | null;
+  account_code: string | null;
 }
 
 // AdminPermissions interface is now imported from adminPermissions.ts
@@ -134,7 +135,8 @@ export function useAdminData(): UseAdminDataReturn {
         first_name: data.profile.first_name,
         last_name: data.profile.last_name,
         created_by_admin: data.profile.created_by_admin,
-        admin_created_at: data.profile.admin_created_at
+        admin_created_at: data.profile.admin_created_at,
+        account_code: data.profile.account_code
       };
 
       // DEBUG: Check what server is returning

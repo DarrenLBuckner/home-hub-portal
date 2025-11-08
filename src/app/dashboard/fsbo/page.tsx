@@ -51,7 +51,7 @@ export default function FSBODashboard() {
           return;
         }
 
-        setUser(authUser);
+        setUser({ ...authUser, ...profile });
         // FSBO uses per-property payments, not subscriptions
         setSubscription({
           status: profile.subscription_status || 'inactive', // This tracks if they've completed registration
@@ -137,8 +137,23 @@ export default function FSBODashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="text-center sm:text-left">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-1 sm:mb-2">🏡 FSBO Dashboard</h1>
-              <p className="text-blue-100 text-sm sm:text-base lg:text-lg">For Sale By Owner - Direct Property Sales</p>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-1 sm:mb-2">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold">🏡 FSBO Dashboard</h1>
+                {user?.account_code && (
+                  <div className="bg-white/20 backdrop-blur-sm border border-white/30 px-3 py-1 rounded-lg">
+                    <div className="text-xs text-blue-100 uppercase tracking-wide font-medium">Account ID</div>
+                    <div className="text-sm font-bold text-white">{user.account_code}</div>
+                  </div>
+                )}
+              </div>
+              <p className="text-blue-100 text-sm sm:text-base lg:text-lg">
+                For Sale By Owner - Direct Property Sales
+                {user?.first_name && (
+                  <span className="block sm:inline sm:ml-2">
+                    Welcome, {user.first_name}!
+                  </span>
+                )}
+              </p>
             </div>
             
             {/* Mobile-Optimized Actions */}

@@ -53,7 +53,7 @@ export default function LandlordDashboard() {
           return;
         }
 
-        setUser(authUser);
+        setUser({ ...authUser, ...profile });
         // Landlord uses per-property payments, not subscriptions
         setSubscription({
           status: profile.subscription_status || 'inactive', // This tracks if they've completed registration
@@ -178,10 +178,17 @@ export default function LandlordDashboard() {
               
               {/* User Info & Actions */}
               <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
-                {/* Welcome Message - Hidden on smallest screens */}
-                <div className="text-center sm:text-right hidden sm:block">
+                {/* Welcome Message with Account Code */}
+                <div className="text-center sm:text-right">
                   <div className="text-xs sm:text-sm text-green-100">Welcome back,</div>
-                  <div className="font-medium text-white text-sm truncate max-w-32 sm:max-w-none">{user?.email}</div>
+                  <div className="font-medium text-white text-sm truncate max-w-40 sm:max-w-none">
+                    {user?.first_name || user?.email}
+                    {user?.account_code && (
+                      <span className="ml-2 px-2 py-0.5 bg-white/20 rounded text-xs font-bold">
+                        {user.account_code}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
                 {/* Action Buttons */}

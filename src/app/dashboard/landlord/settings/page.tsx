@@ -12,6 +12,7 @@ export default function LandlordSettings() {
     user_type?: string;
     subscription_status?: string;
     created_at?: string;
+    account_code?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -143,7 +144,15 @@ export default function LandlordSettings() {
         </Link>
       </div>
 
-      <h1 className="text-3xl font-bold text-purple-700 mb-6">Profile Settings</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold text-purple-700">Profile Settings</h1>
+        {profile?.account_code && (
+          <div className="bg-purple-100 border border-purple-300 px-4 py-2 rounded-lg">
+            <div className="text-xs text-purple-600 uppercase tracking-wide font-medium">Account ID</div>
+            <div className="text-lg font-bold text-purple-800">{profile.account_code}</div>
+          </div>
+        )}
+      </div>
       
       <div className="bg-white rounded-xl shadow-lg p-6">
         <form onSubmit={handleSave} className="space-y-6">

@@ -212,7 +212,7 @@ export default function FranchisePage() {
             </a>
             
             <Link
-              href="/register/select-country"
+              href="/franchise/application"
               className="bg-blue-800 text-white px-8 py-3 rounded-lg font-bold hover:bg-blue-900 transition-colors"
             >
               Start Your Application

@@ -4,6 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
 import { supabase } from "@/supabase";
 import { getActiveCountries } from "@/lib/countries";
+import { checkUserSuspension } from "@/lib/userSuspensionCheck";
+import DualContextPropertyManager from "@/components/DualContextPropertyManager";
+import { getCountryAwareAdminPermissions } from "@/lib/auth/adminPermissions";
 
 export default function OwnerDashboard() {
   const router = useRouter();
@@ -17,6 +20,7 @@ export default function OwnerDashboard() {
   const [countryFilter, setCountryFilter] = useState<string>("");
   const [countries, setCountries] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [permissions, setPermissions] = useState<any>(null);
 
   useEffect(() => {
     async function fetchUserData() {
@@ -42,6 +46,14 @@ export default function OwnerDashboard() {
         .single();
 
       if (profile) {
+        // Check for account suspension first
+        const suspensionStatus = await checkUserSuspension(authUser.id);
+        if (suspensionStatus.suspended) {
+          console.log('Account is suspended, redirecting...');
+          router.push('/account-suspended');
+          return;
+        }
+
         // Check if user is authorized for Owner dashboard
         // Allow: Owner users, Super Admins, and Owner Admins
         const isAuthorizedForOwner = profile.user_type === 'owner' || 
@@ -55,7 +67,19 @@ export default function OwnerDashboard() {
           return;
         }
 
-        setUser(authUser);
+        // Get admin permissions if user has admin level
+        if (profile.admin_level) {
+          const userPermissions = await getCountryAwareAdminPermissions(
+            profile.user_type,
+            profile.email,
+            profile.admin_level,
+            authUser.id,
+            supabase
+          );
+          setPermissions(userPermissions);
+        }
+
+        setUser({ ...authUser, ...profile });
         // FSBO uses per-property payments, not subscriptions
         setSubscription({
           status: profile.subscription_status || 'inactive', // This tracks if they've completed registration
@@ -83,7 +107,7 @@ export default function OwnerDashboard() {
           setSubscription(prev => prev ? ({
             ...prev,
             totalProperties: userProperties.length,
-            activeListings: userProperties.filter(p => p.status === 'available').length
+            activeListings: userProperties.filter((p: any) => p.status === 'available').length
           }) : null);
         }
       }
@@ -153,7 +177,14 @@ export default function OwnerDashboard() {
             <div className="flex items-center space-x-4">
               <div className="text-right">
                 <div className="text-sm text-gray-500">Welcome back,</div>
-                <div className="font-medium">{user?.email}</div>
+                <div className="font-medium flex items-center gap-2">
+                  {user?.first_name || user?.email}
+                  {user?.account_code && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded">
+                      {user.account_code}
+                    </span>
+                  )}
+                </div>
               </div>
               <Link
                 href="/dashboard/owner/settings"
@@ -204,107 +235,14 @@ export default function OwnerDashboard() {
         </div>
       )}
       
-      <div id="properties">
-        <h2 className="text-xl font-bold mb-4">Your Properties</h2>
-        <div className="mb-4">
-          <label htmlFor="countryFilter" className="block text-sm font-medium text-gray-700 mb-2">Filter by Country</label>
-          <select 
-            name="countryFilter" 
-            value={countryFilter} 
-            onChange={e => setCountryFilter(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500"
-          >
-            <option value="">All Countries</option>
-            {countries.map(c => (
-              <option key={c.code || c.id} value={c.code || c.id}>{c.name || c.country_name || 'Unknown Country'}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-      
-      {/* Debug info */}
-      <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-        <div className="text-sm">
-          <strong>Debug Info:</strong><br/>
-          Total properties loaded: {properties.length}<br/>
-          Country filter: "{countryFilter}"<br/>
-          Filtered properties: {properties.filter(p => !countryFilter || p.country === countryFilter).length}<br/>
-          {properties.length > 0 && (
-            <>
-              Sample property: {JSON.stringify({
-                id: properties[0].id,
-                title: properties[0].title,
-                status: properties[0].status,
-                country: properties[0].country,
-                region: properties[0].region
-              }, null, 2)}
-            </>
-          )}
-        </div>
-      </div>
-      
-      {/* Properties List */}
-      {properties.length === 0 ? (
-        <div className="text-center py-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <div className="text-4xl mb-4">🏠</div>
-          <h3 className="text-xl font-semibold text-gray-600 mb-2">No Properties Found</h3>
-          <p className="text-gray-500 mb-4">You haven't uploaded any properties yet, or there may be a loading issue.</p>
-          <Link href="/dashboard/owner/create-property">
-            <button className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition">
-              Upload Your First Property
-            </button>
-          </Link>
-        </div>
-      ) : (
-        <>
-          {properties.filter(p => !countryFilter || p.country === countryFilter).length === 0 ? (
-            <div className="text-center py-8 bg-yellow-50 rounded-lg border border-yellow-200">
-              <div className="text-2xl mb-2">🔍</div>
-              <h3 className="text-lg font-semibold text-gray-600 mb-2">No Properties Match Filter</h3>
-              <p className="text-gray-500 mb-4">Try changing the country filter to see your properties.</p>
-              <button 
-                onClick={() => setCountryFilter('')}
-                className="px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition"
-              >
-                Clear Filter
-              </button>
-            </div>
-          ) : (
-            <ul className="space-y-4">
-              {properties.filter(p => !countryFilter || p.country === countryFilter).map(property => (
-                <li key={property.id} className="bg-white border border-gray-200 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <div className="mb-3">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${property.status === "available" ? "bg-green-100 text-green-700" : property.status === "pending" ? "bg-blue-100 text-blue-700" : property.status === "off_market" ? "bg-yellow-100 text-yellow-700" : "bg-purple-100 text-purple-700"}`}>
-                          {property.status || 'Unknown'}
-                        </span>
-                      </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{property.title || 'Untitled Property'}</h3>
-                      <p className="text-gray-600 mb-2">📍 {property.country || property.region || 'Unknown Location'}</p>
-                      <p className="text-2xl font-bold text-green-600">
-                        {typeof property.price === 'number' ? property.price.toLocaleString() : 'N/A'} {property.currency || 'USD'}
-                      </p>
-                    </div>
-                    <div className="ml-6 flex flex-col gap-2">
-                      <Link href={`/dashboard/owner/edit-property/${property.id}`}>
-                        <button className="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition flex items-center gap-2">
-                          ✏️ Edit Property
-                        </button>
-                      </Link>
-                      <Link href={`/property/${property.id}`} target="_blank">
-                        <button className="px-4 py-2 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition flex items-center gap-2">
-                          👁️ View Live
-                        </button>
-                      </Link>
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </>
-      )}
+      {/* Enhanced Property Management with Dual Context for Owner Admins */}
+      <DualContextPropertyManager
+        userId={user?.id || ''}
+        userType={user?.user_type === 'admin' ? 'admin' : 'fsbo'}
+        adminLevel={user?.admin_level}
+        countryId={user?.country_id}
+        permissions={permissions}
+      />
     </main>
     </div>
   );

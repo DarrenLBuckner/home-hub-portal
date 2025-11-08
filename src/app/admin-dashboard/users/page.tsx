@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
 import { getCountryAwareAdminPermissions, AdminPermissions, getCountryFilter } from '@/lib/auth/adminPermissions';
+import AdminUserManagement from '@/components/AdminUserManagement';
 
 export default function AdminUsers() {
   const router = useRouter();
@@ -197,7 +198,17 @@ export default function AdminUsers() {
               </div>
             )}
             
-            <div className="bg-white shadow overflow-hidden sm:rounded-md">
+            {/* Enhanced User Management Component */}
+            <AdminUserManagement
+              adminUserId={user?.id || ''}
+              permissions={{
+                canViewAllCountries: permissions?.canViewAllCountries || false,
+                countryFilter: permissions?.countryFilter || null,
+                canManageUsers: permissions?.canEditUsers || false
+              }}
+            />
+            
+            <div className="bg-white shadow overflow-hidden sm:rounded-md" style={{ display: 'none' }}>
               <div className="px-4 py-5 sm:px-6">
                 <h3 className="text-lg leading-6 font-medium text-gray-900">
                   All Users ({users.length})

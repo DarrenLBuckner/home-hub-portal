@@ -64,7 +64,7 @@ export default function SuperSimplePricingManagement() {
   const fetchPricingPlans = async () => {
     try {
       let query = supabase
-        .from('admin_pricing_overview')
+        .from('pricing_plans')
         .select('*');
       
       // Apply country filter for Owner Admins (Super Admin sees all)

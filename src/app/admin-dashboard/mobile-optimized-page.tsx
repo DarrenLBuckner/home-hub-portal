@@ -724,6 +724,11 @@ export default function MobileOptimizedAdminDashboard() {
               </div>
               <div className="text-xs text-gray-600">
                 Hi, {getAdminDisplayName(adminData)}
+                {adminData?.account_code && (
+                  <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-bold rounded">
+                    {adminData.account_code}
+                  </span>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">

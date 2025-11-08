@@ -37,7 +37,7 @@ export async function GET() {
     // Get user profile with admin info
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('id,email,user_type,admin_level,country_id,display_name,first_name,last_name,created_by_admin,admin_created_at')
+      .select('id,email,user_type,admin_level,country_id,display_name,first_name,last_name,created_by_admin,admin_created_at,account_code')
       .eq('id', user.id)
       .single();
 
