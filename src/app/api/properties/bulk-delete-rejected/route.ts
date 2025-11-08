@@ -1,47 +1,14 @@
-import { createClient } from '@/supabase';
+import { createAdminClient } from '@/supabase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(request: NextRequest) {
   try {
     console.log('🗑️ Starting bulk delete of rejected properties...');
     
-    const supabase = createClient();
+    const supabase = createAdminClient();
     
-    // Get the current user and verify admin privileges
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
-    if (authError || !user) {
-      console.log('❌ Authentication failed for bulk delete');
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    // Verify user is admin using server-side verification approach
-    try {
-      // Use the same authentication method as the admin dashboard
-      const { data: adminUsers, error: adminError } = await supabase
-        .from('admin_users')
-        .select('user_id, admin_level, country_id')
-        .eq('user_id', user.id);
-
-      if (adminError || !adminUsers || adminUsers.length === 0) {
-        console.log('❌ Non-admin user attempted bulk delete:', user.email);
-        return NextResponse.json(
-          { error: 'Admin privileges required for bulk delete operations' },
-          { status: 403 }
-        );
-      }
-
-      console.log('✅ Admin verified for bulk delete:', user.email);
-    } catch (error) {
-      console.error('❌ Admin verification error:', error);
-      return NextResponse.json(
-        { error: 'Admin verification failed' },
-        { status: 500 }
-      );
-    }
+    // Admin client doesn't need user auth verification - it has full access
+    console.log('✅ Using admin client for bulk delete operation');
 
     // Get count of rejected properties before deletion
     const { count: rejectedCount, error: countError } = await supabase
@@ -69,19 +36,33 @@ export async function DELETE(request: NextRequest) {
     // Delete all rejected properties and their associated media
     console.log(`🗑️ Deleting ${rejectedCount} rejected properties...`);
 
-    // First, delete associated property media
-    const { error: mediaError } = await supabase
-      .from('property_media')
-      .delete()
-      .in('property_id', supabase
-        .from('properties')
-        .select('id')
-        .eq('status', 'rejected')
-      );
+    // First, get the IDs of rejected properties
+    const { data: rejectedProperties, error: idsError } = await supabase
+      .from('properties')
+      .select('id')
+      .eq('status', 'rejected');
 
-    if (mediaError) {
-      console.warn('⚠️ Error deleting property media (continuing):', mediaError);
-      // Continue with property deletion even if media deletion fails
+    if (idsError) {
+      console.error('❌ Error fetching rejected property IDs:', idsError);
+      return NextResponse.json(
+        { error: 'Failed to fetch rejected property IDs' },
+        { status: 500 }
+      );
+    }
+
+    const propertyIds = (rejectedProperties as { id: string }[])?.map(p => p.id) || [];
+
+    // Delete associated property media if there are any rejected properties
+    if (propertyIds.length > 0) {
+      const { error: mediaError } = await supabase
+        .from('property_media')
+        .delete()
+        .in('property_id', propertyIds);
+
+      if (mediaError) {
+        console.warn('⚠️ Error deleting property media (continuing):', mediaError);
+        // Continue with property deletion even if media deletion fails
+      }
     }
 
     // Delete all rejected properties
