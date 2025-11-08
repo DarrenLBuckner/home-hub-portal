@@ -98,18 +98,20 @@ interface UniversalPropertyManagerProps {
   userType: 'agent' | 'landlord' | 'fsbo' | 'admin';
   createPropertyPath?: string;
   editPropertyPath?: string;
+  defaultTab?: string;
 }
 
 export default function UniversalPropertyManager({ 
   userId, 
   userType,
   createPropertyPath = '/properties/create',
-  editPropertyPath = '/dashboard/agent/edit-property'
+  editPropertyPath = '/dashboard/agent/edit-property',
+  defaultTab = 'active'
 }: UniversalPropertyManagerProps) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<string>('active');
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showRejectionModal, setShowRejectionModal] = useState(false);

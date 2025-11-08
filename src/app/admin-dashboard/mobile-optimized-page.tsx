@@ -62,7 +62,7 @@ export default function MobileOptimizedAdminDashboard() {
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
   const [approvedProperties, setApprovedProperties] = useState<Property[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'all' | 'engagement'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'all' | 'engagement' | 'rejected'>('pending');
   const [statistics, setStatistics] = useState<Statistics>({
     totalPending: 0,
     todaySubmissions: 0,
@@ -739,7 +739,7 @@ export default function MobileOptimizedAdminDashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
               {/* Rejected Properties - Most Important */}
               <button
-                onClick={() => setActiveTab('all')}
+                onClick={() => setActiveTab('rejected')}
                 className="bg-red-500 hover:bg-red-600 text-white p-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
               >
                 <div className="text-3xl mb-2">❌</div>
@@ -911,6 +911,27 @@ export default function MobileOptimizedAdminDashboard() {
                 </div>
               )}
             </>
+          )}
+
+          {/* Rejected Properties Tab - Dedicated View */}
+          {activeTab === 'rejected' && (
+            <div className="mt-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <h3 className="text-lg font-semibold text-red-900 mb-2">❌ Rejected Properties Management</h3>
+                <p className="text-sm text-red-800">
+                  Review and manage all rejected properties. Fix issues, resubmit, or delete rejected listings.
+                </p>
+              </div>
+              {adminData && (
+                <UniversalPropertyManager 
+                  userId={adminData.id} 
+                  userType="admin"
+                  editPropertyPath="/admin-dashboard/property"
+                  createPropertyPath="/properties/create"
+                  defaultTab="rejected"
+                />
+              )}
+            </div>
           )}
 
           {/* All Properties Tab - Full Property Management */}
