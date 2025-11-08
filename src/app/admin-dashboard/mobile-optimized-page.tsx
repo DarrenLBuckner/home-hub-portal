@@ -13,6 +13,7 @@ interface Property {
   description: string;
   price: number;
   property_type: string;
+  listing_type?: string;
   bedrooms: number;
   bathrooms: number;
   region: string;
@@ -303,6 +304,36 @@ export default function MobileOptimizedAdminDashboard() {
     setProcessingPropertyId(null);
   }
 
+  async function updatePropertyStatus(propertyId: string, newStatus: string) {
+    try {
+      setProcessingPropertyId(propertyId);
+      
+      const { error } = await supabase
+        .from('properties')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', propertyId);
+
+      if (error) {
+        console.error('❌ Error updating property status:', error);
+        setError(`Failed to update property status: ${error.message}`);
+        return;
+      }
+
+      console.log(`✅ Property ${propertyId} status updated to: ${newStatus}`);
+      
+      // Refresh the dashboard data to reflect changes
+      await loadDashboardData();
+      
+    } catch (error) {
+      console.error('❌ Network error during status update:', error);
+      setError('Network error occurred. Please try again.');
+    }
+    setProcessingPropertyId(null);
+  }
+
   async function handleLogout() {
     try {
       await supabase.auth.signOut();
@@ -483,7 +514,7 @@ export default function MobileOptimizedAdminDashboard() {
           </div>
         </div>
 
-        {/* Content Section */}
+        {/* Enhanced Content Section - All Details Inline */}
         <div className="p-4">
           {/* Title and Type */}
           <div className="mb-3">
@@ -494,18 +525,36 @@ export default function MobileOptimizedAdminDashboard() {
             </div>
           </div>
 
-          {/* Property Details */}
-          <div className="flex items-center justify-between mb-3 py-2 px-3 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-4 text-sm text-gray-700">
-              <span className="flex items-center">🛏 {property.bedrooms}</span>
-              <span className="flex items-center">🚿 {property.bathrooms}</span>
+          {/* Enhanced Property Details - No separate page needed */}
+          <div className="bg-gray-50 rounded-lg p-3 mb-4">
+            <h4 className="text-xs font-semibold text-gray-800 mb-2">📋 Property Details</h4>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span className="text-gray-600">Type:</span>
+                <div className="font-medium">{property.property_type}</div>
+              </div>
+              <div>
+                <span className="text-gray-600">Listing:</span>
+                <div className="font-medium">{property.listing_type || 'Sale'}</div>
+              </div>
+              <div>
+                <span className="text-gray-600">Bedrooms:</span>
+                <div className="font-medium">🛏 {property.bedrooms}</div>
+              </div>
+              <div>
+                <span className="text-gray-600">Bathrooms:</span>
+                <div className="font-medium">🚿 {property.bathrooms}</div>
+              </div>
             </div>
           </div>
-
-          {/* Description Preview */}
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-            {property.description.length > 100 ? `${property.description.substring(0, 100)}...` : property.description}
-          </p>
+          
+          {/* Description */}
+          <div className="mb-4">
+            <h4 className="text-xs font-semibold text-gray-800 mb-1">📝 Description</h4>
+            <p className="text-sm text-gray-600 line-clamp-3">
+              {property.description}
+            </p>
+          </div>
 
           {/* Owner Info Card */}
           <div className="bg-green-50 rounded-lg p-3 mb-4">
@@ -536,13 +585,8 @@ export default function MobileOptimizedAdminDashboard() {
               </button>
             </Link>
             
-            {/* Secondary Actions */}
+            {/* Enhanced Admin Actions - All in One Place */}
             <div className="grid grid-cols-2 gap-2">
-              <Link href={`/admin-dashboard/property/${property.id}`} className="block">
-                <button className="w-full px-4 py-3 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors touch-manipulation">
-                  👁 View Details
-                </button>
-              </Link>
               <a 
                 href={`https://guyanahomehub.com/properties/${property.id}`} 
                 target="_blank" 
@@ -553,6 +597,32 @@ export default function MobileOptimizedAdminDashboard() {
                   🌐 View Live
                 </button>
               </a>
+              <button 
+                onClick={() => updatePropertyStatus(property.id, 'pending')}
+                className="w-full px-4 py-3 bg-yellow-600 text-white text-sm font-bold rounded-xl hover:bg-yellow-700 transition-colors touch-manipulation"
+              >
+                📝 Under Contract
+              </button>
+            </div>
+            
+            {/* Additional Actions Row */}
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <button 
+                onClick={() => updatePropertyStatus(property.id, property.listing_type === 'rental' ? 'rented' : 'sold')}
+                className="w-full px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                {property.listing_type === 'rental' ? '🏠 Mark Rented' : '🏆 Mark Sold'}
+              </button>
+              <button 
+                onClick={() => {
+                  if (confirm('Hide this property from public view?')) {
+                    updatePropertyStatus(property.id, 'off_market');
+                  }
+                }}
+                className="w-full px-4 py-2 bg-gray-600 text-white text-xs font-bold rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                👁️‍🗨️ Take Off Market
+              </button>
             </div>
           </div>
         </div>
