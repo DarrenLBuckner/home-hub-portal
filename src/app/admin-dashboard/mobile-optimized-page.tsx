@@ -334,6 +334,56 @@ export default function MobileOptimizedAdminDashboard() {
     setProcessingPropertyId(null);
   }
 
+  async function handlePriceChange(propertyId: string, currentPrice: number) {
+    const newPriceStr = prompt(
+      `Change property price from $${currentPrice.toLocaleString()}\n\nEnter new price (numbers only):`,
+      currentPrice.toString()
+    );
+    
+    if (!newPriceStr || newPriceStr.trim() === '') {
+      return; // User cancelled
+    }
+    
+    const newPrice = parseFloat(newPriceStr.replace(/[,$]/g, ''));
+    
+    if (isNaN(newPrice) || newPrice <= 0) {
+      alert('Please enter a valid price (numbers only)');
+      return;
+    }
+    
+    if (newPrice === currentPrice) {
+      return; // No change
+    }
+    
+    try {
+      setProcessingPropertyId(propertyId);
+      
+      const { error } = await supabase
+        .from('properties')
+        .update({ 
+          price: newPrice,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', propertyId);
+
+      if (error) {
+        console.error('❌ Error updating property price:', error);
+        setError(`Failed to update price: ${error.message}`);
+        return;
+      }
+
+      console.log(`✅ Property ${propertyId} price updated to: $${newPrice.toLocaleString()}`);
+      
+      // Refresh the dashboard data to reflect changes
+      await loadDashboardData();
+      
+    } catch (error) {
+      console.error('❌ Network error during price update:', error);
+      setError('Network error occurred. Please try again.');
+    }
+    setProcessingPropertyId(null);
+  }
+
   async function handleLogout() {
     try {
       await supabase.auth.signOut();
@@ -606,12 +656,18 @@ export default function MobileOptimizedAdminDashboard() {
             </div>
             
             {/* Additional Actions Row */}
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              <button 
+                onClick={() => handlePriceChange(property.id, property.price)}
+                className="w-full px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                💰 Change Price
+              </button>
               <button 
                 onClick={() => updatePropertyStatus(property.id, property.listing_type === 'rental' ? 'rented' : 'sold')}
                 className="w-full px-4 py-2 bg-purple-600 text-white text-xs font-bold rounded-lg hover:bg-purple-700 transition-colors"
               >
-                {property.listing_type === 'rental' ? '🏠 Mark Rented' : '🏆 Mark Sold'}
+                {property.listing_type === 'rental' ? '🏠 Rented' : '🏆 Sold'}
               </button>
               <button 
                 onClick={() => {
@@ -621,7 +677,7 @@ export default function MobileOptimizedAdminDashboard() {
                 }}
                 className="w-full px-4 py-2 bg-gray-600 text-white text-xs font-bold rounded-lg hover:bg-gray-700 transition-colors"
               >
-                👁️‍🗨️ Take Off Market
+                👁️‍🗨️ Off Market
               </button>
             </div>
           </div>
