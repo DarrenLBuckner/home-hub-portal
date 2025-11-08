@@ -178,9 +178,11 @@ export default function UniversalPropertyManager({
       `• Remove all associated images and data\n` +
       `• Clean up your admin dashboard\n\n` +
       `⚠️ THIS ACTION CANNOT BE UNDONE!\n\n` +
-      `Type "DELETE ALL" below to confirm:`;
+      `To confirm this dangerous action, please type exactly:\n` +
+      `DELETE ALL\n\n` +
+      `(Type the words DELETE ALL in the input box below)`;
     
-    const userInput = prompt(confirmMessage);
+    const userInput = prompt(confirmMessage, "Type DELETE ALL here to confirm");
     if (userInput !== 'DELETE ALL') {
       alert('Bulk delete cancelled. Properties were not deleted.');
       return;

@@ -67,7 +67,7 @@ export default function AdminPropertyDetailsPage() {
       // Get current user and verify admin access
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
-        window.location.href = '/login';
+        router.push('/login?redirectedFrom=' + encodeURIComponent(window.location.pathname));
         return;
       }
 
@@ -79,7 +79,7 @@ export default function AdminPropertyDetailsPage() {
         .single();
 
       if (!adminUser) {
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
         return;
       }
 
