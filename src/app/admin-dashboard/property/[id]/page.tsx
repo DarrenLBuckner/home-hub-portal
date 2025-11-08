@@ -71,19 +71,36 @@ export default function AdminPropertyDetailsPage() {
         return;
       }
 
-      // Check if user is admin using admin_users table
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .single();
+      // Check if user is admin using server API (same approach as admin dashboard)
+      try {
+        const adminResponse = await fetch('/api/admin/data', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
 
-      if (!adminUser) {
+        if (!adminResponse.ok) {
+          console.error('❌ Admin verification failed:', adminResponse.status);
+          router.push('/dashboard');
+          return;
+        }
+
+        const adminData = await adminResponse.json();
+        
+        if (!adminData || !adminData.permissions) {
+          console.error('❌ Invalid admin data received');
+          router.push('/dashboard');
+          return;
+        }
+
+        setUser({ ...authUser, admin: adminData });
+      } catch (error) {
+        console.error('❌ Admin verification error:', error);
         router.push('/dashboard');
         return;
       }
-
-      setUser({ ...authUser, admin: adminUser });
       
       // Check if user is super admin (only super admin can delete properties)
       setIsSuperAdmin(authUser.email === 'mrdarrenbuckner@gmail.com');
