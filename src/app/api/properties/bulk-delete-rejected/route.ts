@@ -18,22 +18,30 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // Verify user is admin
-    const { data: adminUser, error: adminError } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+    // Verify user is admin using server-side verification approach
+    try {
+      // Use the same authentication method as the admin dashboard
+      const { data: adminUsers, error: adminError } = await supabase
+        .from('admin_users')
+        .select('user_id, admin_level, country_id')
+        .eq('user_id', user.id);
 
-    if (adminError || !adminUser) {
-      console.log('❌ Non-admin user attempted bulk delete:', user.email);
+      if (adminError || !adminUsers || adminUsers.length === 0) {
+        console.log('❌ Non-admin user attempted bulk delete:', user.email);
+        return NextResponse.json(
+          { error: 'Admin privileges required for bulk delete operations' },
+          { status: 403 }
+        );
+      }
+
+      console.log('✅ Admin verified for bulk delete:', user.email);
+    } catch (error) {
+      console.error('❌ Admin verification error:', error);
       return NextResponse.json(
-        { error: 'Admin privileges required for bulk delete operations' },
-        { status: 403 }
+        { error: 'Admin verification failed' },
+        { status: 500 }
       );
     }
-
-    console.log('✅ Admin verified for bulk delete:', user.email);
 
     // Get count of rejected properties before deletion
     const { count: rejectedCount, error: countError } = await supabase
