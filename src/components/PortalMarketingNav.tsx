@@ -11,9 +11,11 @@ export default function PortalMarketingNav() {
           {/* Left Side - Logo & Navigation */}
           <div className="flex items-center space-x-8">
             <Link href="/" className="flex items-center">
-              <svg className="w-8 h-8 text-blue-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
-              </svg>
+              <img 
+                src="/android-icon-48x48.png" 
+                alt="Portal Home Hub Logo - PHH" 
+                className="w-8 h-8 mr-2"
+              />
               <span className="text-xl font-bold text-white">Portal Home Hub</span>
             </Link>
 
