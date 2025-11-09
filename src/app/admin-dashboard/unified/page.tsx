@@ -12,7 +12,7 @@ interface Property {
   title: string;  
   description: string;
   price: number;
-  property_type?: string;
+pe?: string;
   listing_type?: string;
   bedrooms: number;
   bathrooms: number;
@@ -622,18 +622,32 @@ export default function UnifiedAdminDashboard() {
 
             {/* Dashboard Overview - Quick Access to All Sections */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Pending Properties Quick Access */}
+              {/* Property Review & Approvals - Primary Action */}
               <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-yellow-900">🏠 Complete Property Management</h3>
+                  <h3 className="text-lg font-bold text-yellow-900">⚖️ Property Review & Approvals</h3>
                   <div className="text-2xl font-black text-yellow-600">{statistics.totalPending}</div>
                 </div>
-                <p className="text-sm text-yellow-800 mb-4">Manage all properties: pending, active, rejected</p>
+                <p className="text-sm text-yellow-800 mb-4">Approve, reject, and manage pending properties</p>
+                <Link href="/admin-dashboard/property-review">
+                  <button className="w-full px-4 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition-colors">
+                    Review Properties →
+                  </button>
+                </Link>
+              </div>
+
+              {/* Complete Property Management */}
+              <div className="bg-gradient-to-br from-orange-50 to-yellow-50 rounded-2xl p-6 border border-orange-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-orange-900">🏠 All Properties</h3>
+                  <div className="text-2xl font-black text-orange-600">{statistics.totalActive + statistics.totalPending}</div>
+                </div>
+                <p className="text-sm text-orange-800 mb-4">View and manage all properties in the system</p>
                 <button
                   onClick={() => setActiveSection('properties')}
-                  className="w-full px-4 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition-colors"
+                  className="w-full px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors"
                 >
-                  Manage Properties →
+                  Manage All Properties →
                 </button>
               </div>
 
