@@ -49,14 +49,12 @@ const navLinks: Record<UserType, NavLink[]> = {
 	admin: [
 		{ label: "Admin Dashboard", href: "/admin-dashboard" },
 		{ label: "Property Review & Approvals", href: "/admin-dashboard/property-review" },
-		{ label: "User Management", href: "/admin-dashboard/users" },
 		{ label: "Settings", href: "/admin-dashboard/settings" },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
 	super_admin: [
 		{ label: "Dashboard", href: "/admin-dashboard" },
 		{ label: "Applications", href: "/admin-dashboard" },
-		{ label: "User Management", href: "/admin-dashboard/users" },
 		{ label: "Properties", href: "/admin-dashboard" },
 		{ label: "System Settings", href: "/admin-dashboard/settings" },
 		{ label: "Admin Management", href: "/admin-dashboard/admin" },
