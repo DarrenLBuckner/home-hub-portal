@@ -8,15 +8,11 @@ import { CountryThemeProvider } from '@/components/CountryThemeProvider';
 import { getCountryFromHeaders } from '@/lib/country-detection-server';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const country = await getCountryFromHeaders();
-  const countryName = country === 'JM' ? 'Jamaica' : 'Guyana';
-  const siteName = country === 'JM' ? 'Jamaica Home Hub' : 'Guyana Home Hub';
-  
   return {
-    title: `${siteName} - Real Estate Portal`,
-    description: `${siteName} - Real estate portal for agents, landlords, and FSBO. Find and list properties in ${countryName}.`,
-    keywords: `real estate, property, homes, agents, landlords, FSBO, ${countryName}, ${siteName}`,
-    authors: [{ name: siteName }],
+    title: 'Portal Home Hub - Professional Real Estate Management',
+    description: 'Portal Home Hub - Comprehensive real estate management platform for professionals across the Caribbean, Africa and beyond.',
+    keywords: 'real estate, property management, portal, agents, landlords, FSBO, Caribbean, Africa, professional',
+    authors: [{ name: 'Portal Home Hub' }],
   };
 }
 
