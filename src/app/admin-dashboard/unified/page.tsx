@@ -511,7 +511,7 @@ export default function UnifiedAdminDashboard() {
           {permissions?.canAccessUserManagement && (
             <button
               onClick={() => setActiveSection('users')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+              className={`hidden px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                 activeSection === 'users'
                   ? 'bg-purple-600 text-white'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'

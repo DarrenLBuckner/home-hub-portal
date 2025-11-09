@@ -48,7 +48,7 @@ const navLinks: Record<UserType, NavLink[]> = {
 	],
 	admin: [
 		{ label: "Admin Dashboard", href: "/admin-dashboard" },
-		{ label: "Property Review & Approvals", href: "/admin-dashboard/property-review" },
+		// { label: "Property Review & Approvals", href: "/admin-dashboard/property-review" }, // Hidden - available via dashboard card
 		{ label: "Settings", href: "/admin-dashboard/settings" },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
