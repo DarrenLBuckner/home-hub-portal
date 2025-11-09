@@ -62,6 +62,24 @@ export default function SuperSimplePricingManagement() {
     fetchPricingPlans();
   }, []);
 
+  // Debug permissions when they change
+  useEffect(() => {
+    if (permissions && adminData) {
+      console.log('🔍 DEBUG Permissions loaded:', {
+        adminEmail: adminData.email,
+        adminLevel: adminData.admin_level,
+        countryId: adminData.country_id,
+        permissions: {
+          canEditGlobalPricing: permissions.canEditGlobalPricing,
+          canEditCountryPricing: permissions.canEditCountryPricing,
+          canViewAllCountryPricing: permissions.canViewAllCountryPricing,
+          canViewCountryPricing: permissions.canViewCountryPricing,
+          countryFilter: permissions.countryFilter,
+        }
+      });
+    }
+  }, [permissions, adminData]);
+
   const fetchPricingPlans = async () => {
     try {
       console.log('🔍 DEBUG: Fetching pricing plans with permissions:', {
@@ -163,16 +181,29 @@ export default function SuperSimplePricingManagement() {
 
   // Helper function to check if current admin can edit this pricing plan
   const canEditPlan = (plan: PricingPlan): boolean => {
+    console.log('🔍 DEBUG canEditPlan for plan:', {
+      planName: plan.plan_name,
+      planCountry: plan.country_id,
+      canEditGlobalPricing: permissions?.canEditGlobalPricing,
+      canEditCountryPricing: permissions?.canEditCountryPricing,
+      countryFilter: permissions?.countryFilter,
+      adminData: adminData
+    });
+
     // Super Admin can edit all plans
     if (permissions?.canEditGlobalPricing) {
+      console.log('✅ Super Admin - can edit all plans');
       return true;
     }
     
     // Owner Admin can only edit plans for their country
     if (permissions?.canEditCountryPricing && permissions?.countryFilter) {
-      return plan.country_id === permissions.countryFilter;
+      const canEdit = plan.country_id === permissions.countryFilter;
+      console.log(`🔍 Owner Admin check: plan.country_id (${plan.country_id}) === countryFilter (${permissions.countryFilter}) = ${canEdit}`);
+      return canEdit;
     }
     
+    console.log('❌ No edit permissions found');
     // No edit permissions
     return false;
   };

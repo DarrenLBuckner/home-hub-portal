@@ -51,7 +51,7 @@ export function useAdminData(): UseAdminDataReturn {
       data.user_type, 
       data.email, 
       data.admin_level,
-      data.country_id ? Number(data.country_id) : null,
+      data.country_id, // Keep as string - don't convert to Number
       null // country name - we'll handle this later
     );
 
