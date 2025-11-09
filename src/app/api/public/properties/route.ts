@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
     const listing_type = searchParams.get('listing_type') // 'sale' or 'rent'
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
+    const bustCache = searchParams.get('bust') // Cache busting parameter
     
     // Search parameters
     const searchQuery = searchParams.get('search') || ''
@@ -126,8 +127,10 @@ export async function GET(request: NextRequest) {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, OPTIONS',
           'Access-Control-Allow-Headers': 'Content-Type, x-site-id',
-          // Add cache headers for better performance
-          'Cache-Control': searchQuery ? 'public, max-age=300' : 'public, max-age=600' // 5min for search, 10min for browse
+          // Dynamic cache control - no cache if cache busting, otherwise short cache
+          'Cache-Control': bustCache ? 'no-cache, no-store, must-revalidate' : 'public, max-age=60, s-maxage=60',
+          'CDN-Cache-Control': bustCache ? 'no-cache' : 'max-age=60',
+          'Vercel-CDN-Cache-Control': bustCache ? 'no-cache' : 'max-age=60'
         }
       }
     )

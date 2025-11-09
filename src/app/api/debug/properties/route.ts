@@ -26,7 +26,7 @@ export async function GET() {
       }
     );
 
-    // Get all properties with user information
+    // Get recent properties with status and basic info for debugging
     const { data: properties, error } = await supabase
       .from('properties')
       .select(`

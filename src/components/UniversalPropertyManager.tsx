@@ -246,8 +246,15 @@ export default function UniversalPropertyManager({
         .eq('id', id);
 
       if (error) throw error;
+      
+      // Update local state first
       setProperties(prev => prev.filter(p => p.id !== id));
-      alert('Property deleted successfully');
+      
+      // Success notification
+      alert('✅ Property deleted successfully!\n\nNote: It may take up to 1 minute for changes to appear on the public website due to caching.');
+      
+      // Optional: Trigger cache invalidation on public API (if we want immediate update)
+      console.log('🗑️ Property deleted:', id, '- Public site will update within 1 minute');
     } catch (err) {
       alert('Error deleting property. Please try again.');
       console.error('Delete error:', err);
