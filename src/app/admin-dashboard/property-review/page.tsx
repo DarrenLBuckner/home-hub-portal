@@ -514,10 +514,10 @@ export default function PropertyReviewPage() {
                           </Link>
 
                           {/* Status Management */}
-                          {property.status === 'pending' && (
+                          {(property.status === 'pending' || property.status === 'draft') && (
                             <>
                               <button
-                                onClick={() => updatePropertyStatus(property.id, 'available')}
+                                onClick={() => updatePropertyStatus(property.id, 'active')}
                                 className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors"
                               >
                                 ✅ Approve

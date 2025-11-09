@@ -14,6 +14,7 @@ interface Property {
   price: number;
 pe?: string;
   listing_type?: string;
+  property_type?: string;
   bedrooms: number;
   bathrooms: number;
   region: string;
@@ -74,7 +75,7 @@ export default function UnifiedAdminDashboard() {
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   
   // State management
-  const [activeSection, setActiveSection] = useState<'dashboard' | 'properties' | 'system'>('dashboard');
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'properties' | 'system' | 'users'>('dashboard');
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
   const [approvedProperties, setApprovedProperties] = useState<Property[]>([]);
   const [users, setUsers] = useState<User[]>([]);
