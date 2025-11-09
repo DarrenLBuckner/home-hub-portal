@@ -504,19 +504,7 @@ export default function UnifiedAdminDashboard() {
             🏠 Properties
           </button>
 
-          {/* PRIORITY 3: Pricing - Business Critical (grouped with properties) */}
-          {permissions?.canAccessPricingManagement && (
-            <button
-              onClick={() => setActiveSection('pricing')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                activeSection === 'pricing'
-                  ? 'bg-yellow-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              � Pricing
-            </button>
-          )}
+
 
           {/* PRIORITY 4: User Management - Administrative Tasks */}
           {permissions?.canAccessUserManagement && (
