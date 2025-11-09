@@ -480,6 +480,7 @@ export default function UnifiedAdminDashboard() {
     <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center space-x-1 overflow-x-auto py-2">
+          {/* PRIORITY 1: Dashboard - Quick Overview */}
           <button
             onClick={() => setActiveSection('dashboard')}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
@@ -491,6 +492,7 @@ export default function UnifiedAdminDashboard() {
             📊 Dashboard
           </button>
           
+          {/* PRIORITY 2: Properties - Core Daily Work */}
           <button
             onClick={() => setActiveSection('properties')}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
@@ -502,19 +504,7 @@ export default function UnifiedAdminDashboard() {
             🏠 Properties
           </button>
 
-          {permissions?.canAccessUserManagement && (
-            <button
-              onClick={() => setActiveSection('users')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                activeSection === 'users'
-                  ? 'bg-purple-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-              }`}
-            >
-              👥 Users
-            </button>
-          )}
-
+          {/* PRIORITY 3: Pricing - Business Critical (grouped with properties) */}
           {permissions?.canAccessPricingManagement && (
             <button
               onClick={() => setActiveSection('pricing')}
@@ -524,10 +514,25 @@ export default function UnifiedAdminDashboard() {
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              💰 Pricing
+              � Pricing
             </button>
           )}
 
+          {/* PRIORITY 4: User Management - Administrative Tasks */}
+          {permissions?.canAccessUserManagement && (
+            <button
+              onClick={() => setActiveSection('users')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                activeSection === 'users'
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              � Users
+            </button>
+          )}
+
+          {/* PRIORITY 5: Personal Settings - Personal Preferences */}
           {permissions?.canAccessSettings && (
             <button
               onClick={() => setActiveSection('settings')}
@@ -541,6 +546,7 @@ export default function UnifiedAdminDashboard() {
             </button>
           )}
 
+          {/* PRIORITY 6: System Settings - Advanced/Less Frequent (Super Admin Only) */}
           {permissions?.canAccessSystemSettings && (
             <button
               onClick={() => setActiveSection('system')}
@@ -640,32 +646,111 @@ export default function UnifiedAdminDashboard() {
               </div>
             </div>
 
-            {/* Pending Properties Quick View */}
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4">⏳ Pending Properties ({statistics.totalPending})</h2>
-              {pendingProperties.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-2xl shadow-sm">
-                  <div className="text-6xl mb-4">🎉</div>
-                  <h3 className="text-xl font-bold text-gray-700 mb-2">All caught up!</h3>
-                  <p className="text-gray-600">No properties waiting for review. Excellent work!</p>
+            {/* Dashboard Overview - Quick Access to All Sections */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Pending Properties Quick Access */}
+              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-yellow-900">⏳ Property Review</h3>
+                  <div className="text-2xl font-black text-yellow-600">{statistics.totalPending}</div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pendingProperties.slice(0, 6).map((property) => (
-                    <MobilePropertyCard key={property.id} property={property} />
-                  ))}
-                </div>
-              )}
-              {pendingProperties.length > 6 && (
-                <div className="text-center mt-4">
+                <p className="text-sm text-yellow-800 mb-4">Properties waiting for review</p>
+                <button
+                  onClick={() => setActiveSection('properties')}
+                  className="w-full px-4 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition-colors"
+                >
+                  Review Properties →
+                </button>
+              </div>
+
+              {/* User Management Quick Access */}
+              {permissions?.canAccessUserManagement && (
+                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-blue-900">👥 User Management</h3>
+                    <div className="text-2xl font-black text-blue-600">{users.length}</div>
+                  </div>
+                  <p className="text-sm text-blue-800 mb-4">
+                    {permissions.canViewAllCountries 
+                      ? 'Manage all users across all countries' 
+                      : `Manage users in ${permissions.countryFilter}`}
+                  </p>
                   <button
-                    onClick={() => setActiveSection('properties')}
-                    className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors"
+                    onClick={() => setActiveSection('users')}
+                    className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    View All {pendingProperties.length} Pending Properties →
+                    Manage Users →
                   </button>
                 </div>
               )}
+
+              {/* Pricing Management Quick Access */}
+              {permissions?.canAccessPricingManagement && (
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-green-900">💰 Pricing Control</h3>
+                    <div className="text-xl text-green-600">$</div>
+                  </div>
+                  <p className="text-sm text-green-800 mb-4">
+                    {permissions.canViewAllCountries 
+                      ? 'Manage pricing for all countries and user types'
+                      : `Manage pricing for ${permissions.countryFilter}`}
+                  </p>
+                  <button
+                    onClick={() => setActiveSection('pricing')}
+                    className="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Manage Pricing →
+                  </button>
+                </div>
+              )}
+
+              {/* Settings Quick Access */}
+              <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-purple-900">⚙️ Settings</h3>
+                  <div className="text-xl text-purple-600">🔧</div>
+                </div>
+                <p className="text-sm text-purple-800 mb-4">Personal admin settings and preferences</p>
+                <button
+                  onClick={() => setActiveSection('settings')}
+                  className="w-full px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Open Settings →
+                </button>
+              </div>
+
+              {/* System Settings for Super Admin */}
+              {permissions?.canAccessSystemSettings && (
+                <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-6 border border-red-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-red-900">🔧 System Settings</h3>
+                    <div className="text-xl text-red-600">⚡</div>
+                  </div>
+                  <p className="text-sm text-red-800 mb-4">Global system configuration and advanced settings</p>
+                  <button
+                    onClick={() => setActiveSection('system')}
+                    className="w-full px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    System Config →
+                  </button>
+                </div>
+              )}
+
+              {/* Active Properties Summary */}
+              <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl p-6 border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900">✅ Live Properties</h3>
+                  <div className="text-2xl font-black text-green-600">{statistics.totalActive}</div>
+                </div>
+                <p className="text-sm text-gray-800 mb-4">Properties currently live on the platform</p>
+                <button
+                  onClick={() => setActiveSection('properties')}
+                  className="w-full px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  View All Properties →
+                </button>
+              </div>
             </div>
           </div>
         )}

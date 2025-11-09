@@ -480,10 +480,15 @@ export default function UniversalPropertyManager({
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">My Properties</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {userType === 'admin' ? 'All Properties' : 'My Properties'}
+          </h2>
           <p className="text-gray-600">
             {totalProperties} total propert{totalProperties !== 1 ? 'ies' : 'y'} • 
-            Manage your listings, track status, and update details
+            {userType === 'admin' 
+              ? 'Manage all properties in your region' 
+              : 'Manage your listings, track status, and update details'
+            }
           </p>
         </div>
         <a
