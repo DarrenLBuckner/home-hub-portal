@@ -791,72 +791,7 @@ export default function MobileOptimizedAdminDashboard() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* Enterprise Statistics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
-          {/* Priority - Pending Review */}
-          <div className="col-span-2 sm:col-span-1 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-4 border border-yellow-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold text-yellow-800 uppercase tracking-wide">Pending</p>
-                <p className="text-3xl font-black text-yellow-600 my-1">{statistics.totalPending}</p>
-                <p className="text-xs text-yellow-700">⚡ Need review</p>
-              </div>
-              <div className="text-3xl opacity-75">⏳</div>
-            </div>
-          </div>
 
-          {/* Today's Activity */}
-          <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600">Today</p>
-                <p className="text-2xl font-bold text-blue-600 my-1">{statistics.todaySubmissions}</p>
-              </div>
-              <div className="text-2xl">📈</div>
-            </div>
-          </div>
-
-          {/* Active Properties */}
-          <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600">Active</p>
-                <p className="text-2xl font-bold text-green-600 my-1">{statistics.totalActive}</p>
-              </div>
-              <div className="text-2xl">✅</div>
-            </div>
-          </div>
-
-          {/* Rejected */}
-          <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-gray-600">Rejected</p>
-                <p className="text-2xl font-bold text-red-600 my-1">{statistics.totalRejected}</p>
-              </div>
-              <div className="text-2xl">❌</div>
-            </div>
-          </div>
-
-          {/* Breakdown */}
-          <div className="col-span-2 sm:col-span-3 lg:col-span-1 bg-gray-50 rounded-2xl p-4 border border-gray-200">
-            <p className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">Types</p>
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-600">FSBO</span>
-                <span className="text-xs font-bold text-gray-900 bg-white px-2 py-1 rounded">{statistics.byUserType.fsbo}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-600">Agent</span>
-                <span className="text-xs font-bold text-gray-900 bg-white px-2 py-1 rounded">{statistics.byUserType.agent}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-xs text-gray-600">Landlord</span>
-                <span className="text-xs font-bold text-gray-900 bg-white px-2 py-1 rounded">{statistics.byUserType.landlord}</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Property Management Hub - Prominent Section */}
         <div className="mb-8">
@@ -901,16 +836,7 @@ export default function MobileOptimizedAdminDashboard() {
                 <div className="text-xs mt-1 opacity-75">Live on Site</div>
               </button>
 
-              {/* All Properties */}
-              <button
-                onClick={() => setActiveTab('all')}
-                className="bg-blue-500 hover:bg-blue-600 text-white p-6 rounded-xl transition-all transform hover:scale-105 shadow-lg"
-              >
-                <div className="text-3xl mb-2">📋</div>
-                <div className="text-2xl font-bold">ALL</div>
-                <div className="text-sm opacity-90">Complete Manager</div>
-                <div className="text-xs mt-1 opacity-75">Full Control</div>
-              </button>
+
 
               {/* Engagement Overview */}
               <button
@@ -931,12 +857,7 @@ export default function MobileOptimizedAdminDashboard() {
                   💰 Pricing Dashboard
                 </button>
               </Link>
-              <button
-                onClick={() => setActiveTab('all')}
-                className="px-6 py-3 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 transition-colors shadow-lg"
-              >
-                🔧 Advanced Property Tools
-              </button>
+
             </div>
           </div>
         </div>

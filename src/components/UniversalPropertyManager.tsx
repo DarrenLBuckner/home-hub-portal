@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/supabase';
+import { getCountryAwareAdminPermissions } from '@/lib/auth/adminPermissions';
 
 interface Property {
   id: string;
@@ -27,6 +28,14 @@ interface Property {
   region: string;
   propertyCategory: string;
   listed_by_type: string;
+  country_id?: string;
+  owner?: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+    user_type: string;
+  };
 }
 
 const statusConfig = {
@@ -115,25 +124,107 @@ export default function UniversalPropertyManager({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [adminPermissions, setAdminPermissions] = useState<any>(null);
 
   useEffect(() => {
-    fetchProperties();
-  }, [userId]);
+    if (userType === 'admin') {
+      loadAdminPermissions();
+    } else {
+      fetchProperties();
+    }
+  }, [userId, userType]);
+
+  const loadAdminPermissions = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        setError('No authenticated user found');
+        setLoading(false);
+        return;
+      }
+
+      // Get user profile and permissions
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('user_type, admin_level, email')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Profile error:', profileError);
+        setError('Failed to load admin profile');
+        setLoading(false);
+        return;
+      }
+
+      // Get country-aware admin permissions
+      const permissions = await getCountryAwareAdminPermissions(
+        profile.user_type,
+        profile.email,
+        profile.admin_level,
+        user.id,
+        supabase
+      );
+
+      setAdminPermissions(permissions);
+      fetchProperties();
+    } catch (err: any) {
+      console.error('Admin permissions error:', err);
+      setError('Failed to load admin permissions');
+      setLoading(false);
+    }
+  };
 
   const fetchProperties = async () => {
     setLoading(true);
     setError(null);
     try {
       const supabase = createClient();
-      const { data, error } = await supabase
+      
+      let query = supabase
         .from('properties')
-        .select('*')
-        .eq('user_id', userId)
+        .select(`
+          *,
+          owner:profiles!user_id (
+            id,
+            email,
+            first_name,
+            last_name,
+            user_type
+          )
+        `)
         .order('created_at', { ascending: false });
 
+      // Apply filtering based on user type
+      if (userType === 'admin') {
+        console.log('🔧 Admin mode: Loading properties with country filtering...');
+        
+        // Apply country filter for non-super admins
+        if (adminPermissions && !adminPermissions.canViewAllCountries && adminPermissions.countryFilter) {
+          console.log(`🌍 Filtering properties for country: ${adminPermissions.countryFilter}`);
+          query = query.eq('country_id', adminPermissions.countryFilter);
+        } else if (adminPermissions && adminPermissions.canViewAllCountries) {
+          console.log('🌍 Super Admin: Loading ALL properties from ALL countries');
+        } else {
+          console.log('⏳ Admin permissions not loaded yet, defaulting to user-specific properties');
+          query = query.eq('user_id', userId);
+        }
+      } else {
+        // Regular users (agent, landlord, fsbo) only see their own properties
+        console.log(`👤 Regular user mode (${userType}): Loading user's own properties only`);
+        query = query.eq('user_id', userId);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
+      
+      console.log(`✅ Loaded ${data?.length || 0} properties for ${userType} user`);
       setProperties(data || []);
     } catch (err: any) {
+      console.error('❌ Property fetch error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -600,6 +691,27 @@ export default function UniversalPropertyManager({
                       <div className="text-sm text-gray-600 mb-3">
                         📍 {property.city}, {property.region}
                       </div>
+                      
+                      {/* Owner Information for Admin Users */}
+                      {userType === 'admin' && property.owner && (
+                        <div className="bg-blue-50 rounded-lg p-2 mb-3 text-xs">
+                          <div className="font-medium text-blue-800 mb-1">Property Owner</div>
+                          <div className="text-blue-700">
+                            <div className="flex items-center justify-between">
+                              <span className="truncate">
+                                {[property.owner.first_name, property.owner.last_name].filter(Boolean).join(' ') || 'Unknown User'}
+                              </span>
+                              <span className="ml-2 px-2 py-0.5 bg-blue-200 text-blue-800 rounded text-xs font-medium">
+                                {property.owner.user_type === 'owner' ? 'FSBO' : 
+                                 property.owner.user_type === 'agent' ? 'Agent' : 
+                                 property.owner.user_type === 'landlord' ? 'Landlord' : 
+                                 property.owner.user_type}
+                              </span>
+                            </div>
+                            <div className="text-blue-600 mt-1">📧 {property.owner.email}</div>
+                          </div>
+                        </div>
+                      )}
                       
                       <div className="flex items-center gap-4 mb-4 text-sm">
                         <span className="flex items-center gap-1 text-gray-700">
