@@ -27,6 +27,7 @@ export default function UserManagement() {
   const [newAdminEmail, setNewAdminEmail] = useState("");
   const [newAdminFirstName, setNewAdminFirstName] = useState("");
   const [newAdminLastName, setNewAdminLastName] = useState("");
+  const [newAdminLevel, setNewAdminLevel] = useState("basic");
   const [addingAdmin, setAddingAdmin] = useState(false);
 
   useEffect(() => {
@@ -185,9 +186,20 @@ export default function UserManagement() {
     router.push('/admin-login');
   };
 
-  const addNewBasicAdmin = async () => {
+  const addNewAdmin = async () => {
     if (!newAdminEmail.trim() || !newAdminFirstName.trim() || !newAdminLastName.trim()) {
       alert('Please fill in all fields');
+      return;
+    }
+
+    // Validate admin level permissions
+    if (newAdminLevel === 'super' && user?.admin_level !== 'super') {
+      alert('🔒 ACCESS DENIED: Only Super Admins can create Super Admin accounts!');
+      return;
+    }
+
+    if (newAdminLevel === 'owner' && user?.admin_level !== 'super' && user?.admin_level !== 'owner') {
+      alert('🔒 ACCESS DENIED: Only Super Admins and Owner Admins can create Owner Admin accounts!');
       return;
     }
 
@@ -206,6 +218,22 @@ export default function UserManagement() {
         return;
       }
 
+      // CRITICAL: Country assignment logic - new admins inherit creator's country
+      let countryId = null;
+      if (user?.admin_level === 'super') {
+        // Super Admin can create admins for any country - inherit their country as default
+        countryId = adminData?.country_id || null; 
+      } else if (user?.admin_level === 'owner') {
+        // Owner Admin creating admin - MUST inherit their country (security requirement)
+        countryId = adminData?.country_id;
+        
+        if (!countryId) {
+          alert('❌ ERROR: Cannot determine your country assignment. Please contact Super Admin.');
+          setAddingAdmin(false);
+          return;
+        }
+      }
+
       // Create new admin profile
       const { data: newProfile, error } = await supabase
         .from('profiles')
@@ -214,7 +242,8 @@ export default function UserManagement() {
           first_name: newAdminFirstName.trim(),
           last_name: newAdminLastName.trim(),
           user_type: 'admin',
-          admin_level: 'basic',
+          admin_level: newAdminLevel,
+          country_id: countryId,
           created_by_admin: user?.id,
           admin_created_at: new Date().toISOString()
         })
@@ -225,12 +254,19 @@ export default function UserManagement() {
         throw error;
       }
 
-      alert(`Basic admin ${newAdminFirstName} ${newAdminLastName} created successfully!`);
+      const levelNames: {[key: string]: string} = {
+        'super': 'Super Admin',
+        'owner': 'Owner Admin', 
+        'basic': 'Basic Admin'
+      };
+
+      alert(`✅ ${levelNames[newAdminLevel]} ${newAdminFirstName} ${newAdminLastName} created successfully!\n🏴 Country: ${countryId || 'Global'}\n👤 Created by: ${user?.name || user?.email}`);
       
       // Clear form
       setNewAdminEmail('');
       setNewAdminFirstName('');
       setNewAdminLastName('');
+      setNewAdminLevel('basic');
       setShowAddAdmin(false);
       
       // Reload users
@@ -326,7 +362,7 @@ export default function UserManagement() {
                   onClick={() => setShowAddAdmin(true)}
                   className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
                 >
-                  + Add Basic Admin
+                  + Add Admin
                 </button>
                 <button 
                   onClick={loadUsers}
@@ -502,7 +538,7 @@ export default function UserManagement() {
       {showAddAdmin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-bold mb-4">Add New Basic Admin</h3>
+            <h3 className="text-lg font-bold mb-4">Add New Admin</h3>
             
             <div className="space-y-4">
               <div>
@@ -546,15 +582,34 @@ export default function UserManagement() {
                   required
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Admin Level
+                </label>
+                <select
+                  value={newAdminLevel}
+                  onChange={(e) => setNewAdminLevel(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="basic">Basic Admin - Property review & basic admin tasks</option>
+                  {(user?.admin_level === 'super' || user?.admin_level === 'owner') && (
+                    <option value="owner">Owner Admin - Full country management</option>
+                  )}
+                  {user?.admin_level === 'super' && (
+                    <option value="super">Super Admin - Global system access</option>
+                  )}
+                </select>
+              </div>
             </div>
 
             <div className="mt-6 flex space-x-3">
               <button
-                onClick={addNewBasicAdmin}
+                onClick={addNewAdmin}
                 disabled={addingAdmin}
                 className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md font-medium transition-colors"
               >
-                {addingAdmin ? 'Creating...' : 'Create Basic Admin'}
+                {addingAdmin ? 'Creating...' : `Create ${newAdminLevel === 'super' ? 'Super' : newAdminLevel === 'owner' ? 'Owner' : 'Basic'} Admin`}
               </button>
               <button
                 onClick={() => {
@@ -562,6 +617,7 @@ export default function UserManagement() {
                   setNewAdminEmail('');
                   setNewAdminFirstName('');
                   setNewAdminLastName('');
+                  setNewAdminLevel('basic');
                 }}
                 className="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
               >
@@ -571,8 +627,11 @@ export default function UserManagement() {
 
             <div className="mt-4 p-3 bg-blue-50 rounded-md">
               <p className="text-sm text-blue-800">
-                <strong>Note:</strong> Basic admins can review properties and access admin features, 
-                but cannot manage users or system settings.
+                <strong>🏴 Country Assignment:</strong> New admins will be assigned to your country ({adminData?.country_id || 'N/A'}) and can only work within that country.<br/>
+                <strong>📋 Admin Levels:</strong><br/>
+                • <strong>Basic:</strong> Property review & basic admin tasks<br/>
+                • <strong>Owner:</strong> Full country management & user creation<br/>
+                • <strong>Super:</strong> Global system access (Super Admin only)
               </p>
             </div>
           </div>
