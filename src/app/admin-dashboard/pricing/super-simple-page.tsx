@@ -19,6 +19,7 @@ interface PricingPlan {
   features: any;
   active_subscriptions: number;
   total_purchases: number;
+  country_id: string;
 }
 
 export default function SuperSimplePricingManagement() {
@@ -63,15 +64,20 @@ export default function SuperSimplePricingManagement() {
 
   const fetchPricingPlans = async () => {
     try {
+      console.log('🔍 DEBUG: Fetching pricing plans with permissions:', {
+        canViewAllCountryPricing: permissions?.canViewAllCountryPricing,
+        countryFilter: permissions?.countryFilter,
+        adminData: adminData
+      });
+
       let query = supabase
         .from('pricing_plans')
         .select('*');
       
-      // Apply country filter for Owner Admins (Super Admin sees all)
-      if (!permissions?.canViewAllCountryPricing && permissions?.countryFilter) {
-        // Owner Admin: Filter to their country only
-        query = query.eq('country_id', permissions.countryFilter);
-      }
+      // REMOVED: Country filtering for viewing - all admins can see all pricing for transparency
+      // This allows competitive intelligence and transparency between countries
+      // but editing will still be restricted by country
+      console.log('🔍 DEBUG: Showing all pricing plans for transparency - editing restrictions will apply by country');
       
       query = query.order('user_type', { ascending: true });
       
@@ -155,6 +161,31 @@ export default function SuperSimplePricingManagement() {
     return <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">✅ Active</span>;
   };
 
+  // Helper function to check if current admin can edit this pricing plan
+  const canEditPlan = (plan: PricingPlan): boolean => {
+    // Super Admin can edit all plans
+    if (permissions?.canEditGlobalPricing) {
+      return true;
+    }
+    
+    // Owner Admin can only edit plans for their country
+    if (permissions?.canEditCountryPricing && permissions?.countryFilter) {
+      return plan.country_id === permissions.countryFilter;
+    }
+    
+    // No edit permissions
+    return false;
+  };
+
+  // Get country flag/identifier for display
+  const getCountryDisplay = (countryId: string) => {
+    switch (countryId) {
+      case 'GY': return '🇬🇾 GY';
+      case 'JM': return '🇯🇲 JM';
+      default: return `🏴 ${countryId}`;
+    }
+  };
+
   const SuperSimpleEditForm = ({ plan }: { plan: PricingPlan }) => {
     const [price, setPrice] = useState((plan.price / 100).toString());
     const [maxProperties, setMaxProperties] = useState(plan.max_properties?.toString() || 'Unlimited');
@@ -171,12 +202,40 @@ export default function SuperSimplePricingManagement() {
       updatePlan(plan.id, updates);
     };
 
+    // Security check - prevent editing if no permission
+    if (!canEditPlan(plan)) {
+      return (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="text-center">
+              <h3 className="text-xl font-bold text-red-600 mb-4">🚫 Access Denied</h3>
+              <p className="text-gray-600 mb-4">You can only edit pricing plans for your assigned country ({permissions?.countryFilter}).</p>
+              <p className="text-sm text-gray-500 mb-4">This plan is for country: {getCountryDisplay(plan.country_id)}</p>
+              <button
+                onClick={() => setEditingPlan(null)}
+                className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-          <div className="flex items-center mb-4">
-            <span className="text-2xl mr-2">{getPlanTypeIcon(plan.user_type)}</span>
-            <h3 className="text-xl font-bold">{plan.plan_name}</h3>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center">
+              <span className="text-2xl mr-2">{getPlanTypeIcon(plan.user_type)}</span>
+              <div>
+                <h3 className="text-xl font-bold">{plan.plan_name}</h3>
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                  {getCountryDisplay(plan.country_id)}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Super Simple Price Input */}
@@ -331,11 +390,13 @@ export default function SuperSimplePricingManagement() {
           </div>
           <div className="mt-4 p-4 bg-blue-50 rounded-lg">
             <p className="text-blue-800">
-              <strong>🎯 Quick Tips:</strong> Click "Edit" to change prices instantly. 
+              <strong>🎯 Quick Tips:</strong> You can view all pricing plans for competitive intelligence and transparency. 
+              Click "Edit" to change prices instantly (only for your country). 
               Toggle plans on/off with the switch. Mark plans as "Popular" to highlight them.
               {!permissions?.canEditGlobalPricing && (
                 <span className="block mt-2 text-yellow-700">
-                  <strong>📍 Note:</strong> As Owner Admin, you can only modify pricing for your assigned country.
+                  <strong>🌍 Transparency:</strong> You can see all countries' pricing for competitive analysis, but can only edit pricing for {permissions?.countryFilter}. 
+                  Other countries' plans will show as "View Only" with grayed-out buttons.
                 </span>
               )}
             </p>
@@ -354,9 +415,23 @@ export default function SuperSimplePricingManagement() {
                     <div>
                       <h3 className="font-bold text-lg">{plan.plan_name}</h3>
                       <p className="text-sm text-gray-500 capitalize">{plan.user_type} Plan</p>
+                      <div className="mt-1">
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                          {getCountryDisplay(plan.country_id)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                  {getStatusBadge(plan)}
+                  <div className="text-right">
+                    {getStatusBadge(plan)}
+                    {!canEditPlan(plan) && (
+                      <div className="mt-1">
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                          🔒 View Only
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 {/* Price Display */}
@@ -390,33 +465,47 @@ export default function SuperSimplePricingManagement() {
                 {/* Action Buttons */}
                 <div className="space-y-2">
                   <button
-                    onClick={() => setEditingPlan(plan)}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    onClick={() => canEditPlan(plan) && setEditingPlan(plan)}
+                    disabled={!canEditPlan(plan)}
+                    className={`w-full px-4 py-2 rounded-lg font-medium transition-colors ${
+                      canEditPlan(plan)
+                        ? 'bg-blue-500 hover:bg-blue-600 text-white cursor-pointer'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    }`}
+                    title={canEditPlan(plan) ? 'Edit this pricing plan' : 'You can only edit pricing for your assigned country'}
                   >
-                    ✏️ Edit This Plan
+                    {canEditPlan(plan) ? '✏️ Edit This Plan' : '🔒 View Only'}
                   </button>
                   
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => togglePlanActive(plan)}
+                      onClick={() => canEditPlan(plan) && togglePlanActive(plan)}
+                      disabled={!canEditPlan(plan)}
                       className={`flex-1 px-3 py-2 rounded-lg font-medium transition-colors ${
-                        plan.is_active 
-                          ? 'bg-red-100 hover:bg-red-200 text-red-700' 
-                          : 'bg-green-100 hover:bg-green-200 text-green-700'
+                        !canEditPlan(plan)
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : plan.is_active 
+                            ? 'bg-red-100 hover:bg-red-200 text-red-700' 
+                            : 'bg-green-100 hover:bg-green-200 text-green-700'
                       }`}
+                      title={canEditPlan(plan) ? undefined : 'You can only edit pricing for your assigned country'}
                     >
-                      {plan.is_active ? '🚫 Disable' : '✅ Enable'}
+                      {!canEditPlan(plan) ? '🔒' : plan.is_active ? '🚫 Disable' : '✅ Enable'}
                     </button>
                     
                     <button
-                      onClick={() => makePlanPopular(plan)}
+                      onClick={() => canEditPlan(plan) && makePlanPopular(plan)}
+                      disabled={!canEditPlan(plan)}
                       className={`flex-1 px-3 py-2 rounded-lg font-medium transition-colors ${
-                        plan.is_popular 
-                          ? 'bg-yellow-200 text-yellow-800' 
-                          : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                        !canEditPlan(plan)
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : plan.is_popular 
+                            ? 'bg-yellow-200 text-yellow-800' 
+                            : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                       }`}
+                      title={canEditPlan(plan) ? undefined : 'You can only edit pricing for your assigned country'}
                     >
-                      {plan.is_popular ? '⭐ Popular' : '⭐ Mark Popular'}
+                      {!canEditPlan(plan) ? '🔒' : plan.is_popular ? '⭐ Popular' : '⭐ Mark Popular'}
                     </button>
                   </div>
                 </div>
