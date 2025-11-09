@@ -62,32 +62,10 @@ export default function SuperSimplePricingManagement() {
     fetchPricingPlans();
   }, []);
 
-  // Debug permissions when they change
-  useEffect(() => {
-    if (permissions && adminData) {
-      console.log('🔍 DEBUG Permissions loaded:', {
-        adminEmail: adminData.email,
-        adminLevel: adminData.admin_level,
-        countryId: adminData.country_id,
-        permissions: {
-          canEditGlobalPricing: permissions.canEditGlobalPricing,
-          canEditCountryPricing: permissions.canEditCountryPricing,
-          canViewAllCountryPricing: permissions.canViewAllCountryPricing,
-          canViewCountryPricing: permissions.canViewCountryPricing,
-          countryFilter: permissions.countryFilter,
-        }
-      });
-    }
-  }, [permissions, adminData]);
+
 
   const fetchPricingPlans = async () => {
     try {
-      console.log('🔍 DEBUG: Fetching pricing plans with permissions:', {
-        canViewAllCountryPricing: permissions?.canViewAllCountryPricing,
-        countryFilter: permissions?.countryFilter,
-        adminData: adminData
-      });
-
       let query = supabase
         .from('pricing_plans')
         .select('*');
@@ -95,7 +73,6 @@ export default function SuperSimplePricingManagement() {
       // REMOVED: Country filtering for viewing - all admins can see all pricing for transparency
       // This allows competitive intelligence and transparency between countries
       // but editing will still be restricted by country
-      console.log('🔍 DEBUG: Showing all pricing plans for transparency - editing restrictions will apply by country');
       
       query = query.order('user_type', { ascending: true });
       
@@ -181,29 +158,16 @@ export default function SuperSimplePricingManagement() {
 
   // Helper function to check if current admin can edit this pricing plan
   const canEditPlan = (plan: PricingPlan): boolean => {
-    console.log('🔍 DEBUG canEditPlan for plan:', {
-      planName: plan.plan_name,
-      planCountry: plan.country_id,
-      canEditGlobalPricing: permissions?.canEditGlobalPricing,
-      canEditCountryPricing: permissions?.canEditCountryPricing,
-      countryFilter: permissions?.countryFilter,
-      adminData: adminData
-    });
-
     // Super Admin can edit all plans
     if (permissions?.canEditGlobalPricing) {
-      console.log('✅ Super Admin - can edit all plans');
       return true;
     }
     
     // Owner Admin can only edit plans for their country
     if (permissions?.canEditCountryPricing && permissions?.countryFilter) {
-      const canEdit = plan.country_id === permissions.countryFilter;
-      console.log(`🔍 Owner Admin check: plan.country_id (${plan.country_id}) === countryFilter (${permissions.countryFilter}) = ${canEdit}`);
-      return canEdit;
+      return plan.country_id === permissions.countryFilter;
     }
     
-    console.log('❌ No edit permissions found');
     // No edit permissions
     return false;
   };
