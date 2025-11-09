@@ -44,8 +44,8 @@ function PortalMarketingContent() {
           <div className="flex justify-center mb-6">
             <div className="w-32 h-32 p-4 bg-white rounded-full shadow-lg">
               <img 
-                src="/android-icon-192x192.png" 
-                alt="Portal Home Hub Logo - PHH" 
+                src="/images/phh-logo-192.png" 
+                alt="PHH" 
                 className="w-full h-full object-contain"
               />
             </div>
