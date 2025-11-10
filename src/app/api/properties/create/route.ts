@@ -393,7 +393,17 @@ export async function POST(req: NextRequest) {
           
           fileBuffer = Buffer.from(base64Data, 'base64');
         } else {
-          throw new Error(`Unsupported file data format: ${typeof file.data} (constructor: ${file.data?.constructor?.name})`);
+          console.error('🚨 File data format error:', {
+            fileIndex: i,
+            fileName: file.name,
+            fileType: file.type,
+            dataType: typeof file.data,
+            isUndefined: file.data === undefined,
+            isNull: file.data === null,
+            constructor: file.data?.constructor?.name,
+            fileObject: file
+          });
+          throw new Error(`Unsupported file data format: ${typeof file.data} (constructor: ${file.data?.constructor?.name}). File objects cannot be sent in JSON - convert to base64 or FormData first.`);
         }
 
         console.log(`📁 File buffer created:`, {

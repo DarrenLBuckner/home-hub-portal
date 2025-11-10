@@ -130,12 +130,23 @@ export default function CreatePropertyPage() {
       setIsSubmitting(false);
       return;
     }
-    // Prepare images for upload
-    const imagesForUpload = form.images.map((file: File) => ({
-      name: file.name,
-      type: file.type,
-      data: file,
-    }));
+    // Prepare images for upload - convert File objects to base64
+    const imagesForUpload = await Promise.all(
+      form.images.map((file: File) => {
+        return new Promise<{name: string, type: string, data: string}>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            resolve({
+              name: file.name,
+              type: file.type,
+              data: e.target?.result as string,
+            });
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      })
+    );
     // Store property in DB via API
     try {
       const res = await fetch("/api/properties/create", {
