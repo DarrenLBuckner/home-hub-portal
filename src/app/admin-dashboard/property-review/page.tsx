@@ -217,26 +217,28 @@ export default function PropertyReviewPage() {
 
   async function updatePropertyStatus(propertyId: string, newStatus: string) {
     try {
-      const { error } = await supabase
-        .from('properties')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString(),
-          reviewed_by: adminData?.email,
-          reviewed_at: new Date().toISOString()
-        })
-        .eq('id', propertyId);
+      const response = await fetch(`/api/properties/status/${propertyId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus
+        }),
+      });
 
-      if (error) {
-        alert('Error updating status');
-        console.error(error);
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(`Error updating status: ${result.error || 'Unknown error'}`);
+        console.error('Status update error:', result);
       } else {
-        alert(`✅ Property status updated to ${newStatus}!`);
+        alert(`✅ ${result.message || 'Property status updated successfully'}!`);
         await loadProperties();
       }
     } catch (error) {
       alert('Error updating status');
-      console.error(error);
+      console.error('Status update error:', error);
     }
   }
 
