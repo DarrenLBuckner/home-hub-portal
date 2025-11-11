@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useAdminData } from '@/hooks/useAdminData';
+import DashboardHeader from '@/components/admin/DashboardHeader';
 
 interface PricingPlan {
   id: string;
@@ -352,7 +353,7 @@ export default function SuperSimplePricingManagement() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen bg-gray-50">
       {/* Success Message */}
       {showSuccess && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-bounce">
@@ -360,29 +361,30 @@ export default function SuperSimplePricingManagement() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">💰 Super Simple Pricing Management</h1>
-              <p className="text-gray-600">Change your pricing plans easily - no technical knowledge required!</p>
-            </div>
-            <div className="text-right">
-              <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                permissions?.canEditGlobalPricing 
-                  ? 'bg-red-100 text-red-800' 
-                  : 'bg-yellow-100 text-yellow-800'
-              }`}>
-                {permissions?.canEditGlobalPricing ? '🌍 Global Access' : `🏴 ${adminData?.country_id || 'Country'} Access`}
-              </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {permissions?.canEditGlobalPricing 
-                  ? 'Can edit pricing for all countries' 
-                  : 'Can edit pricing for your country only'}
-              </p>
-            </div>
+      {/* Standardized Header with Back Button */}
+      <DashboardHeader
+        title="Super Simple Pricing Management"
+        description="Change your pricing plans easily - no technical knowledge required!"
+        icon="💰"
+        statusBadge={
+          <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+            permissions?.canEditGlobalPricing 
+              ? 'bg-red-100 text-red-800' 
+              : 'bg-yellow-100 text-yellow-800'
+          }`}>
+            {permissions?.canEditGlobalPricing ? '🌍 Global Access' : `🏴 ${adminData?.country_id || 'Country'} Access`}
           </div>
+        }
+        adminInfo={`Welcome, ${adminData?.email} • ${permissions?.displayRole || 'Admin'} • ${
+          permissions?.canEditGlobalPricing 
+            ? 'Can edit pricing for all countries' 
+            : 'Can edit pricing for your country only'
+        }`}
+      />
+
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto p-4">
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="mt-4 p-4 bg-blue-50 rounded-lg">
             <p className="text-blue-800">
               <strong>🎯 Quick Tips:</strong> You can view all pricing plans for competitive intelligence and transparency. 

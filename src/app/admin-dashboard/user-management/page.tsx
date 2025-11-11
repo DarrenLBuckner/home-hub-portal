@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase';
 import { useAdminData } from '@/hooks/useAdminData';
+import DashboardHeader from '@/components/admin/DashboardHeader';
 
 interface User {
   id: string;
@@ -306,34 +307,21 @@ export default function UserManagement() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-              <p className="text-gray-600 mt-1">Manage user roles and permissions</p>
-            </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="text-sm text-gray-500">{user?.admin_level_display || 'Admin'}</div>
-                <div className="font-medium">{user?.name}</div>
-              </div>
-              <Link href="/admin-dashboard">
-                <button className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-700 transition-colors">
-                  Dashboard
-                </button>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Standardized Header with Back Button */}
+      <DashboardHeader
+        title="User Management"
+        description="Manage user roles and permissions across the platform"
+        icon="👥"
+        actions={
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded hover:bg-red-700 transition-colors"
+          >
+            Logout
+          </button>
+        }
+        adminInfo={`Welcome, ${adminData?.email} • ${adminData?.admin_level || 'Admin'}`}
+      />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Security & Business Warning Notice */}

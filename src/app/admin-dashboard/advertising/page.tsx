@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import DashboardHeader from '@/components/admin/DashboardHeader';
 
 /**
  * Admin Advertising Management Dashboard
@@ -399,13 +400,16 @@ export default function AdminAdvertisingPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Advertising Management</h1>
-          <p className="mt-2 text-gray-600">Manage advertisers, campaigns, and revenue across all Portal Home Hub sites</p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Standardized Header with Back Button */}
+      <DashboardHeader
+        title="Advertising Management"
+        description="Manage advertisers, campaigns, and revenue across all Portal Home Hub sites"
+        icon="📺"
+        adminInfo="Multi-country advertising dashboard"
+      />
+      
+      <div className="max-w-7xl mx-auto p-6">
 
         {/* Country Filter */}
         <div className="mb-6">

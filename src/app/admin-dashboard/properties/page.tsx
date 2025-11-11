@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminData } from '@/hooks/useAdminData';
 import DualContextPropertyManager from '@/components/DualContextPropertyManager';
+import DashboardHeader from '@/components/admin/DashboardHeader';
 
 export default function AdminPropertiesPage() {
   const router = useRouter();
@@ -44,6 +45,14 @@ export default function AdminPropertiesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Standardized Header with Back Button */}
+      <DashboardHeader
+        title="All Properties Management"
+        description="Comprehensive property management, approval, and oversight dashboard"
+        icon="🏠"
+        adminInfo={`Welcome, ${adminData?.email} • ${adminData?.admin_level || 'Admin'} • Full Property Access`}
+      />
+      
       <div className="py-6">
         <DualContextPropertyManager
           userId={adminData?.id || ''}
