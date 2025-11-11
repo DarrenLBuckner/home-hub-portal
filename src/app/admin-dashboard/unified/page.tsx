@@ -57,6 +57,7 @@ interface Statistics {
   };
   totalActive: number;
   totalRejected: number;
+  totalDrafts: number;
 }
 
 interface User {
@@ -75,9 +76,10 @@ export default function UnifiedAdminDashboard() {
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   
   // State management
-  const [activeSection, setActiveSection] = useState<'dashboard' | 'properties' | 'system' | 'users'>('dashboard');
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'properties' | 'system' | 'users' | 'drafts'>('dashboard');
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
   const [approvedProperties, setApprovedProperties] = useState<Property[]>([]);
+  const [draftProperties, setDraftProperties] = useState<any[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [statistics, setStatistics] = useState<Statistics>({
     totalPending: 0,
@@ -85,6 +87,7 @@ export default function UnifiedAdminDashboard() {
     byUserType: { fsbo: 0, agent: 0, landlord: 0 },
     totalActive: 0,
     totalRejected: 0,
+    totalDrafts: 0,
   });
   const [processingPropertyId, setProcessingPropertyId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -113,6 +116,7 @@ export default function UnifiedAdminDashboard() {
     if (permissions?.canAccessUserManagement) {
       loadUsers();
     }
+    loadDrafts();
   }, [adminLoading, adminError, isAdmin, router, permissions]);
 
   const loadDashboardData = async () => {
@@ -204,12 +208,27 @@ export default function UnifiedAdminDashboard() {
         });
       }
 
+      // Get draft count from the separate property_drafts table
+      let totalDrafts = 0;
+      try {
+        const draftResponse = await fetch(permissions && !permissions.canViewAllCountries && permissions.countryFilter 
+          ? `/api/admin/drafts?country=${permissions.countryFilter}`
+          : '/api/admin/drafts');
+        if (draftResponse.ok) {
+          const draftResult = await draftResponse.json();
+          totalDrafts = draftResult.drafts?.length || 0;
+        }
+      } catch (draftError) {
+        console.error('Error loading draft count for statistics:', draftError);
+      }
+
       setStatistics({
         totalPending: properties?.length || 0,
         todaySubmissions,
         byUserType,
         totalActive: stats?.filter((p: any) => p.status === 'active').length || 0,
         totalRejected: stats?.filter((p: any) => p.status === 'rejected').length || 0,
+        totalDrafts,
       });
 
     } catch (error) {
@@ -241,6 +260,34 @@ export default function UnifiedAdminDashboard() {
       setUsers(usersData || []);
     } catch (error) {
       console.error('Error loading users:', error);
+    }
+  };
+
+  const loadDrafts = async () => {
+    try {
+      console.log('🔄 Loading draft properties...');
+      
+      // Build URL with country filter if needed
+      let apiUrl = '/api/admin/drafts';
+      if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
+        apiUrl += `?country=${permissions.countryFilter}`;
+      }
+
+      const response = await fetch(apiUrl);
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Drafts API error:', result.error);
+        setError(`Failed to load draft properties: ${result.error}`);
+        return;
+      }
+
+      setDraftProperties(result.drafts || []);
+      console.log(`✅ Loaded ${result.drafts?.length || 0} draft properties`);
+
+    } catch (error) {
+      console.error('Error loading drafts:', error);
+      setError('Failed to load draft properties');
     }
   };
 
@@ -505,7 +552,17 @@ export default function UnifiedAdminDashboard() {
             🏠 Properties
           </button>
 
-
+          {/* PRIORITY 3: Draft Management - Property Drafts */}
+          <button
+            onClick={() => setActiveSection('drafts')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+              activeSection === 'drafts'
+                ? 'bg-purple-600 text-white'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            📝 Drafts
+          </button>
 
           {/* PRIORITY 4: User Management - Administrative Tasks */}
           {permissions?.canAccessUserManagement && (
@@ -589,7 +646,7 @@ export default function UnifiedAdminDashboard() {
         {activeSection === 'dashboard' && (
           <div className="space-y-6">
             {/* Statistics Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-4 border border-yellow-200">
                 <div className="text-xs font-bold text-yellow-800 uppercase tracking-wide mb-1">Pending</div>
                 <div className="text-3xl font-black text-yellow-900 mb-1">{statistics.totalPending}</div>
@@ -618,6 +675,12 @@ export default function UnifiedAdminDashboard() {
                 <div className="text-xs font-bold text-red-800 uppercase tracking-wide mb-1">Rejected</div>
                 <div className="text-3xl font-black text-red-900 mb-1">{statistics.totalRejected}</div>
                 <div className="text-xs text-red-700">Need Fixes</div>
+              </div>
+              
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-4 border border-indigo-200">
+                <div className="text-xs font-bold text-indigo-800 uppercase tracking-wide mb-1">Drafts</div>
+                <div className="text-3xl font-black text-indigo-900 mb-1">{statistics.totalDrafts}</div>
+                <div className="text-xs text-indigo-700">Incomplete</div>
               </div>
             </div>
 
@@ -649,6 +712,21 @@ export default function UnifiedAdminDashboard() {
                   className="w-full px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors"
                 >
                   Manage All Properties →
+                </button>
+              </div>
+
+              {/* Draft Properties Management */}
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 border border-purple-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-purple-900">📝 Draft Properties</h3>
+                  <div className="text-2xl font-black text-purple-600">{statistics.totalDrafts}</div>
+                </div>
+                <p className="text-sm text-purple-800 mb-4">Manage incomplete property drafts saved by users</p>
+                <button
+                  onClick={() => setActiveSection('drafts')}
+                  className="w-full px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  Manage Draft Properties →
                 </button>
               </div>
 
@@ -738,6 +816,201 @@ export default function UnifiedAdminDashboard() {
                 editPropertyPath="/admin-dashboard/property"
                 createPropertyPath="/properties/create"
               />
+            )}
+          </div>
+        )}
+
+        {/* Drafts Section */}
+        {activeSection === 'drafts' && (
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">📝 Draft Properties Management</h2>
+            
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="text-red-500 mr-2">❌</div>
+                  <div className="text-red-800 font-medium">Error</div>
+                </div>
+                <p className="text-red-700 text-sm mt-1">{error}</p>
+              </div>
+            )}
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">📊 Draft Statistics</h3>
+                  <p className="text-sm text-gray-600">Overview of all property drafts in the system</p>
+                </div>
+                <button
+                  onClick={loadDrafts}
+                  className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  🔄 Refresh Drafts
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
+                  <div className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-1">Total Drafts</div>
+                  <div className="text-2xl font-black text-purple-900">{draftProperties.length}</div>
+                  <div className="text-xs text-purple-700">Incomplete Properties</div>
+                </div>
+                
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <div className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">Recent Activity</div>
+                  <div className="text-2xl font-black text-blue-900">
+                    {draftProperties.filter(draft => {
+                      const updatedAt = new Date(draft.updated_at);
+                      const today = new Date();
+                      const diffTime = Math.abs(today.getTime() - updatedAt.getTime());
+                      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                      return diffDays <= 7;
+                    }).length}
+                  </div>
+                  <div className="text-xs text-blue-700">Updated This Week</div>
+                </div>
+                
+                <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                  <div className="text-xs font-bold text-green-800 uppercase tracking-wide mb-1">User Types</div>
+                  <div className="text-2xl font-black text-green-900">
+                    {new Set(draftProperties.map(draft => draft.owner?.user_type).filter(Boolean)).size}
+                  </div>
+                  <div className="text-xs text-green-700">Different User Types</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Draft Properties Grid */}
+            {draftProperties.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+                <div className="text-6xl mb-4">📝</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No Draft Properties</h3>
+                <p className="text-gray-600">There are currently no draft properties in the system.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {draftProperties.map((draft) => (
+                  <div key={draft.id} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow">
+                    {/* Draft Header */}
+                    <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 border-b border-purple-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="px-3 py-1 bg-purple-500 text-white text-xs font-bold rounded-full">
+                          📝 DRAFT
+                        </span>
+                        <span className="text-xs text-purple-700">
+                          ID: {draft.id.slice(0, 8)}...
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-lg text-gray-900 line-clamp-2">
+                        {draft.draft_data?.title || 'Untitled Draft'}
+                      </h3>
+                    </div>
+
+                    {/* Draft Content */}
+                    <div className="p-4">
+                      {/* Property Info */}
+                      <div className="grid grid-cols-3 gap-3 text-center mb-4">
+                        <div className="bg-purple-50 rounded-lg p-2">
+                          <div className="text-xs font-medium text-purple-800">🛏️ Beds</div>
+                          <div className="text-sm font-bold text-purple-900">{draft.draft_data?.bedrooms || 'N/A'}</div>
+                        </div>
+                        <div className="bg-purple-50 rounded-lg p-2">
+                          <div className="text-xs font-medium text-purple-800">🚿 Baths</div>
+                          <div className="text-sm font-bold text-purple-900">{draft.draft_data?.bathrooms || 'N/A'}</div>
+                        </div>
+                        <div className="bg-purple-50 rounded-lg p-2">
+                          <div className="text-xs font-medium text-purple-800">💰 Price</div>
+                          <div className="text-xs font-bold text-purple-900">
+                            {draft.draft_data?.price ? `$${draft.draft_data.price.toLocaleString()}` : 'N/A'}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Location */}
+                      {(draft.draft_data?.city || draft.draft_data?.region) && (
+                        <div className="mb-4">
+                          <h4 className="text-xs font-semibold text-gray-800 mb-1">📍 Location</h4>
+                          <p className="text-sm text-gray-600">
+                            {[draft.draft_data?.city, draft.draft_data?.region].filter(Boolean).join(', ') || 'Not specified'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Owner Info */}
+                      <div className="bg-purple-50 rounded-lg p-3 mb-4">
+                        <div className="text-xs font-medium text-purple-800 mb-1">Draft Owner</div>
+                        <div className="text-sm text-purple-700">
+                          <div className="flex items-center justify-between">
+                            <span className="truncate">
+                              📧 {draft.owner?.email || 'Unknown'}
+                            </span>
+                          </div>
+                          <div className="mt-1 text-xs text-purple-600">
+                            {draft.owner ? 
+                              `${draft.owner.first_name || ''} ${draft.owner.last_name || ''}`.trim() || 'Unknown User'
+                              : 'Unknown User'
+                            } • {draft.owner?.user_type || 'Unknown'}
+                          </div>
+                          <div className="text-xs text-purple-500 mt-1">
+                            Updated: {new Date(draft.updated_at).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="space-y-2">
+                        <button
+                          onClick={async () => {
+                            if (!confirm('Are you sure you want to delete this draft? This action cannot be undone.')) {
+                              return;
+                            }
+
+                            try {
+                              const response = await fetch('/api/admin/drafts', {
+                                method: 'DELETE',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ draftId: draft.id }),
+                              });
+
+                              const result = await response.json();
+
+                              if (!response.ok) {
+                                console.error('Error deleting draft:', result.error);
+                                alert(`Failed to delete draft: ${result.error}`);
+                                return;
+                              }
+
+                              // Refresh drafts and statistics
+                              loadDrafts();
+                              loadDashboardData();
+                              alert('Draft deleted successfully');
+                            } catch (error) {
+                              console.error('Error deleting draft:', error);
+                              alert('Failed to delete draft');
+                            }
+                          }}
+                          className="w-full px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-colors"
+                        >
+                          🗑️ Delete Draft
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            // Copy draft data to clipboard for inspection
+                            navigator.clipboard.writeText(JSON.stringify(draft.draft_data, null, 2));
+                            alert('Draft data copied to clipboard');
+                          }}
+                          className="w-full px-4 py-2 bg-gray-600 text-white text-sm font-bold rounded-lg hover:bg-gray-700 transition-colors"
+                        >
+                          📋 Copy Draft Data
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
         )}
