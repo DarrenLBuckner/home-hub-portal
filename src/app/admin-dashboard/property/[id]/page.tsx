@@ -105,38 +105,25 @@ export default function AdminPropertyDetailsPage() {
       // Check if user is super admin (only super admin can delete properties)
       setIsSuperAdmin(authUser.email === 'mrdarrenbuckner@gmail.com');
 
-      // Load property with all details
-      const { data: propertyData, error: propertyError } = await supabase
-        .from('properties')
-        .select(`
-          *,
-          owner:profiles!user_id(first_name, last_name, user_type, phone),
-          property_media!left(
-            media_url,
-            media_type,
-            is_primary,
-            display_order
-          )
-        `)
-        .eq('id', propertyId)
-        .single();
+      // Load property with all details using admin API
+      try {
+        const response = await fetch(`/api/admin/properties/${propertyId}`);
+        const result = await response.json();
 
-      if (propertyError || !propertyData) {
-        setError('Property not found');
+        if (!response.ok) {
+          console.error('Property API error:', result.error);
+          setError(result.error || 'Property not found');
+          setLoading(false);
+          return;
+        }
+
+        setProperty(result.property);
+      } catch (error) {
+        console.error('Error loading property:', error);
+        setError('Failed to load property');
         setLoading(false);
         return;
       }
-
-      // Sort images by display_order, putting primary first
-      if (propertyData.property_media) {
-        propertyData.property_media.sort((a: PropertyMedia, b: PropertyMedia) => {
-          if (a.is_primary) return -1;
-          if (b.is_primary) return 1;
-          return a.display_order - b.display_order;
-        });
-      }
-
-      setProperty(propertyData);
       setLoading(false);
     }
 
