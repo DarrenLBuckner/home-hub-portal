@@ -490,11 +490,7 @@ export default function AdminDashboard() {
               >
                 ❌ Reject
               </button>
-              <Link href={`/admin-dashboard/property/${property.id}`}>
-                <button className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded hover:bg-gray-50 transition-colors">
-                  View Details
-                </button>
-              </Link>
+              {/* View Details removed - all actions available above */}
             </div>
           </div>
         </div>
