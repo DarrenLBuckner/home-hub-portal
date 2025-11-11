@@ -17,41 +17,45 @@ export interface DraftSaveResponse {
 }
 
 /**
- * Save property data as a draft
+ * Save property data as a draft (using new draft system)
  */
-export async function saveDraft(formData: any): Promise<DraftSaveResponse> {
+export async function saveDraft(formData: any, existingDraftId?: string): Promise<DraftSaveResponse> {
   try {
-    console.log('🗂️ Saving property draft...', {
+    console.log('🗂️ Saving property draft to new draft system...', {
       hasTitle: !!formData.title,
       hasImages: !!formData.images?.length,
-      hasDescription: !!formData.description
+      hasDescription: !!formData.description,
+      existingDraftId
     });
-
-    // Prepare draft data with essential fields
-    const draftData = {
-      ...formData,
-      status: 'draft',
-      is_draft: true,
-      saved_at: new Date().toISOString()
-    };
 
     // Extract title for draft identification (fallback to property type + timestamp)
     const draftTitle = formData.title || 
       `${formData.property_type || 'Property'} - ${new Date().toLocaleDateString()}`;
 
+    // Prepare draft data - remove internal flags
+    const { status, is_draft, saved_at, _isDraftSave, _isPublishDraft, ...cleanFormData } = formData;
+
     // Create AbortController for timeout
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
 
-    const response = await fetch('/api/properties/create', {
-      method: 'POST',
+    // Use new draft endpoints
+    const endpoint = existingDraftId 
+      ? `/api/properties/drafts/${existingDraftId}`
+      : '/api/properties/drafts';
+    
+    const method = existingDraftId ? 'PUT' : 'POST';
+
+    const response = await fetch(endpoint, {
+      method,
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        ...draftData,
+        draft_id: existingDraftId,
         title: draftTitle,
-        _isDraftSave: true // Internal flag to indicate this is a draft save
+        draft_type: cleanFormData.listing_type || 'sale',
+        ...cleanFormData
       }),
       signal: controller.signal
     });
@@ -61,10 +65,10 @@ export async function saveDraft(formData: any): Promise<DraftSaveResponse> {
     const result = await response.json();
 
     if (response.ok && result.success) {
-      console.log('✅ Draft saved successfully:', result.propertyId);
+      console.log('✅ Draft saved successfully to new system:', result.draft_id);
       return {
         success: true,
-        draftId: result.propertyId
+        draftId: result.draft_id
       };
     } else {
       console.error('❌ Draft save failed:', result.error);
@@ -145,34 +149,29 @@ export async function deleteDraft(draftId: string): Promise<boolean> {
 }
 
 /**
- * Convert draft to full property submission
+ * Convert draft to full property submission (using new publish endpoint)
  */
-export async function publishDraft(draftId: string, formData: any): Promise<DraftSaveResponse> {
+export async function publishDraft(draftId: string, formData?: any): Promise<DraftSaveResponse> {
   try {
-    const response = await fetch('/api/properties/create', {
+    console.log('🚀 Publishing draft using new publish endpoint:', draftId);
+    
+    const response = await fetch(`/api/properties/drafts/${draftId}/publish`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        ...formData,
-        status: 'pending', // Change from draft to pending for review
-        _isPublishDraft: true,
-        _draftId: draftId // Include original draft ID for cleanup
-      }),
+      }
     });
 
     const result = await response.json();
 
     if (response.ok && result.success) {
-      // Delete the draft after successful submission
-      await deleteDraft(draftId);
-      
+      console.log('✅ Draft published successfully:', result.property_id);
       return {
         success: true,
-        draftId: result.propertyId
+        draftId: result.property_id
       };
     } else {
+      console.error('❌ Draft publish failed:', result.error);
       return {
         success: false,
         error: result.error || 'Failed to publish draft'

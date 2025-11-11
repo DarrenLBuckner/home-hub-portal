@@ -137,7 +137,7 @@ export default function CreatePropertyPage() {
             
             setUserProfile(profileData);
             
-            // Check if user is eligible for auto-save
+            // Enable auto-save for eligible users
             const eligible = isAutoSaveEligible(profileData);
             setAutoSaveEnabled(eligible);
             
@@ -146,6 +146,14 @@ export default function CreatePropertyPage() {
               user_type: profileData.user_type,
               autoSaveEligible: eligible
             });
+
+            // Check for draft ID in URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const draftId = urlParams.get('draft');
+            if (draftId) {
+              console.log('Loading draft from URL:', draftId);
+              await handleLoadDraft(draftId);
+            }
             
             // Auto-populate WhatsApp if not already set
             if (profile.phone && !form.owner_whatsapp) {
@@ -214,7 +222,8 @@ export default function CreatePropertyPage() {
   const autoSave = useAutoSave({
     data: { ...form, images },
     onSave: async (data, isDraft) => {
-      return await saveDraft(data);
+      // ✅ Pass existing draft ID to UPDATE instead of creating new ones
+      return await saveDraft(data, currentDraftId || undefined);
     },
     interval: autoSaveSettings.interval,
     enabled: autoSaveSettings.enabled && !loading && !success,

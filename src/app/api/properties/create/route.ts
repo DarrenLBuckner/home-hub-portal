@@ -82,6 +82,28 @@ export async function POST(req: NextRequest) {
     
     console.log('📋 Request type:', { isDraftSave, isPublishDraft, status: body.status });
     
+    // REDIRECT DRAFT SAVES TO NEW DRAFT SYSTEM
+    if (isDraftSave && !isPublishDraft) {
+      console.log('🔄 Redirecting to draft system...');
+      
+      // Forward to draft API
+      const draftUrl = new URL('/api/properties/drafts', req.url);
+      const draftRequest = new NextRequest(draftUrl, {
+        method: 'POST',
+        headers: req.headers,
+        body: JSON.stringify({
+          draft_id: body.draft_id,
+          title: body.title,
+          draft_type: body.listing_type || 'sale',
+          ...body
+        })
+      });
+      
+      // Import and call the draft POST handler
+      const { POST: draftPost } = await import('../drafts/route');
+      return await draftPost(draftRequest);
+    }
+    
     // Add this where the request payload is processed
     const propertyType = body.property_type || body.propertyType;
     

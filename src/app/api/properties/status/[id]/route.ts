@@ -74,7 +74,7 @@ export async function PUT(
     const permissions = await getCountryAwareAdminPermissions(
       (profile as ProfileType).user_type,
       user.email || '',
-      (profile as ProfileType).admin_level,
+      (profile as ProfileType).admin_level || null,
       user.id,
       adminSupabase
     );
@@ -107,13 +107,7 @@ export async function PUT(
     }
 
     // Prepare update data
-    const updateData: {
-      status: string;
-      updated_at: string;
-      rejection_reason?: string;
-      reviewed_by?: string;
-      reviewed_at?: string;
-    } = {
+    const updateData: Record<string, any> = {
       status: body.status,
       updated_at: new Date().toISOString()
     };
@@ -130,7 +124,7 @@ export async function PUT(
     }
 
     // Update property status using service role client
-    const { data: updatedProperty, error: updateError } = await adminSupabase
+    const { data: updatedProperty, error: updateError } = await (adminSupabase as any)
       .from('properties')
       .update(updateData)
       .eq('id', propertyId)

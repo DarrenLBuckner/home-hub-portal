@@ -100,6 +100,17 @@ export default function AgentSidebar({ activeSection, onSectionChange, userType,
             </button>
           </li>
           <li>
+            <button 
+              className="flex items-center justify-between w-full px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-50 hover:text-green-700" 
+              onClick={() => window.location.href = '/dashboard/drafts'}
+            >
+              <div className="flex items-center">
+                <span className="mr-3">💾</span>
+                My Drafts
+              </div>
+            </button>
+          </li>
+          <li>
             <button className={`flex items-center justify-between w-full px-4 py-3 rounded-lg font-medium ${
               !isAgent 
                 ? 'text-gray-400 bg-gray-50 cursor-not-allowed' 

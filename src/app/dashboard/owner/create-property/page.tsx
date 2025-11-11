@@ -148,22 +148,16 @@ export default function CreateFSBOProperty() {
     
     setIsSubmitting(true);
     setError('');
-    const supabase = createClient();
     
     try {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-      
-
-      const propertyData = {
+      const draftData = {
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
         property_type: formData.property_type || 'Single Family Home',
         bedrooms: Number(formData.bedrooms) || 0,
         bathrooms: Number(formData.bathrooms) || 0,
-        house_size_value: Number(formData.house_size_value) || 1000, // Required field with default
+        house_size_value: Number(formData.house_size_value) || 1000,
         house_size_unit: formData.house_size_unit || 'sq ft',
         land_size_value: formData.land_size_value ? Number(formData.land_size_value) : null,
         land_size_unit: formData.land_size_unit || 'sq ft',
@@ -178,48 +172,30 @@ export default function CreateFSBOProperty() {
         address: formData.address || '',
         owner_email: formData.owner_email,
         owner_whatsapp: formData.owner_whatsapp || '',
-        user_id: user.id,
         listing_type: 'sale',
         listed_by_type: 'owner',
-        status: 'draft',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        images: images // Include images in draft data
       };
       
-      // Create property with draft status
-      const { data: property, error: propertyError } = await supabase
-        .from('properties')
-        .insert(propertyData)
-        .select()
-        .single();
-        
-      if (propertyError) throw propertyError;
+      // Use new draft API instead of direct database insert
+      const response = await fetch('/api/properties/drafts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          draft_type: 'sale',
+          ...draftData
+        })
+      });
+
+      const result = await response.json();
       
-      // Handle image uploads if any
-      if (images.length > 0) {
-        for (let i = 0; i < images.length; i++) {
-          const file = images[i];
-          const fileName = `${property.id}/${Date.now()}-${file.name}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('property-media')
-            .upload(fileName, file);
-            
-          if (uploadError) throw uploadError;
-          
-          const { data: { publicUrl } } = supabase.storage
-            .from('property-media')
-            .getPublicUrl(fileName);
-            
-          await supabase.from('property_media').insert({
-            property_id: property.id,
-            media_url: publicUrl,
-            media_type: 'image',
-            is_primary: i === 0,
-            display_order: i
-          });
-        }
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Failed to save draft');
       }
+      
+      console.log('✅ Draft saved successfully:', result.draft_id);
       
       // Success - redirect to dashboard with draft message
       router.push('/dashboard/owner?success=Property saved as draft');
