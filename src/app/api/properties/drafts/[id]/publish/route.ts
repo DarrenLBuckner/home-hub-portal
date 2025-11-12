@@ -62,13 +62,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       }, { status: 403 });
     }
 
-    // Load the draft
-    const { data: draft, error: draftError } = await supabase
+    // Load the draft - admins can access any draft, others only their own
+    const isAdmin = userProfile.user_type === 'admin';
+    const draftQuery = supabase
       .from('property_drafts')
       .select('*')
-      .eq('id', draftId)
-      .eq('user_id', user.id)
-      .single();
+      .eq('id', draftId);
+      
+    if (!isAdmin) {
+      draftQuery.eq('user_id', user.id);
+    }
+    
+    const { data: draft, error: draftError } = await draftQuery.single();
 
     if (draftError) {
       console.error('❌ Draft not found:', draftError);
@@ -84,6 +89,23 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       }, { status: 410 });
     }
 
+    // Get draft owner's profile if admin is converting someone else's draft
+    let draftOwnerProfile = userProfile;
+    if (isAdmin && draft.user_id !== user.id) {
+      const { data: ownerProfile, error: ownerError } = await supabase
+        .from('profiles')
+        .select('user_type, country_id')
+        .eq('id', draft.user_id)
+        .single();
+        
+      if (ownerError) {
+        console.error('Draft owner profile error:', ownerError);
+        return NextResponse.json({ error: "Draft owner profile not found" }, { status: 404 });
+      }
+      
+      draftOwnerProfile = ownerProfile;
+    }
+
     // Auto-approval for admins and owner admins  
     const shouldAutoApprove = (userType: string): boolean => {
       const adminTypes = ['admin', 'superadmin', 'owner'];
@@ -96,8 +118,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     // Prepare property data from draft
     const draftData = draft.draft_data;
     const propertyData = {
-      user_id: user.id,
-      country_id: userProfile.country_id,
+      user_id: draft.user_id, // Use draft owner's ID, not the admin's ID
+      country_id: draftOwnerProfile.country_id,
       title: draftData.title || draft.title,
       description: draftData.description,
       property_type: draftData.property_type,

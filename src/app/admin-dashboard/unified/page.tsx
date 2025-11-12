@@ -1039,6 +1039,40 @@ export default function UnifiedAdminDashboard() {
                         </button>
                         
                         <button
+                          onClick={async () => {
+                            if (confirm('Convert this draft to a pending property for approval? This will make it visible in the property approval queue.')) {
+                              try {
+                                const response = await fetch(`/api/properties/drafts/${draft.id}/publish`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                  },
+                                });
+
+                                const result = await response.json();
+
+                                if (!response.ok) {
+                                  console.error('Error converting draft:', result.error);
+                                  alert(`Failed to convert draft: ${result.error}`);
+                                  return;
+                                }
+
+                                // Refresh drafts and statistics
+                                loadDrafts();
+                                loadDashboardData();
+                                alert('Draft converted to pending property successfully');
+                              } catch (error) {
+                                console.error('Error converting draft:', error);
+                                alert('Failed to convert draft');
+                              }
+                            }
+                          }}
+                          className="w-full px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition-colors"
+                        >
+                          🚀 Convert to Property
+                        </button>
+
+                        <button
                           onClick={() => {
                             // Copy draft data to clipboard for inspection
                             navigator.clipboard.writeText(JSON.stringify(draft.draft_data, null, 2));
