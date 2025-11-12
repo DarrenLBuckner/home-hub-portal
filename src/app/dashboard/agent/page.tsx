@@ -40,7 +40,19 @@ export default function AgentPage() {
         
         if (adminUser) {
           setUserType('admin');
-          setIsAgent(true); // Admins have agent access
+          
+          // SECURITY: Only owner/super admins can create properties
+          // Basic admins should only review/approve, not create
+          const { data: adminProfile } = await supabase
+            .from('profiles')
+            .select('admin_level')
+            .eq('id', data.user.id)
+            .single();
+            
+          const canCreateProperties = adminProfile?.admin_level === 'owner' || 
+                                    adminProfile?.admin_level === 'super';
+          
+          setIsAgent(canCreateProperties); // Only owner/super admins get agent access
         } else {
           // Check profiles table for regular users
           const { data: profile } = await supabase
