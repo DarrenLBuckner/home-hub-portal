@@ -136,7 +136,7 @@ export default function UnifiedAdminDashboard() {
             user_type
           )
         `)
-        .in('status', ['pending', 'draft']);
+        .eq('status', 'pending');
 
       // Apply country filter for non-super admins
       if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
@@ -686,13 +686,41 @@ export default function UnifiedAdminDashboard() {
 
             {/* Dashboard Overview - Quick Access to All Sections */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Property Review & Approvals - Primary Action */}
+              {/* Property Review & Approvals - Professional Workflow */}
               <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-yellow-900">⚖️ Property Review & Approvals</h3>
+                  <h3 className="text-lg font-bold text-yellow-900">🎯 Property Approvals</h3>
                   <div className="text-2xl font-black text-yellow-600">{statistics.totalPending}</div>
                 </div>
-                <p className="text-sm text-yellow-800 mb-4">Approve, reject, and manage pending properties</p>
+                <p className="text-sm text-yellow-800 mb-4">Professional property review and approval workflow</p>
+                
+                {pendingProperties.length === 0 ? (
+                  <div className="text-center py-4 text-yellow-700">
+                    <div className="text-3xl mb-2">🎉</div>
+                    <p className="font-medium">All caught up!</p>
+                    <p className="text-xs">No properties awaiting review</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2 mb-4">
+                    <div className="bg-white rounded-lg p-3 border border-yellow-200">
+                      <h4 className="text-sm font-semibold text-gray-900 mb-2">⏳ Requires Review:</h4>
+                      <div className="space-y-1">
+                        {pendingProperties.slice(0, 3).map((property) => (
+                          <div key={property.id} className="flex items-center justify-between text-xs">
+                            <span className="truncate flex-1 pr-2">{property.title}</span>
+                            <span className="text-gray-600 font-medium">${property.price?.toLocaleString()}</span>
+                          </div>
+                        ))}
+                        {pendingProperties.length > 3 && (
+                          <div className="text-gray-500 text-xs pt-1 border-t">
+                            + {pendingProperties.length - 3} more awaiting review
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <Link href="/admin-dashboard/property-review">
                   <button className="w-full px-4 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition-colors">
                     Review Properties →
@@ -730,21 +758,35 @@ export default function UnifiedAdminDashboard() {
                 </button>
               </div>
 
-              {/* User Management Quick Access */}
+              {/* Admin Creation - Owner/Super Admin Only */}
               {permissions?.canAccessUserManagement && (
                 <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-200">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-blue-900">👥 User Management</h3>
-                    <div className="text-2xl font-black text-blue-600">{users.length}</div>
+                    <h3 className="text-lg font-bold text-blue-900">👥 Admin Management</h3>
+                    <div className="text-2xl font-black text-blue-600">+</div>
                   </div>
-                  <p className="text-sm text-blue-800 mb-4">
-                    {permissions.canViewAllCountries 
-                      ? 'Manage all users across all countries' 
-                      : `Manage users in ${permissions.countryFilter}`}
-                  </p>
+                  <p className="text-sm text-blue-800 mb-4">Create and manage admin accounts</p>
                   <Link href="/admin-dashboard/user-management">
                     <button className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                      Manage Users →
+                      Admin Management →
+                    </button>
+                  </Link>
+                </div>
+              )}
+
+              {/* User & Suspension Management - Available to All Admin Levels */}
+              {permissions?.canViewUsers && (
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-orange-900">🚫 User & Payment Management</h3>
+                    <div className="text-2xl font-black text-orange-600">{users.length}</div>
+                  </div>
+                  <p className="text-sm text-orange-800 mb-4">
+                    View, suspend & manage user accounts for payment enforcement
+                  </p>
+                  <Link href="/admin-dashboard/users">
+                    <button className="w-full px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors">
+                      Manage Users & Suspensions →
                     </button>
                   </Link>
                 </div>
@@ -1075,7 +1117,7 @@ export default function UnifiedAdminDashboard() {
                 Cancel
               </button>
               <button
-                onClick={() => rejectProperty(showRejectModal, rejectReason)}
+                onClick={() => showRejectModal && rejectProperty(showRejectModal, rejectReason)}
                 disabled={!rejectReason.trim() || processingPropertyId === showRejectModal}
                 className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-bold disabled:opacity-50"
               >

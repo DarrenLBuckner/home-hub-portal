@@ -90,7 +90,45 @@ export async function POST(req: NextRequest) {
       });
 
     } else {
-      // Create new draft
+      // Check for existing drafts with same title to prevent duplicates
+      if (title && title.trim()) {
+        const { data: existingDraft } = await supabase
+          .from('property_drafts')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('title', title.trim())
+          .eq('draft_type', draft_type || 'sale')
+          .single();
+
+        if (existingDraft) {
+          console.log('📝 Updating existing draft instead of creating duplicate');
+          // Update existing draft instead of creating duplicate
+          const { data: updatedDraft, error: updateError } = await supabase
+            .from('property_drafts')
+            .update({
+              draft_data: sanitizedData,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingDraft.id)
+            .select()
+            .single();
+
+          if (updateError) {
+            console.error('❌ Error updating existing draft:', updateError);
+            return NextResponse.json({ 
+              error: 'Failed to update existing draft' 
+            }, { status: 500 });
+          }
+
+          return NextResponse.json({ 
+            success: true, 
+            draft_id: updatedDraft.id,
+            message: 'Draft updated successfully'
+          });
+        }
+      }
+
+      // Create new draft (only if no existing draft found)
       const { data: newDraft, error: createError } = await supabase
         .from('property_drafts')
         .insert({

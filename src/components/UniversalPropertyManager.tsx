@@ -443,6 +443,12 @@ export default function UniversalPropertyManager({
     }
   };
 
+  const submitDraftForReview = async (propertyId: string) => {
+    if (confirm('Submit this draft property for admin review? Make sure all required information is completed.')) {
+      await updatePropertyStatus(propertyId, 'pending');
+    }
+  };
+
   const showRejectionDetails = (property: Property) => {
     setSelectedProperty(property);
     setShowRejectionModal(true);
@@ -770,12 +776,20 @@ export default function UniversalPropertyManager({
                             <div className="text-xs text-blue-700 bg-blue-50 p-2 rounded border border-blue-200">
                               <strong>Draft Status:</strong> Complete your listing to submit for approval
                             </div>
-                            <button
-                              onClick={() => handleEdit(property.id)}
-                              className="w-full px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition text-sm font-medium"
-                            >
-                              ✏️ Continue Editing
-                            </button>
+                            <div className="flex gap-2 text-xs">
+                              <button
+                                onClick={() => handleEdit(property.id)}
+                                className="flex-1 px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                              >
+                                ✏️ Continue Editing
+                              </button>
+                              <button
+                                onClick={() => submitDraftForReview(property.id)}
+                                className="flex-1 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                              >
+                                🚀 Submit for Review
+                              </button>
+                            </div>
                           </div>
                         )}
 

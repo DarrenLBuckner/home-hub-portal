@@ -226,7 +226,7 @@ export default function CreatePropertyPage() {
       return await saveDraft(data, currentDraftId || undefined);
     },
     interval: autoSaveSettings.interval,
-    enabled: autoSaveSettings.enabled && !loading && !success,
+    enabled: false, // 🚫 AUTO-SAVE DISABLED - Manual saves only
     minFieldsRequired: autoSaveSettings.minFieldsRequired,
     onSaveStart: () => setAutoSaveStatus('saving'),
     onSaveComplete: (success, draftId) => {
@@ -416,7 +416,6 @@ export default function CreatePropertyPage() {
     router.push("/dashboard/agent");
   };
 
-
   // Extract the actual submission logic that can be called by usePropertySubmission
   const performActualSubmission = async () => {
     setLoading(true);
@@ -572,63 +571,59 @@ export default function CreatePropertyPage() {
         
         <form onSubmit={(e) => propertySubmission.handleSubmit(e, () => performActualSubmission(), false, form.title)} className="space-y-8">
           {/* Auto-save Status Bar - Only for Agents and Landlords */}
-          {shouldEnableAutoSave && (
-            <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 rounded-lg border border-gray-200 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                {autoSaveStatus === 'saving' && (
-                  <>
-                    <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-                    <span className="text-sm text-gray-600">Saving draft...</span>
-                  </>
-                )}
-                {autoSaveStatus === 'saved' && (
-                  <>
-                    <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
-                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
-                      </svg>
-                    </div>
-                    <span className="text-sm text-green-600">
-                      Draft saved {lastSavedTime && `at ${lastSavedTime.toLocaleTimeString()}`}
-                    </span>
-                  </>
-                )}
-                {autoSaveStatus === 'error' && (
-                  <>
-                    <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">!</span>
-                    </div>
-                    <span className="text-sm text-red-600">Save failed</span>
-                  </>
-                )}
-                {autoSaveStatus === 'idle' && autoSave.hasUnsavedChanges && (
-                  <span className="text-sm text-gray-500">Unsaved changes</span>
-                )}
+          {/* Protective Save Reminder - Always Visible */}
+          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-lg p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-1">
+                ⚠️
               </div>
-              
-              {currentDraftId && (
-                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                  Editing Draft
-                </span>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">
-                {autoSave.filledFieldsCount} fields completed
-              </span>
-              <button
-                type="button"
-                onClick={handleManualSave}
-                disabled={autoSaveStatus === 'saving'}
-                className="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md transition-colors disabled:opacity-50"
-              >
-                Save Now
-              </button>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-yellow-800 font-semibold text-sm">Don't Lose Your Progress!</h4>
+                  <div className="flex items-center gap-2 text-xs text-yellow-700">
+                    {currentDraftId && (
+                      <span className="bg-yellow-200 px-2 py-1 rounded">Editing Draft</span>
+                    )}
+                    <span>{completionAnalysis.completedFields.length} fields completed</span>
+                  </div>
+                </div>
+                
+                <p className="text-yellow-700 text-sm mb-3">
+                  📱 Taking a call? Getting interrupted? Save your work now to protect your listing progress.
+                </p>
+                
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleManualSave}
+                    disabled={autoSaveStatus === 'saving' || (!form.title.trim() && !form.description.trim() && !form.price.trim() && images.length === 0)}
+                    className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {autoSaveStatus === 'saving' ? (
+                      <span className="flex items-center gap-2">
+                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                        Saving...
+                      </span>
+                    ) : (
+                      '💾 SAVE DRAFT NOW'
+                    )}
+                  </button>
+                  
+                  {autoSaveStatus === 'saved' && lastSavedTime && (
+                    <span className="text-green-700 font-medium text-sm">
+                      ✅ Saved at {lastSavedTime.toLocaleTimeString()}
+                    </span>
+                  )}
+                  
+                  {autoSaveStatus === 'error' && (
+                    <span className="text-red-700 font-medium text-sm">
+                      ❌ Save failed - try again
+                    </span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-          )}
 
           {/* 1. BASIC INFO (What & Where) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
@@ -1127,28 +1122,63 @@ export default function CreatePropertyPage() {
             </div>
           )}
           
-          {/* Submit Button - Sticky at bottom for mobile */}
+          {/* Action Buttons - Sticky at bottom for mobile */}
           {!success && (
             <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent pt-6 mt-8 -mx-8 px-8 pb-8">
-              <button 
-                type="submit" 
-                disabled={loading} 
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="animate-spin">⏳</span>
-                    Submitting Property...
-                  </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                
+                {/* Save Draft Button - Always Available */}
+                <button 
+                  type="button"
+                  onClick={handleManualSave}
+                  disabled={autoSaveStatus === 'saving' || (!form.title.trim() && !form.description.trim() && !form.price.trim() && images.length === 0)}
+                  className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {autoSaveStatus === 'saving' ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      Saving Draft...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      💾 Save Draft
+                    </span>
+                  )}
+                </button>
+
+                {/* Submit for Review - When Ready */}
+                <button 
+                  type="submit" 
+                  disabled={loading || completionAnalysis.percentage < 60} 
+                  className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-green-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin">⏳</span>
+                      Submitting...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      🚀 Submit for Review
+                    </span>
+                  )}
+                </button>
+              </div>
+              
+              <div className="text-center space-y-1">
+                {completionAnalysis.percentage < 60 ? (
+                  <p className="text-sm text-orange-600 font-medium">
+                    💡 Complete {Math.ceil((60 - completionAnalysis.percentage) / 10)} more fields to submit for review
+                  </p>
                 ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    🚀 Submit Property for Review
-                  </span>
+                  <p className="text-sm text-green-600 font-medium">
+                    ✅ Ready for submission! Your property will be reviewed by our team
+                  </p>
                 )}
-              </button>
-              <p className="text-center text-sm text-gray-700 mt-3">
-                Your property will be reviewed by our team before going live
-              </p>
+                <p className="text-xs text-gray-500">
+                  Save drafts anytime • Submit when {completionAnalysis.percentage}% complete
+                </p>
+              </div>
             </div>
           )}
         </form>

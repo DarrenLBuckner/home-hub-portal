@@ -515,8 +515,8 @@ export default function PropertyReviewPage() {
                             </button>
                           </Link>
 
-                          {/* Status Management */}
-                          {(property.status === 'pending' || property.status === 'draft') && (
+                          {/* Status Management - Only for pending properties */}
+                          {property.status === 'pending' && (
                             <>
                               <button
                                 onClick={() => updatePropertyStatus(property.id, 'active')}
