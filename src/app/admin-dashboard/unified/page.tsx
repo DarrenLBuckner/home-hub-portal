@@ -1040,15 +1040,9 @@ export default function UnifiedAdminDashboard() {
                         
                         <button
                           onClick={() => {
-                            // Navigate to continue editing the draft
-                            let editRoute = '/dashboard/agent/create-property';
-                            
-                            // Determine route based on draft type
-                            if (draft.draft_type === 'fsbo' || draft.draft_data?.listing_type === 'fsbo') {
-                              editRoute = '/dashboard/owner/create-property';
-                            } else if (draft.draft_type === 'landlord' || draft.draft_data?.listing_type === 'rent') {
-                              editRoute = '/dashboard/landlord/create-property';
-                            }
+                            // Always use agent create-property page for draft editing
+                            // It's the only page that has draft loading functionality
+                            const editRoute = '/dashboard/agent/create-property';
                             
                             // Navigate with draft ID so form can load the draft
                             window.location.href = `${editRoute}?draft=${draft.id}`;
