@@ -1035,7 +1035,27 @@ export default function UnifiedAdminDashboard() {
                           }}
                           className="w-full px-4 py-2 bg-red-600 text-white text-sm font-bold rounded-lg hover:bg-red-700 transition-colors"
                         >
-                          🗑️ Delete Draft
+                          Delete Draft
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            // Navigate to continue editing the draft
+                            let editRoute = '/dashboard/agent/create-property';
+                            
+                            // Determine route based on draft type
+                            if (draft.draft_type === 'fsbo' || draft.draft_data?.listing_type === 'fsbo') {
+                              editRoute = '/dashboard/owner/create-property';
+                            } else if (draft.draft_type === 'landlord' || draft.draft_data?.listing_type === 'rent') {
+                              editRoute = '/dashboard/landlord/create-property';
+                            }
+                            
+                            // Navigate with draft ID so form can load the draft
+                            window.location.href = `${editRoute}?draft=${draft.id}`;
+                          }}
+                          className="w-full px-4 py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors"
+                        >
+                          Continue Editing
                         </button>
                         
                         <button
