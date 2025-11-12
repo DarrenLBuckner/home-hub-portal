@@ -1040,7 +1040,17 @@ export default function UnifiedAdminDashboard() {
                         
                         <button
                           onClick={async () => {
-                            if (confirm('Convert this draft to a pending property for approval? This will make it visible in the property approval queue.')) {
+                            // Check if draft is complete enough for publishing
+                            const draftData = draft.draft_data;
+                            const requiredFields = ['title', 'description', 'price', 'location', 'property_type'];
+                            const missingFields = requiredFields.filter(field => !draftData[field]);
+                            
+                            if (missingFields.length > 0) {
+                              alert(`❌ Cannot publish incomplete draft!\n\nMissing required information:\n• ${missingFields.join('\n• ')}\n\nThe user needs to complete their draft first.`);
+                              return;
+                            }
+                            
+                            if (confirm('Submit this draft for approval on behalf of the user? This will move it to the property approval queue.')) {
                               try {
                                 const response = await fetch(`/api/properties/drafts/${draft.id}/publish`, {
                                   method: 'POST',
@@ -1052,36 +1062,27 @@ export default function UnifiedAdminDashboard() {
                                 const result = await response.json();
 
                                 if (!response.ok) {
-                                  console.error('Error converting draft:', result.error);
-                                  alert(`Failed to convert draft: ${result.error}`);
+                                  console.error('Error submitting draft:', result.error);
+                                  alert(`Failed to submit draft: ${result.error}`);
                                   return;
                                 }
 
                                 // Refresh drafts and statistics
                                 loadDrafts();
                                 loadDashboardData();
-                                alert('Draft converted to pending property successfully');
+                                alert('Draft submitted for approval successfully');
                               } catch (error) {
-                                console.error('Error converting draft:', error);
-                                alert('Failed to convert draft');
+                                console.error('Error submitting draft:', error);
+                                alert('Failed to submit draft');
                               }
                             }
                           }}
                           className="w-full px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition-colors"
                         >
-                          🚀 Convert to Property
+                          � Publish Draft
                         </button>
 
-                        <button
-                          onClick={() => {
-                            // Copy draft data to clipboard for inspection
-                            navigator.clipboard.writeText(JSON.stringify(draft.draft_data, null, 2));
-                            alert('Draft data copied to clipboard');
-                          }}
-                          className="w-full px-4 py-2 bg-gray-600 text-white text-sm font-bold rounded-lg hover:bg-gray-700 transition-colors"
-                        >
-                          📋 Copy Draft Data
-                        </button>
+
                       </div>
                     </div>
                   </div>
