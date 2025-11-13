@@ -90,14 +90,11 @@ export default function CreatePropertyPage() {
   const [canUserUploadVideo, setCanUserUploadVideo] = useState(false);
   const [videoUpgradeMessage, setVideoUpgradeMessage] = useState("");
   
-  // Auto-save and Draft Management
+  // Draft Management (Manual saves only)
   const [userProfile, setUserProfile] = useState<any>(null);
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [availableDrafts, setAvailableDrafts] = useState<any[]>([]);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
-  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
-  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
 
   // Comprehensive submission system with duplicate prevention
   const propertySubmission = usePropertySubmission({
@@ -138,7 +135,6 @@ export default function CreatePropertyPage() {
             setUserProfile(profileData);
             
             // Auto-save completely disabled - using manual save only
-            setAutoSaveEnabled(false);
             
             console.log('User profile loaded:', {
               email: profileData.email,
@@ -194,11 +190,9 @@ export default function CreatePropertyPage() {
     checkVideoAccess();
   }, []);
 
-  // Load drafts when auto-save becomes enabled
+  // Load drafts on component mount
   useEffect(() => {
     const loadDrafts = async () => {
-      if (!autoSaveEnabled) return;
-      
       try {
         const drafts = await loadUserDrafts();
         setAvailableDrafts(drafts);
@@ -213,7 +207,7 @@ export default function CreatePropertyPage() {
     };
     
     loadDrafts();
-  }, [autoSaveEnabled]);
+  }, []);
 
   // AUTO-SAVE COMPLETELY DISABLED - Manual save only to prevent duplicate drafts
   // const autoSaveSettings = userProfile ? getAutoSaveSettings(userProfile) : { enabled: false, interval: 0, minFieldsRequired: 0 };
@@ -227,9 +221,6 @@ export default function CreatePropertyPage() {
   });
 
   const userMotivation = getUserMotivation('agent');
-
-  // Auto-save UI visibility check
-  const shouldEnableAutoSave = autoSaveEnabled && userProfile;
 
   // Draft management functions
   const handleLoadDraft = async (draftId: string) => {
@@ -309,21 +300,19 @@ export default function CreatePropertyPage() {
 
   const handleManualSave = async () => {
     try {
-      setAutoSaveStatus('saving');
-      // Direct save call instead of using auto-save hook
+      // Direct save call - manual save only
       const result = await saveDraft({ ...form, images }, currentDraftId || undefined);
       if (result.success) {
-        setAutoSaveStatus('saved');
-        setLastSavedTime(new Date());
         if (result.draftId && !currentDraftId) {
           setCurrentDraftId(result.draftId);
         }
+        // Simple feedback - could add a toast notification here if desired
+        console.log('✅ Draft saved successfully');
       } else {
-        setAutoSaveStatus('error');
+        console.error('❌ Draft save failed');
       }
     } catch (error) {
       console.error('❌ Manual save error:', error);
-      setAutoSaveStatus('error');
     }
   };
 
@@ -551,60 +540,7 @@ export default function CreatePropertyPage() {
         </div>
         
         <form onSubmit={(e) => propertySubmission.handleSubmit(e, () => performActualSubmission(), false, form.title)} className="space-y-8">
-          {/* Auto-save Status Bar - Only for Agents and Landlords */}
-          {/* Protective Save Reminder - Always Visible */}
-          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-2 border-yellow-400 rounded-lg p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 mt-1">
-                ⚠️
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-yellow-800 font-semibold text-sm">Don't Lose Your Progress!</h4>
-                  <div className="flex items-center gap-2 text-xs text-yellow-700">
-                    {currentDraftId && (
-                      <span className="bg-yellow-200 px-2 py-1 rounded">Editing Draft</span>
-                    )}
-                    <span>{completionAnalysis.completedFields.length} fields completed</span>
-                  </div>
-                </div>
-                
-                <p className="text-yellow-700 text-sm mb-3">
-                  📱 Taking a call? Getting interrupted? Save your work now to protect your listing progress.
-                </p>
-                
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={handleManualSave}
-                    disabled={autoSaveStatus === 'saving' || (!form.title.trim() && !form.description.trim() && !form.price.trim() && images.length === 0)}
-                    className="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {autoSaveStatus === 'saving' ? (
-                      <span className="flex items-center gap-2">
-                        <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                        Saving...
-                      </span>
-                    ) : (
-                      '💾 SAVE DRAFT NOW'
-                    )}
-                  </button>
-                  
-                  {autoSaveStatus === 'saved' && lastSavedTime && (
-                    <span className="text-green-700 font-medium text-sm">
-                      ✅ Saved at {lastSavedTime.toLocaleTimeString()}
-                    </span>
-                  )}
-                  
-                  {autoSaveStatus === 'error' && (
-                    <span className="text-red-700 font-medium text-sm">
-                      ❌ Save failed - try again
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
+
 
           {/* 1. BASIC INFO (What & Where) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
@@ -1053,6 +989,26 @@ export default function CreatePropertyPage() {
             </div>
           </div>
 
+          {/* Strategic Save Draft Button - After Core Info Complete */}
+          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border-2 border-yellow-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-yellow-800">Core property info complete!</p>
+                <p className="text-xs text-yellow-700">Save your progress before adding images</p>
+              </div>
+              <button 
+                type="button"
+                onClick={handleManualSave}
+                disabled={(!form.title.trim() && !form.description.trim() && !form.price.trim())}
+                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                <span className="flex items-center gap-2">
+                  💾 Save Draft
+                </span>
+              </button>
+            </div>
+          </div>
+
           {/* 9. PROPERTY IMAGES (Visual proof) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-yellow-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -1112,19 +1068,12 @@ export default function CreatePropertyPage() {
                 <button 
                   type="button"
                   onClick={handleManualSave}
-                  disabled={autoSaveStatus === 'saving' || (!form.title.trim() && !form.description.trim() && !form.price.trim() && images.length === 0)}
+                  disabled={(!form.title.trim() && !form.description.trim() && !form.price.trim() && images.length === 0)}
                   className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
-                  {autoSaveStatus === 'saving' ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
-                      Saving Draft...
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      💾 Save Draft
-                    </span>
-                  )}
+                  <span className="flex items-center justify-center gap-2">
+                    💾 Save Draft
+                  </span>
                 </button>
 
                 {/* Submit for Review - When Ready */}
@@ -1146,7 +1095,7 @@ export default function CreatePropertyPage() {
                 </button>
               </div>
               
-              <div className="text-center space-y-1">
+              <div className="text-center">
                 {completionAnalysis.percentage < 60 ? (
                   <p className="text-sm text-orange-600 font-medium">
                     💡 Complete {Math.ceil((60 - completionAnalysis.percentage) / 10)} more fields to submit for review
@@ -1156,9 +1105,6 @@ export default function CreatePropertyPage() {
                     ✅ Ready for submission! Your property will be reviewed by our team
                   </p>
                 )}
-                <p className="text-xs text-gray-500">
-                  Save drafts anytime • Submit when {completionAnalysis.percentage}% complete
-                </p>
               </div>
             </div>
           )}
