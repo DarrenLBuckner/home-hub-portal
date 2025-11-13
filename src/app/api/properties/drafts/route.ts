@@ -90,8 +90,11 @@ export async function POST(req: NextRequest) {
       });
 
     } else {
-      // Check for existing drafts with same title to prevent duplicates
-      if (title && title.trim()) {
+      // Enhanced duplicate prevention - check for recent drafts with same content
+      // First check for exact title match (if title exists and isn't generic)
+      const isGenericTitle = !title || title.trim() === '' || title.includes('Untitled') || title.includes('Property -');
+      
+      if (!isGenericTitle) {
         const { data: existingDraft } = await supabase
           .from('property_drafts')
           .select('id')
@@ -101,8 +104,7 @@ export async function POST(req: NextRequest) {
           .single();
 
         if (existingDraft) {
-          console.log('📝 Updating existing draft instead of creating duplicate');
-          // Update existing draft instead of creating duplicate
+          console.log('📝 Updating existing draft by title match instead of creating duplicate');
           const { data: updatedDraft, error: updateError } = await supabase
             .from('property_drafts')
             .update({
@@ -125,6 +127,59 @@ export async function POST(req: NextRequest) {
             draft_id: updatedDraft.id,
             message: 'Draft updated successfully'
           });
+        }
+      }
+      
+      // For generic/untitled drafts, check for recent drafts with similar content to prevent auto-save spam
+      if (isGenericTitle) {
+        // Get drafts from last 10 minutes to check for rapid duplicates
+        const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        const { data: recentDrafts } = await supabase
+          .from('property_drafts')
+          .select('id, draft_data')
+          .eq('user_id', user.id)
+          .eq('draft_type', draft_type || 'sale')
+          .gte('created_at', tenMinutesAgo)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (recentDrafts && recentDrafts.length > 0) {
+          // Check if we have a recent draft with very similar content
+          for (const recentDraft of recentDrafts) {
+            const recentData = recentDraft.draft_data;
+            const isSimilar = (
+              recentData.price === sanitizedData.price &&
+              recentData.bedrooms === sanitizedData.bedrooms &&
+              recentData.bathrooms === sanitizedData.bathrooms &&
+              recentData.region === sanitizedData.region &&
+              recentData.property_type === sanitizedData.property_type
+            );
+            
+            if (isSimilar) {
+              console.log('📝 Updating recent similar draft instead of creating duplicate');
+              const { data: updatedDraft, error: updateError } = await supabase
+                .from('property_drafts')
+                .update({
+                  draft_data: sanitizedData,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', recentDraft.id)
+                .select()
+                .single();
+
+              if (updateError) {
+                console.error('❌ Error updating recent draft:', updateError);
+                // Don't fail - fall through to create new draft
+                break;
+              }
+
+              return NextResponse.json({ 
+                success: true, 
+                draft_id: updatedDraft.id,
+                message: 'Draft updated successfully'
+              });
+            }
+          }
         }
       }
 

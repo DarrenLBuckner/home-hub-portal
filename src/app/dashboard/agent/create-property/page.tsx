@@ -18,10 +18,10 @@ import DuplicateWarningDialog from "@/components/DuplicateWarningDialog";
 import PropertySuccessScreen from "@/components/PropertySuccessScreen";
 // Video Upload Access Control
 import { canUploadVideo, getVideoUpgradeMessage, getUserProfile } from "@/lib/subscription-utils";
-// Auto-save and Draft Management
-import { useAutoSave } from "@/hooks/useAutoSave";
+// Draft Management (Manual saves only - auto-save disabled)
+// import { useAutoSave } from "@/hooks/useAutoSave"; // DISABLED - causing duplicate drafts
 import { saveDraft, loadUserDrafts, loadDraft, deleteDraft } from "@/lib/draftManager";
-import { isAutoSaveEligible, getAutoSaveSettings } from "@/lib/autoSaveEligibility";
+// import { isAutoSaveEligible, getAutoSaveSettings } from "@/lib/autoSaveEligibility"; // DISABLED
 
 
 interface FormData {
@@ -137,14 +137,13 @@ export default function CreatePropertyPage() {
             
             setUserProfile(profileData);
             
-            // Enable auto-save for eligible users
-            const eligible = isAutoSaveEligible(profileData);
-            setAutoSaveEnabled(eligible);
+            // Auto-save completely disabled - using manual save only
+            setAutoSaveEnabled(false);
             
             console.log('User profile loaded:', {
               email: profileData.email,
               user_type: profileData.user_type,
-              autoSaveEligible: eligible
+              autoSaveEligible: false
             });
 
             // Check for draft ID in URL parameters
@@ -216,31 +215,9 @@ export default function CreatePropertyPage() {
     loadDrafts();
   }, [autoSaveEnabled]);
 
-  // Auto-save hook integration with eligibility-based settings
-  const autoSaveSettings = userProfile ? getAutoSaveSettings(userProfile) : { enabled: false, interval: 0, minFieldsRequired: 0 };
-  
-  const autoSave = useAutoSave({
-    data: { ...form, images },
-    onSave: async (data, isDraft) => {
-      // ✅ Pass existing draft ID to UPDATE instead of creating new ones
-      return await saveDraft(data, currentDraftId || undefined);
-    },
-    interval: autoSaveSettings.interval,
-    enabled: false, // 🚫 AUTO-SAVE DISABLED - Manual saves only
-    minFieldsRequired: autoSaveSettings.minFieldsRequired,
-    onSaveStart: () => setAutoSaveStatus('saving'),
-    onSaveComplete: (success, draftId) => {
-      if (success) {
-        setAutoSaveStatus('saved');
-        setLastSavedTime(new Date());
-        if (draftId && !currentDraftId) {
-          setCurrentDraftId(draftId);
-        }
-      } else {
-        setAutoSaveStatus('error');
-      }
-    }
-  });
+  // AUTO-SAVE COMPLETELY DISABLED - Manual save only to prevent duplicate drafts
+  // const autoSaveSettings = userProfile ? getAutoSaveSettings(userProfile) : { enabled: false, interval: 0, minFieldsRequired: 0 };
+  // const autoSave = useAutoSave({ ... }); // REMOVED - was causing duplicate draft creation
 
   // Calculate completion score in real-time
   const completionAnalysis = calculateCompletionScore({
@@ -333,10 +310,14 @@ export default function CreatePropertyPage() {
   const handleManualSave = async () => {
     try {
       setAutoSaveStatus('saving');
-      const success = await autoSave.triggerSave();
-      if (success) {
+      // Direct save call instead of using auto-save hook
+      const result = await saveDraft({ ...form, images }, currentDraftId || undefined);
+      if (result.success) {
         setAutoSaveStatus('saved');
         setLastSavedTime(new Date());
+        if (result.draftId && !currentDraftId) {
+          setCurrentDraftId(result.draftId);
+        }
       } else {
         setAutoSaveStatus('error');
       }

@@ -143,7 +143,7 @@ export function useAutoSave({
     [performSave]
   );
 
-  // Set up auto-save timer
+  // Set up auto-save timer (only if change-based auto-save isn't sufficient)
   useEffect(() => {
     if (!enabled || !data) return;
     
@@ -152,10 +152,14 @@ export function useAutoSave({
       clearInterval(autoSaveTimer.current);
     }
     
-    // Set up new timer - use performSave directly to avoid debounce conflicts
+    // Only use timer-based saving as backup - most saving should be change-based
+    // Set up new timer with longer interval to reduce race conditions
     autoSaveTimer.current = setInterval(() => {
-      performSave(data);
-    }, interval);
+      // Only auto-save if we haven't saved recently (avoid conflicts with change-based saves)
+      if (!isSaving.current) {
+        performSave(data);
+      }
+    }, interval * 2); // Double the interval to reduce conflicts
     
     return () => {
       if (autoSaveTimer.current) {
@@ -164,7 +168,7 @@ export function useAutoSave({
     };
   }, [data, enabled, interval, performSave]);
 
-  // Trigger auto-save when data changes (with debounce)
+  // Primary trigger: auto-save when data changes (with debounce)
   useEffect(() => {
     if (enabled && data) {
       debouncedSave(data);
