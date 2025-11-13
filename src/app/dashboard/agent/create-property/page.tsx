@@ -95,6 +95,7 @@ export default function CreatePropertyPage() {
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [availableDrafts, setAvailableDrafts] = useState<any[]>([]);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
   // Comprehensive submission system with duplicate prevention
   const propertySubmission = usePropertySubmission({
@@ -300,19 +301,24 @@ export default function CreatePropertyPage() {
 
   const handleManualSave = async () => {
     try {
+      setSaveStatus('saving');
       // Direct save call - manual save only
       const result = await saveDraft({ ...form, images }, currentDraftId || undefined);
       if (result.success) {
         if (result.draftId && !currentDraftId) {
           setCurrentDraftId(result.draftId);
         }
-        // Simple feedback - could add a toast notification here if desired
-        console.log('✅ Draft saved successfully');
+        setSaveStatus('saved');
+        // Clear save status after 3 seconds
+        setTimeout(() => setSaveStatus('idle'), 3000);
       } else {
-        console.error('❌ Draft save failed');
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus('idle'), 3000);
       }
     } catch (error) {
       console.error('❌ Manual save error:', error);
+      setSaveStatus('error');
+      setTimeout(() => setSaveStatus('idle'), 3000);
     }
   };
 
@@ -999,12 +1005,27 @@ export default function CreatePropertyPage() {
               <button 
                 type="button"
                 onClick={handleManualSave}
-                disabled={(!form.title.trim() && !form.description.trim() && !form.price.trim())}
+                disabled={saveStatus === 'saving' || (!form.title.trim() && !form.description.trim() && !form.price.trim())}
                 className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
-                <span className="flex items-center gap-2">
-                  💾 Save Draft
-                </span>
+                {saveStatus === 'saving' ? (
+                  <span className="flex items-center gap-2">
+                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
+                    Saving...
+                  </span>
+                ) : saveStatus === 'saved' ? (
+                  <span className="flex items-center gap-2">
+                    ✅ Saved!
+                  </span>
+                ) : saveStatus === 'error' ? (
+                  <span className="flex items-center gap-2">
+                    ❌ Failed
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    💾 Save Draft
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -1068,12 +1089,27 @@ export default function CreatePropertyPage() {
                 <button 
                   type="button"
                   onClick={handleManualSave}
-                  disabled={(!form.title.trim() && !form.description.trim() && !form.price.trim() && images.length === 0)}
+                  disabled={saveStatus === 'saving' || (!form.title.trim() && !form.description.trim() && !form.price.trim() && images.length === 0)}
                   className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
-                  <span className="flex items-center justify-center gap-2">
-                    💾 Save Draft
-                  </span>
+                  {saveStatus === 'saving' ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      Saving Draft...
+                    </span>
+                  ) : saveStatus === 'saved' ? (
+                    <span className="flex items-center justify-center gap-2">
+                      ✅ Draft Saved!
+                    </span>
+                  ) : saveStatus === 'error' ? (
+                    <span className="flex items-center justify-center gap-2">
+                      ❌ Save Failed
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      💾 Save Draft
+                    </span>
+                  )}
                 </button>
 
                 {/* Submit for Review - When Ready */}
