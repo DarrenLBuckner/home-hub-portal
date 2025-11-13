@@ -106,14 +106,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       draftOwnerProfile = ownerProfile;
     }
 
-    // Auto-approval for admins and owner admins  
+    // DISABLED AUTO-APPROVAL: All properties should go through review process
+    // This ensures admin dashboard approval workflow works properly
     const shouldAutoApprove = (userType: string): boolean => {
-      const adminTypes = ['admin', 'superadmin', 'owner'];
-      return adminTypes.includes(userType?.toLowerCase() || '');
+      // return false; // Disable auto-approval for all users including admins
+      
+      // Alternative: Only auto-approve for super admins in production
+      return userType?.toLowerCase() === 'superadmin' && process.env.NODE_ENV === 'production';
     };
 
     const autoApprove = shouldAutoApprove(userProfile.user_type);
-    const propertyStatus = autoApprove ? 'approved' : 'pending';
+    const propertyStatus = autoApprove ? 'active' : 'pending'; // Fixed: use 'active' not 'approved'
 
     // Prepare property data from draft
     const draftData = draft.draft_data;
