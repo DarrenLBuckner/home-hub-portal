@@ -1057,6 +1057,16 @@ export default function UnifiedAdminDashboard() {
                             // Check if draft is complete enough for publishing
                             const draftData = draft.draft_data;
                             
+                            // DEBUG: Log draft data to see what's actually there
+                            console.log('🔍 Draft validation - checking data:', {
+                              draftId: draft.id,
+                              title: draftData.title,
+                              draftTitle: draft.title,
+                              hasTitle: !!draftData.title,
+                              titleLength: draftData.title?.length,
+                              keys: Object.keys(draftData)
+                            });
+                            
                             // Comprehensive validation with proper field names and user-friendly messages
                             // Location validation: check for location field OR city/region (different forms use different patterns)
                             const hasLocation = () => {
@@ -1065,16 +1075,22 @@ export default function UnifiedAdminDashboard() {
                                      (draftData.region && draftData.region.trim().length > 0);
                             };
                             
+                            // Title validation: check draft_data.title OR fall back to draft.title if available
+                            const hasTitle = () => {
+                              return (draftData.title && draftData.title.trim().length > 0) ||
+                                     (draft.title && draft.title.trim().length > 0 && !draft.title.includes('Untitled'));
+                            };
+                            
+                            // Only validate ACTUAL required fields (match the form's required fields)
                             const validationChecks = [
-                              { field: 'title', message: 'title', check: () => draftData.title && draftData.title.trim().length > 0 },
-                              { field: 'description', message: 'description', check: () => draftData.description && draftData.description.trim().length > 0 },
+                              { field: 'title', message: 'property title', check: hasTitle },
                               { field: 'price', message: 'price', check: () => draftData.price && parseFloat(draftData.price) > 0 },
                               { field: 'property_type', message: 'property type', check: () => draftData.property_type && draftData.property_type.trim().length > 0 },
                               { field: 'listing_type', message: 'listing type (sale/rental)', check: () => draftData.listing_type && draftData.listing_type.trim().length > 0 },
-                              { field: 'location', message: 'location (city, region, or general location)', check: hasLocation },
-                              { field: 'bedrooms', message: 'number of bedrooms', check: () => draftData.bedrooms && parseInt(draftData.bedrooms) >= 0 },
-                              { field: 'bathrooms', message: 'number of bathrooms', check: () => draftData.bathrooms && parseInt(draftData.bathrooms) >= 0 }
+                              { field: 'description', message: 'description', check: () => draftData.description && draftData.description.trim().length > 0 },
+                              { field: 'owner_whatsapp', message: 'WhatsApp contact', check: () => draftData.owner_whatsapp && draftData.owner_whatsapp.trim().length > 0 }
                             ];
+                            // Note: Removed bedrooms, bathrooms, location - they are NOT required in the form
                             
                             const missingFields = validationChecks
                               .filter(check => !check.check())
