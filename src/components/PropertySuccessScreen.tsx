@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface PropertySuccessScreenProps {
@@ -9,18 +9,47 @@ interface PropertySuccessScreenProps {
 
 export default function PropertySuccessScreen({ 
   redirectPath = '/dashboard', 
-  redirectDelay = 3000,
+  redirectDelay = 2000, // Reduced from 3000ms to 2000ms
   userType = 'agent'
 }: PropertySuccessScreenProps) {
   const router = useRouter();
+  const [countdown, setCountdown] = useState(Math.ceil(redirectDelay / 1000));
 
   useEffect(() => {
+    console.log('🔄 PropertySuccessScreen: Setting up redirect to:', redirectPath, 'in', redirectDelay, 'ms');
+    
     const timer = setTimeout(() => {
-      router.push(redirectPath);
+      console.log('🔄 PropertySuccessScreen: Attempting redirect to:', redirectPath);
+      try {
+        router.push(redirectPath);
+        console.log('✅ PropertySuccessScreen: Redirect initiated successfully');
+      } catch (error) {
+        console.error('❌ PropertySuccessScreen: Redirect failed:', error);
+        // Fallback: try window.location as backup
+        window.location.href = redirectPath;
+      }
     }, redirectDelay);
 
-    return () => clearTimeout(timer);
+    return () => {
+      console.log('🧹 PropertySuccessScreen: Cleaning up redirect timer');
+      clearTimeout(timer);
+    };
   }, [router, redirectPath, redirectDelay]);
+
+  // Countdown timer
+  useEffect(() => {
+    const countdownTimer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(countdownTimer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownTimer);
+  }, []);
 
   const getUserTypeMessage = () => {
     switch (userType) {
@@ -122,12 +151,22 @@ export default function PropertySuccessScreen({
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          <span className="text-sm">Redirecting to your dashboard...</span>
+          <span className="text-sm">
+            {countdown > 0 ? `Redirecting to your dashboard in ${countdown}s...` : 'Redirecting now...'}
+          </span>
         </div>
 
         {/* Manual Navigation Button */}
         <button
-          onClick={() => router.push(redirectPath)}
+          onClick={() => {
+            console.log('🔄 Manual redirect button clicked, navigating to:', redirectPath);
+            try {
+              router.push(redirectPath);
+            } catch (error) {
+              console.error('❌ Manual redirect failed, using fallback:', error);
+              window.location.href = redirectPath;
+            }
+          }}
           className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105"
         >
           🏠 Go to Dashboard Now
