@@ -120,7 +120,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const propertyData = {
       user_id: draft.user_id, // Use draft owner's ID, not the admin's ID
       country_id: draftOwnerProfile.country_id,
-      title: draftData.title || draft.title,
+      title: draftData.title || (draft.title && !draft.title.includes('Untitled') ? draft.title : 'Property Listing'),
       description: draftData.description,
       property_type: draftData.property_type,
       listing_type: draftData.listing_type || draft.draft_type,
@@ -128,10 +128,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       currency: draftData.currency || 'USD',
       
       // Location data
-      location: draftData.location,
-      address: draftData.address,
+      location: draftData.location || draftData.region || draftData.city,
+      address: draftData.address || draftData.neighborhood || draftData.city,
       city: draftData.city,
       region: draftData.region,
+      neighborhood: draftData.neighborhood,
       postal_code: draftData.postal_code,
       latitude: draftData.latitude,
       longitude: draftData.longitude,
@@ -143,6 +144,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       house_size_unit: draftData.house_size_unit,
       lot_size_value: draftData.lot_size_value,
       lot_size_unit: draftData.lot_size_unit,
+      lot_length: draftData.lot_length,
+      lot_width: draftData.lot_width,
+      lot_dimension_unit: draftData.lot_dimension_unit,
+      land_size_value: draftData.land_size_value,
+      land_size_unit: draftData.land_size_unit,
       year_built: draftData.year_built,
       
       // Features and amenities
@@ -151,10 +157,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       property_condition: draftData.property_condition,
       
       // Listing details
-      listed_by_type: draftData.listed_by_type,
-      contact_name: draftData.contact_name,
-      contact_phone: draftData.contact_phone,
-      contact_email: draftData.contact_email,
+      listed_by_type: draftData.listed_by_type || 'agent',
+      owner_whatsapp: draftData.owner_whatsapp || draftData.contact_phone,
+      owner_email: draftData.owner_email || draftData.contact_email || user.email,
       
       // Status
       status: propertyStatus,
@@ -162,6 +167,18 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
+
+    // Log the property data being inserted for debugging
+    console.log('🔍 Property data being inserted:', {
+      user_id: propertyData.user_id,
+      title: propertyData.title,
+      description: propertyData.description?.substring(0, 50) + '...',
+      property_type: propertyData.property_type,
+      listing_type: propertyData.listing_type,
+      price: propertyData.price,
+      currency: propertyData.currency,
+      country_id: propertyData.country_id
+    });
 
     // Insert into properties table
     const { data: newProperty, error: propertyError } = await supabase
@@ -172,8 +189,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
     if (propertyError) {
       console.error('❌ Error creating property:', propertyError);
+      console.error('❌ Property data that failed:', JSON.stringify(propertyData, null, 2));
       return NextResponse.json({ 
-        error: 'Failed to publish property' 
+        error: `Failed to publish property: ${propertyError.message}`,
+        details: propertyError.details || 'No additional details',
+        hint: propertyError.hint || 'No hints available'
       }, { status: 500 });
     }
 
