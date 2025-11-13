@@ -1056,8 +1056,29 @@ export default function UnifiedAdminDashboard() {
                           onClick={async () => {
                             // Check if draft is complete enough for publishing
                             const draftData = draft.draft_data;
-                            const requiredFields = ['title', 'description', 'price', 'location', 'property_type'];
-                            const missingFields = requiredFields.filter(field => !draftData[field]);
+                            
+                            // Comprehensive validation with proper field names and user-friendly messages
+                            // Location validation: check for location field OR city/region (different forms use different patterns)
+                            const hasLocation = () => {
+                              return (draftData.location && draftData.location.trim().length > 0) ||
+                                     (draftData.city && draftData.city.trim().length > 0) || 
+                                     (draftData.region && draftData.region.trim().length > 0);
+                            };
+                            
+                            const validationChecks = [
+                              { field: 'title', message: 'title', check: () => draftData.title && draftData.title.trim().length > 0 },
+                              { field: 'description', message: 'description', check: () => draftData.description && draftData.description.trim().length > 0 },
+                              { field: 'price', message: 'price', check: () => draftData.price && parseFloat(draftData.price) > 0 },
+                              { field: 'property_type', message: 'property type', check: () => draftData.property_type && draftData.property_type.trim().length > 0 },
+                              { field: 'listing_type', message: 'listing type (sale/rental)', check: () => draftData.listing_type && draftData.listing_type.trim().length > 0 },
+                              { field: 'location', message: 'location (city, region, or general location)', check: hasLocation },
+                              { field: 'bedrooms', message: 'number of bedrooms', check: () => draftData.bedrooms && parseInt(draftData.bedrooms) >= 0 },
+                              { field: 'bathrooms', message: 'number of bathrooms', check: () => draftData.bathrooms && parseInt(draftData.bathrooms) >= 0 }
+                            ];
+                            
+                            const missingFields = validationChecks
+                              .filter(check => !check.check())
+                              .map(check => check.message);
                             
                             if (missingFields.length > 0) {
                               alert(`❌ Cannot publish incomplete draft!\n\nMissing required information:\n• ${missingFields.join('\n• ')}\n\nThe user needs to complete their draft first.`);
