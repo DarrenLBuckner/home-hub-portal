@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 interface PropertySuccessScreenProps {
   redirectPath?: string;
   redirectDelay?: number;
-  userType?: 'agent' | 'landlord' | 'fsbo' | 'owner';
+  userType?: 'agent' | 'landlord' | 'fsbo' | 'owner' | 'admin';
 }
 
 export default function PropertySuccessScreen({ 
@@ -55,6 +55,8 @@ export default function PropertySuccessScreen({
     switch (userType) {
       case 'agent':
         return "Your property has been submitted for review and will be visible to buyers once approved.";
+      case 'admin':
+        return "Property created successfully! You can review and manage it from your admin dashboard.";
       case 'landlord':
         return "Your rental property is now live and tenants can contact you via WhatsApp.";
       case 'fsbo':
@@ -74,6 +76,13 @@ export default function PropertySuccessScreen({
           "📧 You'll get email confirmation when approved",
           "📱 Buyers will contact you via WhatsApp",
           "📊 Track performance in your dashboard"
+        ];
+      case 'admin':
+        return [
+          "✅ Property created with admin privileges",
+          "⚡ Property can be approved immediately",
+          "📊 Manage from admin dashboard",
+          "🔍 Visible across all admin tools"
         ];
       case 'landlord':
         return [

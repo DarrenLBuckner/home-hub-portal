@@ -1224,8 +1224,16 @@ export default function CreatePropertyPage() {
         {/* Success Screen */}
         {success && (
           <PropertySuccessScreen
-            redirectPath="/dashboard/agent"
-            userType="agent"
+            redirectPath={
+              userProfile?.user_type === 'owner_admin' || userProfile?.user_type === 'basic_admin' 
+                ? "/admin-dashboard" 
+                : "/dashboard/agent"
+            }
+            userType={
+              userProfile?.user_type === 'owner_admin' || userProfile?.user_type === 'basic_admin'
+                ? "admin"
+                : "agent"
+            }
           />
         )}
       </div>
