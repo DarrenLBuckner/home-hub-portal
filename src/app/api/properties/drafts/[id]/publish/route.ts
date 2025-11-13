@@ -127,34 +127,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       price: draftData.price,
       currency: draftData.currency || 'USD',
       
-      // Location data
+      // Location data (only fields that exist in database)
       location: draftData.location || draftData.region || draftData.city,
-      address: draftData.address || draftData.neighborhood || draftData.city,
       city: draftData.city,
       region: draftData.region,
-      neighborhood: draftData.neighborhood,
-      postal_code: draftData.postal_code,
-      latitude: draftData.latitude,
-      longitude: draftData.longitude,
       
       // Property details
       bedrooms: draftData.bedrooms,
       bathrooms: draftData.bathrooms,
       house_size_value: draftData.house_size_value || 0,
       house_size_unit: draftData.house_size_unit,
-      lot_size_value: draftData.lot_size_value,
-      lot_size_unit: draftData.lot_size_unit,
+      land_size_value: draftData.land_size_value || draftData.lot_size_value,
+      land_size_unit: draftData.land_size_unit || draftData.lot_size_unit,
       lot_length: draftData.lot_length,
       lot_width: draftData.lot_width,
       lot_dimension_unit: draftData.lot_dimension_unit,
-      land_size_value: draftData.land_size_value,
-      land_size_unit: draftData.land_size_unit,
       year_built: draftData.year_built,
       
-      // Features and amenities
+      // Features and amenities (only if they exist in schema)
       amenities: draftData.amenities,
-      features: draftData.features,
-      property_condition: draftData.property_condition,
       
       // Listing details
       listed_by_type: draftData.listed_by_type || 'agent',
