@@ -625,7 +625,7 @@ export default function CreatePropertyPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms (Optional)</label>
                 <input 
                   name="bedrooms" 
                   type="number" 
@@ -636,7 +636,7 @@ export default function CreatePropertyPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms (Optional)</label>
                 <input 
                   name="bathrooms" 
                   type="number" 
@@ -930,7 +930,7 @@ export default function CreatePropertyPage() {
             <p className="text-sm text-gray-600 mb-4">Country and region are selected above. Add specific location details below:</p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Specific Area/District</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Specific Area/District (Optional)</label>
                 <input 
                   name="city" 
                   type="text" 
