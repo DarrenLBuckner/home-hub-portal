@@ -125,9 +125,7 @@ export async function POST(req: NextRequest) {
       site_id: "guyana",
       country_id: "GY",
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-    
+      updated_at: new Date().toISOString(),
       title: testPropertyData.title,
       listing_type: testPropertyData.listing_type,
       listed_by_type: testPropertyData.listed_by_type,
