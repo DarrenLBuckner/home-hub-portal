@@ -125,13 +125,8 @@ export async function POST(req: NextRequest) {
       site_id: "guyana",
       country_id: "GY",
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      title: testPropertyData.title,
-      listing_type: testPropertyData.listing_type,
-      listed_by_type: testPropertyData.listed_by_type,
-      status: testPropertyData.status,
-      user_id: testPropertyData.user_id
-    });
+      updated_at: new Date().toISOString()
+    };
     
     // Insert the test property
     const { data: propertyResult, error: propertyError } = await supabase
