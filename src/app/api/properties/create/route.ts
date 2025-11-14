@@ -6,16 +6,9 @@ export const runtime = 'nodejs'; // avoid Edge runtime issues
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('🚀 Properties Create API - Starting request processing');
-    console.log('🔍 Environment check:', {
-      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasAnonKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      hasServiceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY
-    });
     
     // Create supabase server client
     const cookieStore = await cookies();
-    console.log('✅ Cookies retrieved successfully');
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -33,7 +26,6 @@ export async function POST(req: NextRequest) {
         },
       }
     );
-    console.log('✅ Supabase client created successfully');
     
     // Authenticate the user
     const {
@@ -51,7 +43,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    console.log('Authenticated as:', user.email);
     
     // Get user profile for permissions
     const { data: userProfile, error: profileError } = await supabase
@@ -83,11 +74,9 @@ export async function POST(req: NextRequest) {
     const isDraftSave = body._isDraftSave === true || body.status === 'draft';
     const isPublishDraft = body._isPublishDraft === true;
     
-    console.log('📋 Request type:', { isDraftSave, isPublishDraft, status: body.status });
     
     // REDIRECT DRAFT SAVES TO NEW DRAFT SYSTEM
     if (isDraftSave && !isPublishDraft) {
-      console.log('🔄 Redirecting to draft system...');
       
       // Forward to draft API
       const draftUrl = new URL('/api/properties/drafts', req.url);
@@ -188,7 +177,6 @@ export async function POST(req: NextRequest) {
       });
       
       if (missingMinimalFields.length > 0) {
-        console.log('⚠️ Draft save with minimal validation - missing:', missingMinimalFields);
         // Don't fail, just ensure we have some basic structure
         normalizedPayload.property_type = normalizedPayload.property_type || 'House';
         normalizedPayload.listing_type = normalizedPayload.listing_type || 'sale';
@@ -218,50 +206,16 @@ export async function POST(req: NextRequest) {
     const adminLevel = getAdminLevel(userProfile.email);
     const isEligibleAdmin = adminLevel === 'super' || adminLevel === 'owner';
 
-    console.log('🔍 BULLETPROOF Admin Detection:', {
-      email: userProfile.email,
-      emailNormalized: userProfile.email?.toLowerCase().trim(),
-      adminLevel,
-      isEligibleAdmin,
-      registryCheck: {
-        super: ADMIN_REGISTRY.super.includes(userProfile.email?.toLowerCase().trim() || ''),
-        owner: ADMIN_REGISTRY.owner.includes(userProfile.email?.toLowerCase().trim() || '')
-      }
-    });
 
-    console.log('🔍 Final Admin Status:', {
-      isEligibleAdmin,
-      email: userProfile.email,
-      emailNormalized: userProfile.email?.toLowerCase().trim(),
-      adminLevel: adminLevel,
-      userType: userProfile.user_type
-    });
 
     // CRITICAL DEBUG - Add a clear marker for admin path
     if (isEligibleAdmin) {
-      console.log('🚨🚨🚨 ADMIN PATH CONFIRMED - BYPASSING REGULAR LIMITS 🚨🚨🚨');
-      console.log('Admin details:', {
-        email: userProfile.email,
-        adminLevel: adminLevel,
-        shouldBypassLimits: true
-      });
     } else {
-      console.log('❌❌❌ NOT ADMIN - WILL USE REGULAR LIMITS ❌❌❌');
-      console.log('Non-admin details:', {
-        email: userProfile.email,
-        userType: userProfile.user_type,
-        adminLevel: null
-      });
     }
 
     // Remove old conflicting admin detection code
 
     if (isEligibleAdmin) {
-      console.log('🎯 ADMIN PATH TAKEN - Using database property limits for:', {
-        email: userProfile.email,
-        adminLevel: adminLevel,
-        userType: userProfile.user_type
-      });
       
       // For admin users, check if there's a specific property limit
       // Default to unlimited for admin users (can be overridden by additional admin settings)
@@ -292,28 +246,11 @@ export async function POST(req: NextRequest) {
           }, { status: 403 });
         }
         
-        console.log('✅ Owner admin property limits check passed:', {
-          email: userProfile.email,
-          adminLevel: adminLevel,
-          totalCount: totalCount || 0,
-          propertyLimit: propertyLimit,
-          listingType: normalizedPayload.listing_type
-        });
       } else {
-        console.log('✅ Super admin unlimited access - no property limit check:', {
-          email: userProfile.email,
-          adminLevel: adminLevel,
-          propertyLimit: 'UNLIMITED'
-        });
       }
       
     } else {
       // For all other users (agents, landlords, FSBO) - use enhanced property limits system
-      console.log('🔍 Using enhanced property limits system for NON-ADMIN user:', {
-        userType: userProfile.user_type,
-        email: userProfile.email,
-        isEligibleAdmin: false
-      });
       
       // Use the new enhanced property limits check
       const { data: limitResult, error: limitCheckError } = await supabase
@@ -357,13 +294,6 @@ export async function POST(req: NextRequest) {
         }, { status: 403 });
       }
 
-      console.log('✅ Enhanced property limits check passed for non-admin:', {
-        userType: userProfile.user_type,
-        can_create: result?.can_create,
-        current_count: result?.current_count,
-        max_allowed: result?.max_allowed,
-        trial_active: result?.trial_active
-      });
     }
 
     // Enforce image limits (15 for rental, 20 for FSBO) - skip for drafts
@@ -389,14 +319,6 @@ export async function POST(req: NextRequest) {
     for (let i = 0; i < body.images.length; i++) {
       const file = body.images[i];
       try {
-        console.log(`📸 Processing image ${i + 1}:`, {
-          name: file.name,
-          type: file.type,
-          hasData: !!file.data,
-          dataType: typeof file.data,
-          isFile: file.data instanceof File,
-          constructor: file.data?.constructor?.name
-        });
 
         // Convert file data - handle different formats including File objects
         let fileBuffer: Buffer;
@@ -431,10 +353,6 @@ export async function POST(req: NextRequest) {
           throw new Error(`Unsupported file data format: ${typeof file.data} (constructor: ${file.data?.constructor?.name}). File objects cannot be sent in JSON - convert to base64 or FormData first.`);
         }
 
-        console.log(`📁 File buffer created:`, {
-          size: fileBuffer.length,
-          fileName: file.name
-        });
         
         const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${i}-${file.name}`;
         const { data, error } = await supabase.storage
@@ -453,7 +371,6 @@ export async function POST(req: NextRequest) {
           throw new Error("No file path returned from storage");
         }
 
-        console.log(`✅ File uploaded successfully:`, data.path);
         
         const { data: urlData } = supabase.storage
           .from("property-images")
@@ -463,7 +380,6 @@ export async function POST(req: NextRequest) {
           throw new Error("Failed to get public URL");
         }
 
-        console.log(`🔗 Public URL generated:`, urlData.publicUrl);
         imageUrls.push(urlData.publicUrl);
       } catch (err) {
         console.error(`❌ Image upload error for file ${i + 1} (${file.name}):`, err);
@@ -617,21 +533,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Log the data being inserted for debugging
-    console.log('🔧 Inserting property data:', {
-      userType,
-      isAgent,
-      isRental,
-      isSale,
-      propertyData: {
-        ...propertyData,
-        // Don't log sensitive data, just structure
-        title: propertyData.title,
-        property_type: propertyData.property_type,
-        listing_type: propertyData.listing_type,
-        status: propertyData.status,
-        user_id: propertyData.user_id
-      }
-    });
 
     // Insert property into properties table
     const { data: propertyResult, error: dbError } = await supabase
@@ -662,11 +563,6 @@ export async function POST(req: NextRequest) {
       display_order: index,
     }));
 
-    console.log('📸 Inserting property media:', {
-      propertyId: propertyResult.id,
-      imageCount: imageUrls.length,
-      mediaInserts: mediaInserts.length
-    });
 
     const { error: mediaError } = await supabase
       .from("property_media")
@@ -677,7 +573,6 @@ export async function POST(req: NextRequest) {
       console.error("💥 Failed media inserts:", mediaInserts);
       // Don't fail the whole request, just log the error
     } else {
-      console.log('✅ Property media inserted successfully');
     }
 
     // Determine success message based on operation type and user status

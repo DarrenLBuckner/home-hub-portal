@@ -34,7 +34,6 @@ export default async function PropertyDetailPage({
     .single();
 
   if (error || !property) {
-    console.error('Property fetch error:', error);
     notFound();
   }
 

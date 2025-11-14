@@ -5,10 +5,8 @@ export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('🚀 Creating test sale property - Starting request processing');
     
     const supabase = createAdminClient();
-    console.log('✅ Supabase admin client created successfully');
     
     // First, check if test agent already exists
     const testAgentEmail = 'test-agent@guyanahomehub.com';
@@ -26,7 +24,6 @@ export async function POST(req: NextRequest) {
     }
     
     if (existingAgent) {
-      console.log('✅ Found existing test agent:', existingAgent.email);
       testAgentId = existingAgent.id;
     } else {
       console.log('📝 Creating new test agent account');
@@ -54,7 +51,6 @@ export async function POST(req: NextRequest) {
             const existingUser = existingUsers.users.find(u => u.email === testAgentEmail);
             if (existingUser) {
               authUser = { user: existingUser };
-              console.log('✅ Found existing auth user:', existingUser.id);
             } else {
               throw new Error(`Auth error: ${authResult.error.message}`);
             }
@@ -63,7 +59,6 @@ export async function POST(req: NextRequest) {
           }
         } else {
           authUser = authResult;
-          console.log('✅ Test agent auth user created:', authUser.user.id);
         }
       } catch (authError: any) {
         console.error('Auth user creation error:', authError);
@@ -71,7 +66,6 @@ export async function POST(req: NextRequest) {
       }
       
       testAgentId = authUser.user.id;
-      console.log('✅ Test agent auth user created:', testAgentId);
       
       // Create test agent profile
       const { error: profileError } = await supabase
@@ -93,7 +87,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Profile error: ${profileError.message}` }, { status: 500 });
       }
       
-      console.log('✅ Test agent profile created successfully');
     }
     
     // Create the test sale property with exact specifications
@@ -135,7 +128,6 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString()
     };
     
-    console.log('🔧 Inserting test property data:', {
       title: testPropertyData.title,
       listing_type: testPropertyData.listing_type,
       listed_by_type: testPropertyData.listed_by_type,
@@ -159,7 +151,6 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
     
-    console.log('✅ Test property created successfully:', propertyResult);
     
     // Create a test image entry (using placeholder image)
     const { error: mediaError } = await supabase
@@ -175,7 +166,6 @@ export async function POST(req: NextRequest) {
     if (mediaError) {
       console.warn('Media insert error (non-critical):', mediaError);
     } else {
-      console.log('✅ Test property media created successfully');
     }
     
     return NextResponse.json({ 

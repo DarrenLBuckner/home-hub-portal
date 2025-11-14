@@ -41,46 +41,148 @@ export async function PUT(
     const propertyId = params.id;
     const body = await request.json();
     
-    // Validate required fields
+    // Validate only essential required fields for updates (much more lenient than create)
+    // Since this property already exists, we only enforce what's truly required
     const required = [
-      "title", "description", "price", "property_type", 
-      "bedrooms", "bathrooms", "house_size_value", 
-      "region", "city", "owner_email", "owner_whatsapp"
+      "title", "price"  // Only the fields marked as required in the edit form
     ];
     
     for (const field of required) {
-      if (!body[field]) {
+      if (!body[field] && body[field] !== 0) {  // Allow 0 as valid value for price
         return NextResponse.json({ error: `Missing field: ${field}` }, { status: 400 });
       }
     }
 
-    // Prepare update data
-    const updateData = {
-      // Step 1 - Basic Info
+    // Prepare update data - handle all fields gracefully (allow empty/null values)
+    const updateData: Record<string, any> = {
+      // Step 1 - Basic Info (only title and price truly required)
       title: body.title,
-      description: body.description,
-      price: parseInt(body.price),
-      property_type: body.property_type,
+      description: body.description || '',
+      price: parseInt(body.price) || 0,
+      property_type: body.property_type || 'House',
       
-      // Step 2 - Property Details
-      bedrooms: parseInt(body.bedrooms),
-      bathrooms: parseInt(body.bathrooms),
-      house_size_value: parseInt(body.house_size_value),
-      house_size_unit: body.house_size_unit,
+      // Step 2 - Property Details (all optional for updates)
+      bedrooms: body.bedrooms ? parseInt(body.bedrooms) : null,
+      bathrooms: body.bathrooms ? parseInt(body.bathrooms) : null,
+      house_size_value: body.house_size_value ? parseInt(body.house_size_value) : null,
+      house_size_unit: body.house_size_unit || 'sq ft',
       land_size_value: body.land_size_value ? parseInt(body.land_size_value) : null,
-      land_size_unit: body.land_size_unit,
+      land_size_unit: body.land_size_unit || 'sq ft',
       year_built: body.year_built ? parseInt(body.year_built) : null,
       amenities: body.amenities || [],
+      lot_length: body.lot_length ? parseFloat(body.lot_length) : null,
+      lot_width: body.lot_width ? parseFloat(body.lot_width) : null,
+      lot_dimension_unit: body.lot_dimension_unit || 'ft',
       
-      // Step 3 - Location
-      region: body.region,
-      city: body.city,
+      // Step 3 - Location (FIX: Include all location fields properly)
+      location: body.location || body.country || 'GY',
+      country: body.country || body.location || 'GY',
+      region: body.region || '',
+      city: body.city || null,
       neighborhood: body.neighborhood || null,
+      site_id: body.site_id || (body.country === 'JM' ? 'jamaica' : 'guyana'),
       
-      // Step 5 - Contact
-      owner_email: body.owner_email,
-      owner_whatsapp: body.owner_whatsapp,
+      // Step 4 - Currency
+      currency: body.currency || 'GYD',
+      
+      // Step 5 - Contact (optional for agent properties)
+      owner_email: body.owner_email || null,
+      owner_whatsapp: body.owner_whatsapp || null,
     };
+
+    // Handle image uploads if provided
+    if (body.images && Array.isArray(body.images) && body.images.length > 0) {
+      console.log(`📸 Processing ${body.images.length} new images for property update`);
+      console.log('Image data format check:', body.images.map((img: any) => ({ 
+        name: img?.name, 
+        hasData: !!img?.data,
+        dataType: typeof img?.data 
+      })));
+      
+      try {
+        // Delete existing property media
+        const { error: deleteError } = await supabase
+          .from('property_media')
+          .delete()
+          .eq('property_id', propertyId);
+          
+        if (deleteError) {
+          console.warn('Warning: Could not delete existing media:', deleteError);
+        }
+
+        // Upload new images to Supabase storage and create media records
+        for (let i = 0; i < body.images.length; i++) {
+          const imageFile = body.images[i];
+          
+          if (imageFile && typeof imageFile === 'object' && imageFile.name) {
+            // Convert base64 to file if needed
+            let fileBuffer;
+            if (imageFile.data && typeof imageFile.data === 'string') {
+              // Handle base64 data
+              const base64Data = imageFile.data.replace(/^data:image\/[a-z]+;base64,/, '');
+              fileBuffer = Buffer.from(base64Data, 'base64');
+            } else {
+              console.warn(`Image ${i} missing data, skipping`);
+              continue;
+            }
+
+            // Upload to Supabase storage
+            const fileName = `${propertyId}/${Date.now()}_${imageFile.name}`;
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('property-images')
+              .upload(fileName, fileBuffer, {
+                contentType: imageFile.type || 'image/jpeg'
+              });
+
+            if (uploadError) {
+              console.error('Image upload error:', uploadError);
+              continue;
+            }
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('property-images')
+              .getPublicUrl(fileName);
+
+            // Save media record to property_media table
+            const { error: mediaError } = await supabase
+              .from('property_media')
+              .insert({
+                property_id: propertyId,
+                media_url: publicUrl,
+                media_type: 'image',
+                display_order: i,
+                is_primary: i === 0
+              });
+
+            if (mediaError) {
+              console.error('Media record error:', mediaError);
+            } else {
+              console.log(`✅ Image ${i + 1} uploaded and saved`);
+            }
+          }
+        }
+      } catch (imageError) {
+        console.error('Image processing error:', imageError);
+        // Don't fail the entire update for image errors
+      }
+    }
+
+    // Get current property to preserve status
+    const { data: currentProperty, error: fetchError } = await supabase
+      .from("properties")
+      .select('status')
+      .eq('id', propertyId)
+      .eq('user_id', user.id)
+      .single();
+
+    if (fetchError || !currentProperty) {
+      return NextResponse.json({ error: "Property not found or access denied" }, { status: 404 });
+    }
+
+    // Preserve current status - don't send active properties back to pending
+    updateData.status = currentProperty.status;
+    updateData.updated_at = new Date().toISOString();
 
     // Update property in properties table
     const { data: propertyResult, error: dbError } = await supabase
@@ -88,7 +190,7 @@ export async function PUT(
       .update(updateData)
       .eq('id', propertyId)
       .eq('user_id', user.id) // Ensure user owns this property
-      .select('id')
+      .select('id, status')
       .single();
       
     if (dbError) {
@@ -100,10 +202,17 @@ export async function PUT(
       return NextResponse.json({ error: "Property not found or access denied" }, { status: 404 });
     }
 
+    const statusMessage = propertyResult.status === 'active' 
+      ? 'Property updated successfully! Your listing remains live on the site.' 
+      : propertyResult.status === 'pending'
+      ? 'Property updated successfully! Changes are pending admin approval.'
+      : 'Property updated successfully!';
+
     return NextResponse.json({ 
       success: true, 
       propertyId: propertyResult.id,
-      message: 'Property updated successfully'
+      status: propertyResult.status,
+      message: statusMessage
     });
     
   } catch (err: any) {

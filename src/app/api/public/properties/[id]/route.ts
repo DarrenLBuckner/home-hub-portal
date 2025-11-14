@@ -12,18 +12,24 @@ export async function GET(
 ) {
   try {
     const { id } = await params
+    
+    // Get site_id from headers (sent by Guyana proxy)
+    const siteId = request.headers.get('x-site-id') || 'guyana'
 
-    // Get single property by ID with status 'active' and include agent profile for agents only
-    const { data, error } = await supabase
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return NextResponse.json(
+        { error: 'Invalid property ID format' },
+        { status: 400 }
+      );
+    }
+
+    // Step 1: Fetch the property (single row) - NO JOINS to avoid .single() issues
+    const { data: property, error: propertyError } = await supabase
       .from('properties')
       .select(`
         *,
-        property_media!property_media_property_id_fkey (
-          media_url,
-          media_type,
-          display_order,
-          is_primary
-        ),
         profiles!properties_user_id_fkey (
           id,
           first_name,
@@ -35,60 +41,77 @@ export async function GET(
         )
       `)
       .eq('id', id)
+      .eq('site_id', siteId)
       .eq('status', 'active')
       .single()
 
-    if (error) {
-      console.error('Error fetching property:', error)
+    if (propertyError) {
+      console.error('Property fetch error:', propertyError);
       return NextResponse.json(
         { error: 'Property not found' },
         { status: 404 }
-      )
+      );
     }
 
-    if (!data) {
+    if (!property) {
       return NextResponse.json(
         { error: 'Property not found' },
         { status: 404 }
-      )
+      );
     }
 
-    // Transform the data to include images properly (same logic as list endpoint)
-    const images = data.property_media
-      ?.filter((media: any) => media.media_type === 'image')
+    // Step 2: Fetch property images separately (multiple rows)
+    const { data: media, error: mediaError } = await supabase
+      .from('property_media')
+      .select('media_url, media_type, display_order, is_primary')
+      .eq('property_id', id)
+      .order('display_order', { ascending: true })
+
+    if (mediaError) {
+      console.error('Media fetch error:', mediaError);
+      // Don't fail the entire request if media fetch fails
+      // Return property with empty images array
+    }
+
+    // Step 3: Transform and combine data
+    const images = media
+      ?.filter((m: any) => m.media_type === 'image')
       ?.sort((a: any, b: any) => {
         // Primary images first, then by display_order
         if (a.is_primary && !b.is_primary) return -1
         if (!a.is_primary && b.is_primary) return 1
         return a.display_order - b.display_order
       })
-      ?.map((media: any) => media.media_url) || []
+      ?.map((m: any) => m.media_url) || []
 
-    // Extract agent profile data if user is an agent OR admin (owner admins can also have photos)
-    const canShowProfile = data.profiles?.user_type === 'agent' || data.profiles?.user_type === 'admin'
+    // Extract agent profile data if user is an agent OR admin
+    const canShowProfile = property.profiles?.user_type === 'agent' || property.profiles?.user_type === 'admin'
     const agentProfile = canShowProfile ? {
-      id: data.profiles.id,
-      first_name: data.profiles.first_name,
-      last_name: data.profiles.last_name,
-      phone: data.profiles.phone,
-      profile_image: data.profiles.profile_image,
-      company: data.profiles.company,
-      user_type: data.profiles.user_type // Include user_type to distinguish agents from admins
+      id: property.profiles.id,
+      first_name: property.profiles.first_name,
+      last_name: property.profiles.last_name,
+      phone: property.profiles.phone,
+      profile_image: property.profiles.profile_image,
+      company: property.profiles.company,
+      user_type: property.profiles.user_type
     } : null
 
-    const transformedProperty = {
-      ...data,
+    // Step 4: Create final response
+    const result = {
+      ...property,
+      property_media: media || [],
       images,
-      agent_profile: agentProfile, // Only include if user is an agent
-      property_media: undefined, // Remove the nested object
-      profiles: undefined // Remove the nested profiles object
+      image_count: media?.length || 0,
+      agent_profile: agentProfile,
+      profiles: undefined, // Remove nested profiles object
     }
 
-    return NextResponse.json(transformedProperty, {
+    return NextResponse.json(result, {
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
       }
     })
   } catch (error) {

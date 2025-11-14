@@ -50,6 +50,7 @@ export default function EditAgentProperty() {
   const submittingRef = useRef(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isSuccess, setIsSuccess] = useState(false);
   
   const [form, setForm] = useState<FormData>({
     location: "",
@@ -95,21 +96,31 @@ export default function EditAgentProperty() {
           return;
         }
 
-        // Fetch property data with images
-        const { data: property, error: propertyError } = await supabase
-          .from('properties')
-          .select(`
-            *,
-            property_media!property_media_property_id_fkey (
-              media_url,
-              media_type,
-              display_order,
-              is_primary
-            )
-          `)
-          .eq('id', propertyId)
-          .eq('user_id', user.id)
-          .single();
+        // Fetch property data with images AND user profile for fallback WhatsApp
+        const [propertyResponse, profileResponse] = await Promise.all([
+          supabase
+            .from('properties')
+            .select(`
+              *,
+              property_media!property_media_property_id_fkey (
+                media_url,
+                media_type,
+                display_order,
+                is_primary
+              )
+            `)
+            .eq('id', propertyId)
+            .eq('user_id', user.id)
+            .single(),
+          supabase
+            .from('profiles')
+            .select('whatsapp')
+            .eq('id', user.id)
+            .single()
+        ]);
+
+        const { data: property, error: propertyError } = propertyResponse;
+        const { data: profile } = profileResponse;
 
         if (propertyError) {
           console.error('Error loading property:', propertyError);
@@ -141,14 +152,49 @@ export default function EditAgentProperty() {
             lot_length: property.lot_length?.toString() || '',
             lot_width: property.lot_width?.toString() || '',
             lot_dimension_unit: property.lot_dimension_unit || 'ft',
-            owner_whatsapp: property.owner_whatsapp || '',
+            owner_whatsapp: property.owner_whatsapp || profile?.whatsapp || '',
           });
 
-          // Set location and currency info
-          setSelectedCountry(property.location || 'GY');
-          setSelectedRegion(property.region || '');
+          // Set location and currency info - FIX: Use country field, not location
+          // Handle legacy data where country might be null but location contains country code
+          let countryCode = property.country || 'GY';
+          if (!property.country && property.location) {
+            // Extract country from location field (GY-R4 -> GY)
+            if (property.location.startsWith('GY')) countryCode = 'GY';
+            else if (property.location.startsWith('JM')) countryCode = 'JM';
+          }
+          setSelectedCountry(countryCode);
+          
+          // Map stored region code to component expected format
+          let mappedRegion = property.region || '';
+          if (mappedRegion && countryCode === 'GY') {
+            // Map GY-R4 (Region 4 - Demerara-Mahaica) to city format
+            const city = property.city || '';
+            if (mappedRegion === 'GY-R4') {
+              // Region 4 includes Georgetown, Diamond, East Coast Demerara, etc.
+              if (city.includes('Georgetown')) {
+                mappedRegion = 'GY-R4-Georgetown';
+              } else {
+                // Default Region 4 areas to Georgetown in the component
+                mappedRegion = 'GY-R4-Georgetown';
+              }
+            } else if (mappedRegion === 'GY-R10' && city.includes('Linden')) {
+              mappedRegion = 'GY-R10-Linden';
+            } else if (mappedRegion === 'GY-R6' && city.includes('New Amsterdam')) {
+              mappedRegion = 'GY-R6-NewAmsterdam';
+            }
+            console.log(`🗺️ Region mapping: ${property.region} + "${city}" -> ${mappedRegion} (country: ${countryCode})`);
+          }
+          setSelectedRegion(mappedRegion);
+          
           setCurrencyCode(property.currency || 'GYD');
           setCurrencySymbol(getCurrencySymbol(property.currency || 'GYD'));
+          
+          // Also update the form location field
+          setForm(prev => ({
+            ...prev,
+            location: countryCode
+          }));
 
           // Set existing images
           const propertyImages = property.property_media
@@ -201,7 +247,14 @@ export default function EditAgentProperty() {
       setForm({ ...form, location: value, region: '' });
     } else {
       setSelectedRegion(value);
-      setForm({ ...form, region: value });
+      // Convert component format to database format before storing in form
+      let dbRegion = value;
+      if (value && selectedCountry === 'GY') {
+        if (value === 'GY-R4-Georgetown') dbRegion = 'GY-R4';
+        else if (value === 'GY-R10-Linden') dbRegion = 'GY-R10';
+        else if (value === 'GY-R6-NewAmsterdam') dbRegion = 'GY-R6';
+      }
+      setForm({ ...form, region: dbRegion });
     }
   };
 
@@ -232,9 +285,24 @@ export default function EditAgentProperty() {
         throw new Error('Authentication required');
       }
 
-      // Prepare property data for update
+      // Convert images to proper format for API
+      const imagesForUpload = await Promise.all(
+        images.map(async (file: File) => {
+          return new Promise<{name: string, type: string, data: string}>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve({
+              name: file.name,
+              type: file.type,
+              data: reader.result as string, // Already in data: URL format
+            });
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+
+      // Prepare property data for update - FIX: Include all necessary fields
       const propertyData = {
-        location: form.location,
+        location: form.location || selectedCountry, // Use selected country as location
         title: form.title,
         description: form.description,
         price: parseFloat(form.price) || 0,
@@ -251,15 +319,17 @@ export default function EditAgentProperty() {
         lot_length: parseFloat(form.lot_length) || null,
         lot_width: parseFloat(form.lot_width) || null,
         lot_dimension_unit: form.lot_dimension_unit,
-        region: form.region,
+        region: form.region, // Form already contains database format
         city: form.city,
         neighborhood: form.neighborhood,
         owner_whatsapp: form.owner_whatsapp,
         currency: currencyCode,
+        country: selectedCountry, // FIX: Include country field
+        site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana', // FIX: Include site_id for routing
         updated_at: new Date().toISOString(),
       };
 
-      // Update property via API
+      // Update property via API - FIX: Send properly formatted images
       const response = await fetch(`/api/properties/update/${propertyId}`, {
         method: 'PUT',
         headers: {
@@ -267,7 +337,7 @@ export default function EditAgentProperty() {
         },
         body: JSON.stringify({
           ...propertyData,
-          images: images // New images to upload
+          images: imagesForUpload // FIX: Send formatted images, not raw File objects
         }),
       });
 
@@ -277,12 +347,22 @@ export default function EditAgentProperty() {
         throw new Error(result.error || 'Failed to update property');
       }
 
-      setSuccess('Property updated successfully!');
+      // Set success state for button feedback
+      setIsSuccess(true);
       
-      // Redirect back to dashboard after a short delay
+      // Enhanced success message with details
+      const successMessage = result.status === 'active' 
+        ? '✅ Property updated successfully! Your listing remains live on Guyana Home Hub.'
+        : result.status === 'pending'
+        ? '✅ Property updated successfully! Changes are pending admin approval.'
+        : `✅ Property updated successfully! ${images.length > 0 ? `${images.length} new images uploaded.` : ''}`;
+      
+      setSuccess(successMessage);
+      
+      // Keep success feedback visible then redirect
       setTimeout(() => {
         router.push('/dashboard/agent');
-      }, 2000);
+      }, 2500);
 
     } catch (error) {
       console.error('Update error:', error);
@@ -691,10 +771,18 @@ export default function EditAgentProperty() {
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-gray-500 text-center">
             <button 
               type="submit" 
-              disabled={isSubmitting}
-              className="px-8 py-4 bg-blue-600 text-white rounded-lg font-semibold text-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isSubmitting || isSuccess}
+              className={`px-8 py-4 text-white rounded-lg font-semibold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed ${
+                isSuccess 
+                  ? 'bg-green-600 hover:bg-green-700' 
+                  : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
-              {isSubmitting ? (
+              {isSuccess ? (
+                <span className="flex items-center justify-center gap-2">
+                  ✅ Property Updated Successfully!
+                </span>
+              ) : isSubmitting ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   Updating Property...

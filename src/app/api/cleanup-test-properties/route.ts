@@ -7,7 +7,6 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = createAdminClient()
     
-    console.log('🧹 Starting test property cleanup...')
     
     // First, get a count of what we're dealing with
     const { count: beforeCount } = await supabase
@@ -47,7 +46,6 @@ export async function POST(request: NextRequest) {
     if (testProperties && testProperties.length > 0) {
       const propertyIds = testProperties.map((p: any) => p.id)
       
-      console.log('🗑️ Deleting associated property media...')
       const { error: mediaDeleteError } = await supabase
         .from('property_media')
         .delete()
@@ -58,7 +56,6 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Failed to delete property media' }, { status: 500 })
       }
       
-      console.log('🗑️ Deleting test properties...')
       const { error: propertyDeleteError } = await supabase
         .from('properties')
         .delete()
@@ -81,7 +78,6 @@ export async function POST(request: NextRequest) {
       .select('id, title, owner_email, owner_whatsapp, listed_by_type, status, created_at')
       .order('created_at', { ascending: false })
     
-    console.log('✅ Cleanup completed!')
     console.log(`Before: ${beforeCount || 0} properties`)
     console.log(`After: ${afterCount || 0} properties`) 
     console.log(`Deleted: ${(beforeCount || 0) - (afterCount || 0)} properties`)

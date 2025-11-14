@@ -5,7 +5,6 @@ export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('🚀 Approving test property - Starting request processing');
     
     const body = await req.json();
     const { propertyId } = body;
@@ -15,7 +14,6 @@ export async function POST(req: NextRequest) {
     }
     
     const supabase = createAdminClient();
-    console.log('✅ Supabase admin client created successfully');
     
     // Update property status to active
     const { data: updatedProperty, error: updateError } = await supabase
@@ -36,7 +34,6 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
     
-    console.log('✅ Test property approved successfully:', updatedProperty);
     
     return NextResponse.json({ 
       success: true,

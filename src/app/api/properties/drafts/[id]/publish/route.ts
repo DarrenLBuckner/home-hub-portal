@@ -9,7 +9,6 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const draftId = params.id;
-    console.log('🚀 Publishing draft:', draftId);
     
     // Create supabase server client
     const cookieStore = await cookies();
@@ -162,17 +161,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       updated_at: new Date().toISOString()
     };
 
-    // Log the property data being inserted for debugging
-    console.log('🔍 Property data being inserted:', {
-      user_id: propertyData.user_id,
-      title: propertyData.title,
-      description: propertyData.description?.substring(0, 50) + '...',
-      property_type: propertyData.property_type,
-      listing_type: propertyData.listing_type,
-      price: propertyData.price,
-      currency: propertyData.currency,
-      country_id: propertyData.country_id
-    });
 
     // Insert into properties table
     const { data: newProperty, error: propertyError } = await supabase
@@ -195,9 +183,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (draftData.images && Array.isArray(draftData.images) && draftData.images.length > 0) {
       const mediaData = draftData.images.map((image: any, index: number) => ({
         property_id: newProperty.id,
-        url: image.url || image.src,
-        alt_text: image.alt || image.altText || `Property image ${index + 1}`,
-        is_primary: image.isPrimary || index === 0
+        media_url: image.url || image.src || image.data, // Fixed: use media_url not url
+        media_type: 'image',
+        is_primary: image.isPrimary || index === 0,
+        display_order: index
       }));
 
       const { error: mediaError } = await supabase
@@ -222,7 +211,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       // Don't fail - property was created successfully
     }
 
-    console.log('✅ Draft published successfully');
 
     return NextResponse.json({ 
       success: true, 

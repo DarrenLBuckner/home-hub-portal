@@ -3,12 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(request: NextRequest) {
   try {
-    console.log('🗑️ Starting bulk delete of rejected properties...');
     
     const supabase = createAdminClient();
     
     // Admin client doesn't need user auth verification - it has full access
-    console.log('✅ Using admin client for bulk delete operation');
 
     // Get count of rejected properties before deletion
     const { count: rejectedCount, error: countError } = await supabase
@@ -34,7 +32,6 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete all rejected properties and their associated media
-    console.log(`🗑️ Deleting ${rejectedCount} rejected properties...`);
 
     // First, get the IDs of rejected properties
     const { data: rejectedProperties, error: idsError } = await supabase
@@ -79,7 +76,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    console.log(`✅ Successfully deleted ${rejectedCount} rejected properties`);
 
     return NextResponse.json({
       success: true,

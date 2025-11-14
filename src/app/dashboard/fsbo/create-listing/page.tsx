@@ -200,7 +200,7 @@ export default function CreateFSBOListing() {
           region: selectedRegion,
           currency: currencyCode,
           propertyCategory: "sale", // Mark as sale property
-          site_id: 'guyana',  // ADD THIS LINE ONLY
+          site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana',  // Dynamic site_id based on country
         }),
       });
 

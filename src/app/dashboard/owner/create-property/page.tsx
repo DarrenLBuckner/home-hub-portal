@@ -150,7 +150,9 @@ export default function CreateFSBOProperty() {
     setError('');
     
     try {
-      const draftData = {
+      // Initialize Supabase client
+      const supabase = createClient();
+      const draftData: any = {
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
@@ -174,8 +176,50 @@ export default function CreateFSBOProperty() {
         owner_whatsapp: formData.owner_whatsapp || '',
         listing_type: 'sale',
         listed_by_type: 'owner',
-        images: images // Include images in draft data
+        images: [] // Initialize empty, will upload images separately
       };
+      
+      // Upload images first if any exist
+      const uploadedImageUrls: string[] = [];
+      if (images.length > 0) {
+        console.log('📸 Uploading images to storage...');
+        
+        for (let i = 0; i < images.length; i++) {
+          const file = images[i];
+          try {
+            // Create unique filename
+            const timestamp = Date.now();
+            const extension = file.name.split('.').pop() || 'jpg';
+            const fileName = `fsbo/${timestamp}-${i}.${extension}`;
+            
+            // Upload to Supabase storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('property-images')
+              .upload(fileName, file);
+            
+            if (uploadError) throw uploadError;
+            
+            // Get public URL
+            const { data: urlData } = supabase.storage
+              .from('property-images')
+              .getPublicUrl(fileName);
+              
+            if (urlData?.publicUrl) {
+              uploadedImageUrls.push(urlData.publicUrl);
+              console.log(`✅ Uploaded image ${i + 1}:`, urlData.publicUrl);
+            }
+          } catch (uploadErr) {
+            console.warn(`❌ Failed to upload image ${i + 1}:`, uploadErr);
+          }
+        }
+        
+        // Add uploaded URLs to draft data
+        draftData.images = uploadedImageUrls.map((url, index) => ({
+          url: url,
+          isPrimary: index === 0,
+          altText: `Property image ${index + 1}`
+        }));
+      }
       
       // Use new draft API instead of direct database insert
       const response = await fetch('/api/properties/drafts', {
@@ -185,6 +229,7 @@ export default function CreateFSBOProperty() {
         },
         body: JSON.stringify({
           draft_type: 'sale',
+          site_id: 'guyana', // Default for admin created properties - could be made dynamic later
           ...draftData
         })
       });

@@ -464,7 +464,7 @@ export default function CreatePropertyPage() {
           video_url: form.video_url.trim() || null, // Only include video URL if user has access and provided one
           // userId will be extracted server-side from authenticated session
           propertyCategory: form.listing_type === 'sale' ? 'sale' : 'rental', // Map to API format
-          site_id: 'guyana',  // ADD THIS LINE ONLY
+          site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana',  // Dynamic site_id based on country
         }),
       });
 

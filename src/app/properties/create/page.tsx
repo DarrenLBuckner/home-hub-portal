@@ -157,7 +157,7 @@ export default function CreatePropertyPage() {
           images: imagesForUpload,
           userId,
           status: "pending",
-          site_id: 'guyana',  // Ensure FSBO properties appear on Guyana Home Hub
+          site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana',  // Dynamic site_id based on country
         }),
       });
       const result = await res.json();

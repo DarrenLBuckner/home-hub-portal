@@ -258,7 +258,7 @@ export default function CreateLandlordProperty() {
           listing_type: "rent", // Required by API
           city: selectedRegion, // Use region as city for rentals
           propertyCategory: "rental", // Mark as rental property
-          site_id: 'guyana',  // ADD THIS LINE ONLY
+          site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana',  // Dynamic site_id based on country
           lot_length: form.lotLength ? Number(form.lotLength) : null,
           lot_width: form.lotWidth ? Number(form.lotWidth) : null,
           lot_dimension_unit: form.lotDimensionUnit,
