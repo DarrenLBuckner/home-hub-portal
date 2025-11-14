@@ -156,6 +156,11 @@ export async function POST(req: NextRequest) {
         ];
       }
       
+      // Add commercial property required fields
+      if (body.property_category === 'commercial') {
+        requiredFields.push("commercial_type");
+      }
+      
       // Always require images for full submissions
       requiredFields.push("images");
       
@@ -434,6 +439,16 @@ export async function POST(req: NextRequest) {
         
         // Video URL (for Pro/Elite tier agents)
         video_url: body.video_url || null,
+        
+        // Commercial Property Fields
+        property_category: body.property_category || 'residential',
+        commercial_type: body.commercial_type || null,
+        floor_size_sqft: body.floor_size_sqft ? parseInt(body.floor_size_sqft) : null,
+        building_floor: body.building_floor || null,
+        parking_spaces: body.parking_spaces ? parseInt(body.parking_spaces) : null,
+        loading_dock: body.loading_dock || false,
+        elevator_access: body.elevator_access || false,
+        climate_controlled: body.climate_controlled || false,
         
         // System fields
         user_id: userId,
