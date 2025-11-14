@@ -42,6 +42,7 @@ export default function CreateLandlordProperty() {
   useEffect(() => {
     async function checkAuth() {
       // Authentication now handled server-side - no client-side auth needed
+      setLoading(false);
       return;
       
       /* DISABLED - Authentication now server-side
