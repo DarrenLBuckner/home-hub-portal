@@ -604,13 +604,13 @@ export default function CreatePropertyPage() {
 
       console.log('✅ Property created successfully via API');
       
-      // Show success message with options
+      // Show success message - PropertySuccessScreen will handle the redirect
       setSuccess("✅ Property created successfully!");
       setError("");
       setLoading(false);
       
-      // Immediate redirect to prevent double submission
-      setTimeout(() => router.push('/dashboard/agent'), 1000);
+      // PropertySuccessScreen component handles redirect automatically
+      // No manual redirect needed here
       
     } catch (authError: any) {
       console.error('❌ Property creation failed:', authError);
@@ -1403,36 +1403,9 @@ export default function CreatePropertyPage() {
               maxImages={10}
             />
           </div>
-          {/* 10. SUBMIT */}
-          {/* Success message with options */}
-          {success && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-8 rounded-xl shadow-sm">
-              <div className="text-center">
-                <div className="text-4xl mb-4">🎉</div>
-                <div className="text-green-800 text-xl font-bold mb-4">{success}</div>
-                <div className="space-y-4">
-                  <p className="text-green-700 text-sm">What would you like to do next?</p>
-                  <div className="flex gap-4 flex-wrap justify-center">
-                    <button 
-                      onClick={handleCreateAnother}
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105"
-                    >
-                      ➕ Create Another Property
-                    </button>
-                    <button 
-                      onClick={handleGoToDashboard}
-                      className="bg-gradient-to-r from-gray-500 to-gray-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:from-gray-600 hover:to-gray-700 transition-all duration-200 transform hover:scale-105"
-                    >
-                      🏠 Go to Dashboard
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Error Display */}
-          {error && (
+          {error && !success && (
             <div className="bg-red-50 border-2 border-red-200 p-6 rounded-xl">
               <div className="flex items-center gap-3">
                 <span className="text-red-500 text-2xl">⚠️</span>
