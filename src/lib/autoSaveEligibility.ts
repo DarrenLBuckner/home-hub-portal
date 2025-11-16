@@ -28,17 +28,21 @@ function getAdminLevel(email: string | undefined): 'super' | 'owner' | 'basic' |
 /**
  * Determines if a user should have auto-save functionality
  * 
- * AUTO-SAVE ENABLED FOR:
+ * AUTO-SAVE DISABLED FOR ALL USERS (2025-11-16)
+ * - Auto-save was creating 20+ duplicate drafts
+ * - Manual save button is available instead
+ * - This keeps all code intact but inactive
+ * 
+ * PREVIOUSLY ENABLED FOR:
  * - Owner Admins (like Qumar) - Admin + active property manager
  * - Agents - Professional real estate agents
  * - Landlords - Property owners with multiple rentals
- * 
- * AUTO-SAVE DISABLED FOR:
- * - Basic Admins - System maintenance only
- * - FSBO - Individual/occasional users (simpler workflow better)
- * - Super Admins - Technical users who can handle data loss
  */
 export function isAutoSaveEligible(userProfile: UserProfile): boolean {
+  // Auto-save disabled for all users - manual save only
+  return false;
+  
+  /* ORIGINAL CODE - KEPT FOR REFERENCE
   if (!userProfile) return false;
 
   const userType = userProfile.user_type?.toLowerCase();
@@ -56,10 +60,12 @@ export function isAutoSaveEligible(userProfile: UserProfile): boolean {
 
   // Exclude: super admins, basic admins, FSBO users
   return false;
+  */
 }
 
 /**
  * Get auto-save settings based on user type
+ * AUTO-SAVE DISABLED - Returns disabled settings for all users
  */
 export function getAutoSaveSettings(userProfile: UserProfile): {
   enabled: boolean;
@@ -67,6 +73,15 @@ export function getAutoSaveSettings(userProfile: UserProfile): {
   minFieldsRequired: number;
   label: string;
 } {
+  // Always return disabled - auto-save turned off globally
+  return {
+    enabled: false,
+    interval: 0,
+    minFieldsRequired: 0,
+    label: 'Auto-save Disabled (Manual Save Available)'
+  };
+  
+  /* ORIGINAL CODE - KEPT FOR REFERENCE
   if (!isAutoSaveEligible(userProfile)) {
     return {
       enabled: false,
@@ -115,4 +130,5 @@ export function getAutoSaveSettings(userProfile: UserProfile): {
     minFieldsRequired: 0,
     label: ''
   };
+  */
 }

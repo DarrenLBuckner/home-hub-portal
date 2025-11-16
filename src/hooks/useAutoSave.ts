@@ -139,34 +139,22 @@ export function useAutoSave({
   const debouncedSave = useCallback(
     debounce((formData: any) => {
       performSave(formData);
-    }, 2000), // 2 second debounce
+    }, 5000), // 5 second debounce - increased from 2 seconds to reduce spam
     [performSave]
   );
 
-  // Set up auto-save timer (only if change-based auto-save isn't sufficient)
+  // DISABLED: Timer-based auto-save to prevent duplicate drafts
+  // Only use change-based saves (debounced) for better control
+  // Timer-based saves were causing 20+ duplicate drafts
   useEffect(() => {
-    if (!enabled || !data) return;
-    
-    // Clear existing timer
-    if (autoSaveTimer.current) {
-      clearInterval(autoSaveTimer.current);
-    }
-    
-    // Only use timer-based saving as backup - most saving should be change-based
-    // Set up new timer with longer interval to reduce race conditions
-    autoSaveTimer.current = setInterval(() => {
-      // Only auto-save if we haven't saved recently (avoid conflicts with change-based saves)
-      if (!isSaving.current) {
-        performSave(data);
-      }
-    }, interval * 2); // Double the interval to reduce conflicts
-    
+    // Cleanup any existing timer on unmount
     return () => {
       if (autoSaveTimer.current) {
         clearInterval(autoSaveTimer.current);
+        autoSaveTimer.current = null;
       }
     };
-  }, [data, enabled, interval, performSave]);
+  }, []);
 
   // Primary trigger: auto-save when data changes (with debounce)
   useEffect(() => {
