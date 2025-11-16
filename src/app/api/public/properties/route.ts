@@ -9,6 +9,7 @@ export async function GET(request: NextRequest) {
     // Get query parameters
     const site = searchParams.get('site') // e.g., 'guyana'
     const listing_type = searchParams.get('listing_type') // 'sale' or 'rent'
+    const listing_type_multiple = searchParams.get('listing_type_multiple') // 'lease,rent'
     const limit = parseInt(searchParams.get('limit') || '50')
     const offset = parseInt(searchParams.get('offset') || '0')
     const bustCache = searchParams.get('bust') // Cache busting parameter
@@ -18,8 +19,9 @@ export async function GET(request: NextRequest) {
     const locationQuery = searchParams.get('location') || ''
     const locationExact = searchParams.get('location_exact') || ''
     const propertyType = searchParams.get('property_type') || ''
+    const propertyCategory = searchParams.get('property_category') || '' // residential or commercial
     
-    console.log(`🔍 Fetching properties - site: ${site}, listing_type: ${listing_type}, search: "${searchQuery}", location: "${locationQuery}"`)
+    console.log(`🔍 Fetching properties - site: ${site}, listing_type: ${listing_type}, listing_type_multiple: ${listing_type_multiple}, category: ${propertyCategory}, search: "${searchQuery}", location: "${locationQuery}"`)
     
     // Build the query - only show active properties (exclude off_market, draft, pending, etc.)
     let query = supabase
@@ -66,6 +68,19 @@ export async function GET(request: NextRequest) {
     if (propertyType) {
       query = query.eq('property_type', propertyType)
     }
+
+    // Add property category filtering (residential vs commercial)
+    if (propertyCategory) {
+      query = query.eq('property_category', propertyCategory)
+    }
+
+    // Add listing type filtering (sale vs rent/lease)
+    if (listing_type_multiple) {
+      const types = listing_type_multiple.split(',')
+      query = query.in('listing_type', types)
+    } else if (listing_type) {
+      query = query.eq('listing_type', listing_type)
+    }
     
     const { data: properties, error } = await query
     
@@ -83,9 +98,17 @@ export async function GET(request: NextRequest) {
     if (site) {
       countQuery = countQuery.eq('site_id', site)
     }
-    if (listing_type) {
+    if (listing_type_multiple) {
+      const types = listing_type_multiple.split(',')
+      countQuery = countQuery.in('listing_type', types)
+    } else if (listing_type) {
       countQuery = countQuery.eq('listing_type', listing_type)
-    }    const { count, error: countError } = await countQuery
+    }
+    if (propertyCategory) {
+      countQuery = countQuery.eq('property_category', propertyCategory)
+    }
+    
+    const { count, error: countError } = await countQuery
     
     if (countError) {
       console.error('Count error:', countError)

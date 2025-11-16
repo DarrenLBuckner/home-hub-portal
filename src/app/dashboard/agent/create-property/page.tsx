@@ -18,10 +18,10 @@ import DuplicateWarningDialog from "@/components/DuplicateWarningDialog";
 import PropertySuccessScreen from "@/components/PropertySuccessScreen";
 // Video Upload Access Control
 import { canUploadVideo, getVideoUpgradeMessage, getUserProfile } from "@/lib/subscription-utils";
-// Draft Management (Manual saves only - auto-save disabled)
-// import { useAutoSave } from "@/hooks/useAutoSave"; // DISABLED - causing duplicate drafts
+// Auto-save and Draft Management
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { saveDraft, loadUserDrafts, loadDraft, deleteDraft } from "@/lib/draftManager";
-// import { isAutoSaveEligible, getAutoSaveSettings } from "@/lib/autoSaveEligibility"; // DISABLED
+import { isAutoSaveEligible, getAutoSaveSettings } from "@/lib/autoSaveEligibility";
 
 
 interface FormData {
@@ -53,10 +53,17 @@ interface FormData {
   commercial_type: string;
   floor_size_sqft: string;
   building_floor: string;
+  number_of_floors: string;
   parking_spaces: string;
   loading_dock: boolean;
   elevator_access: boolean;
+  commercial_garage_entrance: boolean;
   climate_controlled: boolean;
+  // Commercial Lease/Finance Fields
+  lease_term_years: string;
+  lease_type: string;
+  financing_available: boolean;
+  financing_details: string;
 }
 
 export default function CreatePropertyPage() {
@@ -90,10 +97,17 @@ export default function CreatePropertyPage() {
     commercial_type: "",
     floor_size_sqft: "",
     building_floor: "",
+    number_of_floors: "",
     parking_spaces: "",
     loading_dock: false,
     elevator_access: false,
+    commercial_garage_entrance: false,
     climate_controlled: false,
+    // Commercial lease/finance fields
+    lease_term_years: "",
+    lease_type: "",
+    financing_available: false,
+    financing_details: "",
   });
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -108,12 +122,14 @@ export default function CreatePropertyPage() {
   const [canUserUploadVideo, setCanUserUploadVideo] = useState(false);
   const [videoUpgradeMessage, setVideoUpgradeMessage] = useState("");
   
-  // Draft Management (Manual saves only)
+  // Auto-save and Draft Management
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
   const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
   const [availableDrafts, setAvailableDrafts] = useState<any[]>([]);
   const [showDraftDialog, setShowDraftDialog] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
 
   // Comprehensive submission system with duplicate prevention
   const propertySubmission = usePropertySubmission({
@@ -153,21 +169,16 @@ export default function CreatePropertyPage() {
             
             setUserProfile(profileData);
             
-            // Auto-save completely disabled - using manual save only
+            // TEMPORARILY DISABLE AUTOSAVE TO PREVENT DUPLICATES
+            // Check if user is eligible for auto-save
+            const eligible = false; // isAutoSaveEligible(profileData);
+            setAutoSaveEnabled(eligible);
             
             console.log('User profile loaded:', {
               email: profileData.email,
               user_type: profileData.user_type,
-              autoSaveEligible: false
+              autoSaveEligible: eligible
             });
-
-            // Check for draft ID in URL parameters
-            const urlParams = new URLSearchParams(window.location.search);
-            const draftId = urlParams.get('draft');
-            if (draftId) {
-              console.log('Loading draft from URL:', draftId);
-              await handleLoadDraft(draftId);
-            }
             
             // Auto-populate WhatsApp if not already set
             if (profile.phone && !form.owner_whatsapp) {
@@ -209,9 +220,11 @@ export default function CreatePropertyPage() {
     checkVideoAccess();
   }, []);
 
-  // Load drafts on component mount
+  // Load drafts when auto-save becomes enabled
   useEffect(() => {
     const loadDrafts = async () => {
+      if (!autoSaveEnabled) return;
+      
       try {
         const drafts = await loadUserDrafts();
         setAvailableDrafts(drafts);
@@ -226,11 +239,32 @@ export default function CreatePropertyPage() {
     };
     
     loadDrafts();
-  }, []);
+  }, [autoSaveEnabled]);
 
-  // AUTO-SAVE COMPLETELY DISABLED - Manual save only to prevent duplicate drafts
-  // const autoSaveSettings = userProfile ? getAutoSaveSettings(userProfile) : { enabled: false, interval: 0, minFieldsRequired: 0 };
-  // const autoSave = useAutoSave({ ... }); // REMOVED - was causing duplicate draft creation
+  // Auto-save hook integration with eligibility-based settings
+  const autoSaveSettings = userProfile ? getAutoSaveSettings(userProfile) : { enabled: false, interval: 0, minFieldsRequired: 0 };
+  
+  const autoSave = useAutoSave({
+    data: { ...form, images },
+    onSave: async (data, isDraft) => {
+      return await saveDraft(data);
+    },
+    interval: autoSaveSettings.interval,
+    enabled: autoSaveSettings.enabled && !loading && !success,
+    minFieldsRequired: autoSaveSettings.minFieldsRequired,
+    onSaveStart: () => setAutoSaveStatus('saving'),
+    onSaveComplete: (success, draftId) => {
+      if (success) {
+        setAutoSaveStatus('saved');
+        setLastSavedTime(new Date());
+        if (draftId && !currentDraftId) {
+          setCurrentDraftId(draftId);
+        }
+      } else {
+        setAutoSaveStatus('error');
+      }
+    }
+  });
 
   // Calculate completion score in real-time
   const completionAnalysis = calculateCompletionScore({
@@ -240,6 +274,9 @@ export default function CreatePropertyPage() {
   });
 
   const userMotivation = getUserMotivation('agent');
+
+  // Auto-save UI visibility check
+  const shouldEnableAutoSave = autoSaveEnabled && userProfile;
 
   // Draft management functions
   const handleLoadDraft = async (draftId: string) => {
@@ -278,10 +315,16 @@ export default function CreatePropertyPage() {
           commercial_type: draftData.commercial_type || "",
           floor_size_sqft: draftData.floor_size_sqft?.toString() || "",
           building_floor: draftData.building_floor || "",
+          number_of_floors: draftData.number_of_floors || "",
           parking_spaces: draftData.parking_spaces?.toString() || "",
           loading_dock: draftData.loading_dock || false,
           elevator_access: draftData.elevator_access || false,
+          commercial_garage_entrance: draftData.commercial_garage_entrance || false,
           climate_controlled: draftData.climate_controlled || false,
+          lease_term_years: draftData.lease_term_years || "",
+          lease_type: draftData.lease_type || "",
+          financing_available: draftData.financing_available || false,
+          financing_details: draftData.financing_details || "",
         });
         
         // Set location/currency data
@@ -328,33 +371,46 @@ export default function CreatePropertyPage() {
 
   const handleManualSave = async () => {
     try {
-      setSaveStatus('saving');
-      // Direct save call - manual save only
-      const result = await saveDraft({ ...form, images }, currentDraftId || undefined);
-      if (result.success) {
-        if (result.draftId && !currentDraftId) {
-          setCurrentDraftId(result.draftId);
-        }
-        setSaveStatus('saved');
-        // Clear save status after 3 seconds
-        setTimeout(() => setSaveStatus('idle'), 3000);
+      setAutoSaveStatus('saving');
+      const success = await autoSave.triggerSave();
+      if (success) {
+        setAutoSaveStatus('saved');
+        setLastSavedTime(new Date());
       } else {
-        setSaveStatus('error');
-        setTimeout(() => setSaveStatus('idle'), 3000);
+        setAutoSaveStatus('error');
       }
     } catch (error) {
       console.error('❌ Manual save error:', error);
-      setSaveStatus('error');
-      setTimeout(() => setSaveStatus('idle'), 3000);
+      setAutoSaveStatus('error');
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    
     if (type === "checkbox") {
       setForm({ ...form, [name]: (e.target as HTMLInputElement).checked });
     } else {
-      setForm({ ...form, [name]: value });
+      // Special handling for property_category changes
+      if (name === 'property_category') {
+        // Reset property_type when category changes
+        const newPropertyType = value === 'commercial' ? 'Office' : 'House';
+        setForm({ 
+          ...form, 
+          [name]: value as 'residential' | 'commercial',
+          property_type: newPropertyType,
+          commercial_type: value === 'commercial' ? newPropertyType : ''
+        });
+      } else if (name === 'property_type' && form.property_category === 'commercial') {
+        // Auto-sync property_type to commercial_type for commercial properties
+        setForm({ 
+          ...form, 
+          [name]: value,
+          commercial_type: value
+        });
+      } else {
+        setForm({ ...form, [name]: value });
+      }
     }
   };
 
@@ -410,10 +466,16 @@ export default function CreatePropertyPage() {
       commercial_type: "",
       floor_size_sqft: "",
       building_floor: "",
+      number_of_floors: "",
       parking_spaces: "",
       loading_dock: false,
       elevator_access: false,
+      commercial_garage_entrance: false,
       climate_controlled: false,
+      lease_term_years: "",
+      lease_type: "",
+      financing_available: false,
+      financing_details: "",
     });
     setImages([]);
     setSuccess("");
@@ -427,6 +489,7 @@ export default function CreatePropertyPage() {
   const handleGoToDashboard = () => {
     router.push("/dashboard/agent");
   };
+
 
   // Extract the actual submission logic that can be called by usePropertySubmission
   const performActualSubmission = async () => {
@@ -510,10 +573,16 @@ export default function CreatePropertyPage() {
           commercial_type: form.commercial_type || null,
           floor_size_sqft: form.floor_size_sqft ? Number(form.floor_size_sqft) : null,
           building_floor: form.building_floor || null,
+          number_of_floors: form.number_of_floors ? Number(form.number_of_floors) : null,
           parking_spaces: form.parking_spaces ? Number(form.parking_spaces) : null,
           loading_dock: form.loading_dock,
           elevator_access: form.elevator_access,
+          commercial_garage_entrance: form.commercial_garage_entrance,
           climate_controlled: form.climate_controlled,
+          lease_term_years: form.lease_term_years,
+          lease_type: form.lease_type,
+          financing_available: form.financing_available,
+          financing_details: form.financing_details,
           // userId will be extracted server-side from authenticated session
           propertyCategory: form.listing_type === 'sale' ? 'sale' : 'rental', // Map to API format
           site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana',  // Dynamic site_id based on country
@@ -598,7 +667,64 @@ export default function CreatePropertyPage() {
         </div>
         
         <form onSubmit={(e) => propertySubmission.handleSubmit(e, () => performActualSubmission(), false, form.title)} className="space-y-8">
-
+          {/* Auto-save Status Bar - Only for Agents and Landlords */}
+          {shouldEnableAutoSave && (
+            <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 rounded-lg border border-gray-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                {autoSaveStatus === 'saving' && (
+                  <>
+                    <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    <span className="text-sm text-gray-600">Saving draft...</span>
+                  </>
+                )}
+                {autoSaveStatus === 'saved' && (
+                  <>
+                    <div className="w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                      <svg className="w-2 h-2 text-white" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                      </svg>
+                    </div>
+                    <span className="text-sm text-green-600">
+                      Draft saved {lastSavedTime && `at ${lastSavedTime.toLocaleTimeString()}`}
+                    </span>
+                  </>
+                )}
+                {autoSaveStatus === 'error' && (
+                  <>
+                    <div className="w-4 h-4 bg-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-white text-xs">!</span>
+                    </div>
+                    <span className="text-sm text-red-600">Save failed</span>
+                  </>
+                )}
+                {autoSaveStatus === 'idle' && autoSave.hasUnsavedChanges && (
+                  <span className="text-sm text-gray-500">Unsaved changes</span>
+                )}
+              </div>
+              
+              {currentDraftId && (
+                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                  Editing Draft
+                </span>
+              )}
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500">
+                {autoSave.filledFieldsCount} fields completed
+              </span>
+              <button
+                type="button"
+                onClick={handleManualSave}
+                disabled={autoSaveStatus === 'saving'}
+                className="text-xs bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md transition-colors disabled:opacity-50"
+              >
+                Save Now
+              </button>
+            </div>
+          </div>
+          )}
 
           {/* 1. BASIC INFO (What & Where) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
@@ -679,6 +805,7 @@ export default function CreatePropertyPage() {
                       <option value="Retail">🏪 Retail</option>
                       <option value="Warehouse">🏭 Warehouse</option>
                       <option value="Industrial">⚙️ Industrial</option>
+                      <option value="Mixed Use">🏬 Mixed Use</option>
                       <option value="Commercial Land">🌿 Commercial Land</option>
                     </>
                   )}
@@ -710,7 +837,7 @@ export default function CreatePropertyPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms{form.property_category === 'commercial' ? ' (Optional)' : ''}</label>
                 <input 
                   name="bedrooms" 
                   type="number" 
@@ -721,7 +848,7 @@ export default function CreatePropertyPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms{form.property_category === 'commercial' ? ' (Optional)' : ''}</label>
                 <input 
                   name="bathrooms" 
                   type="number" 
@@ -847,101 +974,6 @@ export default function CreatePropertyPage() {
             />
           </div>
 
-          {/* 4.5. COMMERCIAL FEATURES (Commercial Properties Only) */}
-          {form.property_category === 'commercial' && (
-            <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
-              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                🏢 Commercial Features
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Commercial Type *</label>
-                  <select 
-                    name="commercial_type" 
-                    value={form.commercial_type} 
-                    onChange={handleChange} 
-                    required={form.property_category === 'commercial'}
-                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
-                  >
-                    <option value="">Select Commercial Type</option>
-                    <option value="Office">🏢 Office</option>
-                    <option value="Retail">🏪 Retail</option>
-                    <option value="Warehouse">🏭 Warehouse</option>
-                    <option value="Industrial">⚙️ Industrial</option>
-                    <option value="Mixed Use">🏬 Mixed Use</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Floor Size (sq ft)</label>
-                  <input 
-                    name="floor_size_sqft" 
-                    type="number" 
-                    placeholder="e.g., 2500" 
-                    value={form.floor_size_sqft} 
-                    onChange={handleChange} 
-                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Building Floor</label>
-                  <input 
-                    name="building_floor" 
-                    type="text" 
-                    placeholder="e.g., Ground, 2nd, 3-5" 
-                    value={form.building_floor} 
-                    onChange={handleChange} 
-                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Parking Spaces</label>
-                  <input 
-                    name="parking_spaces" 
-                    type="number" 
-                    placeholder="e.g., 10" 
-                    value={form.parking_spaces} 
-                    onChange={handleChange} 
-                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
-                  />
-                </div>
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center">
-                    <input 
-                      name="loading_dock" 
-                      type="checkbox" 
-                      checked={form.loading_dock} 
-                      onChange={handleChange} 
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                    />
-                    <label className="ml-2 block text-sm text-gray-700">Loading Dock</label>
-                  </div>
-                  <div className="flex items-center">
-                    <input 
-                      name="elevator_access" 
-                      type="checkbox" 
-                      checked={form.elevator_access} 
-                      onChange={handleChange} 
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                    />
-                    <label className="ml-2 block text-sm text-gray-700">Elevator Access</label>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <input 
-                    name="climate_controlled" 
-                    type="checkbox" 
-                    checked={form.climate_controlled} 
-                    onChange={handleChange} 
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
-                  />
-                  <label className="ml-2 block text-sm text-gray-700">Climate Controlled</label>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* 5. AMENITIES & FEATURES (What makes it special) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-teal-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -996,6 +1028,176 @@ export default function CreatePropertyPage() {
             />
           </div>
 
+          {/* 4.5. COMMERCIAL FEATURES (Commercial Properties Only) */}
+          {form.property_category === 'commercial' && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                🏢 Commercial Features
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Floor Size (sq ft)</label>
+                  <input 
+                    name="floor_size_sqft" 
+                    type="number" 
+                    placeholder="e.g., 2500" 
+                    value={form.floor_size_sqft} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Floor Level</label>
+                  <input 
+                    name="building_floor" 
+                    type="text" 
+                    placeholder="e.g., Ground, 2nd, 3-5" 
+                    value={form.building_floor} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Number of Floors</label>
+                  <input 
+                    name="number_of_floors" 
+                    type="number" 
+                    placeholder="e.g., 1, 2, 3" 
+                    value={form.number_of_floors} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Parking Spaces</label>
+                  <input 
+                    name="parking_spaces" 
+                    type="number" 
+                    placeholder="e.g., 10" 
+                    value={form.parking_spaces} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <input 
+                      name="loading_dock" 
+                      type="checkbox" 
+                      checked={form.loading_dock} 
+                      onChange={handleChange} 
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                    />
+                    <label className="ml-2 block text-sm text-gray-700">Loading Dock</label>
+                  </div>
+                  <div className="flex items-center">
+                    <input 
+                      name="elevator_access" 
+                      type="checkbox" 
+                      checked={form.elevator_access} 
+                      onChange={handleChange} 
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                    />
+                    <label className="ml-2 block text-sm text-gray-700">Elevator Access</label>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <input 
+                    name="commercial_garage_entrance" 
+                    type="checkbox" 
+                    checked={form.commercial_garage_entrance} 
+                    onChange={handleChange} 
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                  />
+                  <label className="ml-2 block text-sm text-gray-700">Commercial Garage Entrance</label>
+                </div>
+              </div>
+
+              {/* Commercial Lease & Finance Information */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
+                  📋 Lease & Financing Details
+                </h4>
+                
+                {/* Show lease fields only for lease properties */}
+                {form.listing_type === 'rent' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Lease Term (Years)</label>
+                      <select 
+                        name="lease_term_years" 
+                        value={form.lease_term_years} 
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                      >
+                        <option value="">Select lease term</option>
+                        <option value="1">1 Year</option>
+                        <option value="2">2 Years</option>
+                        <option value="3">3 Years</option>
+                        <option value="5">5 Years</option>
+                        <option value="10">10 Years</option>
+                        <option value="15">15 Years</option>
+                        <option value="20">20 Years</option>
+                        <option value="25">25 Years</option>
+                        <option value="99">99 Years</option>
+                        <option value="other">Other (specify in details)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Lease Type</label>
+                      <select 
+                        name="lease_type" 
+                        value={form.lease_type} 
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                      >
+                        <option value="">Select lease type</option>
+                        <option value="gross">Gross Lease (all costs included)</option>
+                        <option value="net">Net Lease (tenant pays utilities/maintenance)</option>
+                        <option value="triple_net">Triple Net Lease (tenant pays all costs)</option>
+                        <option value="modified_gross">Modified Gross Lease</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Financing information (for sale properties) */}
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <input 
+                      name="financing_available" 
+                      type="checkbox" 
+                      checked={form.financing_available} 
+                      onChange={handleChange} 
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                    />
+                    <label className="ml-2 block text-sm font-medium text-gray-700">
+                      Financing Available {form.listing_type === 'rent' ? '(for lease deposits)' : '(for purchase)'}
+                    </label>
+                  </div>
+                  
+                  {form.financing_available && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Financing Details
+                      </label>
+                      <textarea 
+                        name="financing_details" 
+                        value={form.financing_details} 
+                        onChange={handleChange}
+                        placeholder="Describe financing options, down payment requirements, approved lenders, etc."
+                        rows={3}
+                        className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 6. DESCRIPTION & AI ASSISTANT (Content creation) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -1029,16 +1231,36 @@ export default function CreatePropertyPage() {
                 propertyData={{
                   title: form.title,
                   propertyType: form.property_type,
+                  propertyCategory: form.property_category,
+                  // Residential fields
                   bedrooms: form.bedrooms.toString(),
                   bathrooms: form.bathrooms.toString(),
+                  // Commercial fields
+                  commercialType: form.commercial_type,
+                  floorSize: form.floor_size_sqft,
                   price: form.price,
                   location: `${form.city || ''}, ${form.region || ''}`.replace(/^, |, $/, ''),
-                  squareFootage: form.house_size_value ? `${form.house_size_value} ${form.house_size_unit}` : '',
+                  squareFootage: form.property_category === 'commercial' && form.floor_size_sqft 
+                    ? `${form.floor_size_sqft} sq ft` 
+                    : form.house_size_value ? `${form.house_size_value} ${form.house_size_unit}` : '',
                   features: [
                     ...(form.amenities || []),
                     form.year_built ? `Built in ${form.year_built}` : '',
                     form.land_size_value ? `${form.land_size_value} ${form.land_size_unit} lot` : '',
-                    form.lot_length && form.lot_width ? `Lot dimensions: ${form.lot_length}' x ${form.lot_width}'` : ''
+                    form.lot_length && form.lot_width ? `Lot dimensions: ${form.lot_length}' x ${form.lot_width}'` : '',
+                    // Add commercial-specific features
+                    form.property_category === 'commercial' && form.building_floor ? `Floor ${form.building_floor}` : '',
+                    form.property_category === 'commercial' && form.number_of_floors ? `${form.number_of_floors} floors total` : '',
+                    form.property_category === 'commercial' && form.parking_spaces ? `${form.parking_spaces} parking spaces` : '',
+                    form.property_category === 'commercial' && form.loading_dock === true ? 'Loading dock available' : '',
+                    form.property_category === 'commercial' && form.elevator_access === true ? 'Elevator access' : '',
+                    form.property_category === 'commercial' && form.commercial_garage_entrance === true ? 'Commercial garage entrance' : '',
+                    // Add lease information for rental properties
+                    form.property_category === 'commercial' && form.listing_type === 'rent' && form.lease_term_years ? `${form.lease_term_years} year lease available` : '',
+                    form.property_category === 'commercial' && form.listing_type === 'rent' && form.lease_type ? `${form.lease_type.replace('_', ' ')} lease structure` : '',
+                    // Add financing information
+                    form.financing_available ? 'Financing available' : '',
+                    form.financing_details ? `Financing: ${form.financing_details}` : ''
                   ].filter(Boolean),
                   rentalType: "sale"
                 }}
@@ -1110,7 +1332,7 @@ export default function CreatePropertyPage() {
             <p className="text-sm text-gray-600 mb-4">Country and region are selected above. Add specific location details below:</p>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Specific Area/District (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Specific Area/District</label>
                 <input 
                   name="city" 
                   type="text" 
@@ -1169,41 +1391,6 @@ export default function CreatePropertyPage() {
             </div>
           </div>
 
-          {/* Strategic Save Draft Button - After Core Info Complete */}
-          <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg border-2 border-yellow-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-yellow-800">Core property info complete!</p>
-                <p className="text-xs text-yellow-700">Save your progress before adding images</p>
-              </div>
-              <button 
-                type="button"
-                onClick={handleManualSave}
-                disabled={saveStatus === 'saving' || (!form.title.trim() && !form.description.trim() && !form.price.trim())}
-                className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-6 py-3 rounded-lg font-semibold shadow-lg hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              >
-                {saveStatus === 'saving' ? (
-                  <span className="flex items-center gap-2">
-                    <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full"></div>
-                    Saving...
-                  </span>
-                ) : saveStatus === 'saved' ? (
-                  <span className="flex items-center gap-2">
-                    ✅ Saved!
-                  </span>
-                ) : saveStatus === 'error' ? (
-                  <span className="flex items-center gap-2">
-                    ❌ Failed
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    💾 Save Draft
-                  </span>
-                )}
-              </button>
-            </div>
-          </div>
-
           {/* 9. PROPERTY IMAGES (Visual proof) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-yellow-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -1254,68 +1441,28 @@ export default function CreatePropertyPage() {
             </div>
           )}
           
-          {/* Action Buttons - Sticky at bottom for mobile */}
+          {/* Submit Button - Sticky at bottom for mobile */}
           {!success && (
             <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent pt-6 mt-8 -mx-8 px-8 pb-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
-                
-                {/* Save Draft Button - Always Available */}
-                <button 
-                  type="button"
-                  onClick={handleManualSave}
-                  disabled={saveStatus === 'saving' || (!form.title.trim() && !form.description.trim() && !form.price.trim() && images.length === 0)}
-                  className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-yellow-600 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  {saveStatus === 'saving' ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
-                      Saving Draft...
-                    </span>
-                  ) : saveStatus === 'saved' ? (
-                    <span className="flex items-center justify-center gap-2">
-                      ✅ Draft Saved!
-                    </span>
-                  ) : saveStatus === 'error' ? (
-                    <span className="flex items-center justify-center gap-2">
-                      ❌ Save Failed
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      💾 Save Draft
-                    </span>
-                  )}
-                </button>
-
-                {/* Submit for Review - When Ready */}
-                <button 
-                  type="submit" 
-                  disabled={loading || completionAnalysis.percentage < 60} 
-                  className="bg-gradient-to-r from-green-500 to-blue-500 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-green-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="animate-spin">⏳</span>
-                      Submitting...
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      🚀 Submit for Review
-                    </span>
-                  )}
-                </button>
-              </div>
-              
-              <div className="text-center">
-                {completionAnalysis.percentage < 60 ? (
-                  <p className="text-sm text-orange-600 font-medium">
-                    💡 Complete {Math.ceil((60 - completionAnalysis.percentage) / 10)} more fields to submit for review
-                  </p>
+              <button 
+                type="submit" 
+                disabled={loading} 
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="animate-spin">⏳</span>
+                    Submitting Property...
+                  </span>
                 ) : (
-                  <p className="text-sm text-green-600 font-medium">
-                    ✅ Ready for submission! Your property will be reviewed by our team
-                  </p>
+                  <span className="flex items-center justify-center gap-2">
+                    🚀 Submit Property for Review
+                  </span>
                 )}
-              </div>
+              </button>
+              <p className="text-center text-sm text-gray-700 mt-3">
+                Your property will be reviewed by our team before going live
+              </p>
             </div>
           )}
         </form>
@@ -1398,16 +1545,8 @@ export default function CreatePropertyPage() {
         {/* Success Screen */}
         {success && (
           <PropertySuccessScreen
-            redirectPath={
-              userProfile?.user_type === 'owner_admin' || userProfile?.user_type === 'basic_admin' 
-                ? "/admin-dashboard" 
-                : "/dashboard/agent"
-            }
-            userType={
-              userProfile?.user_type === 'owner_admin' || userProfile?.user_type === 'basic_admin'
-                ? "admin"
-                : "agent"
-            }
+            redirectPath="/dashboard/agent"
+            userType="agent"
           />
         )}
       </div>

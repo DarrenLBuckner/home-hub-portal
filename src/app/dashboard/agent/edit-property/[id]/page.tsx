@@ -38,6 +38,23 @@ interface FormData {
   lot_width: string;
   lot_dimension_unit: string;
   owner_whatsapp: string;
+  video_url: string;
+  // Commercial Property Fields
+  property_category: 'residential' | 'commercial';
+  commercial_type: string;
+  floor_size_sqft: string;
+  building_floor: string;
+  number_of_floors: string;
+  parking_spaces: string;
+  loading_dock: boolean;
+  elevator_access: boolean;
+  commercial_garage_entrance: boolean;
+  climate_controlled: boolean;
+  // Commercial Lease/Finance Fields
+  lease_term_years: string;
+  lease_type: string;
+  financing_available: boolean;
+  financing_details: string;
 }
 
 export default function EditAgentProperty() {
@@ -75,6 +92,25 @@ export default function EditAgentProperty() {
     lot_width: "",
     lot_dimension_unit: "ft",
     owner_whatsapp: "",
+    video_url: "",
+    
+    // Commercial Property Fields
+    property_category: 'residential',
+    commercial_type: '',
+    floor_size_sqft: '',
+    building_floor: '',
+    number_of_floors: '',
+    parking_spaces: '',
+    loading_dock: false,
+    elevator_access: false,
+    commercial_garage_entrance: false,
+    climate_controlled: false,
+    
+    // Commercial Lease/Finance Fields
+    lease_term_years: '',
+    lease_type: '',
+    financing_available: false,
+    financing_details: '',
   });
 
   const [images, setImages] = useState<File[]>([]);
@@ -153,6 +189,25 @@ export default function EditAgentProperty() {
             lot_width: property.lot_width?.toString() || '',
             lot_dimension_unit: property.lot_dimension_unit || 'ft',
             owner_whatsapp: property.owner_whatsapp || profile?.whatsapp || '',
+            video_url: property.video_url || '',
+            
+            // Commercial property fields
+            property_category: property.property_category || 'residential',
+            commercial_type: property.commercial_type || '',
+            floor_size_sqft: property.floor_size_sqft?.toString() || '',
+            building_floor: property.building_floor || '',
+            number_of_floors: property.number_of_floors?.toString() || '',
+            parking_spaces: property.parking_spaces?.toString() || '',
+            loading_dock: property.loading_dock || false,
+            elevator_access: property.elevator_access || false,
+            commercial_garage_entrance: property.commercial_garage_entrance || false,
+            climate_controlled: property.climate_controlled || false,
+            
+            // Lease and financing fields
+            lease_term_years: property.lease_term_years || '',
+            lease_type: property.lease_type || '',
+            financing_available: property.financing_available || false,
+            financing_details: property.financing_details || '',
           });
 
           // Set location and currency info - FIX: Use country field, not location
@@ -462,32 +517,61 @@ export default function EditAgentProperty() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Category *</label>
                 <select 
-                  name="property_type" 
-                  value={form.property_type} 
+                  name="property_category" 
+                  value={form.property_category} 
                   onChange={handleChange} 
+                  required
                   className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
                 >
-                  <option value="House">House</option>
-                  <option value="Apartment">Apartment</option>
-                  <option value="Condo">Condo</option>
-                  <option value="Townhouse">Townhouse</option>
-                  <option value="Land">Land/Lot</option>
-                  <option value="Commercial">Commercial</option>
+                  <option value="residential">🏠 Residential</option>
+                  <option value="commercial">🏢 Commercial</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Listing Type</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
+                <select 
+                  name="property_type" 
+                  value={form.property_type} 
+                  onChange={handleChange} 
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                >
+                  {form.property_category === 'residential' ? (
+                    <>
+                      <option value="House">🏠 House</option>
+                      <option value="Apartment">🏢 Apartment</option>
+                      <option value="Land">🌿 Land</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Office">🏢 Office</option>
+                      <option value="Retail">🏪 Retail</option>
+                      <option value="Warehouse">🏭 Warehouse</option>
+                      <option value="Industrial">⚙️ Industrial</option>
+                      <option value="Mixed Use">🏬 Mixed Use</option>
+                      <option value="Commercial Land">🌿 Commercial Land</option>
+                    </>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Listing Type *</label>
                 <select 
                   name="listing_type" 
                   value={form.listing_type} 
                   onChange={handleChange} 
+                  required
                   className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
                 >
                   <option value="sale">🏠 For Sale</option>
                   <option value="rent">🏡 For Rent</option>
+                  {form.property_category === 'commercial' && (
+                    <option value="lease">🏢 For Lease</option>
+                  )}
                 </select>
               </div>
 
@@ -708,6 +792,196 @@ export default function EditAgentProperty() {
               </div>
             </div>
           </div>
+
+          {/* 4.5. COMMERCIAL FEATURES (Commercial Properties Only) */}
+          {form.property_category === 'commercial' && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                🏢 Commercial Features
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Commercial Type</label>
+                  <select 
+                    name="commercial_type" 
+                    value={form.commercial_type} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                  >
+                    <option value="">Select Type</option>
+                    <option value="Office">Office</option>
+                    <option value="Retail">Retail</option>
+                    <option value="Warehouse">Warehouse</option>
+                    <option value="Industrial">Industrial</option>
+                    <option value="Mixed Use">Mixed Use</option>
+                    <option value="Medical">Medical</option>
+                    <option value="Restaurant">Restaurant</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Floor Size (sq ft)</label>
+                  <input 
+                    name="floor_size_sqft" 
+                    type="number" 
+                    placeholder="e.g., 2500" 
+                    value={form.floor_size_sqft} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Floor Level</label>
+                  <input 
+                    name="building_floor" 
+                    type="text" 
+                    placeholder="Ground, 2nd, etc." 
+                    value={form.building_floor} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Total Floors</label>
+                  <input 
+                    name="number_of_floors" 
+                    type="number" 
+                    placeholder="e.g., 3" 
+                    value={form.number_of_floors} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Parking Spaces</label>
+                  <input 
+                    name="parking_spaces" 
+                    type="number" 
+                    placeholder="e.g., 10" 
+                    value={form.parking_spaces} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="loading_dock"
+                    checked={form.loading_dock}
+                    onChange={(e) => setForm({ ...form, loading_dock: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label className="text-sm font-medium text-gray-700">Loading Dock</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="elevator_access"
+                    checked={form.elevator_access}
+                    onChange={(e) => setForm({ ...form, elevator_access: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label className="text-sm font-medium text-gray-700">Elevator Access</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="climate_controlled"
+                    checked={form.climate_controlled}
+                    onChange={(e) => setForm({ ...form, climate_controlled: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label className="text-sm font-medium text-gray-700">Climate Controlled</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="commercial_garage_entrance"
+                    checked={form.commercial_garage_entrance}
+                    onChange={(e) => setForm({ ...form, commercial_garage_entrance: e.target.checked })}
+                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                  <label className="text-sm font-medium text-gray-700">Garage Entrance</label>
+                </div>
+              </div>
+
+              {/* Lease Terms for Commercial Properties */}
+              {form.listing_type === 'lease' && (
+                <div className="mt-6 p-4 bg-green-50 rounded-lg">
+                  <h4 className="text-lg font-medium text-green-900 mb-4">📋 Lease Terms</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Lease Term (Years)</label>
+                      <select 
+                        name="lease_term_years" 
+                        value={form.lease_term_years} 
+                        onChange={handleChange} 
+                        className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                      >
+                        <option value="">Select Term</option>
+                        <option value="1">1 Year</option>
+                        <option value="2">2 Years</option>
+                        <option value="3">3 Years</option>
+                        <option value="5">5 Years</option>
+                        <option value="10">10 Years</option>
+                        <option value="15">15 Years</option>
+                        <option value="20">20 Years</option>
+                        <option value="99">99 Years</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Lease Type</label>
+                      <select 
+                        name="lease_type" 
+                        value={form.lease_type} 
+                        onChange={handleChange} 
+                        className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                      >
+                        <option value="">Select Type</option>
+                        <option value="Triple Net (NNN)">Triple Net (NNN)</option>
+                        <option value="Gross Lease">Gross Lease</option>
+                        <option value="Modified Gross">Modified Gross</option>
+                        <option value="Percentage Lease">Percentage Lease</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Financing Options */}
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <h4 className="text-lg font-medium text-blue-900 mb-4">💰 Financing Options</h4>
+                <div className="mb-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      name="financing_available"
+                      checked={form.financing_available}
+                      onChange={(e) => setForm({ ...form, financing_available: e.target.checked })}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <label className="text-sm font-medium text-gray-700">Financing Available</label>
+                  </div>
+                </div>
+                
+                {form.financing_available && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Financing Details</label>
+                    <textarea
+                      name="financing_details"
+                      value={form.financing_details}
+                      onChange={handleChange}
+                      rows={3}
+                      placeholder="Describe financing options, down payment requirements, terms, etc."
+                      className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* 5. AMENITIES */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">

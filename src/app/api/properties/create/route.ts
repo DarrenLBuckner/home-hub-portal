@@ -445,10 +445,11 @@ export async function POST(req: NextRequest) {
         commercial_type: body.commercial_type || null,
         floor_size_sqft: body.floor_size_sqft ? parseInt(body.floor_size_sqft) : null,
         building_floor: body.building_floor || null,
+        number_of_floors: body.number_of_floors ? parseInt(body.number_of_floors) : null,
         parking_spaces: body.parking_spaces ? parseInt(body.parking_spaces) : null,
         loading_dock: body.loading_dock || false,
         elevator_access: body.elevator_access || false,
-        climate_controlled: body.climate_controlled || false,
+        commercial_garage_entrance: body.commercial_garage_entrance || false,
         
         // System fields
         user_id: userId,

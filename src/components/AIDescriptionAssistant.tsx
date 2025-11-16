@@ -4,8 +4,13 @@ import React, { useState } from 'react';
 interface PropertyData {
   title?: string;
   propertyType: string;
+  propertyCategory?: string; // 'residential' | 'commercial'
+  // Residential fields
   bedrooms: string;
   bathrooms: string;
+  // Commercial fields
+  commercialType?: string;
+  floorSize?: string;
   price: string;
   location: string;
   squareFootage?: string;
@@ -37,9 +42,26 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
   };
 
   const generateDescription = async () => {
-    if (!propertyData.propertyType || !propertyData.bedrooms || !propertyData.bathrooms) {
-      setError('Please fill in property type, bedrooms, and bathrooms first');
+    // Smart validation based on property category
+    const isCommercial = propertyData.propertyCategory === 'commercial';
+    
+    if (!propertyData.propertyType) {
+      setError('Please select a property type first');
       return;
+    }
+    
+    if (isCommercial) {
+      // For commercial properties, require commercial type and floor size
+      if (!propertyData.commercialType || !propertyData.floorSize) {
+        setError('Please fill in commercial type and floor size first');
+        return;
+      }
+    } else {
+      // For residential properties, require bedrooms and bathrooms
+      if (!propertyData.bedrooms || !propertyData.bathrooms) {
+        setError('Please fill in bedrooms and bathrooms first');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -72,7 +94,13 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
     }
   };
 
-  const hasRequiredFields = propertyData.propertyType && propertyData.bedrooms && propertyData.bathrooms;
+  // Smart validation for required fields based on property category
+  const isCommercial = propertyData.propertyCategory === 'commercial';
+  const hasRequiredFields = propertyData.propertyType && (
+    isCommercial 
+      ? (propertyData.commercialType && propertyData.floorSize)
+      : (propertyData.bedrooms && propertyData.bathrooms)
+  );
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -98,7 +126,12 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
       <p className="text-gray-600 text-sm mb-4">
         Let AI create a compelling property description based on your details. 
         {!hasRequiredFields && (
-          <span className="text-amber-600 font-medium"> Fill in property type, bedrooms, and bathrooms first.</span>
+          <span className="text-amber-600 font-medium">
+            {isCommercial 
+              ? ' Fill in property type, commercial type, and floor size first.'
+              : ' Fill in property type, bedrooms, and bathrooms first.'
+            }
+          </span>
         )}
       </p>
 
