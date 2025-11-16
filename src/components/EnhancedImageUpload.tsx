@@ -44,18 +44,100 @@ export default function EnhancedImageUpload({
       return `File type not supported. Please use: ${acceptedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')}`;
     }
     
-    if (file.size > maxSizePerImage * 1024 * 1024) {
-      return `File too large. Maximum size: ${maxSizePerImage}MB`;
+    // Allow larger files since we'll compress them
+    if (file.size > 50 * 1024 * 1024) {
+      return `File too large. Maximum size: 50MB (will be auto-compressed)`;
     }
     
     return null;
   };
 
-  const handleFiles = useCallback((files: FileList | File[]) => {
+  // Compress image to reduce file size while maintaining quality
+  const compressImage = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          if (!ctx) {
+            resolve(file); // Return original if canvas not supported
+            return;
+          }
+
+          // Calculate new dimensions (max 2000px on longest side for high quality)
+          let width = img.width;
+          let height = img.height;
+          const maxDimension = 2000;
+
+          if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+              height = (height / width) * maxDimension;
+              width = maxDimension;
+            } else {
+              width = (width / height) * maxDimension;
+              height = maxDimension;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+
+          // Draw image with high quality
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Try different quality levels to get under 1MB per image
+          const tryCompress = (quality: number) => {
+            canvas.toBlob(
+              (blob) => {
+                if (!blob) {
+                  resolve(file);
+                  return;
+                }
+
+                // If still too large and quality can be reduced, try again
+                if (blob.size > 1024 * 1024 && quality > 0.5) {
+                  tryCompress(quality - 0.1);
+                  return;
+                }
+
+                const compressedFile = new File([blob], file.name, {
+                  type: 'image/jpeg',
+                  lastModified: Date.now(),
+                });
+
+                console.log(`🖼️ Compressed ${file.name}: ${(file.size / 1024 / 1024).toFixed(2)}MB → ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
+                resolve(compressedFile);
+              },
+              'image/jpeg',
+              quality
+            );
+          };
+
+          // Start with 0.85 quality for good balance
+          tryCompress(0.85);
+        };
+
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = e.target?.result as string;
+      };
+
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     const validFiles: File[] = [];
     const errors: string[] = [];
 
+    // Validate files first
     fileArray.forEach(file => {
       const error = validateFile(file);
       if (error) {
@@ -72,8 +154,24 @@ export default function EnhancedImageUpload({
     }
 
     if (validFiles.length > 0) {
-      const newImages = [...images, ...validFiles];
-      setImages(newImages);
+      try {
+        // Show compression message for large files
+        const largeFiles = validFiles.filter(f => f.size > 1024 * 1024);
+        if (largeFiles.length > 0) {
+          console.log(`🔄 Compressing ${largeFiles.length} image(s)...`);
+        }
+
+        // Compress all images
+        const compressedFiles = await Promise.all(
+          validFiles.map(file => compressImage(file))
+        );
+
+        const newImages = [...images, ...compressedFiles];
+        setImages(newImages);
+      } catch (error) {
+        console.error('Error compressing images:', error);
+        alert('Failed to process some images. Please try again.');
+      }
     }
   }, [images, setImages, maxImages, maxSizePerImage, acceptedTypes]);
 
@@ -192,7 +290,7 @@ export default function EnhancedImageUpload({
                 }
               </p>
               <p className="text-sm text-gray-600">
-                Upload up to {maxImages} high-quality photos • {acceptedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} • Max {maxSizePerImage}MB each
+                Upload up to {maxImages} high-quality photos • {acceptedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} • Auto-compressed for optimal upload
               </p>
             </div>
             
