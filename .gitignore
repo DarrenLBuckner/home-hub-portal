@@ -12,7 +12,9 @@ out/
 
 # Env files (CRITICAL FOR SECURITY)
 .env
+.env*
 .env.local
+.env.local.secure
 .env.development.local
 .env.test.local
 .env.production.local
