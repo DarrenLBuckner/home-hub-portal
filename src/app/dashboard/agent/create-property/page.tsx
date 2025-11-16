@@ -48,6 +48,15 @@ interface FormData {
   lot_dimension_unit: string;
   owner_whatsapp: string;
   video_url: string; // YouTube/Vimeo video URL for premium tiers
+  // Commercial Property Fields
+  property_category: 'residential' | 'commercial';
+  commercial_type: string;
+  floor_size_sqft: string;
+  building_floor: string;
+  parking_spaces: string;
+  loading_dock: boolean;
+  elevator_access: boolean;
+  climate_controlled: boolean;
 }
 
 export default function CreatePropertyPage() {
@@ -76,6 +85,15 @@ export default function CreatePropertyPage() {
     lot_dimension_unit: "ft",
     owner_whatsapp: "",
     video_url: "",
+    // Commercial Property Fields
+    property_category: "residential", // Default to residential
+    commercial_type: "",
+    floor_size_sqft: "",
+    building_floor: "",
+    parking_spaces: "",
+    loading_dock: false,
+    elevator_access: false,
+    climate_controlled: false,
   });
   const [images, setImages] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
@@ -255,6 +273,15 @@ export default function CreatePropertyPage() {
           lot_dimension_unit: draftData.lot_dimension_unit || "ft",
           owner_whatsapp: draftData.owner_whatsapp || "",
           video_url: draftData.video_url || "",
+          // Commercial fields
+          property_category: draftData.property_category || "residential",
+          commercial_type: draftData.commercial_type || "",
+          floor_size_sqft: draftData.floor_size_sqft?.toString() || "",
+          building_floor: draftData.building_floor || "",
+          parking_spaces: draftData.parking_spaces?.toString() || "",
+          loading_dock: draftData.loading_dock || false,
+          elevator_access: draftData.elevator_access || false,
+          climate_controlled: draftData.climate_controlled || false,
         });
         
         // Set location/currency data
@@ -378,6 +405,15 @@ export default function CreatePropertyPage() {
       lot_dimension_unit: "ft",
       owner_whatsapp: currentWhatsapp, // Keep WhatsApp for convenience
       video_url: "",
+      // Reset commercial fields
+      property_category: "residential",
+      commercial_type: "",
+      floor_size_sqft: "",
+      building_floor: "",
+      parking_spaces: "",
+      loading_dock: false,
+      elevator_access: false,
+      climate_controlled: false,
     });
     setImages([]);
     setSuccess("");
@@ -404,6 +440,13 @@ export default function CreatePropertyPage() {
     
     if (!form.listing_type) {
       throw new Error('Please select a Listing Type (For Sale or For Rent).');
+    }
+
+    // Commercial property specific validation
+    if (form.property_category === 'commercial') {
+      if (!form.commercial_type) {
+        throw new Error('Please select a Commercial Type for commercial properties.');
+      }
     }
 
     if (images.length < 1) {
@@ -462,6 +505,15 @@ export default function CreatePropertyPage() {
           lot_dimension_unit: form.lot_dimension_unit,
           owner_whatsapp: form.owner_whatsapp,
           video_url: form.video_url.trim() || null, // Only include video URL if user has access and provided one
+          // Commercial fields
+          property_category: form.property_category,
+          commercial_type: form.commercial_type || null,
+          floor_size_sqft: form.floor_size_sqft ? Number(form.floor_size_sqft) : null,
+          building_floor: form.building_floor || null,
+          parking_spaces: form.parking_spaces ? Number(form.parking_spaces) : null,
+          loading_dock: form.loading_dock,
+          elevator_access: form.elevator_access,
+          climate_controlled: form.climate_controlled,
           // userId will be extracted server-side from authenticated session
           propertyCategory: form.listing_type === 'sale' ? 'sale' : 'rental', // Map to API format
           site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana',  // Dynamic site_id based on country
@@ -582,6 +634,19 @@ export default function CreatePropertyPage() {
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Category *</label>
+                <select 
+                  name="property_category" 
+                  value={form.property_category} 
+                  onChange={handleChange} 
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                >
+                  <option value="residential">🏠 Residential</option>
+                  <option value="commercial">🏢 Commercial</option>
+                </select>
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Price ({currencySymbol}) *</label>
                 <input 
                   name="price" 
@@ -602,10 +667,21 @@ export default function CreatePropertyPage() {
                   required
                   className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
                 >
-                  <option value="House">🏠 House</option>
-                  <option value="Apartment">🏢 Apartment</option>
-                  <option value="Land">🌿 Land</option>
-                  <option value="Commercial">🏢 Commercial</option>
+                  {form.property_category === 'residential' ? (
+                    <>
+                      <option value="House">🏠 House</option>
+                      <option value="Apartment">🏢 Apartment</option>
+                      <option value="Land">🌿 Land</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="Office">🏢 Office</option>
+                      <option value="Retail">🏪 Retail</option>
+                      <option value="Warehouse">🏭 Warehouse</option>
+                      <option value="Industrial">⚙️ Industrial</option>
+                      <option value="Commercial Land">🌿 Commercial Land</option>
+                    </>
+                  )}
                 </select>
               </div>
               <div>
@@ -619,6 +695,9 @@ export default function CreatePropertyPage() {
                 >
                   <option value="sale">🏠 For Sale</option>
                   <option value="rent">🏡 For Rent</option>
+                  {form.property_category === 'commercial' && (
+                    <option value="lease">🏢 For Lease</option>
+                  )}
                 </select>
               </div>
             </div>
@@ -767,6 +846,101 @@ export default function CreatePropertyPage() {
               userType="agent"
             />
           </div>
+
+          {/* 4.5. COMMERCIAL FEATURES (Commercial Properties Only) */}
+          {form.property_category === 'commercial' && (
+            <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-indigo-500">
+              <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                🏢 Commercial Features
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Commercial Type *</label>
+                  <select 
+                    name="commercial_type" 
+                    value={form.commercial_type} 
+                    onChange={handleChange} 
+                    required={form.property_category === 'commercial'}
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                  >
+                    <option value="">Select Commercial Type</option>
+                    <option value="Office">🏢 Office</option>
+                    <option value="Retail">🏪 Retail</option>
+                    <option value="Warehouse">🏭 Warehouse</option>
+                    <option value="Industrial">⚙️ Industrial</option>
+                    <option value="Mixed Use">🏬 Mixed Use</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Floor Size (sq ft)</label>
+                  <input 
+                    name="floor_size_sqft" 
+                    type="number" 
+                    placeholder="e.g., 2500" 
+                    value={form.floor_size_sqft} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Building Floor</label>
+                  <input 
+                    name="building_floor" 
+                    type="text" 
+                    placeholder="e.g., Ground, 2nd, 3-5" 
+                    value={form.building_floor} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Parking Spaces</label>
+                  <input 
+                    name="parking_spaces" 
+                    type="number" 
+                    placeholder="e.g., 10" 
+                    value={form.parking_spaces} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <input 
+                      name="loading_dock" 
+                      type="checkbox" 
+                      checked={form.loading_dock} 
+                      onChange={handleChange} 
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                    />
+                    <label className="ml-2 block text-sm text-gray-700">Loading Dock</label>
+                  </div>
+                  <div className="flex items-center">
+                    <input 
+                      name="elevator_access" 
+                      type="checkbox" 
+                      checked={form.elevator_access} 
+                      onChange={handleChange} 
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                    />
+                    <label className="ml-2 block text-sm text-gray-700">Elevator Access</label>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <input 
+                    name="climate_controlled" 
+                    type="checkbox" 
+                    checked={form.climate_controlled} 
+                    onChange={handleChange} 
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" 
+                  />
+                  <label className="ml-2 block text-sm text-gray-700">Climate Controlled</label>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 5. AMENITIES & FEATURES (What makes it special) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-teal-500">
