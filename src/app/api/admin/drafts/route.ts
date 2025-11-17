@@ -76,9 +76,12 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const countryFilter = url.searchParams.get('country');
 
-    // Get only the current user's personal drafts (not all drafts)
-    // Drafts are private to the individual creator, not visible to other admins
-    let draftsQuery = supabase
+    // Fetch TWO types of drafts for the current user:
+    // 1. Incomplete drafts from property_drafts table (personal work-in-progress)
+    // 2. Submitted drafts from properties table with status='draft' (awaiting completion/submission)
+    
+    // Get incomplete drafts from property_drafts table
+    let incompleteDraftsQuery = supabase
       .from('property_drafts')
       .select(`
         *,
@@ -93,25 +96,84 @@ export async function GET(req: NextRequest) {
       .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
-    // Apply country filter for non-super admins (additional safety)
     if (countryFilter) {
-      draftsQuery = draftsQuery.eq('country_id', countryFilter);
+      incompleteDraftsQuery = incompleteDraftsQuery.eq('country_id', countryFilter);
     }
 
-    const { data: drafts, error: draftsError } = await draftsQuery;
+    // Get submitted drafts from properties table with status='draft'
+    let submittedDraftsQuery = supabase
+      .from('properties')
+      .select(`
+        *,
+        owner:profiles!user_id (
+          id,
+          email,
+          first_name,
+          last_name,
+          user_type
+        )
+      `)
+      .eq('user_id', user.id)
+      .eq('status', 'draft')
+      .order('updated_at', { ascending: false });
 
-    if (draftsError) {
-      console.error('❌ Error loading admin drafts:', draftsError);
+    if (countryFilter) {
+      submittedDraftsQuery = submittedDraftsQuery.eq('country_id', countryFilter);
+    }
+
+    const [incompleteDraftsResult, submittedDraftsResult] = await Promise.all([
+      incompleteDraftsQuery,
+      submittedDraftsQuery
+    ]);
+
+    if (incompleteDraftsResult.error) {
+      console.error('❌ Error loading incomplete drafts:', incompleteDraftsResult.error);
       return NextResponse.json({ 
-        error: 'Failed to load drafts' 
+        error: 'Failed to load incomplete drafts' 
       }, { status: 500 });
     }
 
-    console.log('✅ Loaded admin drafts:', { count: drafts?.length || 0 });
+    if (submittedDraftsResult.error) {
+      console.error('❌ Error loading submitted drafts:', submittedDraftsResult.error);
+      return NextResponse.json({ 
+        error: 'Failed to load submitted drafts' 
+      }, { status: 500 });
+    }
+
+    // Transform submitted drafts to match property_drafts format
+    const transformedSubmittedDrafts = (submittedDraftsResult.data || []).map((prop: any) => ({
+      id: prop.id,
+      user_id: prop.user_id,
+      draft_data: {
+        title: prop.title,
+        description: prop.description,
+        price: prop.price,
+        property_type: prop.property_type,
+        listing_type: prop.listing_type,
+        ...prop
+      },
+      created_at: prop.created_at,
+      updated_at: prop.updated_at,
+      country_id: prop.country_id,
+      owner: prop.owner,
+      _isSubmittedDraft: true // Flag to distinguish from incomplete drafts
+    }));
+
+    // Combine both types of drafts
+    const allDrafts = [
+      ...(incompleteDraftsResult.data || []),
+      ...transformedSubmittedDrafts
+    ];
+
+    console.log('✅ Loaded drafts:', { 
+      incomplete: incompleteDraftsResult.data?.length || 0,
+      submitted: submittedDraftsResult.data?.length || 0,
+      total: allDrafts.length
+    });
 
     return NextResponse.json({ 
       success: true, 
-      drafts: drafts || []
+      drafts: allDrafts
     });
     
   } catch (err: any) {

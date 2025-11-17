@@ -123,7 +123,8 @@ export default function UnifiedAdminDashboard() {
     try {
       console.log('🔄 Loading dashboard data...');
       
-      // Build query with profiles data for pending/draft properties needing review
+      // Build query with profiles data for pending properties needing review
+      // NOTE: 'draft' status properties are personal drafts and should NOT appear here
       let propertiesQuery = supabase
         .from('properties')
         .select(`
@@ -136,7 +137,7 @@ export default function UnifiedAdminDashboard() {
             user_type
           )
         `)
-        .in('status', ['pending', 'draft']);
+        .eq('status', 'pending');
 
       // Apply country filter for non-super admins
       if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
