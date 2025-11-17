@@ -44,12 +44,64 @@ export default function PropertiesListClient({
   const [bathroomFilter, setBathroomFilter] = useState('any');
   const [sortBy, setSortBy] = useState('newest');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Update properties when initialProperties change
+  // Fetch properties from API on component mount
   useEffect(() => {
-    setProperties(initialProperties);
-    setFilteredProperties(initialProperties);
-  }, [initialProperties]);
+    async function fetchProperties() {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // Get country from middleware cookie
+        const countryCode = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('country-code='))
+          ?.split('=')[1] || 'GY';
+        
+        // Map country code to site ID for API
+        const siteId = countryCode === 'JM' ? 'jamaica' : 'guyana';
+        
+        console.log(`🔍 Fetching properties - Site: ${siteId}, Listing Type: ${listingType}, Country Code: ${countryCode}`);
+        
+        // Fetch properties from API
+        const response = await fetch(
+          `/api/public/properties?site=${siteId}&listing_type=${listingType}&limit=100&bust=${Date.now()}`
+        );
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch properties: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log(`✅ Loaded ${data.properties?.length || 0} properties for ${siteId}`);
+        
+        setProperties(data.properties || []);
+        setFilteredProperties(data.properties || []);
+      } catch (err) {
+        console.error('Error fetching properties:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load properties');
+        // Fallback to initialProperties if provided
+        if (initialProperties.length > 0) {
+          setProperties(initialProperties);
+          setFilteredProperties(initialProperties);
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchProperties();
+  }, [listingType]); // Re-fetch if listingType changes
+
+  // Update properties when initialProperties change (fallback)
+  useEffect(() => {
+    if (initialProperties.length > 0 && properties.length === 0) {
+      setProperties(initialProperties);
+      setFilteredProperties(initialProperties);
+    }
+  }, [initialProperties, properties.length]);
 
   // Get unique regions and property types from properties
   const regions = [...new Set(properties.map(p => p.region))].filter(Boolean).sort();
@@ -225,13 +277,41 @@ export default function PropertiesListClient({
         </div>
       </div>
 
-      {/* Results Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
-            {filteredProperties.length} Properties Found
-          </h2>
+      {/* Loading State */}
+      {loading && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
+            <p className="text-gray-600 text-lg">Loading properties...</p>
+          </div>
         </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+            <div className="text-4xl mb-4">⚠️</div>
+            <h3 className="text-xl font-bold text-red-800 mb-2">Error Loading Properties</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Results Section */}
+      {!loading && !error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {filteredProperties.length} Properties Found
+            </h2>
+          </div>
 
         {/* Properties Grid */}
         {filteredProperties.length > 0 ? (
@@ -330,6 +410,7 @@ export default function PropertiesListClient({
           </div>
         )}
       </div>
+      )}
 
       {/* Filter Drawer */}
       {isFilterOpen && (

@@ -76,7 +76,8 @@ export async function GET(req: NextRequest) {
     const url = new URL(req.url);
     const countryFilter = url.searchParams.get('country');
 
-    // Use service role client to bypass RLS and get all drafts
+    // Get only the current user's personal drafts (not all drafts)
+    // Drafts are private to the individual creator, not visible to other admins
     let draftsQuery = supabase
       .from('property_drafts')
       .select(`
@@ -89,9 +90,10 @@ export async function GET(req: NextRequest) {
           user_type
         )
       `)
+      .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
-    // Apply country filter for non-super admins
+    // Apply country filter for non-super admins (additional safety)
     if (countryFilter) {
       draftsQuery = draftsQuery.eq('country_id', countryFilter);
     }

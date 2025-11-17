@@ -38,7 +38,8 @@ const LotDimensions: React.FC<LotDimensionsProps> = ({
     if (calculatedArea && onAreaCalculated) {
       onAreaCalculated(calculatedArea.sqFt);
     }
-  }, [calculatedArea, onAreaCalculated]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calculatedArea]);
 
   // Validate on change
   useEffect(() => {

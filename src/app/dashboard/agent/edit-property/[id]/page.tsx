@@ -291,7 +291,26 @@ export default function EditAgentProperty() {
     if (type === "checkbox") {
       setForm({ ...form, [name]: (e.target as HTMLInputElement).checked });
     } else {
-      setForm({ ...form, [name]: value });
+      // Special handling for property_category changes
+      if (name === 'property_category') {
+        // Reset property_type when category changes
+        const newPropertyType = value === 'commercial' ? 'Office' : 'House';
+        setForm({ 
+          ...form, 
+          [name]: value as 'residential' | 'commercial',
+          property_type: newPropertyType,
+          commercial_type: value === 'commercial' ? newPropertyType : ''
+        });
+      } else if (name === 'property_type' && form.property_category === 'commercial') {
+        // Auto-sync property_type to commercial_type for commercial properties
+        setForm({ 
+          ...form, 
+          [name]: value,
+          commercial_type: value
+        });
+      } else {
+        setForm({ ...form, [name]: value });
+      }
     }
   };
 

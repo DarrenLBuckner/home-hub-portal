@@ -245,7 +245,13 @@ export default function CreatePropertyPage() {
   const autoSaveSettings = userProfile ? getAutoSaveSettings(userProfile) : { enabled: false, interval: 0, minFieldsRequired: 0 };
   
   const autoSave = useAutoSave({
-    data: { ...form, images },
+    data: { 
+      ...form, 
+      images,
+      currency: currencyCode,
+      currency_symbol: currencySymbol,
+      country: selectedCountry
+    },
     onSave: async (data, isDraft) => {
       return await saveDraft(data);
     },
@@ -328,11 +334,21 @@ export default function CreatePropertyPage() {
         });
         
         // Set location/currency data
-        if (draftData.location) {
+        if (draftData.country) {
+          setSelectedCountry(draftData.country);
+        } else if (draftData.location) {
           setSelectedCountry(draftData.location);
         }
         if (draftData.region) {
           setSelectedRegion(draftData.region);
+        }
+        
+        // Restore currency settings
+        if (draftData.currency) {
+          setCurrencyCode(draftData.currency);
+        }
+        if (draftData.currency_symbol) {
+          setCurrencySymbol(draftData.currency_symbol);
         }
         
         // Handle images if available
@@ -371,17 +387,39 @@ export default function CreatePropertyPage() {
 
   const handleManualSave = async () => {
     try {
+      console.log('💾 Manual save triggered...');
       setAutoSaveStatus('saving');
-      const success = await autoSave.triggerSave();
-      if (success) {
+      
+      // Directly call saveDraft with current form data including currency and country
+      const result = await saveDraft({ 
+        ...form, 
+        images,
+        currency: currencyCode,
+        currency_symbol: currencySymbol,
+        country: selectedCountry
+      }, currentDraftId);
+      
+      if (result.success) {
         setAutoSaveStatus('saved');
         setLastSavedTime(new Date());
+        
+        // Update current draft ID if this is a new draft
+        if (result.draftId && !currentDraftId) {
+          setCurrentDraftId(result.draftId);
+        }
+        
+        // Show success feedback
+        alert('✅ Draft saved successfully! You can continue editing or come back later.');
+        console.log('✅ Manual save successful:', result.draftId);
       } else {
         setAutoSaveStatus('error');
+        alert('❌ Failed to save draft: ' + (result.error || 'Unknown error'));
+        console.error('❌ Manual save failed:', result.error);
       }
     } catch (error) {
       console.error('❌ Manual save error:', error);
       setAutoSaveStatus('error');
+      alert('❌ Error saving draft. Please try again.');
     }
   };
 
@@ -586,6 +624,9 @@ export default function CreatePropertyPage() {
           // userId will be extracted server-side from authenticated session
           propertyCategory: form.listing_type === 'sale' ? 'sale' : 'rental', // Map to API format
           site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana',  // Dynamic site_id based on country
+          // Draft conversion fields - link this submission to the draft
+          draft_id: currentDraftId || undefined,
+          _isPublishDraft: currentDraftId ? true : false, // Indicate this is converting a draft
         }),
       });
 
@@ -603,6 +644,18 @@ export default function CreatePropertyPage() {
       }
 
       console.log('✅ Property created successfully via API');
+      
+      // If this was from a draft, delete the draft now that it's published
+      if (currentDraftId) {
+        console.log('🗑️ Deleting draft after successful submission:', currentDraftId);
+        const deleted = await deleteDraft(currentDraftId);
+        if (deleted) {
+          console.log('✅ Draft deleted successfully');
+          setCurrentDraftId(null); // Clear the draft ID
+        } else {
+          console.warn('⚠️ Failed to delete draft, but property was created successfully');
+        }
+      }
       
       // Show success message - PropertySuccessScreen will handle the redirect
       setSuccess("✅ Property created successfully!");
@@ -1324,6 +1377,24 @@ export default function CreatePropertyPage() {
             )}
           </div>
 
+          {/* Save Progress Button - Middle of Form */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <h4 className="font-semibold text-gray-800 mb-1">💾 Save Your Progress</h4>
+                <p className="text-sm text-gray-600">Not ready to submit? Save your work and come back later.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleManualSave}
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+              >
+                <span>💾</span>
+                Save as Draft
+              </button>
+            </div>
+          </div>
+
           {/* 7. LOCATION DETAILS (Specific address info) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-pink-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -1417,22 +1488,32 @@ export default function CreatePropertyPage() {
           {/* Submit Button - Sticky at bottom for mobile */}
           {!success && (
             <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent pt-6 mt-8 -mx-8 px-8 pb-8">
-              <button 
-                type="submit" 
-                disabled={loading} 
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="animate-spin">⏳</span>
-                    Submitting Property...
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    🚀 Submit Property for Review
-                  </span>
-                )}
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={handleManualSave}
+                  className="sm:w-auto px-8 py-4 bg-gray-100 hover:bg-gray-200 text-gray-800 text-lg font-semibold rounded-xl border-2 border-gray-300 transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <span>💾</span>
+                  Save as Draft
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={loading} 
+                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="animate-spin">⏳</span>
+                      Submitting Property...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      🚀 Submit Property for Review
+                    </span>
+                  )}
+                </button>
+              </div>
               <p className="text-center text-sm text-gray-700 mt-3">
                 Your property will be reviewed by our team before going live
               </p>
