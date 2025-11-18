@@ -354,6 +354,8 @@ export default function EditAgentProperty() {
     setError('');
 
     try {
+      // Initialize Supabase client
+      const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Authentication required');
