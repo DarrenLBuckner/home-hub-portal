@@ -558,6 +558,10 @@ export default function CreatePropertyPage() {
       // The API route will handle all authentication server-side with @supabase/ssr
       console.log('🔍 Starting property creation - authentication handled by API route');
 
+      // Initialize Supabase client for image uploads
+      const { createClient } = await import('@/supabase');
+      const supabase = createClient();
+
       // Get current user for image uploads
       const { data: { user }, error: userErr } = await supabase.auth.getUser();
       if (userErr || !user) {
