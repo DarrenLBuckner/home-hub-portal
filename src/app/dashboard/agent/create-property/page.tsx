@@ -1,6 +1,6 @@
 
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 // Authentication is now handled entirely server-side in the API route
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
@@ -130,6 +130,12 @@ export default function CreatePropertyPage() {
   const [showDraftDialog, setShowDraftDialog] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+
+  // Save Gates State Management
+  const [currentSection, setCurrentSection] = useState(1);
+  const [completedSections, setCompletedSections] = useState<number[]>([]);
+  const [isSavingGate, setIsSavingGate] = useState(false);
+  const [lastGateSaved, setLastGateSaved] = useState<number | null>(null);
 
   // Comprehensive submission system with duplicate prevention
   const propertySubmission = usePropertySubmission({
@@ -397,7 +403,7 @@ export default function CreatePropertyPage() {
         currency: currencyCode,
         currency_symbol: currencySymbol,
         country: selectedCountry
-      }, currentDraftId);
+      }, currentDraftId || undefined);
       
       if (result.success) {
         setAutoSaveStatus('saved');
@@ -420,6 +426,141 @@ export default function CreatePropertyPage() {
       console.error('❌ Manual save error:', error);
       setAutoSaveStatus('error');
       alert('❌ Error saving draft. Please try again.');
+    }
+  };
+
+  // Save Gates Helper Functions
+  /**
+   * Check if a section can be accessed
+   * Section 1 is always unlocked
+   * Other sections unlock when previous section is completed
+   */
+  const isSectionUnlocked = (sectionNum: number): boolean => {
+    if (sectionNum === 1) return true; // First section always accessible
+    return completedSections.includes(sectionNum - 1);
+  };
+
+  /**
+   * Validate fields required for a specific section
+   * Returns validation result with optional error message
+   */
+  const validateSection = (sectionNum: number): { valid: boolean; error?: string } => {
+    switch (sectionNum) {
+      case 1: // Basic Information  
+        if (!form.title?.trim()) {
+          return { valid: false, error: 'Property title is required' };
+        }
+        if (!form.description || form.description.length < 50) {
+          return { valid: false, error: 'Description must be at least 50 characters' };
+        }
+        if (!form.price || isNaN(Number(form.price))) {
+          return { valid: false, error: 'Valid price is required' };
+        }
+        if (!form.property_type) {
+          return { valid: false, error: 'Property type is required' };
+        }
+        return { valid: true };
+      
+      case 2: // Property Details
+        if (!form.bedrooms || isNaN(Number(form.bedrooms))) {
+          return { valid: false, error: 'Number of bedrooms is required' };
+        }
+        if (!form.bathrooms || isNaN(Number(form.bathrooms))) {
+          return { valid: false, error: 'Number of bathrooms is required' };
+        }
+        // At least one size measurement required
+        if (!form.house_size_value && !form.land_size_value) {
+          return { valid: false, error: 'House size or land size is required' };
+        }
+        return { valid: true };
+      
+      case 3: // Location & Amenities
+        if (!form.region) {
+          return { valid: false, error: 'Region is required' };
+        }
+        if (!form.city) {
+          return { valid: false, error: 'City is required' };
+        }
+        return { valid: true };
+      
+      case 4: // Photos & Additional
+        if (!images || images.length === 0) {
+          return { valid: false, error: 'At least one photo is required' };
+        }
+        if (!form.owner_whatsapp) {
+          return { valid: false, error: 'WhatsApp number is required' };
+        }
+        return { valid: true };
+      
+      case 5: // Review & Submit
+        // Final validation - all previous sections should be complete
+        const allRequiredFieldsValid = form.title && form.description && form.price && 
+                                     form.property_type && form.bedrooms && form.bathrooms &&
+                                     form.region && form.city && images.length > 0 && form.owner_whatsapp;
+        if (!allRequiredFieldsValid) {
+          return { valid: false, error: 'Please complete all required fields in previous sections' };
+        }
+        return { valid: true };
+      
+      default:
+        return { valid: true };
+    }
+  };
+
+  /**
+   * Handle save gate checkpoint
+   * Validates, saves draft, unlocks next section
+   */
+  const handleSaveGate = async (sectionNum: number) => {
+    // Step 1: Validate current section
+    const validation = validateSection(sectionNum);
+    if (!validation.valid) {
+      setError(validation.error || 'Please complete all required fields');
+      return;
+    }
+    
+    // Step 2: Prepare to save
+    setIsSavingGate(true);
+    setError('');
+    
+    try {
+      // Step 3: Call existing saveDraft function
+      // Note: Images are excluded - they upload separately during submission
+      const result = await saveDraft({
+        ...form,
+        images: [], // Don't save File objects
+        currency: currencyCode,
+        currency_symbol: currencySymbol,
+        country: selectedCountry
+      }, currentDraftId || undefined); // Pass existing draft ID to update, not create new
+      
+      if (result.success) {
+        // Step 4: Mark section as complete
+        setCompletedSections(prev => [...new Set([...prev, sectionNum])]);
+        
+        // Step 5: Store draft ID if this is the first save
+        if (result.draftId && !currentDraftId) {
+          setCurrentDraftId(result.draftId);
+        }
+        
+        // Step 6: Unlock and move to next section
+        setCurrentSection(sectionNum + 1);
+        setLastGateSaved(sectionNum);
+        
+        // Step 7: Smooth scroll to top of next section
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
+        // Success feedback
+        console.log(`✅ Gate ${sectionNum} completed, section ${sectionNum + 1} unlocked`);
+      } else {
+        // Save failed - show error, don't advance
+        setError(result.error || 'Failed to save progress. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Save gate error:', error);
+      setError('Failed to save. Please check your connection and try again.');
+    } finally {
+      setIsSavingGate(false);
     }
   };
 
@@ -724,6 +865,45 @@ export default function CreatePropertyPage() {
         </div>
         
         <form onSubmit={(e) => propertySubmission.handleSubmit(e, () => performActualSubmission(), false, form.title)} className="space-y-8">
+          {/* Progress indicator showing which sections are complete */}
+          <div className="mb-6 bg-white p-4 rounded-lg shadow-sm">
+            <div className="flex items-center justify-between">
+              {[
+                { num: 1, name: 'Basic Info' },
+                { num: 2, name: 'Details' },
+                { num: 3, name: 'Location' },
+                { num: 4, name: 'Photos' },
+                { num: 5, name: 'Review' }
+              ].map((section, idx) => (
+                <React.Fragment key={section.num}>
+                  <div className="flex flex-col items-center">
+                    <div className={`
+                      w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm
+                      ${completedSections.includes(section.num) 
+                        ? 'bg-green-500 text-white' 
+                        : currentSection === section.num 
+                          ? 'bg-blue-500 text-white' 
+                          : 'bg-gray-300 text-gray-600'
+                      }
+                    `}>
+                      {completedSections.includes(section.num) ? '✓' : section.num}
+                    </div>
+                    <span className={`text-xs mt-1 ${
+                      currentSection === section.num ? 'font-semibold text-blue-600' : 'text-gray-600'
+                    }`}>
+                      {section.name}
+                    </span>
+                  </div>
+                  {idx < 4 && (
+                    <div className={`flex-1 h-1 mx-2 ${
+                      completedSections.includes(section.num) ? 'bg-green-500' : 'bg-gray-300'
+                    }`} />
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+
           {/* Auto-save Status Bar - Only for Agents and Landlords */}
           {shouldEnableAutoSave && (
             <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 rounded-lg border border-gray-200 flex items-center justify-between">
@@ -784,10 +964,39 @@ export default function CreatePropertyPage() {
           )}
 
           {/* 1. BASIC INFO (What & Where) */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              📍 Basic Information
-            </h3>
+          <div className={`
+            relative bg-white p-6 rounded-lg shadow-sm mb-6
+            ${currentSection >= 1 ? 'border-l-4 border-blue-500' : 'border-l-4 border-gray-300'}
+          `}>
+            {/* Lock overlay for locked sections */}
+            {!isSectionUnlocked(1) && (
+              <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
+                <div className="text-center p-6">
+                  <div className="text-5xl mb-3">🔒</div>
+                  <p className="font-semibold text-gray-700 text-lg">Section Locked</p>
+                  <p className="text-gray-600 text-sm mt-2">
+                    Complete and save the previous section to unlock
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Section header */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                📍 Basic Information
+              </h3>
+              {completedSections.includes(1) && (
+                <span className="text-green-600 text-sm font-semibold flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                  </svg>
+                  Saved
+                </span>
+              )}
+            </div>
+            
+            {/* Form fields */}
             <div className="space-y-4">
               <GlobalSouthLocationSelector
                 selectedCountry={selectedCountry}
@@ -795,6 +1004,7 @@ export default function CreatePropertyPage() {
                 onLocationChange={handleLocationChange}
                 onCurrencyChange={handleCurrencyChange}
               />
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Property Title *</label>
                 <input 
@@ -807,143 +1017,278 @@ export default function CreatePropertyPage() {
                   className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 bg-white placeholder-gray-500" 
                 />
               </div>
-            </div>
-          </div>
 
-          {/* 2. LISTING DETAILS (Price & Type) */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-green-500">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              💰 Listing Details
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Property Category *</label>
-                <select 
-                  name="property_category" 
-                  value={form.property_category} 
-                  onChange={handleChange} 
+                <label className="block text-sm font-medium text-gray-700 mb-2">Property Description *</label>
+                <textarea
+                  name="description"
+                  value={form.description}
+                  onChange={handleChange}
+                  placeholder="Describe your property in at least 50 characters. Highlight key features, location benefits, and what makes it special."
+                  rows={4}
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
-                >
-                  <option value="residential">🏠 Residential</option>
-                  <option value="commercial">🏢 Commercial</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price ({currencySymbol}) *</label>
-                <input 
-                  name="price" 
-                  type="number" 
-                  placeholder="0" 
-                  value={form.price} 
-                  onChange={handleChange} 
-                  required 
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-400"
                 />
+                <div className="mt-2 text-xs text-gray-500 flex justify-between">
+                  <span>💡 Tip: {form.description.trim().split(/\s+/).filter(word => word.length > 0).length < 50 ? `Add ${50 - form.description.trim().split(/\s+/).filter(word => word.length > 0).length} more words for gate validation` : 'Ready for save gate!'}</span>
+                  <span className={form.description.trim().split(/\s+/).filter(word => word.length > 0).length >= 50 ? 'text-green-600' : 'text-amber-600'}>{form.description.trim().split(/\s+/).filter(word => word.length > 0).length} words</span>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
-                <select 
-                  name="property_type" 
-                  value={form.property_type} 
-                  onChange={handleChange} 
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
-                >
-                  {form.property_category === 'residential' ? (
-                    <>
-                      <option value="House">🏠 House</option>
-                      <option value="Apartment">🏢 Apartment</option>
-                      <option value="Land">🌿 Land</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="Office">🏢 Office</option>
-                      <option value="Retail">🏪 Retail</option>
-                      <option value="Warehouse">🏭 Warehouse</option>
-                      <option value="Industrial">⚙️ Industrial</option>
-                      <option value="Mixed Use">🏬 Mixed Use</option>
-                      <option value="Commercial Land">🌿 Commercial Land</option>
-                    </>
-                  )}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Listing Type *</label>
-                <select 
-                  name="listing_type" 
-                  value={form.listing_type} 
-                  onChange={handleChange} 
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
-                >
-                  <option value="sale">🏠 For Sale</option>
-                  <option value="rent">🏡 For Rent</option>
-                  {form.property_category === 'commercial' && (
-                    <option value="lease">🏢 For Lease</option>
-                  )}
-                </select>
-              </div>
-            </div>
-          </div>
 
-          {/* 3. PROPERTY SPECIFICATIONS (Key Features) */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-purple-500">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              🏘️ Property Specifications
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms{form.property_category === 'commercial' ? ' (Optional)' : ''}</label>
-                <input 
-                  name="bedrooms" 
-                  type="number" 
-                  placeholder="0" 
-                  value={form.bedrooms} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms{form.property_category === 'commercial' ? ' (Optional)' : ''}</label>
-                <input 
-                  name="bathrooms" 
-                  type="number" 
-                  placeholder="0" 
-                  value={form.bathrooms} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">House Size (Optional)</label>
-                <div className="flex gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Price ({currencySymbol}) *</label>
                   <input 
-                    name="house_size_value" 
+                    name="price" 
                     type="number" 
-                    placeholder="2000" 
-                    value={form.house_size_value} 
+                    placeholder="0" 
+                    value={form.price} 
                     onChange={handleChange} 
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                    required 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
                   />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Property Category *</label>
                   <select 
-                    name="house_size_unit" 
-                    value={form.house_size_unit} 
+                    name="property_category" 
+                    value={form.property_category} 
                     onChange={handleChange} 
-                    className="px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
                   >
-                    <option value="sq ft">Sq Ft</option>
-                    <option value="sq m">Sq M</option>
+                    <option value="residential">🏠 Residential</option>
+                    <option value="commercial">🏢 Commercial</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
+                  <select 
+                    name="property_type" 
+                    value={form.property_type} 
+                    onChange={handleChange} 
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                  >
+                    {form.property_category === 'residential' ? (
+                      <>
+                        <option value="House">🏠 House</option>
+                        <option value="Apartment">🏢 Apartment</option>
+                        <option value="Land">🌿 Land</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Office">🏢 Office</option>
+                        <option value="Retail">🏪 Retail</option>
+                        <option value="Warehouse">🏭 Warehouse</option>
+                        <option value="Industrial">⚙️ Industrial</option>
+                        <option value="Mixed Use">🏬 Mixed Use</option>
+                        <option value="Commercial Land">🌿 Commercial Land</option>
+                      </>
+                    )}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Listing Type *</label>
+                  <select 
+                    name="listing_type" 
+                    value={form.listing_type} 
+                    onChange={handleChange} 
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                  >
+                    <option value="sale">🏠 For Sale</option>
+                    <option value="rent">🏡 For Rent</option>
+                    {form.property_category === 'commercial' && (
+                      <option value="lease">🏢 For Lease</option>
+                    )}
                   </select>
                 </div>
               </div>
             </div>
-            <CompletionIncentive 
-              fieldName="house_size_value"
-              fieldType="squareFootage" 
-              isCompleted={!!form.house_size_value}
-              userType="agent"
-            />
+            
+            {/* Save & Continue button (only show for current section) */}
+            {currentSection === 1 && (
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={() => handleSaveGate(1)}
+                  disabled={isSavingGate}
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                >
+                  {isSavingGate ? (
+                    <>
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      Saving Progress...
+                    </>
+                  ) : (
+                    <>
+                      💾 Save & Continue to Property Details
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 2. PROPERTY DETAILS (Price, Type & Specifications) */}
+          <div className={`
+            relative bg-white p-6 rounded-lg shadow-sm mb-6
+            ${currentSection >= 2 ? 'border-l-4 border-green-500' : 'border-l-4 border-gray-300'}
+          `}>
+            {/* Lock overlay for locked sections */}
+            {!isSectionUnlocked(2) && (
+              <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
+                <div className="text-center p-6">
+                  <div className="text-5xl mb-3">🔒</div>
+                  <p className="font-semibold text-gray-700 text-lg">Section Locked</p>
+                  <p className="text-gray-600 text-sm mt-2">
+                    Complete and save the previous section to unlock
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Section header */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                💰 Property Details
+              </h3>
+              {completedSections.includes(2) && (
+                <span className="text-green-600 text-sm font-semibold flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                  </svg>
+                  Saved
+                </span>
+              )}
+            </div>
+            
+            {/* Property Details */}
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms{form.property_category === 'commercial' ? ' (Optional)' : ''}</label>
+                  <input 
+                    name="bedrooms" 
+                    type="number" 
+                    placeholder="0" 
+                    value={form.bedrooms} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms{form.property_category === 'commercial' ? ' (Optional)' : ''}</label>
+                  <input 
+                    name="bathrooms" 
+                    type="number" 
+                    placeholder="0" 
+                    value={form.bathrooms} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Year Built (Optional)</label>
+                  <input 
+                    name="year_built" 
+                    type="number" 
+                    placeholder="e.g., 2020" 
+                    value={form.year_built} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                    min="1800"
+                    max={new Date().getFullYear()}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">House Size</label>
+                  <div className="flex gap-2">
+                    <input 
+                      name="house_size_value" 
+                      type="number" 
+                      placeholder="2000" 
+                      value={form.house_size_value} 
+                      onChange={handleChange} 
+                      className="flex-1 px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                    />
+                    <select 
+                      name="house_size_unit" 
+                      value={form.house_size_unit} 
+                      onChange={handleChange} 
+                      className="px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                    >
+                      <option value="sq ft">Sq Ft</option>
+                      <option value="sq m">Sq M</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Land Size</label>
+                  <div className="flex gap-2">
+                    <input 
+                      name="land_size_value" 
+                      type="number" 
+                      placeholder="Total area" 
+                      value={form.land_size_value} 
+                      onChange={handleChange} 
+                      className="flex-1 px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                    />
+                    <select 
+                      name="land_size_unit" 
+                      value={form.land_size_unit} 
+                      onChange={handleChange} 
+                      className="px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                    >
+                      <option value="sq ft">sq ft</option>
+                      <option value="sq m">sq m</option>
+                      <option value="acres">acres</option>
+                      <option value="hectares">hectares</option>
+                    </select>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-1">At least one size (house or land) is required</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Save & Continue button (only show for current section) */}
+            {currentSection === 2 && (
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={() => handleSaveGate(2)}
+                  disabled={isSavingGate}
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                >
+                  {isSavingGate ? (
+                    <>
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      Saving Progress...
+                    </>
+                  ) : (
+                    <>
+                      💾 Save & Continue to Location
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
           {/* 4. LAND INFORMATION (All land details together!) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-orange-500">
@@ -1031,58 +1376,151 @@ export default function CreatePropertyPage() {
             />
           </div>
 
-          {/* 5. AMENITIES & FEATURES (What makes it special) */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-teal-500">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              ✨ Amenities & Features
-            </h3>
+          {/* Section 3: Location & Amenities */}
+          <div className={`
+            relative bg-white p-6 rounded-lg shadow-sm mb-6
+            ${currentSection >= 3 ? 'border-l-4 border-blue-500' : 'border-l-4 border-gray-300'}
+          `}>
+            {/* Lock overlay for locked sections */}
+            {!isSectionUnlocked(3) && (
+              <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
+                <div className="text-center p-6">
+                  <div className="text-5xl mb-3">🔒</div>
+                  <p className="font-semibold text-gray-700 text-lg">Section Locked</p>
+                  <p className="text-gray-600 text-sm mt-2">
+                    Complete and save the previous section to unlock
+                  </p>
+                </div>
+              </div>
+            )}
             
-            {/* Enhanced messaging about why amenities matter */}
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 p-5 rounded-lg border border-green-200 mb-4">
-              <div className="flex items-start gap-3">
-                <div className="text-green-600 text-xl">🎯</div>
+            {/* Section header */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                📍 Location & Amenities
+              </h3>
+              {completedSections.includes(3) && (
+                <span className="text-green-600 text-sm font-semibold flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                  </svg>
+                  Saved
+                </span>
+              )}
+            </div>
+
+            {/* Location Details */}
+            <div className="mb-6">
+              <h4 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
+                📍 Location Details
+              </h4>
+              <p className="text-sm text-gray-600 mb-4">Country and region are selected above. Add specific location details below:</p>
+              <div className="space-y-4">
                 <div>
-                  <h4 className="font-semibold text-green-900 mb-2">Why Complete Amenities = Better Results</h4>
-                  <div className="space-y-1 text-sm text-green-800">
-                    <div className="flex items-center gap-2">
-                      <span className="w-1 h-1 bg-green-600 rounded-full"></span>
-                      <span><strong>43% more inquiries</strong> - Detailed listings attract serious buyers</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1 h-1 bg-green-600 rounded-full"></span>
-                      <span><strong>Faster sales</strong> - Buyers know exactly what they're getting</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1 h-1 bg-green-600 rounded-full"></span>
-                      <span><strong>Better AI descriptions</strong> - More amenities = richer, compelling content</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-1 h-1 bg-green-600 rounded-full"></span>
-                      <span><strong>Higher engagement</strong> - Complete listings build buyer confidence</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-green-700 mt-2 italic">💡 Select amenities first, then let AI create your perfect description!</p>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Specific Area/District *</label>
+                  <input 
+                    name="city" 
+                    type="text" 
+                    placeholder="e.g., Kitty, Campbellville, New Amsterdam" 
+                    value={form.city} 
+                    onChange={handleChange} 
+                    required
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Neighborhood/Street (Optional)</label>
+                  <input 
+                    name="neighborhood" 
+                    type="text" 
+                    placeholder="e.g., Main Street, Sheriff Street" 
+                    value={form.neighborhood} 
+                    onChange={handleChange} 
+                    className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500" 
+                  />
                 </div>
               </div>
             </div>
-            
+
+            {/* Amenities & Features */}
             <div className="mb-4">
-              <AmenitiesSelector
-                value={form.amenities || []}
-                onChange={(amenities) => {
-                  setForm({
-                    ...form,
-                    amenities
-                  });
-                }}
+              <h4 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
+                ✨ Amenities & Features
+              </h4>
+              
+              {/* Enhanced messaging about why amenities matter */}
+              <div className="bg-gradient-to-r from-green-50 to-blue-50 p-5 rounded-lg border border-green-200 mb-4">
+                <div className="flex items-start gap-3">
+                  <div className="text-green-600 text-xl">🎯</div>
+                  <div>
+                    <h4 className="font-semibold text-green-900 mb-2">Why Complete Amenities = Better Results</h4>
+                    <div className="space-y-1 text-sm text-green-800">
+                      <div className="flex items-center gap-2">
+                        <span className="w-1 h-1 bg-green-600 rounded-full"></span>
+                        <span><strong>43% more inquiries</strong> - Detailed listings attract serious buyers</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1 h-1 bg-green-600 rounded-full"></span>
+                        <span><strong>Faster sales</strong> - Buyers know exactly what they're getting</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1 h-1 bg-green-600 rounded-full"></span>
+                        <span><strong>Better AI descriptions</strong> - More amenities = richer, compelling content</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-1 h-1 bg-green-600 rounded-full"></span>
+                        <span><strong>Higher engagement</strong> - Complete listings build buyer confidence</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-green-700 mt-2 italic">💡 Select amenities first, then let AI create your perfect description!</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mb-4">
+                <AmenitiesSelector
+                  value={form.amenities || []}
+                  onChange={(amenities) => {
+                    setForm({
+                      ...form,
+                      amenities
+                    });
+                  }}
+                />
+              </div>
+              <CompletionIncentive 
+                fieldName="amenities"
+                fieldType="amenities" 
+                isCompleted={Array.isArray(form.amenities) && form.amenities.length > 0}
+                userType="agent"
               />
             </div>
-            <CompletionIncentive 
-              fieldName="amenities"
-              fieldType="amenities" 
-              isCompleted={Array.isArray(form.amenities) && form.amenities.length > 0}
-              userType="agent"
-            />
+            
+            {/* Save & Continue button (only show for current section) */}
+            {currentSection === 3 && (
+              <div className="mt-6">
+                <button
+                  type="button"
+                  onClick={() => handleSaveGate(3)}
+                  disabled={isSavingGate}
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                >
+                  {isSavingGate ? (
+                    <>
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      Saving Progress...
+                    </>
+                  ) : (
+                    <>
+                      💾 Save & Continue to Photos
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* 4.5. COMMERCIAL FEATURES (Commercial Properties Only) */}
@@ -1399,128 +1837,236 @@ export default function CreatePropertyPage() {
             </div>
           </div>
 
-          {/* 7. LOCATION DETAILS (Specific address info) */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-pink-500">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              📍 Location Details
-            </h3>
-            <p className="text-sm text-gray-600 mb-4">Country and region are selected above. Add specific location details below:</p>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Specific Area/District</label>
-                <input 
-                  name="city" 
-                  type="text" 
-                  placeholder="e.g., Kitty, Campbellville, New Amsterdam" 
-                  value={form.city} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Neighborhood/Street (Optional)</label>
-                <input 
-                  name="neighborhood" 
-                  type="text" 
-                  placeholder="e.g., Main Street, Sheriff Street" 
-                  value={form.neighborhood} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500" 
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* 8. CONTACT INFORMATION */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-emerald-500">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              📞 Contact Information
-            </h3>
-            <div className="bg-blue-50 p-4 rounded-lg mb-6">
-              <h4 className="font-medium text-blue-900 mb-2">How buyers will contact you</h4>
-              <p className="text-sm text-blue-800">
-                Interested buyers will be able to contact you through WhatsApp. Your contact details will only be shown to serious inquiries.
-              </p>
+          {/* Section 4: Photos & Additional Details */}
+          <div className={`
+            relative bg-white p-6 rounded-lg shadow-sm mb-6
+            ${currentSection >= 4 ? 'border-l-4 border-blue-500' : 'border-l-4 border-gray-300'}
+          `}>
+            {/* Lock overlay for locked sections */}
+            {!isSectionUnlocked(4) && (
+              <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
+                <div className="text-center p-6">
+                  <div className="text-5xl mb-3">🔒</div>
+                  <p className="font-semibold text-gray-700 text-lg">Section Locked</p>
+                  <p className="text-gray-600 text-sm mt-2">
+                    Complete and save the previous section to unlock
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Section header */}
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold flex items-center gap-2">
+                📸 Photos & Additional Details
+              </h3>
+              {completedSections.includes(4) && (
+                <span className="text-green-600 text-sm font-semibold flex items-center gap-1">
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                  </svg>
+                  Saved
+                </span>
+              )}
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                WhatsApp Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                name="owner_whatsapp"
-                value={form.owner_whatsapp}
-                onChange={handleChange}
-                placeholder="+592-XXX-XXXX"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
+
+            {/* Property Images */}
+            <div className="mb-6">
+              <h4 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
+                📸 Property Images
+              </h4>
+              <p className="text-gray-600 mb-6">Upload high-quality photos to attract more buyers. First image will be the main photo.</p>
+              <EnhancedImageUpload
+                images={images}
+                setImages={handleImagesChange}
+                maxImages={10}
               />
-              <p className="text-sm text-gray-500 mt-1">
-                <strong>Required:</strong> Include country code (+592 for Guyana). Most customers prefer WhatsApp for instant contact.
-              </p>
-              <div className="bg-green-50 p-3 rounded mt-2">
-                <p className="text-sm text-green-800">
-                  <strong>💬 Why WhatsApp?</strong> 90% of property inquiries in Guyana happen via WhatsApp. This ensures you get contacted quickly by serious buyers.
+            </div>
+
+            {/* Contact Information */}
+            <div className="mb-4">
+              <h4 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
+                📞 Contact Information
+              </h4>
+              <div className="bg-blue-50 p-4 rounded-lg mb-6">
+                <h4 className="font-medium text-blue-900 mb-2">How buyers will contact you</h4>
+                <p className="text-sm text-blue-800">
+                  Interested buyers will be able to contact you through WhatsApp. Your contact details will only be shown to serious inquiries.
                 </p>
               </div>
-            </div>
-          </div>
-
-          {/* 9. PROPERTY IMAGES (Visual proof) */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-yellow-500">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              📸 Property Images
-            </h3>
-            <p className="text-gray-600 mb-6">Upload high-quality photos to attract more buyers. First image will be the main photo.</p>
-            <EnhancedImageUpload
-              images={images}
-              setImages={handleImagesChange}
-              maxImages={10}
-            />
-          </div>
-
-          {/* Error Display */}
-          {error && !success && (
-            <div className="bg-red-50 border-2 border-red-200 p-6 rounded-xl">
-              <div className="flex items-center gap-3">
-                <span className="text-red-500 text-2xl">⚠️</span>
-                <div className="text-red-800 font-medium">{error}</div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  WhatsApp Number <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="tel"
+                  name="owner_whatsapp"
+                  value={form.owner_whatsapp}
+                  onChange={handleChange}
+                  placeholder="+592-XXX-XXXX"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  <strong>Required:</strong> Include country code (+592 for Guyana). Most customers prefer WhatsApp for instant contact.
+                </p>
+                <div className="bg-green-50 p-3 rounded mt-2">
+                  <p className="text-sm text-green-800">
+                    <strong>💬 Why WhatsApp?</strong> 90% of property inquiries in Guyana happen via WhatsApp. This ensures you get contacted quickly by serious buyers.
+                  </p>
+                </div>
               </div>
             </div>
-          )}
-          
-          {/* Submit Button - Sticky at bottom for mobile */}
-          {!success && (
-            <div className="sticky bottom-0 bg-gradient-to-t from-white via-white to-transparent pt-6 mt-8 -mx-8 px-8 pb-8">
-              <div className="flex flex-col sm:flex-row gap-3">
+            
+            {/* Save & Continue button (only show for current section) */}
+            {currentSection === 4 && (
+              <div className="mt-6">
                 <button
                   type="button"
-                  onClick={handleManualSave}
-                  className="sm:w-auto px-8 py-4 bg-gray-100 hover:bg-gray-200 text-gray-800 text-lg font-semibold rounded-xl border-2 border-gray-300 transition-all duration-200 flex items-center justify-center gap-2"
+                  onClick={() => handleSaveGate(4)}
+                  disabled={isSavingGate}
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                 >
-                  <span>💾</span>
-                  Save as Draft
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={loading} 
-                  className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-lg py-4 rounded-xl font-bold shadow-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105"
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <span className="animate-spin">⏳</span>
-                      Submitting Property...
-                    </span>
+                  {isSavingGate ? (
+                    <>
+                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      Saving Progress...
+                    </>
                   ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      🚀 Submit Property for Review
-                    </span>
+                    <>
+                      💾 Save & Continue to Review
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </>
                   )}
                 </button>
               </div>
-              <p className="text-center text-sm text-gray-700 mt-3">
-                Your property will be reviewed by our team before going live
-              </p>
+            )}
+          </div>
+
+          {/* Section 5: Review & Submit */}
+          {!success && (
+            <div className={`
+              relative bg-white p-6 rounded-lg shadow-sm mb-6
+              ${currentSection >= 5 ? 'border-l-4 border-blue-500' : 'border-l-4 border-gray-300'}
+            `}>
+              {/* Lock overlay */}
+              {!isSectionUnlocked(5) && (
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
+                  <div className="text-center p-6">
+                    <div className="text-5xl mb-3">🔒</div>
+                    <p className="font-semibold text-gray-700 text-lg">Section Locked</p>
+                    <p className="text-gray-600 text-sm mt-2">
+                      Complete and save the previous section to unlock
+                    </p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Section header */}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold flex items-center gap-2">
+                  ✅ Review & Submit
+                </h3>
+                {completedSections.includes(5) && (
+                  <span className="text-green-600 text-sm font-semibold flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"></path>
+                    </svg>
+                    Saved
+                  </span>
+                )}
+              </div>
+              
+              {/* Review Summary */}
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <p className="text-sm text-blue-800">
+                    📋 Please review your property details before submitting. You can go back to any section to make changes.
+                  </p>
+                </div>
+                
+                {/* Summary cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-700 mb-2">Basic Information</h4>
+                    <p className="text-sm text-gray-600">Title: {form.title || 'Not set'}</p>
+                    <p className="text-sm text-gray-600">Price: {form.price ? `${currencySymbol}${form.price}` : 'Not set'}</p>
+                    <p className="text-sm text-gray-600">Type: {form.property_type || 'Not set'}</p>
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-700 mb-2">Property Details</h4>
+                    <p className="text-sm text-gray-600">Beds: {form.bedrooms || 'Not set'}</p>
+                    <p className="text-sm text-gray-600">Baths: {form.bathrooms || 'Not set'}</p>
+                    <p className="text-sm text-gray-600">Size: {form.house_size_value || 'Not set'} {form.house_size_unit}</p>
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-700 mb-2">Location</h4>
+                    <p className="text-sm text-gray-600">Region: {form.region || 'Not set'}</p>
+                    <p className="text-sm text-gray-600">City: {form.city || 'Not set'}</p>
+                    <p className="text-sm text-gray-600">Neighborhood: {form.neighborhood || 'Not set'}</p>
+                  </div>
+                  
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-700 mb-2">Media & Contact</h4>
+                    <p className="text-sm text-gray-600">Photos: {images?.length || 0} uploaded</p>
+                    <p className="text-sm text-gray-600">WhatsApp: {form.owner_whatsapp || 'Not set'}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Submit Section - Only show when at Section 5 */}
+              {currentSection === 5 && (
+                <div className="mt-6 space-y-4">
+                  {/* Error display */}
+                  {error && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                      <div className="flex items-start">
+                        <svg className="w-5 h-5 text-red-500 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                        <p className="text-sm text-red-700">{error}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Submit buttons */}
+                  <div className="flex gap-4">
+                    <button
+                      type="button"
+                      onClick={handleManualSave}
+                      disabled={loading || isSavingGate}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+                    >
+                      📝 Save as Draft
+                    </button>
+                    
+                    <button
+                      type="submit"
+                      disabled={loading || isSavingGate}
+                      className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                    >
+                      {loading ? (
+                        <>
+                          <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
+                          Submitting...
+                        </>
+                      ) : (
+                        <>
+                          🚀 Submit for Review
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-center text-sm text-gray-700 mt-3">
+                    Your property will be reviewed by our team before going live
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </form>
