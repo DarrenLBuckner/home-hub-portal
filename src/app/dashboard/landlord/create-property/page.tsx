@@ -228,20 +228,12 @@ export default function CreateLandlordProperty() {
       return;
     }
 
-    // Prepare images for upload - convert File objects to base64
-    const imagesForUpload = await Promise.all(
-      form.images.map(async (file: File) => {
-        return new Promise<{name: string, type: string, data: string}>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve({
-            name: file.name,
-            type: file.type,
-            data: reader.result as string, // Already in data: URL format
-          });
-          reader.readAsDataURL(file);
-        });
-      })
-    );
+    // Upload images directly to Supabase Storage (bypasses API payload limits)
+    console.log('📤 Uploading images directly to Supabase Storage...');
+    const { uploadImagesToSupabase } = await import('@/lib/supabaseImageUpload');
+    const uploadedImages = await uploadImagesToSupabase(form.images, userId);
+    const imageUrls = uploadedImages.map(img => img.url);
+    console.log(`✅ ${imageUrls.length} images uploaded successfully`);
 
     // Store rental property in DB via API
     try {

@@ -359,20 +359,15 @@ export default function EditAgentProperty() {
         throw new Error('Authentication required');
       }
 
-      // Convert images to proper format for API
-      const imagesForUpload = await Promise.all(
-        images.map(async (file: File) => {
-          return new Promise<{name: string, type: string, data: string}>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve({
-              name: file.name,
-              type: file.type,
-              data: reader.result as string, // Already in data: URL format
-            });
-            reader.readAsDataURL(file);
-          });
-        })
-      );
+      // Upload new images directly to Supabase Storage (if any)
+      let imageUrls: string[] = [];
+      if (images.length > 0) {
+        console.log('📤 Uploading new images directly to Supabase Storage...');
+        const { uploadImagesToSupabase } = await import('@/lib/supabaseImageUpload');
+        const uploadedImages = await uploadImagesToSupabase(images, user.id);
+        imageUrls = uploadedImages.map(img => img.url);
+        console.log(`✅ ${imageUrls.length} new images uploaded`);
+      }
 
       // Prepare property data for update - FIX: Include all necessary fields
       const propertyData = {
@@ -403,7 +398,7 @@ export default function EditAgentProperty() {
         updated_at: new Date().toISOString(),
       };
 
-      // Update property via API - FIX: Send properly formatted images
+      // Update property via API - send image URLs
       const response = await fetch(`/api/properties/update/${propertyId}`, {
         method: 'PUT',
         headers: {
@@ -411,7 +406,7 @@ export default function EditAgentProperty() {
         },
         body: JSON.stringify({
           ...propertyData,
-          images: imagesForUpload // FIX: Send formatted images, not raw File objects
+          imageUrls: imageUrls // Send URLs of newly uploaded images
         }),
       });
 

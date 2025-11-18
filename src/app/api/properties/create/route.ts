@@ -3,6 +3,9 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
 export const runtime = 'nodejs'; // avoid Edge runtime issues
+export const maxDuration = 60; // Allow up to 60 seconds for image processing
+// Note: Vercel free tier has 4.5MB body limit, Pro has 4.5MB, Enterprise can go higher
+// We handle this by compressing images on client side before upload
 
 export async function POST(req: NextRequest) {
   try {
@@ -301,100 +304,94 @@ export async function POST(req: NextRequest) {
 
     }
 
-    // Enforce image limits (15 for rental, 20 for FSBO) - skip for drafts
-    if (!isDraftSave && body.images && body.images.length > 0) {
-      const maxImages = isRental ? 15 : 20;
-      if (body.images.length > maxImages) {
-        return NextResponse.json({ error: `Image limit exceeded (${maxImages} allowed)` }, { status: 400 });
-      }
-    }
+    // Handle image URLs (new direct upload method) or base64 images (legacy)
+    let imageUrls: string[] = [];
     
-    // Require at least one image for full submissions, optional for drafts
-    if (!isDraftSave && (!body.images || body.images.length < 1)) {
+    if (body.imageUrls && Array.isArray(body.imageUrls)) {
+      // New method: Images already uploaded to Supabase Storage
+      console.log(`✅ Using pre-uploaded images: ${body.imageUrls.length} URLs`);
+      imageUrls = body.imageUrls;
+      
+      // Enforce image limits
+      if (!isDraftSave) {
+        const maxImages = isRental ? 15 : 20;
+        if (imageUrls.length > maxImages) {
+          return NextResponse.json({ error: `Image limit exceeded (${maxImages} allowed)` }, { status: 400 });
+        }
+        if (imageUrls.length < 1) {
+          return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
+        }
+      }
+    } else if (body.images && Array.isArray(body.images)) {
+      // Legacy method: Base64 images that need to be uploaded
+      console.log(`📤 Uploading ${body.images.length} base64 images...`);
+      
+      // Enforce image limits
+      if (!isDraftSave) {
+        const maxImages = isRental ? 15 : 20;
+        if (body.images.length > maxImages) {
+          return NextResponse.json({ error: `Image limit exceeded (${maxImages} allowed)` }, { status: 400 });
+        }
+        if (body.images.length < 1) {
+          return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
+        }
+      }
+
+      // Upload images to Supabase Storage
+      for (let i = 0; i < body.images.length; i++) {
+        const file = body.images[i];
+        try {
+          // Convert file data - handle different formats
+          let fileBuffer: Buffer;
+          if (typeof file.data === 'string') {
+            // Handle base64 data URL (data:image/jpeg;base64,...)
+            const base64Data = file.data.includes(',') ? file.data.split(',')[1] : file.data;
+            
+            // Validate base64 size
+            const estimatedSize = (base64Data.length * 3) / 4;
+            if (estimatedSize > 15 * 1024 * 1024) {
+              throw new Error(`Image too large: ${Math.round(estimatedSize / 1024 / 1024)}MB (15MB max)`);
+            }
+            
+            fileBuffer = Buffer.from(base64Data, 'base64');
+          } else {
+            throw new Error(`Unsupported file data format`);
+          }
+
+          const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${i}-${file.name}`;
+          const { data, error } = await supabase.storage
+            .from("property-images")
+            .upload(fileName, fileBuffer, {
+              contentType: file.type,
+              upsert: false,
+            });
+
+          if (error) throw error;
+          if (!data?.path) throw new Error("No file path returned from storage");
+
+          const { data: urlData } = supabase.storage
+            .from("property-images")
+            .getPublicUrl(data.path);
+            
+          if (!urlData?.publicUrl) throw new Error("Failed to get public URL");
+
+          imageUrls.push(urlData.publicUrl);
+        } catch (err) {
+          console.error(`❌ Image upload error for file ${i + 1}:`, err);
+          return NextResponse.json({ 
+            error: `Image upload failed: ${err instanceof Error ? err.message : 'Unknown error'}`
+          }, { status: 500 });
+        }
+      }
+    } else if (!isDraftSave) {
+      // No images provided for full submission
       return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
     }
-    
-    // Ensure images array exists (empty for drafts without images)
-    if (!body.images) {
-      body.images = [];
+
+    // For drafts without images, use empty array
+    if (imageUrls.length === 0 && isDraftSave) {
+      imageUrls = [];
     }
-
-    // Upload images to Supabase Storage
-    const imageUrls: string[] = [];
-    for (let i = 0; i < body.images.length; i++) {
-      const file = body.images[i];
-      try {
-
-        // Convert file data - handle different formats including File objects
-        let fileBuffer: Buffer;
-        if (file.data instanceof File) {
-          // Handle File object - convert to ArrayBuffer first
-          const arrayBuffer = await file.data.arrayBuffer();
-          fileBuffer = Buffer.from(arrayBuffer);
-        } else if (file.data instanceof ArrayBuffer) {
-          fileBuffer = Buffer.from(file.data);
-        } else if (typeof file.data === 'string') {
-          // Handle base64 data URL (data:image/jpeg;base64,...)
-          const base64Data = file.data.includes(',') ? file.data.split(',')[1] : file.data;
-          
-          // Validate base64 size (base64 is ~33% larger than original)
-          const estimatedSize = (base64Data.length * 3) / 4;
-          if (estimatedSize > 15 * 1024 * 1024) { // 15MB limit after base64 conversion
-            throw new Error(`Image too large after conversion: ${Math.round(estimatedSize / 1024 / 1024)}MB (15MB max)`);
-          }
-          
-          fileBuffer = Buffer.from(base64Data, 'base64');
-        } else {
-          console.error('🚨 File data format error:', {
-            fileIndex: i,
-            fileName: file.name,
-            fileType: file.type,
-            dataType: typeof file.data,
-            isUndefined: file.data === undefined,
-            isNull: file.data === null,
-            constructor: file.data?.constructor?.name,
-            fileObject: file
-          });
-          throw new Error(`Unsupported file data format: ${typeof file.data} (constructor: ${file.data?.constructor?.name}). File objects cannot be sent in JSON - convert to base64 or FormData first.`);
-        }
-
-        
-        const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${i}-${file.name}`;
-        const { data, error } = await supabase.storage
-          .from("property-images")
-          .upload(fileName, fileBuffer, {
-            contentType: file.type,
-            upsert: false,
-          });
-
-        if (error) {
-          console.error(`🚨 Storage upload error for ${file.name}:`, error);
-          throw error;
-        }
-          
-        if (!data?.path) {
-          throw new Error("No file path returned from storage");
-        }
-
-        
-        const { data: urlData } = supabase.storage
-          .from("property-images")
-          .getPublicUrl(data.path);
-          
-        if (!urlData?.publicUrl) {
-          throw new Error("Failed to get public URL");
-        }
-
-        imageUrls.push(urlData.publicUrl);
-      } catch (err) {
-        console.error(`❌ Image upload error for file ${i + 1} (${file.name}):`, err);
-        return NextResponse.json({ 
-          error: `Image upload failed for file ${i + 1}: ${err instanceof Error ? err.message : 'Unknown error'}`,
-          fileDetails: {
-            name: file.name,
-            type: file.type,
-            size: file.data ? (typeof file.data === 'string' ? file.data.length : file.data.byteLength || 'unknown') : 'no data'
-          }
         }, { status: 500 });
       }
     }

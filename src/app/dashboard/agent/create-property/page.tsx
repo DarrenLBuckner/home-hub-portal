@@ -558,22 +558,22 @@ export default function CreatePropertyPage() {
       // The API route will handle all authentication server-side with @supabase/ssr
       console.log('🔍 Starting property creation - authentication handled by API route');
 
-      // Prepare images for upload - convert File objects to base64
-      const imagesForUpload = await Promise.all(
-        images.map(async (file: File) => {
-          return new Promise<{name: string, type: string, data: string}>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve({
-              name: file.name,
-              type: file.type,
-              data: reader.result as string, // Already in data: URL format
-            });
-            reader.readAsDataURL(file);
-          });
-        })
-      );
+      // Get current user for image uploads
+      const { data: { user }, error: userErr } = await supabase.auth.getUser();
+      if (userErr || !user) {
+        throw new Error('Authentication required. Please log in again.');
+      }
 
-      // Create property using API route for proper server-side authentication
+      // Upload images directly to Supabase Storage (bypasses API payload limits)
+      console.log('📤 Uploading images directly to Supabase Storage...');
+      const { uploadImagesToSupabase } = await import('@/lib/supabaseImageUpload');
+      const uploadedImages = await uploadImagesToSupabase(images, user.id);
+      
+      // Extract URLs for API
+      const imageUrls = uploadedImages.map(img => img.url);
+      console.log(`✅ ${imageUrls.length} images uploaded successfully`);
+
+      // Create property using API route with image URLs (not base64 data)
       const res = await fetch("/api/properties/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -600,7 +600,7 @@ export default function CreatePropertyPage() {
           status: form.status,
           country: selectedCountry,
           currency: currencyCode,
-          images: imagesForUpload,
+          imageUrls: imageUrls, // Send URLs instead of base64 data
           lot_length: form.lot_length ? Number(form.lot_length) : null,
           lot_width: form.lot_width ? Number(form.lot_width) : null,
           lot_dimension_unit: form.lot_dimension_unit,
