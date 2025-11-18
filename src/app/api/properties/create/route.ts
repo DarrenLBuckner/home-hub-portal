@@ -392,9 +392,6 @@ export async function POST(req: NextRequest) {
     if (imageUrls.length === 0 && isDraftSave) {
       imageUrls = [];
     }
-        }, { status: 500 });
-      }
-    }
 
     // Prepare property data for database - different structure for rental vs sale vs agent
     let propertyData: any;
