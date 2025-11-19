@@ -113,6 +113,7 @@ export default function CreatePropertyPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isSavingManually, setIsSavingManually] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>("GY");
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
@@ -416,18 +417,29 @@ export default function CreatePropertyPage() {
   };
 
   const handleManualSave = async () => {
+    if (isSavingManually) return;
+
     try {
       console.log('💾 Manual save triggered...');
+      setIsSavingManually(true);
       setAutoSaveStatus('saving');
       
-      // Directly call saveDraft with current form data including currency and country
-      const result = await saveDraft({ 
-        ...form, 
+      // Create draft data with current save gate state
+      const draftData = {
+        ...form,
         images,
         currency: currencyCode,
         currency_symbol: currencySymbol,
-        country: selectedCountry
-      }, currentDraftId || undefined);
+        country: selectedCountry,
+        saveGateState: {
+          currentSection,
+          completedSections: Array.from(completedSections), // Ensure it's an array
+          lastGateSaved: Date.now()
+        }
+      };
+      
+      // Save the draft
+      const result = await saveDraft(draftData, currentDraftId || undefined);
       
       if (result.success) {
         setAutoSaveStatus('saved');
@@ -438,8 +450,18 @@ export default function CreatePropertyPage() {
           setCurrentDraftId(result.draftId);
         }
         
-        // Show success feedback
-        alert('✅ Draft saved successfully! You can continue editing or come back later.');
+        // Show success with subtle feedback
+        alert(`✅ Progress Saved - Draft saved successfully. Sections unlocked: ${completedSections.length}`);
+        
+        // Add visual feedback on the save button
+        const saveButton = document.querySelector('.manual-save-button');
+        if (saveButton) {
+          saveButton.classList.add('save-success');
+          setTimeout(() => {
+            saveButton.classList.remove('save-success');
+          }, 1000);
+        }
+        
         console.log('✅ Manual save successful:', result.draftId);
       } else {
         setAutoSaveStatus('error');
@@ -450,6 +472,8 @@ export default function CreatePropertyPage() {
       console.error('❌ Manual save error:', error);
       setAutoSaveStatus('error');
       alert('❌ Error saving draft. Please try again.');
+    } finally {
+      setIsSavingManually(false);
     }
   };
 
@@ -536,9 +560,16 @@ export default function CreatePropertyPage() {
    * Validates, saves draft, unlocks next section
    */
   const handleSaveGate = async (sectionNum: number) => {
+    console.log('🔍 Save gate clicked for section:', sectionNum);
+    console.log('📋 Current form data:', form);
+    console.log('✅ Completed sections:', completedSections);
+    
     // Step 1: Validate current section
     const validation = validateSection(sectionNum);
+    console.log('🔍 Validation result for section', sectionNum, ':', validation);
+    
     if (!validation.valid) {
+      console.error('❌ Validation failed:', validation.error);
       setError(validation.error || 'Please complete all required fields');
       return;
     }
@@ -577,8 +608,33 @@ export default function CreatePropertyPage() {
           setCurrentDraftId(result.draftId);
         }
         
-        // Step 7: Smooth scroll to top of next section
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Step 7: SMOOTH TRANSITION - Not aggressive scrolling!
+        setTimeout(() => {
+          // Find the next section
+          const nextSection = document.getElementById(`section-${sectionNum + 1}`);
+          
+          if (nextSection) {
+            // Get the progress bar height for offset
+            const progressBar = document.querySelector('.progress-indicator');
+            const offset = progressBar ? progressBar.clientHeight + 20 : 100;
+            
+            // Calculate position with nice offset so user sees the section header
+            const elementPosition = nextSection.getBoundingClientRect().top;
+            const offsetPosition = elementPosition + window.pageYOffset - offset;
+            
+            // Smooth scroll with easing
+            window.scrollTo({
+              top: offsetPosition,
+              behavior: 'smooth'
+            });
+            
+            // Add a subtle highlight animation to draw attention
+            nextSection.classList.add('section-highlight');
+            setTimeout(() => {
+              nextSection.classList.remove('section-highlight');
+            }, 2000);
+          }
+        }, 300); // Small delay for save confirmation to register
         
         // Success feedback
         console.log(`✅ Gate ${sectionNum} completed, section ${sectionNum + 1} unlocked`);
@@ -850,7 +906,43 @@ export default function CreatePropertyPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <>
+      <style jsx>{`
+        .section-highlight {
+          animation: highlight-fade 2s ease-out;
+        }
+
+        @keyframes highlight-fade {
+          0% {
+            background-color: rgba(59, 130, 246, 0.1);
+            transform: scale(1.005);
+          }
+          100% {
+            background-color: transparent;
+            transform: scale(1);
+          }
+        }
+        
+        .save-success {
+          animation: save-pulse 1s ease-out;
+        }
+        
+        @keyframes save-pulse {
+          0% {
+            background-color: #10b981;
+            transform: scale(1);
+          }
+          50% {
+            background-color: #059669;
+            transform: scale(1.05);
+          }
+          100% {
+            background-color: #10b981;
+            transform: scale(1);
+          }
+        }
+      `}</style>
+      <div className="max-w-4xl mx-auto p-6">
       <div className="bg-white rounded-xl shadow-lg p-8">
         <h2 className="text-3xl font-bold mb-2 text-gray-900 flex items-center gap-3">
           🏠 Create New Property
@@ -994,10 +1086,12 @@ export default function CreatePropertyPage() {
           )}
 
           {/* 1. BASIC INFO (What & Where) */}
-          <div className={`
-            relative bg-white p-6 rounded-lg shadow-sm mb-6
-            ${currentSection >= 1 ? 'border-l-4 border-blue-500' : 'border-l-4 border-gray-300'}
-          `}>
+          <div 
+            id="section-1"
+            className={`
+              relative bg-white p-6 rounded-lg shadow-sm mb-6 transition-all duration-300 ease-in-out
+              ${currentSection >= 1 ? 'border-l-4 border-blue-500 shadow-md' : 'border-l-4 border-gray-300'}
+            `}>
             {/* Lock overlay for locked sections */}
             {!isSectionUnlocked(1) && (
               <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
@@ -1170,10 +1264,12 @@ export default function CreatePropertyPage() {
           </div>
 
           {/* 2. PROPERTY DETAILS (Price, Type & Specifications) */}
-          <div className={`
-            relative bg-white p-6 rounded-lg shadow-sm mb-6
-            ${currentSection >= 2 ? 'border-l-4 border-green-500' : 'border-l-4 border-gray-300'}
-          `}>
+          <div 
+            id="section-2"
+            className={`
+              relative bg-white p-6 rounded-lg shadow-sm mb-6 transition-all duration-300 ease-in-out
+              ${currentSection >= 2 ? 'border-l-4 border-green-500 shadow-md' : 'border-l-4 border-gray-300'}
+            `}>
             {/* Lock overlay for locked sections */}
             {!isSectionUnlocked(2) && (
               <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
@@ -1407,10 +1503,12 @@ export default function CreatePropertyPage() {
           </div>
 
           {/* Section 3: Location & Amenities */}
-          <div className={`
-            relative bg-white p-6 rounded-lg shadow-sm mb-6
-            ${currentSection >= 3 ? 'border-l-4 border-blue-500' : 'border-l-4 border-gray-300'}
-          `}>
+          <div 
+            id="section-3"
+            className={`
+              relative bg-white p-6 rounded-lg shadow-sm mb-6 transition-all duration-300 ease-in-out
+              ${currentSection >= 3 ? 'border-l-4 border-blue-500 shadow-md' : 'border-l-4 border-gray-300'}
+            `}>
             {/* Lock overlay for locked sections */}
             {!isSectionUnlocked(3) && (
               <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
@@ -1533,20 +1631,31 @@ export default function CreatePropertyPage() {
                   type="button"
                   onClick={() => handleSaveGate(3)}
                   disabled={isSavingGate}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                  className={`
+                    w-full px-6 py-3 rounded-md font-medium
+                    transition-all duration-300 ease-out
+                    transform hover:scale-102 active:scale-98
+                    ${isSavingGate 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl'
+                    }
+                  `}
                 >
                   {isSavingGate ? (
-                    <>
-                      <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full"></div>
-                      Saving Progress...
-                    </>
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Saving...
+                    </span>
                   ) : (
-                    <>
+                    <span className="flex items-center justify-center gap-2">
                       💾 Save & Continue to Photos
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
-                    </>
+                    </span>
                   )}
                 </button>
               </div>
@@ -1859,7 +1968,7 @@ export default function CreatePropertyPage() {
               <button
                 type="button"
                 onClick={handleManualSave}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                className="manual-save-button px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
               >
                 <span>💾</span>
                 Save as Draft
@@ -1869,10 +1978,12 @@ export default function CreatePropertyPage() {
 
 
           {/* Section 4: Photos & Additional Details */}
-          <div className={`
-            relative bg-white p-6 rounded-lg shadow-sm mb-6
-            ${currentSection >= 4 ? 'border-l-4 border-blue-500' : 'border-l-4 border-gray-300'}
-          `}>
+          <div 
+            id="section-4"
+            className={`
+              relative bg-white p-6 rounded-lg shadow-sm mb-6 transition-all duration-300 ease-in-out
+              ${currentSection >= 4 ? 'border-l-4 border-purple-500 shadow-md' : 'border-l-4 border-gray-300'}
+            `}>
             {/* Lock overlay for locked sections */}
             {!isSectionUnlocked(4) && (
               <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
@@ -1978,10 +2089,12 @@ export default function CreatePropertyPage() {
 
           {/* Section 5: Review & Submit */}
           {!success && (
-            <div className={`
-              relative bg-white p-6 rounded-lg shadow-sm mb-6
-              ${currentSection >= 5 ? 'border-l-4 border-blue-500' : 'border-l-4 border-gray-300'}
-            `}>
+            <div 
+              id="section-5"
+              className={`
+                relative bg-white p-6 rounded-lg shadow-sm mb-6 transition-all duration-300 ease-in-out
+                ${currentSection >= 5 ? 'border-l-4 border-green-500 shadow-md' : 'border-l-4 border-gray-300'}
+              `}>
               {/* Lock overlay */}
               {!isSectionUnlocked(5) && (
                 <div className="absolute inset-0 bg-white/90 backdrop-blur-sm rounded-lg flex items-center justify-center z-10">
@@ -2070,7 +2183,7 @@ export default function CreatePropertyPage() {
                       type="button"
                       onClick={handleManualSave}
                       disabled={loading || isSavingGate}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+                      className="manual-save-button flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
                     >
                       📝 Save as Draft
                     </button>
@@ -2184,6 +2297,7 @@ export default function CreatePropertyPage() {
           />
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
