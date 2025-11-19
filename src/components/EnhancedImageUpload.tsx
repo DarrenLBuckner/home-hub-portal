@@ -22,6 +22,8 @@ export default function EnhancedImageUpload({
   const [dragActive, setDragActive] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [compressingCount, setCompressingCount] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const fileInputId = useId();
 
@@ -161,6 +163,10 @@ export default function EnhancedImageUpload({
           console.log(`🔄 Compressing ${largeFiles.length} image(s)...`);
         }
 
+        // Start compression indicator
+        setIsCompressing(true);
+        setCompressingCount(validFiles.length);
+
         // Compress all images
         const compressedFiles = await Promise.all(
           validFiles.map(file => compressImage(file))
@@ -168,9 +174,17 @@ export default function EnhancedImageUpload({
 
         const newImages = [...images, ...compressedFiles];
         setImages(newImages);
+
+        // Complete compression indicator
+        setIsCompressing(false);
+        setCompressingCount(0);
       } catch (error) {
         console.error('Error compressing images:', error);
         alert('Failed to process some images. Please try again.');
+        
+        // Reset compression indicator on error
+        setIsCompressing(false);
+        setCompressingCount(0);
       }
     }
   }, [images, setImages, maxImages, maxSizePerImage, acceptedTypes]);
@@ -322,6 +336,44 @@ export default function EnhancedImageUpload({
               <span className="mr-1">🌍</span>
               Optimized for mobile upload • Low bandwidth friendly
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Progress Indicator */}
+      {Object.keys(uploadProgress).length > 0 && (
+        <div className="space-y-3 mb-4">
+          <h4 className="text-sm font-medium text-gray-700">Upload Progress</h4>
+          {Object.entries(uploadProgress).map(([fileName, progress]) => (
+            <div key={fileName} className="bg-gray-50 rounded-lg p-3">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-700 truncate max-w-[200px]">{fileName}</span>
+                <span className="text-gray-600 font-medium">{progress}%</span>
+              </div>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-green-500 transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Compression Indicator */}
+      {isCompressing && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+            <div>
+              <p className="text-blue-800 font-medium">
+                Optimizing images for faster upload...
+              </p>
+              <p className="text-blue-600 text-sm mt-1">
+                This reduces file sizes by up to 89% for better performance
+              </p>
+            </div>
           </div>
         </div>
       )}

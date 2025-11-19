@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 // Authentication is now handled entirely server-side in the API route
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
@@ -137,6 +137,10 @@ export default function CreatePropertyPage() {
   const [isSavingGate, setIsSavingGate] = useState(false);
   const [lastGateSaved, setLastGateSaved] = useState<number | null>(null);
 
+  // Fix infinite loop - reference tracking for draft loading
+  const isDraftLoaded = useRef(false);
+  const draftLoadAttempted = useRef(false);
+
   // Comprehensive submission system with duplicate prevention
   const propertySubmission = usePropertySubmission({
     onSuccess: () => {
@@ -226,10 +230,12 @@ export default function CreatePropertyPage() {
     checkVideoAccess();
   }, []);
 
-  // Load drafts when auto-save becomes enabled
+  // Load drafts when auto-save becomes enabled - fixed infinite loop
   useEffect(() => {
     const loadDrafts = async () => {
-      if (!autoSaveEnabled) return;
+      if (!autoSaveEnabled || draftLoadAttempted.current) return;
+      
+      draftLoadAttempted.current = true;
       
       try {
         const drafts = await loadUserDrafts();
@@ -245,7 +251,7 @@ export default function CreatePropertyPage() {
     };
     
     loadDrafts();
-  }, [autoSaveEnabled]);
+  }, [autoSaveEnabled]); // Only depend on autoSaveEnabled
 
   // Auto-save hook integration with eligibility-based settings
   const autoSaveSettings = userProfile ? getAutoSaveSettings(userProfile) : { enabled: false, interval: 0, minFieldsRequired: 0 };
@@ -290,13 +296,24 @@ export default function CreatePropertyPage() {
   // Auto-save UI visibility check
   const shouldEnableAutoSave = autoSaveEnabled && userProfile;
 
-  // Draft management functions
+  // Cleanup effect to reset refs on component unmount/remount
+  useEffect(() => {
+    return () => {
+      isDraftLoaded.current = false;
+      draftLoadAttempted.current = false;
+    };
+  }, []); // Empty dependency array - runs once on mount, cleanup on unmount
+
+  // Draft management functions - fixed infinite loop prevention
   const handleLoadDraft = async (draftId: string) => {
     try {
       setLoading(true);
       const draftData = await loadDraft(draftId);
       
-      if (draftData) {
+      if (draftData && !isDraftLoaded.current) {
+        console.log('Applying draft data to form...');
+        isDraftLoaded.current = true;
+        
         // Populate form with draft data
         setForm({
           location: draftData.location || "",
@@ -355,6 +372,13 @@ export default function CreatePropertyPage() {
         }
         if (draftData.currency_symbol) {
           setCurrencySymbol(draftData.currency_symbol);
+        }
+        
+        // Set save gate states if they exist
+        if (draftData.saveGateState) {
+          setCurrentSection(draftData.saveGateState.currentSection || 1);
+          setCompletedSections(draftData.saveGateState.completedSections || []);
+          setLastGateSaved(draftData.saveGateState.lastGateSaved || null);
         }
         
         // Handle images if available
@@ -524,28 +548,34 @@ export default function CreatePropertyPage() {
     setError('');
     
     try {
-      // Step 3: Call existing saveDraft function
-      // Note: Images are excluded - they upload separately during submission
-      const result = await saveDraft({
+      // Step 3: Prepare save data with gate state
+      const newCompletedSections = Array.from(new Set([...completedSections, sectionNum]));
+      const saveData = {
         ...form,
         images: [], // Don't save File objects
         currency: currencyCode,
         currency_symbol: currencySymbol,
-        country: selectedCountry
-      }, currentDraftId || undefined); // Pass existing draft ID to update, not create new
+        country: selectedCountry,
+        saveGateState: {
+          currentSection: sectionNum + 1,
+          completedSections: newCompletedSections,
+          lastGateSaved: Date.now()
+        }
+      };
+      
+      // Step 4: Call existing saveDraft function
+      const result = await saveDraft(saveData, currentDraftId || undefined);
       
       if (result.success) {
-        // Step 4: Mark section as complete
-        setCompletedSections(prev => [...new Set([...prev, sectionNum])]);
+        // Step 5: Update local state
+        setCompletedSections(newCompletedSections);
+        setCurrentSection(sectionNum + 1);
+        setLastGateSaved(Date.now());
         
-        // Step 5: Store draft ID if this is the first save
+        // Step 6: Store draft ID if this is the first save
         if (result.draftId && !currentDraftId) {
           setCurrentDraftId(result.draftId);
         }
-        
-        // Step 6: Unlock and move to next section
-        setCurrentSection(sectionNum + 1);
-        setLastGateSaved(sectionNum);
         
         // Step 7: Smooth scroll to top of next section
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1119,7 +1149,7 @@ export default function CreatePropertyPage() {
                   type="button"
                   onClick={() => handleSaveGate(1)}
                   disabled={isSavingGate}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                  className="btn-mobile w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSavingGate ? (
                     <>
@@ -1271,7 +1301,7 @@ export default function CreatePropertyPage() {
                   type="button"
                   onClick={() => handleSaveGate(2)}
                   disabled={isSavingGate}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                  className="btn-mobile w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSavingGate ? (
                     <>
@@ -1503,7 +1533,7 @@ export default function CreatePropertyPage() {
                   type="button"
                   onClick={() => handleSaveGate(3)}
                   disabled={isSavingGate}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                  className="btn-mobile w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSavingGate ? (
                     <>
@@ -1829,7 +1859,7 @@ export default function CreatePropertyPage() {
               <button
                 type="button"
                 onClick={handleManualSave}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                className="btn-mobile px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
               >
                 <span>💾</span>
                 Save as Draft
@@ -1926,7 +1956,7 @@ export default function CreatePropertyPage() {
                   type="button"
                   onClick={() => handleSaveGate(4)}
                   disabled={isSavingGate}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                  className="btn-mobile w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSavingGate ? (
                     <>
@@ -2040,7 +2070,7 @@ export default function CreatePropertyPage() {
                       type="button"
                       onClick={handleManualSave}
                       disabled={loading || isSavingGate}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+                      className="btn-mobile flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
                     >
                       📝 Save as Draft
                     </button>
@@ -2048,7 +2078,7 @@ export default function CreatePropertyPage() {
                     <button
                       type="submit"
                       disabled={loading || isSavingGate}
-                      className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                      className="btn-mobile flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                     >
                       {loading ? (
                         <>
