@@ -103,7 +103,7 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
               <>
                 <button
                   onClick={prevImage}
-                  className="btn-mobile-icon absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white rounded-full hover:bg-black/70 transition"
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white rounded-full hover:bg-black/70 transition p-3"
                   aria-label="Previous image"
                 >
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +113,7 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
                 
                 <button
                   onClick={nextImage}
-                  className="btn-mobile-icon absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white rounded-full hover:bg-black/70 transition"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white rounded-full hover:bg-black/70 transition p-3"
                   aria-label="Next image"
                 >
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -312,7 +312,7 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
             href={whatsappLink}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-mobile flex items-center justify-center gap-3 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300"
+            className="flex items-center justify-center gap-3 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300"
           >
             <WhatsAppIcon />
             Contact via WhatsApp
@@ -322,7 +322,7 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
             href="https://wa.me/5926001234?text=Hi! I need help contacting the property owner for this listing."
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-mobile flex items-center justify-center gap-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300"
+            className="flex items-center justify-center gap-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300"
           >
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M20.52 3.449c-2.28-1.23-4.99-1.89-7.77-1.89C6.03 1.56.84 6.74.84 12.45c0 2.18.58 4.32 1.68 6.22L0 24l5.42-1.44c1.84.98 3.9 1.49 6.02 1.49 6.72 0 12.18-5.46 12.18-12.18 0-3.25-1.26-6.3-3.55-8.63zm-7.77 18.73c-1.85 0-3.67-.5-5.27-1.44l-.38-.23-3.94 1.05 1.05-3.94-.23-.38c-1.02-1.62-1.56-3.49-1.56-5.41 0-5.6 4.55-10.15 10.15-10.15 2.71 0 5.25 1.05 7.17 2.97 1.92 1.92 2.97 4.46 2.97 7.17 0 5.6-4.55 10.15-10.15 10.15zm5.56-7.59c-.31-.16-1.8-.89-2.08-.99-.27-.11-.47-.16-.67.16-.2.31-.78.99-.96 1.2-.18.2-.36.23-.67.08-.31-.16-1.31-.48-2.49-1.54-.92-.82-1.54-1.84-1.72-2.15-.18-.31-.02-.48.14-.63.14-.14.31-.36.47-.54.16-.18.2-.31.31-.52.11-.2.05-.38-.03-.54-.08-.16-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51-.18-.01-.38-.01-.58-.01-.2 0-.52.08-.79.38-.27.31-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.16.2 2.13 3.25 5.16 4.56.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.8-.74 2.05-1.45.25-.72.25-1.33.18-1.45-.08-.12-.27-.2-.58-.35z"/>
@@ -371,7 +371,7 @@ function ContactCard({
           href={whatsappLink}
           target="_blank"
           rel="noopener noreferrer"
-          className="btn-mobile flex items-center justify-center gap-3 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 mb-4"
+          className="flex items-center justify-center gap-3 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 mb-4"
         >
           <WhatsAppIcon />
           Contact via WhatsApp

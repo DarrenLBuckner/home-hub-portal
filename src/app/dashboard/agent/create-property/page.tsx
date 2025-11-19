@@ -1149,7 +1149,7 @@ export default function CreatePropertyPage() {
                   type="button"
                   onClick={() => handleSaveGate(1)}
                   disabled={isSavingGate}
-                  className="btn-mobile w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSavingGate ? (
                     <>
@@ -1301,7 +1301,7 @@ export default function CreatePropertyPage() {
                   type="button"
                   onClick={() => handleSaveGate(2)}
                   disabled={isSavingGate}
-                  className="btn-mobile w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSavingGate ? (
                     <>
@@ -1533,7 +1533,7 @@ export default function CreatePropertyPage() {
                   type="button"
                   onClick={() => handleSaveGate(3)}
                   disabled={isSavingGate}
-                  className="btn-mobile w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSavingGate ? (
                     <>
@@ -1859,7 +1859,7 @@ export default function CreatePropertyPage() {
               <button
                 type="button"
                 onClick={handleManualSave}
-                className="btn-mobile px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
+                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md transition-all duration-200 transform hover:scale-105 flex items-center gap-2"
               >
                 <span>💾</span>
                 Save as Draft
@@ -1956,7 +1956,7 @@ export default function CreatePropertyPage() {
                   type="button"
                   onClick={() => handleSaveGate(4)}
                   disabled={isSavingGate}
-                  className="btn-mobile w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                 >
                   {isSavingGate ? (
                     <>
@@ -2070,7 +2070,7 @@ export default function CreatePropertyPage() {
                       type="button"
                       onClick={handleManualSave}
                       disabled={loading || isSavingGate}
-                      className="btn-mobile flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold transition-colors"
                     >
                       📝 Save as Draft
                     </button>
@@ -2078,7 +2078,7 @@ export default function CreatePropertyPage() {
                     <button
                       type="submit"
                       disabled={loading || isSavingGate}
-                      className="btn-mobile flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+                      className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
                     >
                       {loading ? (
                         <>
