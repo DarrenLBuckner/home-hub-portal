@@ -9,6 +9,65 @@ interface ProfileImageUploadProps {
   className?: string;
 }
 
+// Image compression utility
+const compressImage = async (file: File, maxWidth = 800, maxHeight = 800, quality = 0.8): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Calculate new dimensions while maintaining aspect ratio
+        if (width > height) {
+          if (width > maxWidth) {
+            height = (height * maxWidth) / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = (width * maxHeight) / height;
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Failed to get canvas context'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error('Failed to compress image'));
+              return;
+            }
+            const compressedFile = new File([blob], file.name, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+  });
+};
+
 export default function ProfileImageUpload({
   currentImageUrl,
   onImageSelect,
@@ -20,18 +79,14 @@ export default function ProfileImageUpload({
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadMode, setUploadMode] = useState<'upload' | 'url'>('upload');
   const [isUploading, setIsUploading] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): string | null => {
     const acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const maxSizeMB = 5;
 
     if (!acceptedTypes.includes(file.type)) {
       return `File type not supported. Please use JPG, PNG, or WebP`;
-    }
-    
-    if (file.size > maxSizeMB * 1024 * 1024) {
-      return `File too large. Maximum size: ${maxSizeMB}MB`;
     }
     
     return null;
@@ -63,18 +118,27 @@ export default function ProfileImageUpload({
       return;
     }
 
-    // Create preview
-    const newPreviewUrl = URL.createObjectURL(file);
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(newPreviewUrl);
-    setUploadedFile(file);
-
-    // Upload to storage
+    setIsCompressing(true);
     setIsUploading(true);
+    
     try {
-      const uploadedUrl = await uploadImageToStorage(file);
+      // Compress the image before upload
+      console.log('Original file size:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
+      const compressedFile = await compressImage(file);
+      console.log('Compressed file size:', (compressedFile.size / 1024 / 1024).toFixed(2) + 'MB');
+      
+      setIsCompressing(false);
+
+      // Create preview from compressed file
+      const newPreviewUrl = URL.createObjectURL(compressedFile);
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(newPreviewUrl);
+      setUploadedFile(compressedFile);
+
+      // Upload compressed file to storage
+      const uploadedUrl = await uploadImageToStorage(compressedFile);
       onImageUrlChange(uploadedUrl);
-      onImageSelect(file);
+      onImageSelect(compressedFile);
     } catch (error) {
       console.error('Upload failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Upload failed. Please try again.';
@@ -82,8 +146,8 @@ export default function ProfileImageUpload({
       // Reset on error
       setPreviewUrl(null);
       setUploadedFile(null);
-      URL.revokeObjectURL(newPreviewUrl);
     } finally {
+      setIsCompressing(false);
       setIsUploading(false);
     }
   }, [previewUrl, onImageSelect, onImageUrlChange]);
@@ -195,7 +259,9 @@ export default function ProfileImageUpload({
                 {isUploading ? (
                   <div className="flex flex-col items-center space-y-2">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-                    <p className="text-sm text-gray-600">Uploading...</p>
+                    <p className="text-sm text-gray-600">
+                      {isCompressing ? 'Compressing image...' : 'Uploading...'}
+                    </p>
                   </div>
                 ) : (
                   <>
@@ -204,7 +270,7 @@ export default function ProfileImageUpload({
                       Click to upload or drag and drop
                     </p>
                     <p className="text-xs text-gray-500 mb-3">
-                      JPG, PNG or WebP (max 5MB)
+                      JPG, PNG or WebP • Photos are automatically compressed for fast loading
                     </p>
                     <button
                       type="button"
