@@ -65,9 +65,9 @@ export default function PropertiesListClient({
         
         console.log(`🔍 Fetching properties - Site: ${siteId}, Listing Type: ${listingType}, Country Code: ${countryCode}`);
         
-        // Fetch properties from API
+        // Fetch properties from API - only residential properties for rent/sale pages
         const response = await fetch(
-          `/api/public/properties?site=${siteId}&listing_type=${listingType}&limit=100&bust=${Date.now()}`
+          `/api/public/properties?site=${siteId}&listing_type=${listingType}&property_category=residential&limit=100&bust=${Date.now()}`
         );
         
         if (!response.ok) {

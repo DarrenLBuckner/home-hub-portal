@@ -58,56 +58,11 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
           onChange={(e) => handleChange('property_type', e.target.value)}
           className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white text-base"
         >
-          <optgroup label="🏘️ Residential Properties">
-            <option value="Single Family Home">Single Family Home</option>
-            <option value="Duplex">Duplex (Two-Family Home)</option>
-            <option value="Triplex">Triplex (Three-Family Home)</option>
-            <option value="Multi-Family Home">Multi-Family Home (4+ units)</option>
-            <option value="Apartment">Apartment/Flat</option>
-            <option value="Condominium">Condominium</option>
-            <option value="Townhouse">Townhouse</option>
-            <option value="Villa">Villa</option>
-            <option value="Bungalow">Bungalow</option>
-            <option value="Cottage">Cottage</option>
-          </optgroup>
-          
-          <optgroup label="🌾 Agricultural & Farmland">
-            <option value="Rice Farm">Rice Farm/Paddy Land</option>
-            <option value="Sugar Estate">Sugar Estate/Plantation</option>
-            <option value="Cattle Ranch">Cattle Ranch/Pasture Land</option>
-            <option value="Poultry Farm">Poultry Farm</option>
-            <option value="Fruit Orchard">Fruit Orchard/Grove</option>
-            <option value="Vegetable Farm">Vegetable Farm/Market Garden</option>
-            <option value="Fish Farm">Fish Farm/Aquaculture</option>
-            <option value="Mixed Farming">Mixed Farming Operation</option>
-            <option value="Agricultural Land">General Agricultural Land</option>
-            <option value="Farmland with House">Farmland with Residence</option>
-          </optgroup>
-          
-          <optgroup label="🏗️ Land & Development">
-            <option value="Residential Land">Residential Land/Lot</option>
-            <option value="Commercial Land">Commercial Land</option>
-            <option value="Industrial Land">Industrial Land</option>
-            <option value="Mixed-Use Land">Mixed-Use Development Land</option>
-            <option value="Waterfront Land">Waterfront/Coastal Land</option>
-          </optgroup>
-          
-          <optgroup label="🏢 Commercial Properties">
-            <option value="Office Building">Office Building</option>
-            <option value="Retail Space">Retail/Shop Space</option>
-            <option value="Restaurant">Restaurant/Food Service</option>
-            <option value="Warehouse">Warehouse/Storage</option>
-            <option value="Industrial Building">Industrial Building</option>
-            <option value="Mixed-Use Building">Mixed-Use Building</option>
-            <option value="Hotel/Guesthouse">Hotel/Guesthouse</option>
-          </optgroup>
-          
-          <optgroup label="🏖️ Special Properties">
-            <option value="Waterfront Property">Waterfront Property</option>
-            <option value="Vacation Home">Vacation/Holiday Home</option>
-            <option value="Investment Property">Investment Property</option>
-            <option value="Fixer-Upper">Fixer-Upper/Renovation Project</option>
-          </optgroup>
+          <option value="">Select Property Type</option>
+          <option value="Single Family Home">🏠 Single Family Home</option>
+          <option value="Duplex">🏘️ Duplex</option>
+          <option value="Apartment">🏢 Apartment/Flat</option>
+          <option value="Residential Land">🌿 Residential Land/Lot</option>
         </select>
         <p className="text-sm text-gray-500 mt-1">
           Choose the category that best describes your property
