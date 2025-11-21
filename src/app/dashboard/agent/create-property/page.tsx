@@ -510,12 +510,21 @@ export default function CreatePropertyPage() {
         return { valid: true };
       
       case 2: // Property Details
-        if (!form.bedrooms || isNaN(Number(form.bedrooms))) {
-          return { valid: false, error: 'Number of bedrooms is required' };
+        // Bedrooms/bathrooms required for residential properties (except land)
+        // Optional for commercial properties (some have them, some don't)
+        const isLand = form.property_type === 'Land' || form.property_type === 'Commercial Land';
+        const isResidential = form.property_category === 'residential';
+        
+        // Only require bedrooms/bathrooms for residential non-land properties
+        if (isResidential && !isLand) {
+          if (!form.bedrooms || isNaN(Number(form.bedrooms))) {
+            return { valid: false, error: 'Number of bedrooms is required for residential properties' };
+          }
+          if (!form.bathrooms || isNaN(Number(form.bathrooms))) {
+            return { valid: false, error: 'Number of bathrooms is required for residential properties' };
+          }
         }
-        if (!form.bathrooms || isNaN(Number(form.bathrooms))) {
-          return { valid: false, error: 'Number of bathrooms is required' };
-        }
+        
         // At least one size measurement required
         if (!form.house_size_value && !form.land_size_value) {
           return { valid: false, error: 'House size or land size is required' };
@@ -542,8 +551,14 @@ export default function CreatePropertyPage() {
       
       case 5: // Review & Submit
         // Final validation - all previous sections should be complete
+        const isLandFinal = form.property_type === 'Land' || form.property_type === 'Commercial Land';
+        const isResidentialFinal = form.property_category === 'residential';
+        
+        // Bedrooms/bathrooms only required for residential non-land
+        const bedsAndBathsValid = (isLandFinal || !isResidentialFinal) || (form.bedrooms && form.bathrooms);
+        
         const allRequiredFieldsValid = form.title && form.description && form.price && 
-                                     form.property_type && form.bedrooms && form.bathrooms &&
+                                     form.property_type && bedsAndBathsValid &&
                                      form.region && form.city && images.length > 0 && form.owner_whatsapp;
         if (!allRequiredFieldsValid) {
           return { valid: false, error: 'Please complete all required fields in previous sections' };
@@ -660,11 +675,14 @@ export default function CreatePropertyPage() {
       if (name === 'property_category') {
         // Reset property_type when category changes
         const newPropertyType = value === 'commercial' ? 'Office' : 'House';
+        // Reset listing_type to prevent commercial properties from having 'rent'
+        const newListingType = value === 'commercial' && form.listing_type === 'rent' ? 'lease' : form.listing_type;
         setForm({ 
           ...form, 
           [name]: value as 'residential' | 'commercial',
           property_type: newPropertyType,
-          commercial_type: value === 'commercial' ? newPropertyType : ''
+          commercial_type: value === 'commercial' ? newPropertyType : '',
+          listing_type: newListingType
         });
       } else if (name === 'property_type' && form.property_category === 'commercial') {
         // Auto-sync property_type to commercial_type for commercial properties
@@ -767,7 +785,7 @@ export default function CreatePropertyPage() {
     }
     
     if (!form.listing_type) {
-      throw new Error('Please select a Listing Type (For Sale or For Rent).');
+      throw new Error('Please select a Listing Type.');
     }
 
     // Commercial property specific validation
@@ -1227,7 +1245,9 @@ export default function CreatePropertyPage() {
                     className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
                   >
                     <option value="sale">🏠 For Sale</option>
-                    <option value="rent">🏡 For Rent</option>
+                    {form.property_category === 'residential' && (
+                      <option value="rent">🏡 For Rent</option>
+                    )}
                     {form.property_category === 'commercial' && (
                       <option value="lease">🏢 For Lease</option>
                     )}
@@ -1302,22 +1322,30 @@ export default function CreatePropertyPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms{form.property_category === 'commercial' ? ' (Optional)' : ''}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bedrooms
+                    {(form.property_category === 'commercial' || form.property_type === 'Land') && ' (Optional)'}
+                    {form.property_category === 'residential' && form.property_type !== 'Land' && ' *'}
+                  </label>
                   <input 
                     name="bedrooms" 
                     type="number" 
-                    placeholder="0" 
+                    placeholder={form.property_type === 'Land' || form.property_type === 'Commercial Land' ? 'N/A for land' : '0'} 
                     value={form.bedrooms} 
                     onChange={handleChange} 
                     className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms{form.property_category === 'commercial' ? ' (Optional)' : ''}</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bathrooms
+                    {(form.property_category === 'commercial' || form.property_type === 'Land') && ' (Optional)'}
+                    {form.property_category === 'residential' && form.property_type !== 'Land' && ' *'}
+                  </label>
                   <input 
                     name="bathrooms" 
                     type="number" 
-                    placeholder="0" 
+                    placeholder={form.property_type === 'Land' || form.property_type === 'Commercial Land' ? 'N/A for land' : '0'} 
                     value={form.bathrooms} 
                     onChange={handleChange} 
                     className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 

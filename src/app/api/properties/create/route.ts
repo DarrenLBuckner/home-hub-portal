@@ -146,10 +146,19 @@ export async function POST(req: NextRequest) {
     
     // Validate required fields - more lenient for drafts
     if (!isDraftSave) {
+      // Base required fields for full submission
       let requiredFields = [
         "title", "description", "price", "property_type",
-        "listing_type", "bedrooms", "bathrooms", "region", "city"
+        "listing_type", "region", "city"
       ];
+      
+      // Bedrooms/bathrooms only required for residential non-land properties
+      const isLand = body.property_type === 'Land' || body.property_type === 'Commercial Land';
+      const isResidential = body.property_category === 'residential';
+      
+      if (isResidential && !isLand) {
+        requiredFields.push("bedrooms", "bathrooms");
+      }
       
       // Add user-type specific required fields
       if (userType === 'fsbo') {

@@ -584,7 +584,9 @@ export default function EditAgentProperty() {
                   className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
                 >
                   <option value="sale">🏠 For Sale</option>
-                  <option value="rent">🏡 For Rent</option>
+                  {form.property_category === 'residential' && (
+                    <option value="rent">🏡 For Rent</option>
+                  )}
                   {form.property_category === 'commercial' && (
                     <option value="lease">🏢 For Lease</option>
                   )}
