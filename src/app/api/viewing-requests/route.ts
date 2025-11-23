@@ -3,8 +3,9 @@ import { createServiceRoleClient } from '@/lib/supabase/server';
 import { sendViewingRequestEmails, SharedEmailParams } from '@/lib/email/viewing-requests';
 
 // CORS headers for cross-origin requests
+// Allow all origins to support multiple country domains (guyanahomehub.com, jamaicahomehub.com, etc.)
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://guyanahomehub.com',
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
@@ -189,8 +190,11 @@ export async function POST(request: NextRequest) {
 
     console.log('Viewing request created with ID:', viewingRequest.id);
 
-    // Send emails using the new SharedEmailParams interface
-    let emailResults = {
+    // Send emails - initialize with proper typing
+    let emailResults: {
+      visitorConfirmation: { success: boolean; error?: string };
+      agentNotification: { success: boolean; error?: string };
+    } = {
       visitorConfirmation: { success: false, error: 'Not attempted' },
       agentNotification: { success: false, error: 'Not attempted' }
     };
