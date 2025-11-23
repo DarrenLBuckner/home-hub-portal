@@ -95,17 +95,30 @@ export async function sendVisitorConfirmation(params: VisitorConfirmationParams)
       },
     });
 
-    if (result.data) {
+    // Check for errors first
+    if (result.error) {
+      console.error('Resend API error (visitor):', result.error);
+      return {
+        success: false,
+        error: result.error.message || 'Failed to send email',
+      };
+    }
+
+    // Then check for data
+    if (result.data && result.data.id) {
       return {
         success: true,
         emailId: result.data.id,
       };
-    } else {
-      return {
-        success: false,
-        error: 'Failed to send email - no data returned',
-      };
     }
+
+    // Fallback if neither error nor data
+    console.error('Unexpected Resend response (visitor):', result);
+    return {
+      success: false,
+      error: 'Unexpected response from email service',
+    };
+
   } catch (error) {
     console.error('Error sending visitor confirmation email:', error);
     return {
@@ -148,17 +161,30 @@ export async function sendAgentNotification(params: AgentNotificationParams): Pr
       },
     });
 
-    if (result.data) {
+    // Check for errors first
+    if (result.error) {
+      console.error('Resend API error (agent):', result.error);
+      return {
+        success: false,
+        error: result.error.message || 'Failed to send email',
+      };
+    }
+
+    // Then check for data
+    if (result.data && result.data.id) {
       return {
         success: true,
         emailId: result.data.id,
       };
-    } else {
-      return {
-        success: false,
-        error: 'Failed to send email - no data returned',
-      };
     }
+
+    // Fallback if neither error nor data
+    console.error('Unexpected Resend response (agent):', result);
+    return {
+      success: false,
+      error: 'Unexpected response from email service',
+    };
+
   } catch (error) {
     console.error('Error sending agent notification email:', error);
     return {
