@@ -297,29 +297,29 @@ function RegistrationContent() {
                     <div
                       key={plan.id}
                       onClick={() => setForm({ ...form, selected_plan: plan.id })}
-                      className={`relative flex flex-col h-full min-h-[280px] lg:min-h-[360px] p-4 lg:p-6 border-2 rounded-xl cursor-pointer transition-all shadow-lg hover:shadow-xl touch-manipulation ${
+                      className={`relative flex flex-col h-full min-h-[200px] lg:min-h-[360px] p-3 lg:p-6 border-2 rounded-xl cursor-pointer transition-all shadow-lg hover:shadow-xl touch-manipulation ${
                         isSelected 
                           ? 'border-blue-600 bg-blue-50' 
                           : 'border-gray-200 bg-white'
                       }`}
                     >
                       {plan.is_popular && (
-                        <div className="absolute -top-2 left-4 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                        <div className="absolute -top-2 left-3 bg-blue-600 text-white text-xs px-2 py-0.5 rounded">
                           Recommended
                         </div>
                       )}
                       
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-gray-900 text-lg lg:text-xl">{plan.plan_name}</h3>
-                        <div className="text-right">
-                          <div className="text-lg lg:text-2xl font-bold text-gray-900">
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <h3 className="font-bold text-gray-900 text-base lg:text-xl">{plan.plan_name}</h3>
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-base lg:text-2xl font-bold text-gray-900">
                             {plan.price_formatted}
                           </div>
-                          <div className="text-xs lg:text-sm text-gray-500">/{plan.plan_type}</div>
+                          <div className="text-xs text-gray-500">/{plan.plan_type}</div>
                         </div>
                       </div>
                       
-                      <div className="space-y-1 text-sm lg:text-base text-gray-600 flex-grow min-h-[80px] lg:min-h-[120px]">
+                      <div className="space-y-0.5 lg:space-y-1 text-xs lg:text-base text-gray-600 flex-grow">
                         <div>• {plan.max_properties ? `${plan.max_properties} ${plan.max_properties === 1 ? 'property' : 'properties'}` : 'Unlimited properties'}</div>
                         {plan.featured_listings_included > 0 && <div>• {plan.featured_listings_included} featured listings</div>}
                         <div>• {plan.listing_duration_days ? `${plan.listing_duration_days} days duration` : 'Listings never expire'}</div>

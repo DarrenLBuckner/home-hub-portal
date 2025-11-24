@@ -295,36 +295,36 @@ function LandlordRegistrationContent() {
                     <div
                       key={plan.id}
                       onClick={() => setFormData({ ...formData, plan: plan.id })}
-                      className={`relative flex flex-col h-full min-h-[280px] lg:min-h-[360px] p-4 lg:p-6 border-2 rounded-xl cursor-pointer transition-all shadow-lg hover:shadow-xl touch-manipulation ${
+                      className={`relative flex flex-col h-full min-h-[200px] lg:min-h-[360px] p-3 lg:p-6 border-2 rounded-xl cursor-pointer transition-all shadow-lg hover:shadow-xl touch-manipulation ${
                         isSelected 
                           ? 'border-green-600 bg-green-50' 
                           : 'border-gray-200 bg-white'
                       }`}
                     >
                       {plan.is_popular && (
-                        <div className="absolute -top-2 left-4 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                        <div className="absolute -top-2 left-3 bg-green-600 text-white text-xs px-2 py-0.5 rounded">
                           Most Popular
                         </div>
                       )}
                       
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h3 className="font-bold text-gray-900 text-lg lg:text-xl">{plan.plan_name}</h3>
-                          <div className="text-xs lg:text-sm text-gray-500 mt-1">{plan.listing_duration_days} days listing period</div>
+                      <div className="flex justify-between items-start mb-2 gap-2">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 text-base lg:text-xl">{plan.plan_name}</h3>
+                          <div className="text-xs text-gray-500 mt-0.5">{plan.listing_duration_days} days</div>
                         </div>
-                        <div className="text-right">
-                          <div className="text-lg lg:text-2xl font-bold text-gray-900">
+                        <div className="text-right flex-shrink-0">
+                          <div className="text-base lg:text-2xl font-bold text-gray-900">
                             {plan.price_formatted}
                           </div>
                           {plan.plan_type === 'listing' && (
                             <div className="text-xs text-gray-500">
-                              ≈ {pricingCountry?.currency_symbol || ''}${monthlyPrice.toLocaleString()}/month
+                              ≈ {pricingCountry?.currency_symbol || ''}${monthlyPrice.toLocaleString()}/mo
                             </div>
                           )}
                         </div>
                       </div>
                       
-                      <div className="space-y-1 text-sm lg:text-base text-gray-600 flex-grow min-h-[80px] lg:min-h-[120px]">
+                      <div className="space-y-0.5 lg:space-y-1 text-xs lg:text-base text-gray-600 flex-grow">
                         <div>• {plan.max_properties ? `${plan.max_properties} ${plan.max_properties === 1 ? 'property' : 'properties'}` : 'Unlimited properties'}</div>
                         {plan.featured_listings_included > 0 && <div>• {plan.featured_listings_included} featured listings</div>}
                         <div>• {plan.listing_duration_days ? `${plan.listing_duration_days} days duration` : 'Listings never expire'}</div>
@@ -333,7 +333,7 @@ function LandlordRegistrationContent() {
                       </div>
 
                       {/* Selection Indicator */}
-                      <div className="absolute top-4 right-4">
+                      <div className="absolute top-3 right-3">
                         <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
                           isSelected ? 'border-green-600 bg-green-600' : 'border-gray-300'
                         }`}>
