@@ -142,14 +142,14 @@ function EnterprisePaymentForm() {
         {timeoutActive && !success && (
           <div className="text-orange-600 font-bold text-center mt-4">
             Are you still there? Card info will be cleared in {countdown} seconds.<br />
-            <button type="button" className="mt-2 px-4 py-2 bg-blue-600 text-white rounded" onClick={handleRetry}>I'm still here</button>
+            <button type="button" className="mt-2 px-4 py-3 bg-blue-600 text-white rounded min-h-[44px] touch-manipulation" onClick={handleRetry}>I'm still here</button>
           </div>
         )}
       </div>
       {error && (
         <div className="text-red-500 text-sm font-semibold animate-shake">
           {error}<br />
-          <button type="button" className="mt-2 px-4 py-2 bg-orange-500 text-white rounded" onClick={handleRetry}>Try another payment method</button>
+          <button type="button" className="mt-2 px-4 py-3 bg-orange-500 text-white rounded min-h-[44px] touch-manipulation" onClick={handleRetry}>Try another payment method</button>
         </div>
       )}
       {success ? (
@@ -197,7 +197,7 @@ export default function PaymentPage() {
       <main className="max-w-xl mx-auto py-12 px-4 text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">Payment Configuration Error</h1>
         <p className="text-gray-700">Payment system is not properly configured. Please contact support.</p>
-        <a href="https://wa.me/5927629797?text=Payment%20configuration%20error" className="mt-4 inline-block px-4 py-2 bg-green-500 text-white rounded">
+        <a href="https://wa.me/5927629797?text=Payment%20configuration%20error" className="mt-4 inline-block px-4 py-3 bg-green-500 text-white rounded min-h-[44px] touch-manipulation">
           Contact Support
         </a>
       </main>
@@ -209,7 +209,7 @@ export default function PaymentPage() {
       <main className="max-w-xl mx-auto py-12 px-4 text-center">
         <h1 className="text-2xl font-bold text-red-600 mb-4">Payment Loading Error</h1>
         <p className="text-gray-700">Failed to load payment system. Please refresh and try again.</p>
-        <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded">
+        <button onClick={() => window.location.reload()} className="mt-4 px-4 py-3 bg-blue-500 text-white rounded min-h-[44px] touch-manipulation">
           Refresh Page
         </button>
       </main>

@@ -2,6 +2,16 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from 'next/navigation';
 import FSBORegistrationNew from "@/components/FSBORegistrationNew";
+import PromoCodeInput from "@/components/PromoCodeInput";
+
+const countries = [
+  { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
+  { code: 'JM', name: 'Jamaica', currency: 'JMD', symbol: 'J$' },
+  { code: 'TT', name: 'Trinidad & Tobago', currency: 'TTD', symbol: 'TT$' },
+  { code: 'BB', name: 'Barbados', currency: 'BBD', symbol: 'Bds$' },
+  { code: 'US', name: 'United States', currency: 'USD', symbol: '$' },
+  { code: 'CA', name: 'Canada', currency: 'CAD', symbol: 'C$' },
+];
 
 function FSBORegistrationContent() {
   const searchParams = useSearchParams();
@@ -15,8 +25,14 @@ function FSBORegistrationContent() {
     confirmPassword: '',
   });
   const [selectedPlan, setSelectedPlan] = useState('featured');
+  const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Promo code state
+  const [validPromoCode, setValidPromoCode] = useState<string | null>(null);
+  const [promoBenefits, setPromoBenefits] = useState<any>(null);
+  const [promoSpotNumber, setPromoSpotNumber] = useState<number | null>(null);
 
   // Handle URL parameters on component mount
   useEffect(() => {
@@ -24,12 +40,37 @@ function FSBORegistrationContent() {
     
     const countryParam = searchParams.get('country');
     
-    // Could add country handling here if FSBO component supports it
-    // For now, just note the country parameter is available
+    // Pre-fill country if provided
     if (countryParam) {
-      console.log('FSBO Registration - Country selected:', countryParam);
+      const country = countries.find(c => c.code === countryParam);
+      if (country) {
+        setSelectedCountry(country);
+      }
     }
   }, [searchParams]);
+
+  const handleCountryChange = (countryCode: string) => {
+    const country = countries.find(c => c.code === countryCode) || countries[0];
+    setSelectedCountry(country);
+  };
+
+  // Promo code handlers
+  const handleValidPromoCode = (code: string, benefits: any, spotNumber: number) => {
+    setValidPromoCode(code);
+    setPromoBenefits(benefits);
+    setPromoSpotNumber(spotNumber);
+  };
+
+  const handleClearPromoCode = () => {
+    setValidPromoCode(null);
+    setPromoBenefits(null);
+    setPromoSpotNumber(null);
+  };
+
+  const handleSelectFoundingMember = () => {
+    // Set a special founding member "plan" that will be handled during submission
+    setSelectedPlan('founding_member');
+  };
 
   // Registration form handlers
 
@@ -60,6 +101,11 @@ function FSBORegistrationContent() {
           phone: formData.phone,
           password: formData.password,
           plan: selectedPlan,
+          // Include promo code information
+          promo_code: validPromoCode,
+          promo_benefits: promoBenefits,
+          promo_spot_number: promoSpotNumber,
+          is_founding_member: !!validPromoCode
         }),
       });
       const data = await response.json();
@@ -96,6 +142,54 @@ function FSBORegistrationContent() {
       {/* Registration step */}
       {step === 'register' && (
         <>
+          {/* Country Selector */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Your Location</label>
+            <select 
+              value={selectedCountry.code}
+              onChange={(e) => handleCountryChange(e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-base"
+            >
+              {countries.map(country => (
+                <option key={country.code} value={country.code}>
+                  {country.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Promo Code Input */}
+          <div className="mb-6">
+            <PromoCodeInput
+              userType="fsbo"
+              countryId={selectedCountry.code}
+              onValidCode={handleValidPromoCode}
+              onClearCode={handleClearPromoCode}
+            />
+
+            {/* Founding Member CTA */}
+            {validPromoCode && promoBenefits && (
+              <div className="mb-6">
+                <button
+                  onClick={handleSelectFoundingMember}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
+                >
+                  🚀 Continue as Founding Member
+                </button>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">Or choose a paid plan</span>
+              </div>
+            </div>
+          </div>
+
           <div className="mb-8">
             <FSBORegistrationNew.PlanSelection
               selectedPlan={selectedPlan}

@@ -262,7 +262,7 @@ export default function AgentSettings() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Profile Picture <span className="text-gray-400">(Highly Recommended)</span>
+              Profile Picture (Optional)
             </label>
             <ProfileImageUpload
               currentImageUrl={profile?.profile_image || ''}
@@ -275,10 +275,10 @@ export default function AgentSettings() {
               }}
               className="mt-2"
             />
-            <p className="text-sm text-gray-600 mt-2">
-              <span className="font-medium text-green-700">📈 Properties with agent photos get 3x more inquiries!</span>
+            <p className="text-sm text-gray-500 mt-2">
+              This photo will be displayed on your property listings to help clients identify you.
               <br />
-              <span className="text-gray-500">A professional photo builds trust and helps buyers feel confident reaching out.</span>
+              <span className="text-green-600">✨ Tip:</span> Take a clear, professional headshot for the best results!
             </p>
           </div>
 

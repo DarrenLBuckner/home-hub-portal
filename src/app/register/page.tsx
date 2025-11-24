@@ -2,6 +2,8 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { usePricing } from '@/hooks/usePricing';
+import PromoCodeInput from '@/components/PromoCodeInput';
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -12,50 +14,26 @@ const countries = [
   { code: 'CA', name: 'Canada', currency: 'CAD', symbol: 'C$' },
 ];
 
-const agentPlans = [
-  {
-    id: 'basic',
-    name: 'Basic Agent',
-    listings: '5 listings',
-    photos: '8 photos/property',
-    support: 'Basic support',
-    pricing: { GYD: 6000, JMD: 12000, TTD: 400, BBD: 150, USD: 75, CAD: 100 },
-    color: 'green',
-    recommended: false
-  },
-  {
-    id: 'pro',
-    name: 'Pro Agent',
-    listings: '20 listings',
-    photos: '15 photos/property',
-    support: 'Priority support',
-    pricing: { GYD: 11000, JMD: 22000, TTD: 750, BBD: 275, USD: 135, CAD: 180 },
-    color: 'blue',
-    recommended: true
-  },
-  {
-    id: 'elite',
-    name: 'Elite Agent',
-    listings: 'Unlimited listings',
-    photos: '25 photos/property',
-    support: 'Premium support',
-    pricing: { GYD: 25000, JMD: 50000, TTD: 1700, BBD: 625, USD: 310, CAD: 420 },
-    color: 'purple',
-    recommended: false
-  }
-];
 
 function RegistrationContent() {
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
-  const [selectedPlan, setSelectedPlan] = useState('pro');
+  const [selectedPlan, setSelectedPlan] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // Promo code state
+  const [validPromoCode, setValidPromoCode] = useState<string | null>(null);
+  const [promoBenefits, setPromoBenefits] = useState<any>(null);
+  const [promoSpotNumber, setPromoSpotNumber] = useState<number | null>(null);
+  
+  // Fetch pricing data for current country and agent user type
+  const { plans: agentPlans, country: pricingCountry, loading: plansLoading } = usePricing(selectedCountry.code, 'agent');
 
   const [form, setForm] = useState({
     // Step 1: Plan Selection
-    selected_plan: 'pro',
+    selected_plan: '',
     country: 'GY',
     
     // Step 2: Personal Info
@@ -63,6 +41,8 @@ function RegistrationContent() {
     last_name: "",
     phone: "",
     email: "",
+    password: "",
+    confirm_password: "",
     years_experience: "",
     
     // Step 3: Professional Info
@@ -97,12 +77,19 @@ function RegistrationContent() {
       }
     }
     
-    // Pre-fill plan based on type
-    if (typeParam === 'agent') {
-      setSelectedPlan('pro'); // Default to Pro for agents
-      setForm(prev => ({ ...prev, selected_plan: 'pro' }));
-    }
+    // Pre-fill plan based on type - will be set once plans load
   }, [searchParams]);
+
+  // Set default plan when plans are loaded
+  useEffect(() => {
+    if (agentPlans.length > 0 && !form.selected_plan) {
+      // Find the popular plan or use the first one
+      const popularPlan = agentPlans.find(plan => plan.is_popular);
+      const defaultPlan = popularPlan || agentPlans[0];
+      setForm(prev => ({ ...prev, selected_plan: defaultPlan.id }));
+      setSelectedPlan(defaultPlan.id);
+    }
+  }, [agentPlans, form.selected_plan]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -114,12 +101,31 @@ function RegistrationContent() {
     setForm({ ...form, country: countryCode });
   };
 
+  // Promo code handlers
+  const handleValidPromoCode = (code: string, benefits: any, spotNumber: number) => {
+    setValidPromoCode(code);
+    setPromoBenefits(benefits);
+    setPromoSpotNumber(spotNumber);
+  };
+
+  const handleClearPromoCode = () => {
+    setValidPromoCode(null);
+    setPromoBenefits(null);
+    setPromoSpotNumber(null);
+  };
+
+  const handleSelectFoundingMember = () => {
+    // Set a special founding member "plan" that will be handled during submission
+    setForm({ ...form, selected_plan: 'founding_member' });
+    setSelectedPlan('founding_member');
+  };
+
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
         return !!(form.selected_plan && form.country);
       case 2:
-        return !!(form.first_name && form.last_name && form.phone && form.email && form.years_experience);
+        return !!(form.first_name && form.last_name && form.phone && form.email && form.password && form.confirm_password && form.years_experience);
       case 3:
         return !!(form.company_name && form.license_number);
       default:
@@ -145,38 +151,57 @@ function RegistrationContent() {
     setLoading(true);
     setError("");
     
-    try {
-      const supabase = createClientComponentClient();
-      const { error: dbError } = await supabase.from("agent_vetting").insert({
-        ...form,
-        user_type: "agent",
-        status: "pending_review",
-        submitted_at: new Date().toISOString(),
-      });
+    // Validate passwords match
+    if (form.password !== form.confirm_password) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
 
-      if (dbError) {
-        setError(dbError.message);
-        setLoading(false);
-        return;
+    // Validate password strength
+    if (form.password.length < 8 || !/[!@#$%^&*(),.?":{}|<>]/.test(form.password)) {
+      setError("Password must be at least 8 characters with at least one special character");
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      const response = await fetch('/api/register/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...form,
+          // Add promo code information if available
+          promo_code: validPromoCode,
+          promo_benefits: promoBenefits,
+          promo_spot_number: promoSpotNumber,
+          is_founding_member: !!validPromoCode
+        }),
+      });
+      
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Registration failed');
       }
 
-      // Success - redirect to success page
-      window.location.href = '/register-success';
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
+      // Success - redirect to success page with promo code info if applicable
+      let successUrl = '/register-success';
+      if (validPromoCode && promoSpotNumber) {
+        successUrl += `?foundingMember=${promoSpotNumber}&code=${validPromoCode}`;
+      }
+      window.location.href = successUrl;
+    } catch (err: any) {
+      setError(err.message || "Something went wrong. Please try again.");
       setLoading(false);
     }
   };
 
-  const formatPrice = (amount: number, currency: string, symbol: string) => {
-    return `${symbol}${amount.toLocaleString()}`;
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Mobile Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-md mx-auto px-4 py-4">
+        <div className="max-w-md mx-auto lg:max-w-6xl px-4 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-bold text-gray-900">Agent Registration</h1>
             <div className="text-sm text-gray-500">Step {currentStep} of 4</div>
@@ -193,14 +218,14 @@ function RegistrationContent() {
       </div>
 
       {/* Form Content */}
-      <div className="max-w-md mx-auto px-4 py-6">
+      <div className="max-w-md mx-auto lg:max-w-6xl px-4 lg:px-8 py-6">
         
         {/* Step 1: Plan Selection */}
         {currentStep === 1 && (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Choose Your Plan</h2>
-              <p className="text-gray-600 text-sm">Select the plan that best fits your business needs</p>
+              <h2 className="text-xl lg:text-3xl font-bold text-gray-900 mb-2">Choose Your Plan</h2>
+              <p className="text-gray-600 text-sm lg:text-lg">Select the plan that best fits your business needs</p>
             </div>
 
             {/* Country Selector */}
@@ -219,45 +244,92 @@ function RegistrationContent() {
               </select>
             </div>
 
+            {/* Promo Code Input */}
+            <PromoCodeInput
+              userType="agent"
+              countryId={selectedCountry.code}
+              onValidCode={handleValidPromoCode}
+              onClearCode={handleClearPromoCode}
+            />
+
+            {/* Founding Member CTA */}
+            {validPromoCode && promoBenefits && (
+              <div className="mb-6">
+                <button
+                  onClick={handleSelectFoundingMember}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
+                >
+                  🚀 Continue as Founding Member
+                </button>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">Or choose a paid plan</span>
+              </div>
+            </div>
+
             {/* Plan Cards */}
-            <div className="space-y-3">
-              {agentPlans.map(plan => {
-                const price = plan.pricing[selectedCountry.currency as keyof typeof plan.pricing];
-                const isSelected = form.selected_plan === plan.id;
-                return (
-                  <div
-                    key={plan.id}
-                    onClick={() => setForm({ ...form, selected_plan: plan.id })}
-                    className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                      isSelected 
-                        ? 'border-blue-600 bg-blue-50' 
-                        : 'border-gray-200 bg-white'
-                    }`}
-                  >
-                    {plan.recommended && (
-                      <div className="absolute -top-2 left-4 bg-blue-600 text-white text-xs px-2 py-1 rounded">
-                        Recommended
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold text-gray-900">{plan.name}</h3>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-gray-900">
-                          {formatPrice(price, selectedCountry.currency, selectedCountry.symbol)}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8 items-stretch">
+              {plansLoading ? (
+                <>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="animate-pulse">
+                      <div className="bg-gray-200 h-48 rounded-xl"></div>
+                    </div>
+                  ))}
+                </>
+              ) : agentPlans.length === 0 ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="text-gray-500">No agent plans available for {selectedCountry.name}</div>
+                  <div className="text-sm text-gray-400">Please select a different country or contact support.</div>
+                </div>
+              ) : (
+                agentPlans.map(plan => {
+                  const isSelected = form.selected_plan === plan.id;
+                  const features = plan.features || {};
+                  return (
+                    <div
+                      key={plan.id}
+                      onClick={() => setForm({ ...form, selected_plan: plan.id })}
+                      className={`relative flex flex-col h-full min-h-[280px] lg:min-h-[360px] p-4 lg:p-6 border-2 rounded-xl cursor-pointer transition-all shadow-lg hover:shadow-xl touch-manipulation ${
+                        isSelected 
+                          ? 'border-blue-600 bg-blue-50' 
+                          : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      {plan.is_popular && (
+                        <div className="absolute -top-2 left-4 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                          Recommended
                         </div>
-                        <div className="text-xs text-gray-500">/month</div>
+                      )}
+                      
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-gray-900 text-lg lg:text-xl">{plan.plan_name}</h3>
+                        <div className="text-right">
+                          <div className="text-lg lg:text-2xl font-bold text-gray-900">
+                            {plan.price_formatted}
+                          </div>
+                          <div className="text-xs lg:text-sm text-gray-500">/{plan.plan_type}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1 text-sm lg:text-base text-gray-600 flex-grow min-h-[80px] lg:min-h-[120px]">
+                        <div>• {plan.max_properties ? `${plan.max_properties} ${plan.max_properties === 1 ? 'property' : 'properties'}` : 'Unlimited properties'}</div>
+                        {plan.featured_listings_included > 0 && <div>• {plan.featured_listings_included} featured listings</div>}
+                        <div>• {plan.listing_duration_days ? `${plan.listing_duration_days} days duration` : 'Listings never expire'}</div>
+                        {features.photos && <div>• {features.photos} photos/property</div>}
+                        {features.support && <div>• {features.support} support</div>}
                       </div>
                     </div>
-                    
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <div>• {plan.listings}</div>
-                      <div>• {plan.photos}</div>
-                      <div>• {plan.support}</div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
 
             {/* Free Trial Notice */}
@@ -325,6 +397,46 @@ function RegistrationContent() {
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
                   placeholder="john@example.com"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={form.password}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                    placeholder="Create strong password"
+                  />
+                  <div className="mt-1 space-y-1 text-xs text-gray-600">
+                    <div className={`flex items-center ${form.password.length >= 8 ? 'text-green-600' : ''}`}>
+                      <span className="mr-1">{form.password.length >= 8 ? '✓' : '○'}</span>
+                      At least 8 characters
+                    </div>
+                    <div className={`flex items-center ${/[!@#$%^&*(),.?":{}|<>]/.test(form.password) ? 'text-green-600' : ''}`}>
+                      <span className="mr-1">{/[!@#$%^&*(),.?":{}|<>]/.test(form.password) ? '✓' : '○'}</span>
+                      One special character
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+                  <input
+                    type="password"
+                    name="confirm_password"
+                    value={form.confirm_password}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                    placeholder="Confirm your password"
+                  />
+                  {form.confirm_password && (
+                    <div className={`mt-1 text-xs ${form.password === form.confirm_password ? 'text-green-600' : 'text-red-600'}`}>
+                      {form.password === form.confirm_password ? '✓ Passwords match' : '✗ Passwords do not match'}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>

@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getCountryFromDomain } from '@/lib/country-detection';
+import { usePricingSummary } from '@/hooks/usePricing';
 
 // Available countries with their details
 const countries = [
@@ -16,11 +17,6 @@ const countries = [
     domain: 'guyanahomehub.com',
     description: 'Land of Many Waters - Emerging real estate market with growing opportunities',
     features: ['Established market', 'English speaking', 'Growing economy'],
-    samplePrices: {
-      agent: 'G$49,99/month',
-      landlord: 'G$79-149/listing',
-      owner: 'G$99-199/listing'
-    },
     active: true
   },
   {
@@ -33,11 +29,6 @@ const countries = [
     domain: 'jamaicahomehub.com',
     description: 'Out of Many, One People - Vibrant Caribbean real estate market',
     features: ['Tourism-driven', 'English speaking', 'High demand'],
-    samplePrices: {
-      agent: 'J$7,350/month',
-      landlord: 'J$12,000-22,000/listing',
-      owner: 'J$15,000-30,000/listing'
-    },
     active: true
   },
   {
@@ -50,11 +41,6 @@ const countries = [
     domain: 'trinidadhomehub.com',
     description: 'Together We Aspire, Together We Achieve - Twin island prosperity',
     features: ['Oil & gas economy', 'English speaking', 'Stable market'],
-    samplePrices: {
-      agent: 'TT$400/month',
-      landlord: 'TT$500-750/listing',
-      owner: 'TT$650-1,100/listing'
-    },
     active: false, // Coming soon
     comingSoon: true
   },
@@ -68,11 +54,6 @@ const countries = [
     domain: 'barbadoshomehub.com',
     description: 'Pride and Industry - Premium Caribbean real estate destination',
     features: ['Luxury market', 'English speaking', 'Tourism hub'],
-    samplePrices: {
-      agent: 'Bds$150/month',
-      landlord: 'Bds$200-350/listing',
-      owner: 'Bds$250-500/listing'
-    },
     active: false, // Coming soon
     comingSoon: true
   },
@@ -86,11 +67,6 @@ const countries = [
     domain: 'ghanahomehub.com',
     description: 'Gateway to Africa - Rapidly growing economy with emerging real estate opportunities',
     features: ['Growing economy', 'English speaking', 'Political stability'],
-    samplePrices: {
-      agent: 'GH₵180/month',
-      landlord: 'GH₵250-400/listing',
-      owner: 'GH₵300-600/listing'
-    },
     active: false, // Coming soon
     comingSoon: true
   },
@@ -104,11 +80,6 @@ const countries = [
     domain: 'rwandahomehub.com',
     description: 'Land of a Thousand Hills - East Africa\'s rising economic star',
     features: ['Fast-growing economy', 'Investment friendly', 'Clean & safe'],
-    samplePrices: {
-      agent: 'RF35,000/month',
-      landlord: 'RF45,000-75,000/listing',
-      owner: 'RF60,000-120,000/listing'
-    },
     active: false, // Coming soon
     comingSoon: true
   },
@@ -122,11 +93,6 @@ const countries = [
     domain: 'southafricahomehub.com',
     description: 'Rainbow Nation - Africa\'s most developed real estate market',
     features: ['Developed market', 'Multiple languages', 'Investment hub'],
-    samplePrices: {
-      agent: 'R750/month',
-      landlord: 'R1,000-1,800/listing',
-      owner: 'R1,200-2,500/listing'
-    },
     active: false, // Coming soon
     comingSoon: true
   },
@@ -140,11 +106,6 @@ const countries = [
     domain: 'namibiahomehub.com',
     description: 'Land of the Brave - Southern Africa\'s diamond in the rough',
     features: ['Mining economy', 'English speaking', 'Tourism potential'],
-    samplePrices: {
-      agent: 'N$450/month',
-      landlord: 'N$600-1,000/listing',
-      owner: 'N$750-1,500/listing'
-    },
     active: false, // Coming soon
     comingSoon: true
   },
@@ -158,15 +119,79 @@ const countries = [
     domain: 'dominicanrepublichomehub.com',
     description: 'Caribbean Paradise - Premier Caribbean real estate destination',
     features: ['Tourism economy', 'Spanish speaking', 'Beach properties'],
-    samplePrices: {
-      agent: 'RD$2,800/month',
-      landlord: 'RD$3,500-6,000/listing',
-      owner: 'RD$4,500-8,500/listing'
-    },
     active: false, // Coming soon
     comingSoon: true
   },
 ];
+
+interface PricingDisplayProps {
+  countryCode: string;
+}
+
+function PricingDisplay({ countryCode }: PricingDisplayProps) {
+  const { summary, country, loading, error } = usePricingSummary(countryCode);
+
+  if (loading) {
+    return (
+      <div className="mb-4">
+        <h4 className="font-semibold text-gray-900 mb-2">Loading pricing...</h4>
+        <div className="animate-pulse space-y-2">
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !summary || !country) {
+    return (
+      <div className="mb-4">
+        <h4 className="font-semibold text-gray-900 mb-2">Sample Pricing in {countryCode}:</h4>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-gray-600">Real Estate Agent:</span>
+            <span className="font-medium text-gray-900">Coming Soon</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Landlord Services:</span>
+            <span className="font-medium text-gray-900">Coming Soon</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600">Sell By Owner:</span>
+            <span className="font-medium text-gray-900">Coming Soon</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-4">
+      <h4 className="font-semibold text-gray-900 mb-2">Pricing in {country.currency_code}:</h4>
+      <div className="space-y-2 text-sm">
+        <div className="flex justify-between">
+          <span className="text-gray-600">Real Estate Agent:</span>
+          <span className="font-medium text-gray-900">
+            {summary.agent.starting ? `${summary.agent.starting}${summary.agent.suffix}` : 'Coming Soon'}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">Landlord Services:</span>
+          <span className="font-medium text-gray-900">
+            {summary.landlord.range ? `${summary.landlord.range}${summary.landlord.suffix}` : 'Coming Soon'}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">Sell By Owner:</span>
+          <span className="font-medium text-gray-900">
+            {summary.fsbo.range ? `${summary.fsbo.range}${summary.fsbo.suffix}` : 'Coming Soon'}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SelectCountryContent() {
   const router = useRouter();
@@ -314,23 +339,7 @@ function SelectCountryContent() {
 
                 {/* Pricing Preview */}
                 <div className="p-6">
-                  <div className="mb-4">
-                    <h4 className="font-semibold text-gray-900 mb-2">Sample Pricing in {country.currency}:</h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Real Estate Agent:</span>
-                        <span className="font-medium text-gray-900">{country.samplePrices.agent}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Landlord Services:</span>
-                        <span className="font-medium text-gray-900">{country.samplePrices.landlord}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Sell By Owner:</span>
-                        <span className="font-medium text-gray-900">{country.samplePrices.owner}</span>
-                      </div>
-                    </div>
-                  </div>
+                  <PricingDisplay countryCode={country.code} />
 
                   {/* Action Buttons */}
                   <div className="space-y-3">
@@ -419,23 +428,7 @@ function SelectCountryContent() {
 
               {/* Pricing Preview */}
               <div className="p-6">
-                <div className="mb-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Sample Pricing in {country.currency}:</h4>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Real Estate Agent:</span>
-                      <span className="font-medium text-gray-900">{country.samplePrices.agent}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Landlord Services:</span>
-                      <span className="font-medium text-gray-900">{country.samplePrices.landlord}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Sell By Owner:</span>
-                      <span className="font-medium text-gray-900">{country.samplePrices.owner}</span>
-                    </div>
-                  </div>
-                </div>
+                <PricingDisplay countryCode={country.code} />
 
                 {/* Action Buttons */}
                 {country.active ? (

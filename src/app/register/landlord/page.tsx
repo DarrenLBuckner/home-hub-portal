@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from 'next/navigation';
+import { usePricing } from '@/hooks/usePricing';
+import PromoCodeInput from '@/components/PromoCodeInput';
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -11,56 +13,26 @@ const countries = [
   { code: 'CA', name: 'Canada', currency: 'CAD', symbol: 'C$' },
 ];
 
-const landlordPlans = [
-  {
-    id: 'basic',
-    name: 'Basic Landlord',
-    listings: '1 rental listing',
-    photos: '5 photos/property',
-    support: 'Basic support',
-    duration: '30 days',
-    pricing: { GYD: 5200, JMD: 10400, TTD: 350, BBD: 130, USD: 65, CAD: 85 },
-    color: 'green',
-    recommended: false,
-    badge: null
-  },
-  {
-    id: 'featured',
-    name: 'Featured Landlord',
-    listings: '3 rental listings',
-    photos: '10 photos/property',
-    support: 'Priority support',
-    duration: '60 days',
-    pricing: { GYD: 7300, JMD: 14600, TTD: 490, BBD: 185, USD: 90, CAD: 120 },
-    color: 'blue',
-    recommended: true,
-    badge: 'Most Popular'
-  },
-  {
-    id: 'premium',
-    name: 'Premium Landlord',
-    listings: 'Unlimited listings',
-    photos: '15 photos/property',
-    support: 'Premium support',
-    duration: '90 days',
-    pricing: { GYD: 12500, JMD: 25000, TTD: 840, BBD: 315, USD: 155, CAD: 210 },
-    color: 'purple',
-    recommended: false,
-    badge: 'Best Value'
-  }
-];
 
 function LandlordRegistrationContent() {
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
-  const [selectedPlan, setSelectedPlan] = useState('featured');
+  const [selectedPlan, setSelectedPlan] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  
+  // Promo code state
+  const [validPromoCode, setValidPromoCode] = useState<string | null>(null);
+  const [promoBenefits, setPromoBenefits] = useState<any>(null);
+  const [promoSpotNumber, setPromoSpotNumber] = useState<number | null>(null);
+  
+  // Fetch pricing data for current country and landlord user type
+  const { plans: landlordPlans, country: pricingCountry, loading: plansLoading } = usePricing(selectedCountry.code, 'landlord');
 
   const [formData, setFormData] = useState({
     // Step 1: Plan Selection
-    plan: 'featured',
+    plan: '',
     country: 'GY',
     
     // Step 2: Account Information
@@ -90,6 +62,17 @@ function LandlordRegistrationContent() {
     }
   }, [searchParams]);
 
+  // Set default plan when plans are loaded
+  useEffect(() => {
+    if (landlordPlans.length > 0 && !formData.plan) {
+      // Find the popular plan or use the first one
+      const popularPlan = landlordPlans.find(plan => plan.is_popular);
+      const defaultPlan = popularPlan || landlordPlans[0];
+      setFormData(prev => ({ ...prev, plan: defaultPlan.id }));
+      setSelectedPlan(defaultPlan.id);
+    }
+  }, [landlordPlans, formData.plan]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,
@@ -101,6 +84,25 @@ function LandlordRegistrationContent() {
     const country = countries.find(c => c.code === countryCode) || countries[0];
     setSelectedCountry(country);
     setFormData({ ...formData, country: countryCode });
+  };
+
+  // Promo code handlers
+  const handleValidPromoCode = (code: string, benefits: any, spotNumber: number) => {
+    setValidPromoCode(code);
+    setPromoBenefits(benefits);
+    setPromoSpotNumber(spotNumber);
+  };
+
+  const handleClearPromoCode = () => {
+    setValidPromoCode(null);
+    setPromoBenefits(null);
+    setPromoSpotNumber(null);
+  };
+
+  const handleSelectFoundingMember = () => {
+    // Set a special founding member "plan" that will be handled during submission
+    setFormData({ ...formData, plan: 'founding_member' });
+    setSelectedPlan('founding_member');
   };
 
   const validateStep = (step: number): boolean => {
@@ -158,6 +160,11 @@ function LandlordRegistrationContent() {
           password: formData.password,
           plan: formData.plan,
           country: formData.country,
+          // Include promo code information
+          promo_code: validPromoCode,
+          promo_benefits: promoBenefits,
+          promo_spot_number: promoSpotNumber,
+          is_founding_member: !!validPromoCode
         }),
       });
       
@@ -185,15 +192,12 @@ function LandlordRegistrationContent() {
     }
   };
 
-  const formatPrice = (amount: number, currency: string, symbol: string) => {
-    return `${symbol}${amount.toLocaleString()}`;
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
       {/* Mobile Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-md mx-auto px-4 py-4">
+        <div className="max-w-md mx-auto lg:max-w-6xl px-4 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-bold text-gray-900">Landlord Registration</h1>
             <div className="text-sm text-gray-500">Step {currentStep} of 3</div>
@@ -210,14 +214,14 @@ function LandlordRegistrationContent() {
       </div>
 
       {/* Form Content */}
-      <div className="max-w-md mx-auto px-4 py-6">
+      <div className="max-w-md mx-auto lg:max-w-6xl px-4 lg:px-8 py-6">
         
         {/* Step 1: Plan Selection */}
         {currentStep === 1 && (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Choose Your Plan</h2>
-              <p className="text-gray-600 text-sm">Get your rental properties in front of qualified tenants</p>
+              <h2 className="text-xl lg:text-3xl font-bold text-gray-900 mb-2">Choose Your Plan</h2>
+              <p className="text-gray-600 text-sm lg:text-lg">Get your rental properties in front of qualified tenants</p>
             </div>
 
             {/* Country Selector */}
@@ -236,64 +240,114 @@ function LandlordRegistrationContent() {
               </select>
             </div>
 
-            {/* Plan Cards */}
-            <div className="space-y-3">
-              {landlordPlans.map(plan => {
-                const price = plan.pricing[selectedCountry.currency as keyof typeof plan.pricing];
-                const monthlyPrice = Math.round(price / (parseInt(plan.duration) / 30));
-                const isSelected = formData.plan === plan.id;
-                return (
-                  <div
-                    key={plan.id}
-                    onClick={() => setFormData({ ...formData, plan: plan.id })}
-                    className={`relative p-4 border-2 rounded-xl cursor-pointer transition-all ${
-                      isSelected 
-                        ? 'border-green-600 bg-green-50' 
-                        : 'border-gray-200 bg-white'
-                    }`}
-                  >
-                    {plan.badge && (
-                      <div className="absolute -top-2 left-4 bg-green-600 text-white text-xs px-2 py-1 rounded">
-                        {plan.badge}
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-bold text-gray-900">{plan.name}</h3>
-                        <div className="text-xs text-gray-500 mt-1">{plan.duration} listing period</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-gray-900">
-                          {formatPrice(price, selectedCountry.currency, selectedCountry.symbol)}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          ≈ {formatPrice(monthlyPrice, selectedCountry.currency, selectedCountry.symbol)}/month
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <div>• {plan.listings}</div>
-                      <div>• {plan.photos}</div>
-                      <div>• {plan.support}</div>
-                    </div>
+            {/* Promo Code Input */}
+            <PromoCodeInput
+              userType="property_owner"
+              countryId={selectedCountry.code}
+              onValidCode={handleValidPromoCode}
+              onClearCode={handleClearPromoCode}
+            />
 
-                    {/* Selection Indicator */}
-                    <div className="absolute top-4 right-4">
-                      <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                        isSelected ? 'border-green-600 bg-green-600' : 'border-gray-300'
-                      }`}>
-                        {isSelected && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
+            {/* Founding Member CTA */}
+            {validPromoCode && promoBenefits && (
+              <div className="mb-6">
+                <button
+                  onClick={handleSelectFoundingMember}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
+                >
+                  🚀 Continue as Founding Member
+                </button>
+              </div>
+            )}
+
+            {/* Divider */}
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-4 bg-white text-gray-500">Or choose a paid plan</span>
+              </div>
+            </div>
+
+            {/* Plan Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8 items-stretch">
+              {plansLoading ? (
+                <>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="animate-pulse">
+                      <div className="bg-gray-200 h-48 rounded-xl"></div>
+                    </div>
+                  ))}
+                </>
+              ) : landlordPlans.length === 0 ? (
+                <div className="col-span-full text-center py-8">
+                  <div className="text-gray-500">No landlord plans available for {selectedCountry.name}</div>
+                  <div className="text-sm text-gray-400">Please select a different country or contact support.</div>
+                </div>
+              ) : (
+                landlordPlans.map(plan => {
+                  const isSelected = formData.plan === plan.id;
+                  const features = plan.features || {};
+                  const monthlyPrice = plan.listing_duration_days ? Math.round(plan.price_display / (plan.listing_duration_days / 30)) : plan.price_display;
+                  
+                  return (
+                    <div
+                      key={plan.id}
+                      onClick={() => setFormData({ ...formData, plan: plan.id })}
+                      className={`relative flex flex-col h-full min-h-[280px] lg:min-h-[360px] p-4 lg:p-6 border-2 rounded-xl cursor-pointer transition-all shadow-lg hover:shadow-xl touch-manipulation ${
+                        isSelected 
+                          ? 'border-green-600 bg-green-50' 
+                          : 'border-gray-200 bg-white'
+                      }`}
+                    >
+                      {plan.is_popular && (
+                        <div className="absolute -top-2 left-4 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                          Most Popular
+                        </div>
+                      )}
+                      
+                      <div className="flex justify-between items-start mb-3">
+                        <div>
+                          <h3 className="font-bold text-gray-900 text-lg lg:text-xl">{plan.plan_name}</h3>
+                          <div className="text-xs lg:text-sm text-gray-500 mt-1">{plan.listing_duration_days} days listing period</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-lg lg:text-2xl font-bold text-gray-900">
+                            {plan.price_formatted}
+                          </div>
+                          {plan.plan_type === 'listing' && (
+                            <div className="text-xs text-gray-500">
+                              ≈ {pricingCountry?.currency_symbol || ''}${monthlyPrice.toLocaleString()}/month
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-1 text-sm lg:text-base text-gray-600 flex-grow min-h-[80px] lg:min-h-[120px]">
+                        <div>• {plan.max_properties ? `${plan.max_properties} ${plan.max_properties === 1 ? 'property' : 'properties'}` : 'Unlimited properties'}</div>
+                        {plan.featured_listings_included > 0 && <div>• {plan.featured_listings_included} featured listings</div>}
+                        <div>• {plan.listing_duration_days ? `${plan.listing_duration_days} days duration` : 'Listings never expire'}</div>
+                        {features.photos && <div>• {features.photos}</div>}
+                        {features.support && <div>• {features.support} support</div>}
+                      </div>
+
+                      {/* Selection Indicator */}
+                      <div className="absolute top-4 right-4">
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                          isSelected ? 'border-green-600 bg-green-600' : 'border-gray-300'
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
 
             {/* Launch Special */}
@@ -430,13 +484,9 @@ function LandlordRegistrationContent() {
             <div className="bg-gray-50 rounded-lg p-4">
               <h3 className="font-medium text-gray-900 mb-2">Registration Summary:</h3>
               <div className="space-y-1 text-sm text-gray-600">
-                <div><strong>Plan:</strong> {landlordPlans.find(p => p.id === formData.plan)?.name}</div>
+                <div><strong>Plan:</strong> {landlordPlans.find(p => p.id === formData.plan)?.plan_name || 'No plan selected'}</div>
                 <div><strong>Location:</strong> {selectedCountry.name}</div>
-                <div><strong>Price:</strong> {formatPrice(
-                  landlordPlans.find(p => p.id === formData.plan)?.pricing[selectedCountry.currency as keyof typeof landlordPlans[0]['pricing']] || 0,
-                  selectedCountry.currency,
-                  selectedCountry.symbol
-                )}</div>
+                <div><strong>Price:</strong> {landlordPlans.find(p => p.id === formData.plan)?.price_formatted || 'N/A'}</div>
               </div>
             </div>
           </div>

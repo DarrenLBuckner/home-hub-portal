@@ -30,6 +30,7 @@ export default function SuperSimplePricingManagement() {
   const [loading, setLoading] = useState(true);
   const [editingPlan, setEditingPlan] = useState<PricingPlan | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [selectedCountryFilter, setSelectedCountryFilter] = useState<string>('ALL');
   const supabase = createClientComponentClient();
   
   // Admin access control for pricing management
@@ -63,7 +64,43 @@ export default function SuperSimplePricingManagement() {
     fetchPricingPlans();
   }, []);
 
+  // Restrict Owner Admin to their country only
+  useEffect(() => {
+    if (!permissions?.canEditGlobalPricing && permissions?.countryFilter) {
+      setSelectedCountryFilter(permissions.countryFilter);
+    }
+  }, [permissions]);
 
+  // Hide "All Countries" option for Owner Admin
+  const showAllCountriesOption = permissions?.canEditGlobalPricing;
+
+  // Get country flag/identifier for display (moved up to fix hoisting)
+  function getCountryDisplay(countryId: string) {
+    switch (countryId) {
+      case 'GY': return '🇬🇾 GY';
+      case 'JM': return '🇯🇲 JM';
+      default: return `🏴 ${countryId}`;
+    }
+  };
+
+  // Filter plans based on selected country (moved here after getCountryDisplay)
+  const filteredPlans = selectedCountryFilter === 'ALL' 
+    ? plans 
+    : plans.filter(plan => plan.country_id === selectedCountryFilter);
+
+  // Get unique countries from plans for dropdown
+  const uniqueCountries = Array.from(
+    new Set(plans.map(p => p.country_id))
+  ).map(countryId => ({
+    id: countryId,
+    display: getCountryDisplay(countryId)
+  }));
+
+  // Count plans per country for statistics
+  const planCountByCountry = plans.reduce((acc, plan) => {
+    acc[plan.country_id] = (acc[plan.country_id] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   const fetchPricingPlans = async () => {
     try {
@@ -87,6 +124,8 @@ export default function SuperSimplePricingManagement() {
       setLoading(false);
     }
   };
+
+  // Note: Filter logic moved after getCountryDisplay function
 
   const updatePlan = async (planId: string, updates: Partial<PricingPlan>) => {
     try {
@@ -173,14 +212,7 @@ export default function SuperSimplePricingManagement() {
     return false;
   };
 
-  // Get country flag/identifier for display
-  const getCountryDisplay = (countryId: string) => {
-    switch (countryId) {
-      case 'GY': return '🇬🇾 GY';
-      case 'JM': return '🇯🇲 JM';
-      default: return `🏴 ${countryId}`;
-    }
-  };
+  // (getCountryDisplay function moved above)
 
   const SuperSimpleEditForm = ({ plan }: { plan: PricingPlan }) => {
     const [price, setPrice] = useState((plan.price / 100).toString());
@@ -400,9 +432,40 @@ export default function SuperSimplePricingManagement() {
           </div>
         </div>
 
+        {/* Country Filter Dropdown */}
+        <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
+          <label htmlFor="country-filter" className="block text-sm font-medium text-gray-700 mb-2">
+            Filter by Country
+          </label>
+          <select
+            id="country-filter"
+            value={selectedCountryFilter}
+            onChange={(e) => setSelectedCountryFilter(e.target.value)}
+            disabled={!permissions?.canEditGlobalPricing} // Disable for Owner Admin
+            className="w-full md:w-64 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+          >
+            {showAllCountriesOption && (
+              <option value="ALL">
+                🌍 All Countries ({plans.length} plans)
+              </option>
+            )}
+            {uniqueCountries.map(country => (
+              <option key={country.id} value={country.id}>
+                {country.display} ({planCountByCountry[country.id]} plans)
+              </option>
+            ))}
+          </select>
+          
+          {selectedCountryFilter !== 'ALL' && (
+            <div className="mt-2 text-sm text-gray-600">
+              Showing {filteredPlans.length} pricing plans for {getCountryDisplay(selectedCountryFilter)}
+            </div>
+          )}
+        </div>
+
         {/* Pricing Plans Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {plans.map((plan) => (
+          {filteredPlans.map((plan) => (
             <div key={plan.id} className="bg-white rounded-lg shadow-md overflow-hidden">
               {/* Plan Header */}
               <div className="p-6">
