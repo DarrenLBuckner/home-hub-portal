@@ -49,6 +49,11 @@ function FSBORegistrationContent() {
     }
   }, [searchParams]);
 
+  // Force scroll to top on page load (fixes iOS Safari loading at bottom bug)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const handleCountryChange = (countryCode: string) => {
     const country = countries.find(c => c.code === countryCode) || countries[0];
     setSelectedCountry(country);

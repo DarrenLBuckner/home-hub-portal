@@ -73,6 +73,11 @@ function LandlordRegistrationContent() {
     }
   }, [landlordPlans, formData.plan]);
 
+  // Force scroll to top on page load (fixes iOS Safari loading at bottom bug)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({
       ...formData,

@@ -91,6 +91,11 @@ function RegistrationContent() {
     }
   }, [agentPlans, form.selected_plan]);
 
+  // Force scroll to top on page load (fixes iOS Safari loading at bottom bug)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
