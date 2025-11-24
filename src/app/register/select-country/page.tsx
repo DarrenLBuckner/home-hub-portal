@@ -5,8 +5,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { getCountryFromDomain } from '@/lib/country-detection';
 import { usePricingSummary } from '@/hooks/usePricing';
 
-// Available countries with their details
+// Available countries with their details - organized by region
 const countries = [
+  // Caribbean - Available Now
   {
     code: 'GY',
     name: 'Guyana',
@@ -17,6 +18,7 @@ const countries = [
     domain: 'guyanahomehub.com',
     description: 'Land of Many Waters - Emerging real estate market with growing opportunities',
     features: ['Established market', 'English speaking', 'Growing economy'],
+    region: 'caribbean',
     active: true
   },
   {
@@ -29,8 +31,10 @@ const countries = [
     domain: 'jamaicahomehub.com',
     description: 'Out of Many, One People - Vibrant Caribbean real estate market',
     features: ['Tourism-driven', 'English speaking', 'High demand'],
+    region: 'caribbean',
     active: true
   },
+  // Caribbean - Coming Soon
   {
     code: 'TT',
     name: 'Trinidad & Tobago',
@@ -41,7 +45,8 @@ const countries = [
     domain: 'trinidadhomehub.com',
     description: 'Together We Aspire, Together We Achieve - Twin island prosperity',
     features: ['Oil & gas economy', 'English speaking', 'Stable market'],
-    active: false, // Coming soon
+    region: 'caribbean',
+    active: false,
     comingSoon: true
   },
   {
@@ -54,59 +59,22 @@ const countries = [
     domain: 'barbadoshomehub.com',
     description: 'Pride and Industry - Premium Caribbean real estate destination',
     features: ['Luxury market', 'English speaking', 'Tourism hub'],
-    active: false, // Coming soon
+    region: 'caribbean',
+    active: false,
     comingSoon: true
   },
   {
-    code: 'GH',
-    name: 'Ghana',
-    fullName: 'Republic of Ghana',
-    currency: 'GHS',
-    symbol: 'GH₵',
-    flag: '🇬🇭',
-    domain: 'ghanahomehub.com',
-    description: 'Gateway to Africa - Rapidly growing economy with emerging real estate opportunities',
-    features: ['Growing economy', 'English speaking', 'Political stability'],
-    active: false, // Coming soon
-    comingSoon: true
-  },
-  {
-    code: 'RW',
-    name: 'Rwanda',
-    fullName: 'Republic of Rwanda',
-    currency: 'RWF',
-    symbol: 'RF',
-    flag: '🇷🇼',
-    domain: 'rwandahomehub.com',
-    description: 'Land of a Thousand Hills - East Africa\'s rising economic star',
-    features: ['Fast-growing economy', 'Investment friendly', 'Clean & safe'],
-    active: false, // Coming soon
-    comingSoon: true
-  },
-  {
-    code: 'ZA',
-    name: 'South Africa',
-    fullName: 'Republic of South Africa',
-    currency: 'ZAR',
-    symbol: 'R',
-    flag: '🇿🇦',
-    domain: 'southafricahomehub.com',
-    description: 'Rainbow Nation - Africa\'s most developed real estate market',
-    features: ['Developed market', 'Multiple languages', 'Investment hub'],
-    active: false, // Coming soon
-    comingSoon: true
-  },
-  {
-    code: 'NA',
-    name: 'Namibia',
-    fullName: 'Republic of Namibia',
-    currency: 'NAD',
-    symbol: 'N$',
-    flag: '🇳🇦',
-    domain: 'namibiahomehub.com',
-    description: 'Land of the Brave - Southern Africa\'s diamond in the rough',
-    features: ['Mining economy', 'English speaking', 'Tourism potential'],
-    active: false, // Coming soon
+    code: 'BS',
+    name: 'Bahamas',
+    fullName: 'Commonwealth of The Bahamas',
+    currency: 'BSD',
+    symbol: 'B$',
+    flag: '🇧🇸',
+    domain: 'bahamashomehub.com',
+    description: 'Caribbean Paradise - Luxury real estate haven in the Atlantic',
+    features: ['Luxury market', 'English speaking', 'Tourism hub'],
+    region: 'caribbean',
+    active: false,
     comingSoon: true
   },
   {
@@ -119,9 +87,38 @@ const countries = [
     domain: 'dominicanrepublichomehub.com',
     description: 'Caribbean Paradise - Premier Caribbean real estate destination',
     features: ['Tourism economy', 'Spanish speaking', 'Beach properties'],
-    active: false, // Coming soon
+    region: 'caribbean',
+    active: false,
     comingSoon: true
   },
+  {
+    code: 'HT',
+    name: 'Haiti',
+    fullName: 'Republic of Haiti',
+    currency: 'HTG',
+    symbol: 'G',
+    flag: '🇭🇹',
+    domain: 'haitihomehub.com',
+    description: 'Pearl of the Antilles - Emerging market with investment potential',
+    features: ['Emerging market', 'French/Creole speaking', 'Investment potential'],
+    region: 'caribbean',
+    active: false,
+    comingSoon: true
+  },
+  {
+    code: 'BZ',
+    name: 'Belize',
+    fullName: 'Belize',
+    currency: 'BZD',
+    symbol: 'BZ$',
+    flag: '🇧🇿',
+    domain: 'belizehomehub.com',
+    description: 'Caribbean Coast meets Central America - Diverse real estate opportunities',
+    features: ['Caribbean coast', 'English speaking', 'Diverse market'],
+    region: 'caribbean',
+    active: false,
+    comingSoon: true
+  }
 ];
 
 interface PricingDisplayProps {
@@ -292,13 +289,13 @@ function SelectCountryContent() {
           </div>
         </div>
 
-        {/* Active Countries Section */}
+        {/* Caribbean Available Now Section */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 text-center mb-8">
-            🚀 Available Now
+            🌴 CARIBBEAN - Available Now
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {countries.filter(country => country.active).map((country) => (
+            {countries.filter(country => country.region === 'caribbean' && country.active).map((country) => (
               <div 
                 key={country.code}
                 className={`bg-white rounded-2xl shadow-lg border-2 transition-all duration-300 ${
@@ -370,17 +367,17 @@ function SelectCountryContent() {
           </div>
         </div>
 
-        {/* Coming Soon Countries Section */}
+        {/* Caribbean Coming Soon Section */}
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-gray-900 text-center mb-4">
-            🚧 Coming Soon
+            🌴 CARIBBEAN - Coming Soon
           </h2>
           <p className="text-gray-600 text-center mb-8 max-w-2xl mx-auto">
-            We're working hard to expand Portal Home Hub to these exciting markets. 
+            We're working hard to expand Portal Home Hub to these exciting Caribbean markets. 
             Stay tuned for launch announcements!
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {countries.filter(country => country.comingSoon).map((country) => (
+            {countries.filter(country => country.region === 'caribbean' && country.comingSoon).map((country) => (
             <div 
               key={country.code}
               className={`bg-white rounded-2xl shadow-lg border-2 transition-all duration-300 ${
