@@ -228,20 +228,12 @@ function RegistrationContent() {
               <p className="text-gray-600 text-sm lg:text-lg">Select the plan that best fits your business needs</p>
             </div>
 
-            {/* Country Selector */}
+            {/* Country Display (Read-only) */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Your Location</label>
-              <select 
-                value={selectedCountry.code}
-                onChange={(e) => handleCountryChange(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-              >
-                {countries.map(country => (
-                  <option key={country.code} value={country.code}>
-                    {country.name}
-                  </option>
-                ))}
-              </select>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <div className="text-sm text-gray-600 mb-1">📍 Location</div>
+                <div className="text-base font-medium text-gray-900">{selectedCountry.name}</div>
+              </div>
             </div>
 
             {/* Promo Code Input */}
