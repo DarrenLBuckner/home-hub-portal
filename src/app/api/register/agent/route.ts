@@ -100,61 +100,26 @@ export async function POST(request: Request) {
       }
     }
 
-    // Try to insert into agent_vetting table with user_id reference
-    // If table doesn't exist, continue without it (temporary fix until table is created)
-    try {
-      const agentVettingData = {
-        user_id: data.user.id,
-        ...agentData,
-        user_type: "agent",
-        status: "pending_review",
-        submitted_at: new Date().toISOString(),
-        promo_code: promo_code,
-        promo_benefits: promo_benefits ? JSON.stringify(promo_benefits) : null,
-        promo_spot_number: promo_spot_number,
-        is_founding_member: !!promo_code
-      };
+    // Insert into agent_vetting table with user_id reference
+    const agentVettingData = {
+      user_id: data.user.id,
+      ...agentData,
+      user_type: "agent",
+      status: "pending_review",
+      submitted_at: new Date().toISOString(),
+      promo_code: promo_code,
+      promo_benefits: promo_benefits ? JSON.stringify(promo_benefits) : null,
+      promo_spot_number: promo_spot_number,
+      is_founding_member: !!promo_code
+    };
 
-      const { error: vettingError } = await supabase
-        .from("agent_vetting")
-        .insert(agentVettingData);
+    const { error: vettingError } = await supabase
+      .from("agent_vetting")
+      .insert(agentVettingData);
 
-      if (vettingError) {
-        console.warn('Agent vetting insert failed (table may not exist):', vettingError);
-        // Don't fail the registration - save the data to user_metadata instead as fallback
-        await supabase.auth.admin.updateUserById(data.user.id, {
-          user_metadata: {
-            ...data.user.user_metadata,
-            agent_application: agentVettingData
-          }
-        });
-        console.log('Agent application data saved to user_metadata as fallback');
-      }
-    } catch (error) {
-      console.error('Error saving agent vetting data:', error);
-      // Save to user_metadata as fallback
-      try {
-        await supabase.auth.admin.updateUserById(data.user.id, {
-          user_metadata: {
-            ...data.user.user_metadata,
-            agent_application: {
-              user_id: data.user.id,
-              ...agentData,
-              user_type: "agent",
-              status: "pending_review",
-              submitted_at: new Date().toISOString(),
-              promo_code: promo_code,
-              promo_benefits: promo_benefits ? JSON.stringify(promo_benefits) : null,
-              promo_spot_number: promo_spot_number,
-              is_founding_member: !!promo_code
-            }
-          }
-        });
-        console.log('Agent application data saved to user_metadata as fallback');
-      } catch (metadataError) {
-        console.error('Failed to save to user_metadata as well:', metadataError);
-        // Still don't fail the registration - at least the user account is created
-      }
+    if (vettingError) {
+      console.error('Agent vetting insert error:', vettingError);
+      return NextResponse.json({ error: 'Failed to save agent application' }, { status: 500 });
     }
     
     return NextResponse.json({ 
