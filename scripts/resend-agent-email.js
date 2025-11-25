@@ -10,7 +10,7 @@ const data = JSON.stringify({
 });
 
 // For production - change to your actual domain
-const hostname = 'portalhomehub.com';
+const hostname = 'www.portalhomehub.com';
 const port = 443;
 const path = '/api/send-agent-confirmation-email';
 

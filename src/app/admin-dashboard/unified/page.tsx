@@ -6,6 +6,7 @@ import { supabase } from '@/supabase';
 import { useAdminData, getAdminDisplayName } from '@/hooks/useAdminData';
 import UniversalPropertyManager from '@/components/UniversalPropertyManager';
 import EngagementOverview from '../components/EngagementOverview';
+import EmailBounceAlert from '@/components/EmailBounceAlert';
 
 interface Property {
   id: string;
@@ -110,7 +111,7 @@ export default function UnifiedAdminDashboard() {
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   
   // State management
-  const [activeSection, setActiveSection] = useState<'dashboard' | 'properties' | 'system' | 'users' | 'drafts' | 'agents'>('dashboard');
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'properties' | 'system' | 'users' | 'drafts' | 'agents' | 'emails'>('dashboard');
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
   const [approvedProperties, setApprovedProperties] = useState<Property[]>([]);
   const [draftProperties, setDraftProperties] = useState<any[]>([]);
@@ -910,6 +911,9 @@ export default function UnifiedAdminDashboard() {
                 <div className="text-xs text-indigo-700">Incomplete</div>
               </div>
             </div>
+
+            {/* Email Status Alert */}
+            <EmailBounceAlert />
 
             {/* Dashboard Overview - Quick Access to All Sections */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
