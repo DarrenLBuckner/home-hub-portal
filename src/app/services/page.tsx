@@ -1,6 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
 import ServicesOverview from '@/components/services/ServicesOverview';
+import PageTracker from '@/components/PageTracker';
 
 export const metadata: Metadata = {
   title: 'Professional Real Estate Services | Portal Home Hub',
@@ -13,5 +14,10 @@ export const metadata: Metadata = {
  * Showcases all available services with lead capture functionality
  */
 export default function ServicesPage() {
-  return <ServicesOverview />;
+  return (
+    <>
+      <PageTracker path="/services" />
+      <ServicesOverview />
+    </>
+  );
 }

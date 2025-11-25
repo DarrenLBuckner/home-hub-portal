@@ -7,6 +7,7 @@ import { useAdminData, getAdminDisplayName } from '@/hooks/useAdminData';
 import UniversalPropertyManager from '@/components/UniversalPropertyManager';
 import EngagementOverview from '../components/EngagementOverview';
 import EmailBounceAlert from '@/components/EmailBounceAlert';
+import VisitorAnalytics from '@/components/VisitorAnalytics';
 
 interface Property {
   id: string;
@@ -914,6 +915,9 @@ export default function UnifiedAdminDashboard() {
 
             {/* Email Status Alert */}
             <EmailBounceAlert />
+
+            {/* Visitor Analytics */}
+            <VisitorAnalytics />
 
             {/* Dashboard Overview - Quick Access to All Sections */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

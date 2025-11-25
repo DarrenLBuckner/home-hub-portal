@@ -15,14 +15,19 @@ export default function EmailBounceAlert() {
   const [failedEmails, setFailedEmails] = useState<FailedEmail[]>([]);
   const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    // Only fetch if user is admin
+    if (isAdmin && adminData) {
+      fetchFailedEmails();
+    } else {
+      setLoading(false);
+    }
+  }, [isAdmin, adminData]);
+
   // Only show to admins (super_admin, admin_owner, basic_admin) - not regular users
   if (!isAdmin || !adminData) {
     return null;
   }
-
-  useEffect(() => {
-    fetchFailedEmails();
-  }, []);
 
   const fetchFailedEmails = async () => {
     try {
