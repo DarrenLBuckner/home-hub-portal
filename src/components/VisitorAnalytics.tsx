@@ -15,19 +15,15 @@ export default function VisitorAnalytics() {
 
   useEffect(() => {
     // Only fetch if user is admin with proper permissions
-    if (isAdmin && adminData && (adminData.admin_level === 'super_admin' || adminData.admin_level === 'admin_owner')) {
+    if (isAdmin && adminData && (adminData === 'super' || adminData === 'owner')) {
       fetchAnalytics();
     } else {
       setLoading(false);
     }
   }, [isAdmin, adminData]);
 
-  // Debug: Log admin data to console
-  console.log('VisitorAnalytics Debug:', { isAdmin, adminData: adminData?.admin_level });
-
-  // Temporarily show to all admins for debugging
-  if (!isAdmin || !adminData) {
-    console.log('VisitorAnalytics: Not showing - no admin access');
+  // Show to super admins and owner admins only
+  if (!isAdmin || !adminData || (adminData !== 'super' && adminData !== 'owner')) {
     return null;
   }
 
