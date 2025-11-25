@@ -22,15 +22,21 @@ export default function VisitorAnalytics() {
     }
   }, [isAdmin, adminData]);
 
-  // Only show to super admins and admin owners
-  if (!isAdmin || !adminData || (adminData.admin_level !== 'super_admin' && adminData.admin_level !== 'admin_owner')) {
+  // Debug: Log admin data to console
+  console.log('VisitorAnalytics Debug:', { isAdmin, adminData: adminData?.admin_level });
+
+  // Temporarily show to all admins for debugging
+  if (!isAdmin || !adminData) {
+    console.log('VisitorAnalytics: Not showing - no admin access');
     return null;
   }
 
   const fetchAnalytics = async () => {
     try {
+      console.log('Fetching visitor analytics...');
       const response = await fetch('/api/admin/analytics?type=summary');
       const data = await response.json();
+      console.log('Visitor analytics data:', data);
       setAnalytics(data);
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
