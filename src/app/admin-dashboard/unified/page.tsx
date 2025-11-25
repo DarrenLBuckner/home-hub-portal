@@ -916,9 +916,6 @@ export default function UnifiedAdminDashboard() {
             {/* Email Status Alert */}
             <EmailBounceAlert />
 
-            {/* Visitor Analytics */}
-            <VisitorAnalytics />
-
             {/* Dashboard Overview - Quick Access to All Sections */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {/* Property Review & Approvals - Professional Workflow */}
@@ -1079,6 +1076,9 @@ export default function UnifiedAdminDashboard() {
                 </button>
               </div>
             </div>
+
+            {/* Visitor Analytics - Bottom of dashboard for reference */}
+            <VisitorAnalytics />
           </div>
         )}
 

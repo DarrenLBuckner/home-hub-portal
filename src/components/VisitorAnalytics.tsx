@@ -22,8 +22,8 @@ export default function VisitorAnalytics() {
     }
   }, [isAdmin, adminData]);
 
-  // Only show to super admins and admin owners (temporarily show to all admins for debugging)
-  if (!isAdmin || !adminData) {
+  // Only show to super admins and admin owners
+  if (!isAdmin || !adminData || (adminData.admin_level !== 'super_admin' && adminData.admin_level !== 'admin_owner')) {
     return null;
   }
 
