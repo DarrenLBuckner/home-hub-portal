@@ -42,39 +42,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
-    // Force update the profile to agent type
-    const { error: profileError } = await supabase
+    // Create or update profile - use upsert to handle both cases
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .update({
+      .upsert({
+        id: data.user.id,
         email: email,
         first_name: first_name,
         last_name: last_name,
         phone: phone,
         user_type: 'agent',
         updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'id',
+        ignoreDuplicates: false
       })
-      .eq('id', data.user.id);
+      .select();
 
     if (profileError) {
-      console.error('Profile update error:', profileError);
-      // Try creating if update failed
-      const { error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: data.user.id,
-          email: email,
-          first_name: first_name,
-          last_name: last_name,
-          phone: phone,
-          user_type: 'agent',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-      
-      if (insertError) {
-        console.error('Profile insert error:', insertError);
-      }
+      console.error('❌ Profile upsert failed:', profileError);
+      return NextResponse.json({ 
+        error: 'Failed to create user profile: ' + profileError.message 
+      }, { status: 500 });
     }
+
+    console.log('✅ Profile created/updated successfully:', profileData);
 
     // Handle promo code redemption if provided
     if (promo_code && data.user) {
@@ -121,10 +113,28 @@ export async function POST(request: Request) {
       console.error('Agent vetting insert error:', vettingError);
       return NextResponse.json({ error: 'Failed to save agent application' }, { status: 500 });
     }
+
+    // Send confirmation email
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/send-agent-confirmation-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentEmail: email,
+          agentName: `${first_name} ${last_name}`.trim(),
+          country: agentData.country || 'GY',
+          submittedAt: new Date().toLocaleDateString()
+        })
+      });
+      console.log('✅ Agent confirmation email sent successfully');
+    } catch (emailError) {
+      console.warn('⚠️ Failed to send confirmation email:', emailError);
+      // Continue registration even if email fails
+    }
     
     return NextResponse.json({ 
       user: data.user,
-      message: 'Agent registration successful! Your application is under review.' 
+      message: 'Agent registration successful! Your application is under review. You will receive an email confirmation shortly.' 
     });
   } catch (error: any) {
     console.error('Agent registration error:', error);

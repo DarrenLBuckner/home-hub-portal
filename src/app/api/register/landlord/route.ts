@@ -90,11 +90,19 @@ export async function POST(request: Request) {
       }
     }
 
-    // Note: Welcome email functionality can be added later
+    // Send welcome email to new landlord
+    try {
+      const { sendWelcomeEmail } = await import('@/lib/email.js');
+      await sendWelcomeEmail(email);
+      console.log('✅ Landlord welcome email sent successfully');
+    } catch (emailError) {
+      console.warn('⚠️ Failed to send welcome email:', emailError);
+      // Continue registration even if email fails
+    }
     
     return NextResponse.json({ 
       user: data.user,
-      message: 'Registration successful! You can now login to access your dashboard.' 
+      message: 'Registration successful! Welcome email sent. You can now login to access your dashboard.' 
     });
   } catch (error: any) {
     console.error('Landlord registration error:', error);

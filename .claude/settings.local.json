@@ -24,7 +24,8 @@
       "Bash(npx supabase db reset:*)",
       "Bash(node:*)",
       "WebFetch(domain:guyanahomehub.com)",
-      "Read(//home/DarrenLBuckner/**)"
+      "Read(//home/DarrenLBuckner/**)",
+      "Read(//mnt/c/Users/darre/Pictures/Screenshots/**)"
     ],
     "deny": [],
     "ask": []

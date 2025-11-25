@@ -358,6 +358,51 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to update property status' }, { status: 500 })
     }
 
+    // Send notification email to property owner
+    try {
+      // Get property owner details
+      const { data: propertyWithOwner, error: ownerError } = await adminSupabase
+        .from('properties')
+        .select(`
+          id, title, owner_email, user_id,
+          owner:profiles!user_id (
+            email, first_name, last_name
+          )
+        `)
+        .eq('id', propertyId)
+        .single();
+
+      if (!ownerError && propertyWithOwner) {
+        // Determine owner email and name
+        const ownerEmail = propertyWithOwner.owner_email || propertyWithOwner.owner?.email;
+        const ownerName = propertyWithOwner.owner 
+          ? `${propertyWithOwner.owner.first_name || ''} ${propertyWithOwner.owner.last_name || ''}`.trim() 
+          : 'Property Owner';
+
+        if (ownerEmail && propertyWithOwner.title) {
+          // Import and send appropriate email
+          const { sendPropertyApprovalEmail, sendPropertyRejectionEmail } = await import('@/lib/email.js');
+          
+          if (body.status === 'active') {
+            await sendPropertyApprovalEmail({
+              to: ownerEmail,
+              propertyTitle: propertyWithOwner.title
+            });
+            console.log('✅ Property approval email sent to:', ownerEmail);
+          } else if (body.status === 'rejected') {
+            await sendPropertyRejectionEmail({
+              to: ownerEmail,
+              propertyTitle: propertyWithOwner.title
+            });
+            console.log('✅ Property rejection email sent to:', ownerEmail);
+          }
+        }
+      }
+    } catch (emailError) {
+      console.warn('⚠️ Failed to send property notification email:', emailError);
+      // Continue without failing the main operation
+    }
+
     // Try to log the admin action (optional, won't fail if table doesn't exist)
     try {
       await adminSupabase

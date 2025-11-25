@@ -33,7 +33,7 @@ function LoadingScreen() {
   );
 }
 
-// Marketing content for agents/landlords/FSBO to sign up
+// Marketing content for agents/landlords/FSBO to sign up  
 function PortalMarketingContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900">
@@ -41,20 +41,20 @@ function PortalMarketingContent() {
       {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
         <div className="text-center mb-16">
-          <div className="flex justify-center mb-6">
-            <div className="w-32 h-32 p-4 bg-white rounded-full shadow-lg">
+          <div className="flex justify-center mb-8">
+            <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-lg">
               <img 
                 src="/images/phh-logo-192.png" 
                 alt="PHH" 
-                className="w-full h-full object-contain"
+                className="w-20 h-20 object-contain"
               />
             </div>
           </div>
           
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
             Portal Home Hub
           </h1>
-          <p className="text-xl md:text-2xl text-slate-300 mb-2">
+          <p className="text-xl md:text-2xl text-slate-300 mb-4">
             Professional Real Estate Management
           </p>
           <p className="text-lg text-slate-400 mb-8">
@@ -99,15 +99,17 @@ function PortalMarketingContent() {
             <PricingCard
               icon="🏢"
               title="Real Estate Agent"
-              description="Manage sales & rentals with professional tools"
-              price="$49-99/month"
-              priceLabel="Subscription"
+              description="Professional tools for sales & rental management"
+              price="Flexible Plans"
+              priceLabel="Monthly Subscription"
               features={[
-                'Up to 10 active listings',
+                'Unlimited listing capability',
+                'Photo & video upload',
                 'Professional profile page',
-                'WhatsApp integration',
-                'Priority support',
-                'Advanced analytics'
+                'WhatsApp lead integration',
+                'Priority customer support',
+                'Advanced analytics & reporting',
+                'Professional marketing tools'
               ]}
               buttonText="Get Started"
               buttonLink="/register/select-country"
@@ -118,14 +120,16 @@ function PortalMarketingContent() {
               icon="🏠"
               title="Landlord Services"
               description="Professional rental property management"
-              price="$79-149"
-              priceLabel="Per listing"
+              price="Competitive Rates"
+              priceLabel="Per Property"
               features={[
                 '1 rental property listing',
-                'WhatsApp integration',
-                'Photo gallery',
-                'Tenant inquiries',
-                'Property management tools'
+                'High-quality photo gallery',
+                'WhatsApp tenant inquiries',
+                'Professional property showcase',
+                'Application processing (upgrade)',
+                'Premium listing exposure',
+                'Tenant screening tools (coming soon)'
               ]}
               buttonText="Get Started"
               buttonLink="/register/select-country"
@@ -137,14 +141,16 @@ function PortalMarketingContent() {
               icon="🏆"
               title="Sell By Owner"
               description="Sell your property without an agent"
-              price="$99-199"
-              priceLabel="Per listing"
+              price="Affordable Pricing"
+              priceLabel="Per Listing"
               features={[
                 '1 property for sale',
+                'Professional photo upload',
                 'Full platform exposure',
                 'Direct buyer contact',
-                'Marketing support',
-                'Sales tools'
+                'Marketing & promotion tools',
+                'Featured listing placement',
+                'Expert listing guidance (add-on service)'
               ]}
               buttonText="Get Started"
               buttonLink="/register/select-country"
@@ -226,12 +232,86 @@ function PortalMarketingContent() {
         </div>
       </div>
 
+      {/* Business Contact Section */}
+      <div className="bg-slate-800/50 backdrop-blur py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              Ready to Grow Your Business?
+            </h2>
+            <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+              Get in touch with our team for personalized support, technical assistance, or partnership opportunities
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* General Business Inquiries */}
+            <div className="bg-white rounded-lg p-6 text-center">
+              <div className="text-4xl mb-4">🏢</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Business Inquiries</h3>
+              <p className="text-gray-600 mb-4">Questions about our platform, pricing, or features?</p>
+              <Link
+                href="/contact?type=general"
+                className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Contact Sales
+              </Link>
+            </div>
+
+            {/* Technical Support */}
+            <div className="bg-white rounded-lg p-6 text-center">
+              <div className="text-4xl mb-4">🔧</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Technical Support</h3>
+              <p className="text-gray-600 mb-4">Need help with your account or experiencing technical issues?</p>
+              <Link
+                href="/contact?type=technical_support"
+                className="inline-block bg-red-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors"
+              >
+                Get Support
+              </Link>
+            </div>
+
+            {/* Advertising */}
+            <div className="bg-white rounded-lg p-6 text-center">
+              <div className="text-4xl mb-4">📢</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Advertising</h3>
+              <p className="text-gray-600 mb-4">Reach customers across our Caribbean markets</p>
+              <Link
+                href="/contact?type=advertising"
+                className="inline-block bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              >
+                Advertise
+              </Link>
+            </div>
+          </div>
+
+          {/* Quick Contact Options */}
+          <div className="mt-12 text-center">
+            <p className="text-slate-300 mb-4">Need immediate assistance?</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <a 
+                href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20I%27m%20interested%20in%20your%20platform." 
+                className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📱 WhatsApp +592 762-9797
+              </a>
+              <a 
+                href="mailto:manager@portalhomehub.com?subject=Portal Home Hub Inquiry" 
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                📧 Email Us
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Bottom CTA */}
       <div className="max-w-4xl mx-auto px-4 py-16 text-center">
-        <p className="text-slate-400 mb-2">Need help?</p>
-        <a href="tel:+5927629797" className="text-blue-400 hover:text-blue-300 text-lg font-medium">
-          Call +592-762-9797
-        </a>
+        <p className="text-slate-400 mb-2">Portal Home Hub - Professional Real Estate Platform</p>
+        <p className="text-slate-500 text-sm">Serving the Caribbean, Africa & Beyond</p>
       </div>
     </div>
   );

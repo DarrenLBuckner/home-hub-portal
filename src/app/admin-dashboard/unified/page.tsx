@@ -71,16 +71,54 @@ interface User {
   updated_at: string;
 }
 
+interface AgentVetting {
+  id: string;
+  user_id: string;
+  selected_plan?: string;
+  country: string;
+  years_experience?: string;
+  company_name?: string;
+  license_number?: string;
+  license_type?: string;
+  specialties?: string;
+  target_region?: string;
+  reference1_name?: string;
+  reference1_phone?: string;
+  reference1_email?: string;
+  reference2_name?: string;
+  reference2_phone?: string;
+  reference2_email?: string;
+  promo_code?: string;
+  promo_benefits?: string;
+  promo_spot_number?: number;
+  is_founding_member?: boolean;
+  user_type: string;
+  status: 'pending_review' | 'approved' | 'rejected' | 'under_review';
+  submitted_at: string;
+  reviewed_at?: string;
+  created_at: string;
+  updated_at: string;
+  profiles?: {
+    email: string;
+    first_name: string;
+    last_name: string;
+  };
+}
+
 export default function UnifiedAdminDashboard() {
   const router = useRouter();
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
   
   // State management
-  const [activeSection, setActiveSection] = useState<'dashboard' | 'properties' | 'system' | 'users' | 'drafts'>('dashboard');
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'properties' | 'system' | 'users' | 'drafts' | 'agents'>('dashboard');
   const [pendingProperties, setPendingProperties] = useState<Property[]>([]);
   const [approvedProperties, setApprovedProperties] = useState<Property[]>([]);
   const [draftProperties, setDraftProperties] = useState<any[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [pendingAgents, setPendingAgents] = useState<AgentVetting[]>([]);
+  const [processingAgentId, setProcessingAgentId] = useState<string | null>(null);
+  const [agentRejectReason, setAgentRejectReason] = useState("");
+  const [showAgentRejectModal, setShowAgentRejectModal] = useState<string | null>(null);
   const [statistics, setStatistics] = useState<Statistics>({
     totalPending: 0,
     todaySubmissions: 0,
@@ -117,6 +155,7 @@ export default function UnifiedAdminDashboard() {
       loadUsers();
     }
     loadDrafts();
+    loadAgents();
   }, [adminLoading, adminError, isAdmin, router, permissions]);
 
   const loadDashboardData = async () => {
@@ -292,6 +331,69 @@ export default function UnifiedAdminDashboard() {
     }
   };
 
+  const loadAgents = async () => {
+    try {
+      console.log('🔄 Loading all agents (pending and approved)...');
+      
+      // Get ALL agent applications (not just pending) - this is the source of truth
+      let agentsQuery = supabase
+        .from('agent_vetting')
+        .select('*')
+        .in('status', ['pending_review', 'approved', 'denied']); // Include all statuses
+
+      // Apply country filter for non-super admins
+      if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
+        agentsQuery = agentsQuery.eq('country', permissions.countryFilter);
+      }
+
+      const { data: agents, error: agentsError } = await agentsQuery;
+
+      if (agentsError) {
+        console.warn('⚠️ Agents table not available:', agentsError.message);
+        setPendingAgents([]);
+        return;
+      }
+
+      if (!agents || agents.length === 0) {
+        setPendingAgents([]);
+        console.log('✅ No agents found in system');
+        return;
+      }
+
+      // Get profile data for each agent manually
+      const enrichedAgents = await Promise.all(
+        agents.map(async (agent) => {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('email, first_name, last_name, user_type')
+            .eq('id', agent.user_id)
+            .single();
+
+          return {
+            ...agent,
+            profiles: profile || null,
+            // Override profile user_type with agent_vetting source of truth
+            effective_user_type: 'agent' // Since they're in agent_vetting table
+          };
+        })
+      );
+
+      // Separate pending from approved/denied for display
+      const pendingAgents = enrichedAgents.filter(agent => agent.status === 'pending_review');
+      const approvedAgents = enrichedAgents.filter(agent => agent.status === 'approved');
+      const deniedAgents = enrichedAgents.filter(agent => agent.status === 'denied');
+
+      setPendingAgents(pendingAgents);
+      
+      console.log(`✅ Loaded agents: ${pendingAgents.length} pending, ${approvedAgents.length} approved, ${deniedAgents.length} denied`);
+      console.log('📋 All agents:', enrichedAgents.map(a => `${a.profiles?.first_name} ${a.profiles?.last_name} (${a.status})`));
+
+    } catch (error) {
+      console.warn('⚠️ Error loading agents (non-critical):', error);
+      setPendingAgents([]);
+    }
+  };
+
   const approveProperty = async (propertyId: string) => {
     setProcessingPropertyId(propertyId);
     setError('');
@@ -367,6 +469,118 @@ export default function UnifiedAdminDashboard() {
       setError('Network error occurred. Please try again.');
     }
     setProcessingPropertyId(null);
+  };
+
+  const approveAgent = async (agentId: string) => {
+    setProcessingAgentId(agentId);
+    setError('');
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        throw new Error('No authentication token available');
+      }
+      
+      const { error: updateError } = await supabase
+        .from('agent_vetting')
+        .update({ 
+          status: 'approved', 
+          approved_at: new Date().toISOString() 
+        })
+        .eq('id', agentId);
+
+      if (updateError) {
+        setError(updateError.message || 'Failed to approve agent');
+        return;
+      }
+
+      const agent = pendingAgents.find(a => a.id === agentId);
+      const agentName = agent?.profiles ? 
+        `${agent.profiles.first_name} ${agent.profiles.last_name}`.trim() || agent.profiles.email :
+        'Agent';
+      
+      // Send approval email notification
+      try {
+        await fetch('/api/send-agent-approval-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agentEmail: agent.profiles?.email || agent.email,
+            agentName: agentName,
+            country: agent.country || 'GY'
+          })
+        });
+        console.log('✅ Agent approval email sent successfully');
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send approval email:', emailError);
+      }
+
+      alert(`✅ Agent "${agentName}" has been approved and notified via email!`);
+      await loadAgents();
+      
+    } catch (error) {
+      console.error('❌ Network error during agent approval:', error);
+      setError('Network error occurred. Please try again.');
+    }
+    setProcessingAgentId(null);
+  };
+
+  const rejectAgent = async (agentId: string, reason: string) => {
+    if (!reason.trim()) {
+      setError('Please provide a reason for rejection');
+      return;
+    }
+
+    setProcessingAgentId(agentId);
+    setError('');
+    
+    try {
+      const { error: updateError } = await supabase
+        .from('agent_vetting')
+        .update({ 
+          status: 'rejected', 
+          denied_at: new Date().toISOString(),
+          rejection_reason: reason
+        })
+        .eq('id', agentId);
+
+      if (updateError) {
+        setError(updateError.message || 'Failed to reject agent');
+        return;
+      }
+
+      const agent = pendingAgents.find(a => a.id === agentId);
+      const agentName = agent?.profiles ? 
+        `${agent.profiles.first_name} ${agent.profiles.last_name}`.trim() || agent.profiles.email :
+        'Agent';
+        
+      // Send rejection email notification
+      try {
+        await fetch('/api/send-agent-rejection-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            agentEmail: agent.profiles?.email || agent.email,
+            agentName: agentName,
+            rejectionReason: reason,
+            country: agent.country || 'GY'
+          })
+        });
+        console.log('✅ Agent rejection email sent successfully');
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send rejection email:', emailError);
+      }
+
+      alert(`❌ Agent "${agentName}" has been rejected and notified via email.\nReason: ${reason}`);
+      setShowAgentRejectModal(null);
+      setAgentRejectReason("");
+      await loadAgents();
+      
+    } catch (error) {
+      console.error('❌ Network error during agent rejection:', error);
+      setError('Network error occurred. Please try again.');
+    }
+    setProcessingAgentId(null);
   };
 
   const handleLogout = async () => {
@@ -563,6 +777,18 @@ export default function UnifiedAdminDashboard() {
             }`}
           >
             📝 Drafts
+          </button>
+
+          {/* PRIORITY 3.5: Agent Vetting - Agent Applications */}
+          <button
+            onClick={() => setActiveSection('agents')}
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+              activeSection === 'agents'
+                ? 'bg-orange-600 text-white'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            👤 Agents
           </button>
 
           {/* PRIORITY 4: User Management - Administrative Tasks */}
@@ -1144,6 +1370,185 @@ export default function UnifiedAdminDashboard() {
           </div>
         )}
 
+        {/* Agents Section */}
+        {activeSection === 'agents' && (
+          <div>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">👤 Agent Vetting & Approval</h2>
+            
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="text-red-500 mr-2">❌</div>
+                  <div className="text-red-800 font-medium">Error</div>
+                </div>
+                <p className="text-red-700 text-sm mt-1">{error}</p>
+              </div>
+            )}
+
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-6 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">📊 Agent Applications Overview</h3>
+                  <p className="text-sm text-gray-600">Pending agent applications awaiting your review</p>
+                </div>
+                <button
+                  onClick={loadAgents}
+                  className="px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 transition-colors"
+                >
+                  🔄 Refresh Applications
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-orange-50 rounded-xl p-4 border border-orange-200">
+                  <div className="text-xs font-bold text-orange-800 uppercase tracking-wide mb-1">Pending Applications</div>
+                  <div className="text-2xl font-black text-orange-900">{pendingAgents.length}</div>
+                  <div className="text-xs text-orange-700">Awaiting Review</div>
+                </div>
+                
+                <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+                  <div className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">Countries</div>
+                  <div className="text-2xl font-black text-blue-900">
+                    {new Set(pendingAgents.map(agent => agent.country).filter(Boolean)).size}
+                  </div>
+                  <div className="text-xs text-blue-700">Different Countries</div>
+                </div>
+                
+                <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                  <div className="text-xs font-bold text-green-800 uppercase tracking-wide mb-1">Your Authority</div>
+                  <div className="text-2xl font-black text-green-900">
+                    {permissions?.canViewAllCountries ? 'ALL' : (permissions?.countryFilter || 'Limited')}
+                  </div>
+                  <div className="text-xs text-green-700">Review Access</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Agent Applications Grid */}
+            {pendingAgents.length === 0 ? (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+                <div className="text-6xl mb-4">👤</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No Pending Agent Applications</h3>
+                <p className="text-gray-600">There are currently no agent applications awaiting review.</p>
+                {!permissions?.canViewAllCountries && permissions?.countryFilter && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    You can only see applications for: {permissions.countryFilter}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pendingAgents.map((agent) => (
+                  <div key={agent.id} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow">
+                    {/* Agent Header */}
+                    <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 border-b border-orange-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
+                          👤 AGENT APPLICATION
+                        </span>
+                        <span className="text-xs text-orange-700">
+                          {agent.country}
+                        </span>
+                      </div>
+                      <h3 className="font-bold text-lg text-gray-900">
+                        {agent.profiles ? 
+                          `${agent.profiles.first_name || ''} ${agent.profiles.last_name || ''}`.trim() || agent.profiles.email :
+                          'Unknown Applicant'
+                        }
+                      </h3>
+                      <p className="text-sm text-gray-600">{agent.profiles?.email || 'No email'}</p>
+                    </div>
+
+                    {/* Agent Details */}
+                    <div className="p-4">
+                      {/* Professional Info */}
+                      <div className="grid grid-cols-2 gap-3 text-center mb-4">
+                        <div className="bg-orange-50 rounded-lg p-2">
+                          <div className="text-xs font-medium text-orange-800">💼 Experience</div>
+                          <div className="text-sm font-bold text-orange-900">{agent.years_experience || 'N/A'}</div>
+                        </div>
+                        <div className="bg-orange-50 rounded-lg p-2">
+                          <div className="text-xs font-medium text-orange-800">📋 Plan</div>
+                          <div className="text-sm font-bold text-orange-900">{agent.selected_plan || 'N/A'}</div>
+                        </div>
+                      </div>
+
+                      {/* Company Info */}
+                      {agent.company_name && (
+                        <div className="mb-4">
+                          <h4 className="text-xs font-semibold text-gray-800 mb-1">🏢 Company</h4>
+                          <p className="text-sm text-gray-600">{agent.company_name}</p>
+                        </div>
+                      )}
+
+                      {/* License Info */}
+                      {(agent.license_number || agent.license_type) && (
+                        <div className="mb-4">
+                          <h4 className="text-xs font-semibold text-gray-800 mb-1">📜 License</h4>
+                          <p className="text-sm text-gray-600">
+                            {agent.license_type && `${agent.license_type}: `}
+                            {agent.license_number || 'Not provided'}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Specialties */}
+                      {agent.specialties && (
+                        <div className="mb-4">
+                          <h4 className="text-xs font-semibold text-gray-800 mb-1">⭐ Specialties</h4>
+                          <p className="text-sm text-gray-600">{agent.specialties}</p>
+                        </div>
+                      )}
+
+                      {/* Application Info */}
+                      <div className="bg-orange-50 rounded-lg p-3 mb-4">
+                        <div className="text-xs font-medium text-orange-800 mb-1">Application Details</div>
+                        <div className="text-sm text-orange-700">
+                          <div className="flex items-center justify-between">
+                            <span>📅 Applied:</span>
+                            <span>{new Date(agent.submitted_at).toLocaleDateString()}</span>
+                          </div>
+                          {agent.target_region && (
+                            <div className="flex items-center justify-between mt-1">
+                              <span>🎯 Target:</span>
+                              <span>{agent.target_region}</span>
+                            </div>
+                          )}
+                          {agent.is_founding_member && (
+                            <div className="mt-1 text-xs bg-orange-200 text-orange-800 px-2 py-1 rounded">
+                              🌟 Founding Member
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => approveAgent(agent.id)}
+                            disabled={processingAgentId === agent.id}
+                            className="w-full px-4 py-3 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                          >
+                            {processingAgentId === agent.id ? '⏳' : '✅'} Approve
+                          </button>
+                          <button
+                            onClick={() => setShowAgentRejectModal(agent.id)}
+                            disabled={processingAgentId === agent.id}
+                            className="w-full px-4 py-3 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+                          >
+                            ❌ Reject
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* System Section */}
         {activeSection === 'system' && permissions?.canAccessSystemSettings && (
           <div>
@@ -1209,6 +1614,42 @@ export default function UnifiedAdminDashboard() {
                 className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-bold disabled:opacity-50"
               >
                 {processingPropertyId === showRejectModal ? '⏳ Processing...' : '❌ Reject Property'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Agent Reject Modal */}
+      {showAgentRejectModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-gray-900 mb-4">❌ Reject Agent Application</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Please provide a clear reason for rejecting this agent application. This will help the applicant understand what needs to be improved.
+            </p>
+            <textarea
+              value={agentRejectReason}
+              onChange={(e) => setAgentRejectReason(e.target.value)}
+              placeholder="Enter reason for rejection (e.g., insufficient experience, missing documentation, etc.)..."
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 min-h-[100px] mb-4"
+            />
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  setShowAgentRejectModal(null);
+                  setAgentRejectReason("");
+                }}
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => showAgentRejectModal && rejectAgent(showAgentRejectModal, agentRejectReason)}
+                disabled={!agentRejectReason.trim() || processingAgentId === showAgentRejectModal}
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-bold disabled:opacity-50"
+              >
+                {processingAgentId === showAgentRejectModal ? '⏳ Processing...' : '❌ Reject Agent'}
               </button>
             </div>
           </div>

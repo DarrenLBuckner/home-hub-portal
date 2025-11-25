@@ -54,14 +54,15 @@ export async function GET(request: NextRequest) {
     if (searchQuery) {
       // Search in title, description, and location using case-insensitive LIKE
       // For better performance, prioritize title matches first
-      query = query.or(`title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%`)
+      const searchTerm = String(searchQuery)
+      query = query.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,location.ilike.%${searchTerm}%`)
     }
     
-    // Add location filtering
+    // Add location filtering with proper string handling
     if (locationExact) {
-      query = query.ilike('location', `%${locationExact}%`)
+      query = query.ilike('location', `%${String(locationExact)}%`)
     } else if (locationQuery && !searchQuery) {
-      query = query.ilike('location', `%${locationQuery}%`)
+      query = query.ilike('location', `%${String(locationQuery)}%`)
     }
     
     // Add property type filtering
