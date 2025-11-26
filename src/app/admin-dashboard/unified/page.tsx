@@ -496,7 +496,20 @@ export default function UnifiedAdminDashboard() {
         return;
       }
 
+      // Also activate the user's subscription status
       const agent = pendingAgents.find(a => a.id === agentId);
+      if (agent?.user_id) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ subscription_status: 'active' })
+          .eq('id', agent.user_id);
+
+        if (profileError) {
+          console.warn('⚠️ Failed to activate user subscription:', profileError);
+        } else {
+          console.log('✅ User subscription activated');
+        }
+      }
       const agentName = agent?.profiles ? 
         `${agent.profiles.first_name} ${agent.profiles.last_name}`.trim() || agent.profiles.email :
         'Agent';
