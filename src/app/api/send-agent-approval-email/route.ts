@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
             <li>✅ Access to exclusive agent dashboard and tools</li>
             <li>🏠 Help clients buy, sell, and rent properties</li>
             <li>💼 Professional agent profile on our platform</li>
-            <li>📈 Commission tracking and management</li>
+            <li>📊 Property management and client tools</li>
             <li>🌟 Marketing support and lead generation</li>
             <li>📱 Mobile-friendly agent tools</li>
           </ul>
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
             <li>📝 <strong>Complete your agent profile</strong> - Add your photo, bio, and specialties</li>
             <li>🏢 <strong>Set up your office details</strong> - Add your company information</li>
             <li>🎯 <strong>Start helping clients</strong> - Begin listing and managing properties</li>
-            <li>📚 <strong>Access training materials</strong> - Learn our platform tools</li>
+            <li>📚 <strong>Access training materials (Coming Soon)</strong> - Platform tutorials and guides</li>
           </ol>
         </div>
         
@@ -80,7 +80,7 @@ YOUR AGENT BENEFITS:
 - Access to exclusive agent dashboard and tools
 - Help clients buy, sell, and rent properties  
 - Professional agent profile on our platform
-- Commission tracking and management
+- Property management and client tools
 - Marketing support and lead generation
 - Mobile-friendly agent tools
 
@@ -88,7 +88,7 @@ NEXT STEPS:
 1. Complete your agent profile - Add your photo, bio, and specialties
 2. Set up your office details - Add your company information  
 3. Start helping clients - Begin listing and managing properties
-4. Access training materials - Learn our platform tools
+4. Access training materials (Coming Soon) - Platform tutorials and guides
 
 Access your agent dashboard at: https://portalhomehub.com/agent-dashboard
 
