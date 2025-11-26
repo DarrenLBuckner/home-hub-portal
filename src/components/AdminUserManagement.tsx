@@ -229,6 +229,60 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
     }
   };
 
+  const handleActivateSubscription = async (userId: string) => {
+    if (!confirm('Are you sure you want to activate this user\'s subscription?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          subscription_status: 'active'
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Update local state
+      setUsers(prev => prev.map(user => 
+        user.id === userId 
+          ? { ...user, subscription_status: 'active', payment_status: 'current' }
+          : user
+      ));
+
+      alert('✅ User subscription activated successfully!');
+    } catch (error) {
+      console.error('Error activating subscription:', error);
+      alert('Failed to activate subscription. Please try again.');
+    }
+  };
+
+  const handleDeactivateSubscription = async (userId: string) => {
+    if (!confirm('Are you sure you want to deactivate this user\'s subscription?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          subscription_status: 'inactive'
+        })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Update local state
+      setUsers(prev => prev.map(user => 
+        user.id === userId 
+          ? { ...user, subscription_status: 'inactive', payment_status: 'overdue' }
+          : user
+      ));
+
+      alert('✅ User subscription deactivated successfully!');
+    } catch (error) {
+      console.error('Error deactivating subscription:', error);
+      alert('Failed to deactivate subscription. Please try again.');
+    }
+  };
+
   const handleReactivateUser = async (userId: string) => {
     if (!confirm('Are you sure you want to reactivate this user account?')) return;
 
@@ -454,6 +508,25 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                       >
                         🚫 Suspend
                       </button>
+                    )}
+
+                    {/* Subscription Status Controls */}
+                    {!isSuperAdmin(user.email) && (
+                      user.subscription_status === 'active' ? (
+                        <button
+                          onClick={() => handleDeactivateSubscription(user.id)}
+                          className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-sm"
+                        >
+                          ⏸️ Deactivate
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleActivateSubscription(user.id)}
+                          className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm"
+                        >
+                          ▶️ Activate
+                        </button>
+                      )
                     )}
                     
                     <button
