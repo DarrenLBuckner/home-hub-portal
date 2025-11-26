@@ -15,7 +15,7 @@ export default function VisitorAnalytics() {
 
   useEffect(() => {
     // Only fetch if user is admin with proper permissions
-    if (isAdmin && adminData && (adminData === 'super' || adminData === 'owner')) {
+    if (isAdmin && adminData && (adminData.admin_level === 'super' || adminData.admin_level === 'owner')) {
       fetchAnalytics();
     } else {
       setLoading(false);
@@ -23,7 +23,7 @@ export default function VisitorAnalytics() {
   }, [isAdmin, adminData]);
 
   // Show to super admins and owner admins only
-  if (!isAdmin || !adminData || (adminData !== 'super' && adminData !== 'owner')) {
+  if (!isAdmin || !adminData || (adminData.admin_level !== 'super' && adminData.admin_level !== 'owner')) {
     return null;
   }
 
