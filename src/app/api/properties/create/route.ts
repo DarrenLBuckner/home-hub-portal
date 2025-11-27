@@ -126,11 +126,11 @@ export async function POST(req: NextRequest) {
     const userId = user.id;
     
     // Validate that user has permission to create properties
-    const allowedUserTypes = ['admin', 'landlord', 'agent', 'fsbo'];
+    const allowedUserTypes = ['admin', 'landlord', 'agent', 'fsbo', 'owner'];
     if (!allowedUserTypes.includes(userType)) {
       return NextResponse.json({ 
         error: "Insufficient privileges", 
-        message: "Only admin, landlord, agent, or FSBO users can create properties"
+        message: "Only admin, landlord, agent, FSBO, or owner users can create properties"
       }, { status: 403 });
     }
     

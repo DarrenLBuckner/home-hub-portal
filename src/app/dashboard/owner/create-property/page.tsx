@@ -287,144 +287,103 @@ export default function CreateFSBOProperty() {
       console.log('Submitting as user:', user.id);
       console.log('Form data:', formData);
       
-
-      // Prepare data with defaults for ALL required fields
+      // Prepare data for API submission
       const propertyData = {
         title: formData.title || 'Untitled Property',
-        price: Number(formData.price) || 0,
-        property_type: formData.property_type || 'Residential',
+        description: formData.description || '',
+        price: formData.price || '0',
+        property_type: formData.property_type || 'Single Family Home',
         listing_type: 'sale',
-        status: 'pending',
-        listed_by_type: 'owner',
-        user_id: user.id,
+        propertyCategory: 'sale',
         
-        // Numeric fields with defaults
-        bedrooms: Number(formData.bedrooms) || 1,
-        bathrooms: Number(formData.bathrooms) || 1,
-        house_size_value: Number(formData.house_size_value) || 1000,
+        // Numeric fields
+        bedrooms: formData.bedrooms || '1',
+        bathrooms: formData.bathrooms || '1',
+        house_size_value: formData.house_size_value || '1000',
         house_size_unit: formData.house_size_unit || 'sq ft',
-        land_size_value: Number(formData.land_size_value) || 0,
+        land_size_value: formData.land_size_value || null,
         land_size_unit: formData.land_size_unit || 'sq ft',
-        year_built: Number(formData.year_built) || new Date().getFullYear(),
+        year_built: formData.year_built || null,
         
         // Lot dimensions
-        lot_length: formData.lot_length ? Number(formData.lot_length) : null,
-        lot_width: formData.lot_width ? Number(formData.lot_width) : null,
+        lot_length: formData.lot_length || null,
+        lot_width: formData.lot_width || null,
         lot_dimension_unit: formData.lot_dimension_unit || 'ft',
         
-        // Optional fields
-        description: formData.description || '',
-        region: formData.region || null,
-        city: formData.city || null,
+        // Location
+        region: formData.region || '',
+        city: formData.city || '',
         neighborhood: formData.neighborhood || null,
-        owner_email: formData.owner_email || null,
-        owner_whatsapp: formData.owner_whatsapp || null,
+        country: formData.country || 'GY',
+        
+        // Contact info
+        owner_email: formData.owner_email || '',
+        owner_whatsapp: formData.owner_whatsapp || '',
+        
+        // Amenities
         amenities: formData.amenities || [],
         
-        // Timestamps
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-      
-      // Remove any undefined values
-      Object.keys(propertyData).forEach(key => {
-        if ((propertyData as any)[key] === undefined) {
-          delete (propertyData as any)[key];
-        }
-      });
-      
-      console.log('Property data to submit:', propertyData);
-      
-      // Create property with pending status
-      console.log('Inserting into database...');
-      
-      // EMERGENCY BYPASS: Test with minimal data first
-      const testProperty = {
-        title: 'Test Property',
-        price: 100000,
-        user_id: user.id,
-        status: 'pending',
-        listed_by_type: 'owner',
-        listing_type: 'sale'
-      };
-      
-      console.log('Testing minimal insert first:', testProperty);
-      const { data: testData, error: testError } = await supabase
-        .from('properties')
-        .insert([testProperty])
-        .select();
-      
-      if (testError) {
-        console.error('MINIMAL DATA TEST FAILED:', testError);
-        setError(`Basic insert failed: ${testError.message}`);
-        submittingRef.current = false; // Reset ref on error
-        setIsSubmitting(false);
-        return;
-      }
-      
-      console.log('Minimal test SUCCESS! Trying full data...');
-      
-      const { data, error } = await supabase
-        .from('properties')
-        .insert([propertyData])
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Detailed submission error:', error);
-        console.error('Error code:', error.code);
-        console.error('Error details:', error.details);
-        console.error('Error hint:', error.hint);
-        console.error('Error message:', error.message);
+        // Images (prepare for API)
+        images: images.length > 0 ? images.map((file, index) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: null // Will be set below
+        })) : [],
         
-        // Show user-friendly message
-        if (error.message.includes('user_id')) {
-          setError('Authentication error. Please login again.');
-        } else if (error.message.includes('property_type')) {
-          setError('Property type issue. Contact support.');
-        } else {
-          setError(`Submission failed: ${error.message}`);
-        }
-        submittingRef.current = false; // Reset ref on error
-        setIsSubmitting(false);
-        return;
-      }
-      
-      console.log('Success! Property created:', data);
-      const property = data;
-      
-      // Upload images if any
-      if (images.length > 0 && property) {
+        // Status
+        status: 'pending'
+      };
+
+      // Convert images to base64 for API
+      if (images.length > 0) {
+        console.log('Converting images to base64...');
         for (let i = 0; i < images.length; i++) {
           const file = images[i];
-          const fileName = `${property.id}/${Date.now()}-${file.name}`;
-          
           try {
-            // Upload to storage
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('property-images')
-              .upload(fileName, file);
-            
-            if (!uploadError && uploadData) {
-              // Save to property_media
-              await supabase
-                .from('property_media')
-                .insert({
-                  property_id: property.id,
-                  media_url: uploadData.path,
-                  is_primary: i === 0,
-                  position: i
-                });
-            }
-          } catch (uploadErr) {
-            console.warn(`Failed to upload image ${i + 1}:`, uploadErr);
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result as string);
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+            propertyData.images[i].data = base64;
+          } catch (err) {
+            console.error(`Failed to convert image ${i + 1} to base64:`, err);
+            setError('Failed to process images. Please try again.');
+            submittingRef.current = false;
+            setIsSubmitting(false);
+            return;
           }
         }
       }
       
-      // Success - redirect to dashboard
+      console.log('Submitting to API...');
+      
+      // Submit to API instead of direct Supabase
+      const response = await fetch('/api/properties/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(propertyData)
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        console.error('API submission failed:', result);
+        setError(result.error || 'Submission failed. Please try again.');
+        submittingRef.current = false;
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log('Success! Property created via API:', result);
+      
+      // Success - redirect to dashboard with message from API
       console.log('Property submission complete, redirecting...');
-      router.push('/dashboard/owner?success=Property submitted for review');
+      router.push(`/dashboard/owner?success=${encodeURIComponent(result.message || 'Property submitted for review')}`);
       
     } catch (err: any) {
       console.error('Unexpected error:', err);

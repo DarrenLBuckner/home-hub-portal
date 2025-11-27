@@ -8,7 +8,7 @@ const AREA_CONVERSION_FACTORS = {
   'sq ft': 1,
   'sq m': 10.764, // 1 sq m = 10.764 sq ft
   'acres': 1/43560, // 1 acre = 43,560 sq ft
-  'hectares': 1/4047 // 1 hectare = 4,047 sq ft (approximately)
+  'hectares': 1/10764 // 1 hectare = 10,764 sq ft
 };
 
 // Dimension conversion factors to feet

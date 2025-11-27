@@ -116,9 +116,12 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
         onWidthChange={(width) => handleChange('lot_width', width)}
         onUnitChange={(unit) => handleChange('lot_dimension_unit', unit)}
         onAreaCalculated={(areaSqFt) => {
-          // Auto-update land_size_value with calculated area
-          handleChange('land_size_value', areaSqFt.toString());
-          handleChange('land_size_unit', 'sq ft');
+          // Auto-update land_size_value with calculated area (only if different)
+          const newValue = areaSqFt.toString();
+          if (formData.land_size_value !== newValue) {
+            handleChange('land_size_value', newValue);
+            handleChange('land_size_unit', 'sq ft');
+          }
         }}
       />
 

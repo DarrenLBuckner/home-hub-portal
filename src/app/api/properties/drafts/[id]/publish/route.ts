@@ -53,11 +53,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     // Validate that user has permission to publish properties
-    const allowedUserTypes = ['admin', 'landlord', 'agent', 'fsbo'];
+    const allowedUserTypes = ['admin', 'landlord', 'agent', 'fsbo', 'owner'];
     if (!allowedUserTypes.includes(userProfile.user_type)) {
       return NextResponse.json({ 
         error: "Insufficient privileges", 
-        message: "Only admin, landlord, agent, or FSBO users can publish properties"
+        message: "Only admin, landlord, agent, FSBO, or owner users can publish properties"
       }, { status: 403 });
     }
 
