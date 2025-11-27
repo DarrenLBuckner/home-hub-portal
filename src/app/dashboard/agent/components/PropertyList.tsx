@@ -5,6 +5,7 @@ const statusColors: { [key: string]: string } = {
   off_market: 'bg-gray-200 text-gray-700',
   active: 'bg-green-100 text-green-700',
   available: 'bg-green-100 text-green-700',
+  under_contract: 'bg-orange-100 text-orange-700',
   sold: 'bg-red-100 text-red-700',
   rented: 'bg-purple-100 text-purple-700',
   pending: 'bg-yellow-100 text-yellow-700',
@@ -124,12 +125,24 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
                 className="object-cover w-full h-full"
               />
               <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold ${statusClass}`}>
-                {property.status === 'available' ? 'LIVE' : 
-                 property.status === 'pending' ? 'UNDER CONTRACT' : 
+                {property.status === 'available' || property.status === 'active' ? 'LIVE' : 
+                 property.status === 'under_contract' ? 'UNDER CONTRACT' : 
+                 property.status === 'pending' ? 'PENDING APPROVAL' : 
                  property.status === 'sold' ? 'SOLD' : 
                  property.status === 'rented' ? 'RENTED' : 
-                 'PENDING APPROVAL'}
+                 property.status === 'off_market' ? 'HIDDEN' :
+                 property.status === 'rejected' ? 'REJECTED' :
+                 property.status === 'draft' ? 'DRAFT' :
+                 'UNKNOWN'}
               </span>
+              
+              {/* FSBO Badge - positioned below status badge */}
+              {(property.listed_by_type === 'owner' || property.listed_by_type === 'fsbo') && (
+                <span className="absolute top-12 left-3 px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 shadow-sm">
+                  For Sale By Owner
+                </span>
+              )}
+              
               <span className="absolute top-3 right-3 text-2xl">{typeIcon}</span>
             </div>
             <div className="p-4 flex-1 flex flex-col">
@@ -151,11 +164,11 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
               <div className="mt-auto space-y-2">
                 {/* Property Status Management */}
                 <div className="flex gap-2 flex-wrap text-xs">
-                  {property.status === 'available' && (
+                  {(property.status === 'available' || property.status === 'active') && (
                     <>
                       <button 
-                        onClick={() => updatePropertyStatus(property.id, 'pending')}
-                        className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                        onClick={() => updatePropertyStatus(property.id, 'under_contract')}
+                        className="px-2 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 transition"
                         disabled={deletingId === property.id}
                       >
                         📝 Mark Under Contract
@@ -199,7 +212,37 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
                         </button>
                       )}
                       <button 
-                        onClick={() => updatePropertyStatus(property.id, 'available')}
+                        onClick={() => updatePropertyStatus(property.id, 'active')}
+                        className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                        disabled={deletingId === property.id}
+                      >
+                        ↩️ Back to Market
+                      </button>
+                    </>
+                  )}
+                  
+                  {/* Under Contract Properties */}
+                  {property.status === 'under_contract' && (
+                    <>
+                      {property.listing_type === 'rental' ? (
+                        <button 
+                          onClick={() => updatePropertyStatus(property.id, 'rented')}
+                          className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+                          disabled={deletingId === property.id}
+                        >
+                          🏠 Completed - Rented
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => updatePropertyStatus(property.id, 'sold')}
+                          className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+                          disabled={deletingId === property.id}
+                        >
+                          🏆 Completed - Sold
+                        </button>
+                      )}
+                      <button 
+                        onClick={() => updatePropertyStatus(property.id, 'active')}
                         className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
                         disabled={deletingId === property.id}
                       >

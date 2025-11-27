@@ -53,6 +53,13 @@ const statusConfig = {
     icon: '⏳',
     description: 'Properties waiting for admin approval'
   },
+  under_contract: {
+    label: 'Under Contract',
+    color: 'bg-orange-100 text-orange-700',
+    badgeText: 'UNDER CONTRACT',
+    icon: '📝',
+    description: 'Properties that are under contract but not yet sold/rented'
+  },
   rejected: {
     label: 'Rejected',
     color: 'bg-red-200 text-red-800',
@@ -678,6 +685,14 @@ export default function UniversalPropertyManager({
                       <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold ${config.color} shadow-sm`}>
                         {config.badgeText}
                       </span>
+                      
+                      {/* FSBO Badge - positioned below status badge */}
+                      {(property.listed_by_type === 'owner' || property.listed_by_type === 'fsbo') && (
+                        <span className="absolute top-12 left-3 px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 shadow-sm">
+                          For Sale By Owner
+                        </span>
+                      )}
+                      
                       <span className="absolute top-3 right-3 text-2xl bg-white/80 rounded-full p-1">
                         {typeIcon}
                       </span>
@@ -801,6 +816,33 @@ export default function UniversalPropertyManager({
                           </div>
                         )}
 
+                        {/* Under Contract Properties */}
+                        {property.status === 'under_contract' && (
+                          <div className="space-y-2">
+                            <div className="text-xs text-orange-700 bg-orange-50 p-2 rounded border border-orange-200">
+                              <strong>Under Contract:</strong> This property is under contract. Complete the sale or put it back on market.
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <button 
+                                onClick={() => updatePropertyStatus(property.id, property.propertyCategory === 'rental' ? 'rented' : 'sold')}
+                                className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+                              >
+                                {property.propertyCategory === 'rental' ? '🏠 Completed - Rented' : '🏆 Completed - Sold'}
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  if (confirm('This will put your property back on the market as available.')) {
+                                    updatePropertyStatus(property.id, 'active');
+                                  }
+                                }}
+                                className="px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                              >
+                                ↩️ Back to Market
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
                         {/* Off Market Properties */}
                         {property.status === 'off_market' && (
                           <div className="space-y-2">
@@ -836,8 +878,8 @@ export default function UniversalPropertyManager({
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-xs">
                               <button 
-                                onClick={() => updatePropertyStatus(property.id, 'pending')}
-                                className="px-2 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition"
+                                onClick={() => updatePropertyStatus(property.id, 'under_contract')}
+                                className="px-2 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 transition"
                                 title="Mark as under contract"
                               >
                                 📝 Under Contract

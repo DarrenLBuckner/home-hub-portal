@@ -11,10 +11,48 @@ import { getCountryAwareAdminPermissions } from "@/lib/auth/adminPermissions";
 export default function OwnerDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  
+  // Function to determine account status display
+  const getAccountStatus = (subscription: any) => {
+    if (!subscription) return { text: 'Loading...', color: 'text-gray-600' };
+    
+    const { subscription_status, is_founding_member, totalProperties } = subscription;
+    
+    // Founding members get special treatment
+    if (is_founding_member) {
+      return { text: 'Founding Member', color: 'text-purple-600' };
+    }
+    
+    // Check subscription status
+    switch (subscription_status) {
+      case 'active':
+        return { text: 'Active Account', color: 'text-green-600' };
+      case 'pending_payment':
+        // User registered but hasn't paid yet
+        if (totalProperties === 0) {
+          return { text: 'Free Trial', color: 'text-blue-600' };
+        } else {
+          return { text: 'Upgrade Required', color: 'text-orange-600' };
+        }
+      case 'inactive':
+      case null:
+      case undefined:
+        // Check if they have properties - if yes, they've used their free trial
+        if (totalProperties > 0) {
+          return { text: 'Upgrade Required', color: 'text-orange-600' };
+        } else {
+          return { text: 'Free Trial', color: 'text-blue-600' };
+        }
+      default:
+        return { text: subscription_status || 'Unknown Status', color: 'text-gray-600' };
+    }
+  };
   const [subscription, setSubscription] = useState<{
     status: string;
     totalProperties: number;
     activeListings: number;
+    subscription_status?: string;
+    is_founding_member?: boolean;
   } | null>(null);
   const [properties, setProperties] = useState<any[]>([]);
   const [countryFilter, setCountryFilter] = useState<string>("");
@@ -84,7 +122,9 @@ export default function OwnerDashboard() {
         setSubscription({
           status: profile.subscription_status || 'inactive', // This tracks if they've completed registration
           totalProperties: 0, // Will be updated when we fetch properties
-          activeListings: 0
+          activeListings: 0,
+          subscription_status: profile.subscription_status,
+          is_founding_member: profile.is_founding_member
         });
 
         // Fetch user properties
@@ -209,8 +249,8 @@ export default function OwnerDashboard() {
         <div className="mb-6 p-6 bg-white rounded-xl shadow">
           <div className="font-semibold text-lg mb-2">
             Account Status: 
-            <span className={subscription.status === 'active' ? 'text-green-600' : 'text-red-600'}>
-              {subscription.status === 'active' ? 'Registered' : 'Registration Required'}
+            <span className={getAccountStatus(subscription).color}>
+              {getAccountStatus(subscription).text}
             </span>
           </div>
           <div className="mb-1">Total Properties: <span className="font-bold text-orange-600">{subscription.totalProperties}</span></div>

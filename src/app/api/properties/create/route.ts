@@ -458,7 +458,7 @@ export async function POST(req: NextRequest) {
         user_id: userId,
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'draft'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
-        country_id: userProfile?.country_id || 1,  // ✅ Use integer 1 for Guyana
+        country_id: body.country || 'GY',  // Use country code from form data
         created_at: new Date().toISOString(),
       };
     } else if (isRental) {
@@ -499,7 +499,7 @@ export async function POST(req: NextRequest) {
         listed_by_type: 'landlord',
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
-        country_id: userProfile?.country_id || 1,  // ✅ Use integer 1 for Guyana
+        country_id: body.country || 'GY',  // Use country code from form data
         propertyCategory: 'rental',
         created_at: new Date().toISOString(),
       };
@@ -543,7 +543,7 @@ export async function POST(req: NextRequest) {
         listed_by_type: 'fsbo',
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
-        country_id: userProfile?.country_id || 1,  // ✅ Use integer 1 for Guyana
+        country_id: body.country || 'GY',  // Use country code from form data
         
         // Legacy/additional fields
         propertyCategory: 'sale',

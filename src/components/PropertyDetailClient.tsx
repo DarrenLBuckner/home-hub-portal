@@ -138,12 +138,19 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
         )}
         
         {/* Listing Type Badge */}
-        <div className="absolute top-4 left-4">
-          <span className={`px-4 py-2 rounded-lg font-semibold text-white shadow-lg ${
+        <div className="absolute top-4 left-4 space-y-2">
+          <span className={`block px-4 py-2 rounded-lg font-semibold text-white shadow-lg ${
             property.listing_type === 'rent' ? 'bg-blue-600' : 'bg-emerald-600'
           }`}>
             {property.listing_type === 'rent' ? 'FOR RENT' : 'FOR SALE'}
           </span>
+          
+          {/* FSBO Badge - positioned below listing type badge */}
+          {(property.listed_by_type === 'owner' || property.listed_by_type === 'fsbo' || property.owner?.user_type === 'owner') && (
+            <span className="block px-3 py-1.5 rounded-lg font-semibold bg-orange-100 text-orange-700 shadow-lg text-sm">
+              For Sale By Owner
+            </span>
+          )}
         </div>
       </div>
 

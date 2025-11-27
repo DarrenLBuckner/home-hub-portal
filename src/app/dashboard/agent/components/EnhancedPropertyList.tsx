@@ -25,6 +25,7 @@ interface Property {
   reviewed_at: string | null;
   city: string;
   region: string;
+  listed_by_type?: string;
 }
 
 const statusConfig = {
@@ -41,6 +42,13 @@ const statusConfig = {
     badgeText: 'UNDER REVIEW',
     icon: '⏳',
     description: 'Property is waiting for admin approval'
+  },
+  under_contract: {
+    label: 'Under Contract',
+    color: 'bg-orange-100 text-orange-700',
+    badgeText: 'UNDER CONTRACT',
+    icon: '📝',
+    description: 'Property is under contract but not yet sold/rented'
   },
   rejected: {
     label: 'Rejected',
@@ -278,6 +286,14 @@ export default function EnhancedPropertyList({ userId }: { userId: string }) {
                   <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold ${config.color}`}>
                     {config.badgeText}
                   </span>
+                  
+                  {/* FSBO Badge - positioned below status badge */}
+                  {(property.listed_by_type === 'owner' || property.listed_by_type === 'fsbo') && (
+                    <span className="absolute top-12 left-3 px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 shadow-sm">
+                      For Sale By Owner
+                    </span>
+                  )}
+                  
                   <span className="absolute top-3 right-3 text-2xl">{typeIcon}</span>
                   
                   {/* Rejection indicator */}
@@ -323,8 +339,8 @@ export default function EnhancedPropertyList({ userId }: { userId: string }) {
                     {property.status === 'active' && (
                       <div className="flex gap-2 flex-wrap text-xs">
                         <button 
-                          onClick={() => updatePropertyStatus(property.id, 'pending')}
-                          className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                          onClick={() => updatePropertyStatus(property.id, 'under_contract')}
+                          className="px-2 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 transition"
                         >
                           📝 Mark Under Contract
                         </button>
@@ -385,6 +401,32 @@ export default function EnhancedPropertyList({ userId }: { userId: string }) {
                     {property.status === 'pending' && (
                       <div className="text-xs text-yellow-600 bg-yellow-50 p-2 rounded">
                         <strong>Under Review:</strong> Your property is being reviewed by our team
+                      </div>
+                    )}
+
+                    {property.status === 'under_contract' && (
+                      <div className="space-y-2">
+                        <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded">
+                          <strong>Under Contract:</strong> This property is under contract
+                        </div>
+                        <div className="flex gap-2 text-xs">
+                          <button 
+                            onClick={() => updatePropertyStatus(property.id, property.listing_type === 'rent' ? 'rented' : 'sold')}
+                            className="flex-1 px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+                          >
+                            {property.listing_type === 'rent' ? '🏠 Completed - Rented' : '🏆 Completed - Sold'}
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (confirm('Put property back on market?')) {
+                                updatePropertyStatus(property.id, 'active');
+                              }
+                            }}
+                            className="flex-1 px-2 py-1 bg-green-600 text-white rounded hover:bg-green-700 transition"
+                          >
+                            ↩️ Back to Market
+                          </button>
+                        </div>
                       </div>
                     )}
 
