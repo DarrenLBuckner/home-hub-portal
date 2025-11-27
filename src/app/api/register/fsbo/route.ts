@@ -1,69 +1,58 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
-import { sendWelcomeEmail } from '@/lib/email.js';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     console.log('Received registration data:', { ...body, password: '[REDACTED]' });
     const { first_name, last_name, email, phone, password, promo_code, promo_benefits, promo_spot_number, is_founding_member } = body;
+    
     if (!first_name || !last_name || !email || !phone || !password) {
       console.log('Missing fields:', { first_name: !!first_name, last_name: !!last_name, email: !!email, phone: !!phone, password: !!password });
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
     
-    // Create Supabase Auth user
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    }
+
+    // Check if email already exists in auth system before proceeding
     const supabase = createAdminClient();
-    const { data, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      user_metadata: {
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    const emailExists = existingUsers.users?.some(user => user.email === email);
+    
+    if (emailExists) {
+      return NextResponse.json({ error: 'An account with this email address already exists' }, { status: 400 });
+    }
+    
+    // Validate password requirements
+    if (password.length < 8 || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      return NextResponse.json({ error: 'Password must be at least 8 characters with at least one special character' }, { status: 400 });
+    }
+    
+    // DO NOT create user yet - just validate and return temp registration data
+    // User will only be created after payment/plan confirmation is complete
+    const tempRegistrationId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    return NextResponse.json({ 
+      success: true,
+      tempRegistrationId,
+      registrationData: {
         first_name,
         last_name,
+        email,
         phone,
-        user_type: 'owner',
+        password,
+        promo_code,
+        promo_benefits,
+        promo_spot_number,
+        is_founding_member
       },
-      email_confirm: true,
+      message: 'Registration data validated successfully. Complete your plan selection to finish registration.'
     });
     
-    if (authError) {
-      console.error('Supabase auth error:', authError);
-      return NextResponse.json({ error: authError.message }, { status: 400 });
-    }
-
-    // Handle promo code redemption if provided
-    if (promo_code && data.user) {
-      try {
-        const redeemResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/promo-codes/redeem`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            code: promo_code,
-            userId: data.user.id
-          })
-        });
-
-        const redeemResult = await redeemResponse.json();
-        if (!redeemResult.success) {
-          console.warn('Promo code redemption failed:', redeemResult.error);
-        } else {
-          console.log('Promo code redeemed successfully:', redeemResult.message);
-        }
-      } catch (redeemError) {
-        console.error('Error redeeming promo code:', redeemError);
-        // Don't fail registration if promo code redemption fails
-      }
-    }
-
-    // Send welcome email (async, don't wait for it)
-    try {
-      await sendWelcomeEmail(email);
-    } catch (emailError) {
-      console.error('Failed to send welcome email:', emailError);
-      // Don't fail the registration if email fails
-    }
-    
-    return NextResponse.json({ user: data.user });
   } catch (error: any) {
     console.error('Registration error:', error);
     return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

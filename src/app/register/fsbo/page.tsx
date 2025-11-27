@@ -118,17 +118,19 @@ function FSBORegistrationContent() {
         throw new Error(data.error || 'Registration failed');
       }
       
-      // Store registration data for payment page
+      // Store temporary registration data for payment page
       sessionStorage.setItem('fsboRegistration', JSON.stringify({
-        userId: data.user.id,
+        tempRegistrationId: data.tempRegistrationId,
+        registrationData: data.registrationData,
         email: formData.email,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        plan: selectedPlan
+        plan: selectedPlan,
+        isTemporary: true // Flag to indicate this is not a completed registration
       }));
       
       setIsSubmitting(false);
-      setStep('plan'); // Move to plan selection step after registration
+      setStep('plan'); // Move to plan selection step after validation
     } catch (error: any) {
       setError(error.message);
       setIsSubmitting(false);
