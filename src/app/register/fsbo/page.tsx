@@ -159,9 +159,9 @@ function FSBORegistrationContent() {
           // Clear session storage since registration is complete
           sessionStorage.removeItem('fsboRegistration');
           
-          // Success - redirect to dashboard after brief delay
+          // Success - redirect to login with success message
           setTimeout(() => {
-            window.location.href = '/dashboard/owner';
+            window.location.href = '/login?success=fsbo-founding-member&firstName=' + encodeURIComponent(formData.firstName);
           }, 1500);
         } catch (completeError: any) {
           console.error('Registration completion error:', completeError);

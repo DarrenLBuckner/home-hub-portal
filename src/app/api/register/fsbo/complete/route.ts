@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
-import { sendWelcomeEmail } from '@/lib/email.js';
+import { sendWelcomeEmail, sendFSBOFoundingMemberEmail } from '@/lib/email.js';
 
 export async function POST(request: Request) {
   try {
@@ -73,9 +73,17 @@ export async function POST(request: Request) {
       }
     }
 
-    // Send welcome email (async, don't wait for it)
+    // Send appropriate welcome email based on user type
     try {
-      await sendWelcomeEmail(email);
+      if (is_founding_member && promo_code) {
+        // Send special founding member email with personalized content
+        await sendFSBOFoundingMemberEmail(email, first_name, promo_spot_number);
+        console.log('✅ FSBO founding member welcome email sent successfully');
+      } else {
+        // Send regular welcome email for paid FSBO users
+        await sendWelcomeEmail(email);
+        console.log('✅ Regular FSBO welcome email sent successfully');
+      }
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
       // Don't fail the registration if email fails
