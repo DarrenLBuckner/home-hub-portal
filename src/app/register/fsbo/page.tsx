@@ -15,7 +15,7 @@ const countries = [
 
 function FSBORegistrationContent() {
   const searchParams = useSearchParams();
-  const [step, setStep] = useState<'register' | 'plan'>('register');
+  const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -75,6 +75,11 @@ function FSBORegistrationContent() {
   const handleSelectFoundingMember = () => {
     // Set a special founding member "plan" that will be handled during submission
     setSelectedPlan('founding_member');
+    setCurrentStep(3); // Skip plan selection, go directly to registration
+  };
+
+  const handleChooseRegularPlans = () => {
+    setCurrentStep(2); // Go to plan selection
   };
 
   // Registration form handlers
@@ -130,7 +135,7 @@ function FSBORegistrationContent() {
       }));
       
       setIsSubmitting(false);
-      setStep('plan'); // Move to plan selection step after validation
+      setCurrentStep(4); // Move to completion step after validation
     } catch (error: any) {
       setError(error.message);
       setIsSubmitting(false);
@@ -145,9 +150,9 @@ function FSBORegistrationContent() {
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-100">
       <div className="max-w-md mx-auto lg:max-w-4xl bg-white lg:bg-transparent p-4 lg:p-6 lg:rounded-2xl lg:shadow-xl space-y-6 lg:space-y-8">
         <h1 className="text-2xl lg:text-3xl font-extrabold text-center text-orange-600 mb-2 tracking-tight drop-shadow-lg">For Sale By Owner Registration</h1>
-      {/* Always show plan cards at the top */}
-      {/* Registration step */}
-      {step === 'register' && (
+        
+        {/* Step 1: Initial promo code entry */}
+        {currentStep === 1 && (
         <>
           {/* Country Display (Read-only) */}
           <div className="mb-6">
@@ -178,45 +183,74 @@ function FSBORegistrationContent() {
               </div>
             )}
 
-            {/* Divider */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">Or choose a paid plan</span>
+              {/* Regular Plans CTA */}
+              <div className="mt-6">
+                <button
+                  onClick={handleChooseRegularPlans}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-medium text-lg shadow-lg transform hover:scale-[1.02] transition-all"
+                >
+                  Choose Regular Plan
+                </button>
               </div>
             </div>
-          </div>
+        </>
+        )}
 
-          <div className="mb-8">
+        {/* Step 2: Plan selection for regular users */}
+        {currentStep === 2 && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={() => setCurrentStep(1)}
+                className="flex items-center text-blue-600 hover:text-blue-800"
+              >
+                ← Back to Start
+              </button>
+            </div>
+            
             <FSBORegistrationNew.PlanSelection
               selectedPlan={selectedPlan}
               setSelectedPlan={setSelectedPlan}
-              onContinue={() => {}}
-              isContinueEnabled={false}
+              onContinue={() => setCurrentStep(3)}
+              isContinueEnabled={!!selectedPlan}
             />
           </div>
-          <FSBORegistrationNew.RegistrationForm
-            formData={formData}
-            setFormData={setFormData}
-            onSubmit={handleRegistrationSubmit}
-            isSubmitting={isSubmitting}
-            error={error}
-          />
-        </>
-      )}
-      {/* Plan selection step */}
-      {step === 'plan' && (
-        <div className="mt-6">
-          <FSBORegistrationNew.PlanSelection
-            selectedPlan={selectedPlan}
-            setSelectedPlan={setSelectedPlan}
-            onContinue={() => window.location.href = '/register/payment'}
-            isContinueEnabled={!!selectedPlan}
-          />
-        </div>
-      )}
+        )}
+
+        {/* Step 3: Registration form */}
+        {currentStep === 3 && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={() => setCurrentStep(selectedPlan === 'founding_member' ? 1 : 2)}
+                className="flex items-center text-blue-600 hover:text-blue-800"
+              >
+                ← Back
+              </button>
+              {selectedPlan === 'founding_member' && validPromoCode && (
+                <div className="bg-green-100 text-green-800 px-3 py-1 rounded-lg text-sm font-medium">
+                  Founding Member #{promoSpotNumber}
+                </div>
+              )}
+            </div>
+            
+            <FSBORegistrationNew.RegistrationForm
+              formData={formData}
+              setFormData={setFormData}
+              onSubmit={handleRegistrationSubmit}
+              isSubmitting={isSubmitting}
+              error={error}
+            />
+          </div>
+        )}
+
+        {/* Step 4: Completion - redirect happens automatically */}
+        {currentStep === 4 && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Processing your registration...</p>
+          </div>
+        )}
       </div>
     </div>
   );

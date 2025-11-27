@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       first_name: first_name,
       last_name: last_name,
       phone: phone,
-      password: password, // Store temporarily - will be used when approved
+      temp_password: password, // Store temporarily - will be used when approved
       ...agentData,
       user_type: "agent",
       status: "pending_review",
