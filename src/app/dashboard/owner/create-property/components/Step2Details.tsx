@@ -91,31 +91,6 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
             </select>
           </div>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Land Size
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              value={formData.land_size_value}
-              onChange={(e) => handleChange('land_size_value', e.target.value)}
-              placeholder="5000"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              min="0"
-            />
-            <select
-              value={formData.land_size_unit}
-              onChange={(e) => handleChange('land_size_unit', e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="sq ft">sq ft</option>
-              <option value="sq m">sq m</option>
-              <option value="acres">acres</option>
-            </select>
-          </div>
-        </div>
       </div>
 
       <div>

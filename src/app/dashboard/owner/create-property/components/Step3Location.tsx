@@ -27,13 +27,15 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
         ...prev,
         country: value,
         region: '',
+        city: '', // Clear city when country changes
         currency: currencyCode
       }));
     } else {
       setSelectedRegion(value);
       setFormData((prev: any) => ({
         ...prev,
-        region: value
+        region: value,
+        city: value // Set city to the same value as region for validation
       }));
     }
   };
