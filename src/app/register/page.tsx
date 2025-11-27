@@ -28,6 +28,10 @@ function RegistrationContent() {
   const [promoBenefits, setPromoBenefits] = useState<any>(null);
   const [promoSpotNumber, setPromoSpotNumber] = useState<number | null>(null);
   
+  // Password visibility state
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  
   // Fetch pricing data for current country and agent user type
   const { plans: agentPlans, country: pricingCountry, loading: plansLoading } = usePricing(selectedCountry.code, 'agent');
 
@@ -44,6 +48,7 @@ function RegistrationContent() {
     password: "",
     confirm_password: "",
     years_experience: "",
+    current_listings: "",
     
     // Step 3: Professional Info
     company_name: "",
@@ -123,6 +128,9 @@ function RegistrationContent() {
     // Set a special founding member "plan" that will be handled during submission
     setForm({ ...form, selected_plan: 'founding_member' });
     setSelectedPlan('founding_member');
+    // Automatically proceed to next step
+    setCurrentStep(2);
+    setError("");
   };
 
   const validateStep = (step: number): boolean => {
@@ -132,7 +140,7 @@ function RegistrationContent() {
       case 2:
         return !!(form.first_name && form.last_name && form.phone && form.email && form.password && form.confirm_password && form.years_experience);
       case 3:
-        return !!(form.company_name && form.license_number);
+        return true; // Professional details are now optional
       default:
         return true;
     }
@@ -399,14 +407,33 @@ function RegistrationContent() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
-                  <input
-                    type="password"
-                    name="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                    placeholder="Create strong password"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      value={form.password}
+                      onChange={handleChange}
+                      className="w-full p-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                      placeholder="Create strong password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 focus:outline-none touch-manipulation"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <svg className="h-5 w-5 lg:h-4 lg:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5 lg:h-4 lg:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                   <div className="mt-1 space-y-1 text-xs text-gray-600">
                     <div className={`flex items-center ${form.password.length >= 8 ? 'text-green-600' : ''}`}>
                       <span className="mr-1">{form.password.length >= 8 ? '✓' : '○'}</span>
@@ -420,14 +447,33 @@ function RegistrationContent() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
-                  <input
-                    type="password"
-                    name="confirm_password"
-                    value={form.confirm_password}
-                    onChange={handleChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                    placeholder="Confirm your password"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirm_password"
+                      value={form.confirm_password}
+                      onChange={handleChange}
+                      className="w-full p-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                      placeholder="Confirm your password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 focus:outline-none touch-manipulation"
+                      aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                    >
+                      {showConfirmPassword ? (
+                        <svg className="h-5 w-5 lg:h-4 lg:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5 lg:h-4 lg:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      )}
+                    </button>
+                  </div>
                   {form.confirm_password && (
                     <div className={`mt-1 text-xs ${form.password === form.confirm_password ? 'text-green-600' : 'text-red-600'}`}>
                       {form.password === form.confirm_password ? '✓ Passwords match' : '✗ Passwords do not match'}
@@ -436,20 +482,38 @@ function RegistrationContent() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience *</label>
-                <select
-                  name="years_experience"
-                  value={form.years_experience}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                >
-                  <option value="">Select experience level</option>
-                  <option value="0-1">New Agent (0-1 years)</option>
-                  <option value="2-5">Experienced (2-5 years)</option>
-                  <option value="6-10">Senior Agent (6-10 years)</option>
-                  <option value="10+">Expert (10+ years)</option>
-                </select>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Years of Experience *</label>
+                  <select
+                    name="years_experience"
+                    value={form.years_experience}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                  >
+                    <option value="">Select experience level</option>
+                    <option value="0-1">New Agent (0-1 years)</option>
+                    <option value="2-5">Experienced (2-5 years)</option>
+                    <option value="6-10">Senior Agent (6-10 years)</option>
+                    <option value="10+">Expert (10+ years)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Current Number of Listings</label>
+                  <select
+                    name="current_listings"
+                    value={form.current_listings}
+                    onChange={handleChange}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                  >
+                    <option value="">Select current listings</option>
+                    <option value="0-24">0-24 listings</option>
+                    <option value="25-49">25-49 listings</option>
+                    <option value="50-74">50-74 listings</option>
+                    <option value="75-99">75-99 listings</option>
+                    <option value="100+">100+ listings</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
@@ -465,7 +529,8 @@ function RegistrationContent() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Company/Brokerage Name *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company/Brokerage Name</label>
+                <div className="text-xs text-gray-500 mb-2">Strongly recommended for professionalism</div>
                 <input
                   type="text"
                   name="company_name"
@@ -478,18 +543,18 @@ function RegistrationContent() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">License Number *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
                   <input
                     type="text"
                     name="license_number"
                     value={form.license_number}
                     onChange={handleChange}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                    placeholder="RE123456"
+                    placeholder="If applicable"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">License Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Type of Agent</label>
                   <select
                     name="license_type"
                     value={form.license_type}
