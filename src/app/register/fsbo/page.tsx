@@ -136,6 +136,45 @@ function FSBORegistrationContent() {
       
       setIsSubmitting(false);
       setCurrentStep(4); // Move to completion step after validation
+      
+      // Founding members complete registration immediately (no payment needed)
+      if (validPromoCode && promoBenefits) {
+        try {
+          const completeResponse = await fetch('/api/register/fsbo/complete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tempRegistrationId: data.tempRegistrationId,
+              registrationData: data.registrationData,
+              paymentVerified: false // Founding members don't need payment
+            }),
+          });
+          
+          const completeData = await completeResponse.json();
+          
+          if (!completeResponse.ok) {
+            throw new Error(completeData.error || 'Failed to complete registration');
+          }
+          
+          // Clear session storage since registration is complete
+          sessionStorage.removeItem('fsboRegistration');
+          
+          // Success - redirect to dashboard after brief delay
+          setTimeout(() => {
+            window.location.href = '/dashboard/owner';
+          }, 1500);
+        } catch (completeError: any) {
+          console.error('Registration completion error:', completeError);
+          setError(`Registration failed: ${completeError.message}`);
+          setIsSubmitting(false);
+          setCurrentStep(3); // Go back to registration form
+        }
+      } else {
+        // Regular users need to complete payment first
+        setTimeout(() => {
+          window.location.href = '/register/payment';
+        }, 1500);
+      }
     } catch (error: any) {
       setError(error.message);
       setIsSubmitting(false);
