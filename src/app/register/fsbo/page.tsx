@@ -159,10 +159,8 @@ function FSBORegistrationContent() {
           // Clear session storage since registration is complete
           sessionStorage.removeItem('fsboRegistration');
           
-          // Success - redirect to login with success message
-          setTimeout(() => {
-            window.location.href = '/login?success=fsbo-founding-member&firstName=' + encodeURIComponent(formData.firstName);
-          }, 1500);
+          // Show success step instead of immediate redirect
+          setCurrentStep(5);
         } catch (completeError: any) {
           console.error('Registration completion error:', completeError);
           setError(`Registration failed: ${completeError.message}`);
@@ -283,11 +281,51 @@ function FSBORegistrationContent() {
           </div>
         )}
 
-        {/* Step 4: Completion - redirect happens automatically */}
+        {/* Step 4: Processing registration */}
         {currentStep === 4 && (
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
             <p className="text-gray-600">Processing your registration...</p>
+          </div>
+        )}
+
+        {/* Step 5: Success Message */}
+        {currentStep === 5 && (
+          <div className="text-center py-8 space-y-6">
+            <div className="mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-green-600 mb-2">🎉 Registration Complete!</h2>
+              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg inline-block font-medium mb-4">
+                Founding Member #{promoSpotNumber}
+              </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+              <h3 className="text-lg font-semibold text-blue-800 mb-2">📧 Please Check Your Email</h3>
+              <p className="text-blue-700 mb-4">
+                We've sent a welcome message to <strong>{formData.email}</strong> with important information about your founding member benefits and how to get started.
+              </p>
+              <p className="text-sm text-blue-600">
+                Don't see it? Check your spam/junk folder and add info@portalhomehub.com to your contacts.
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <button
+                onClick={() => window.location.href = '/login'}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
+              >
+                Continue to Login
+              </button>
+              
+              <p className="text-sm text-gray-500">
+                Ready to list your first property? Login and start immediately - no approval needed!
+              </p>
+            </div>
           </div>
         )}
       </div>

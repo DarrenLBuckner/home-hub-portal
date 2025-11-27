@@ -52,33 +52,9 @@ export async function sendFSBOFoundingMemberEmail(to, firstName, spotNumber) {
           </ul>
         </div>
 
-        <!-- Ready to Start -->
-        <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <h3 style="color: #2563eb; margin: 0 0 15px 0;">🚀 Ready to List Your Property?</h3>
-          <p style="margin-bottom: 15px; color: #374151;">
-            Unlike agents, you can start immediately! No waiting for approval - just login and create your first listing.
-          </p>
-          
-          <h4 style="color: #16a34a; margin: 20px 0 10px 0;">📸 Professional Services Available:</h4>
-          <ul style="margin: 0 0 15px 0; padding-left: 20px; color: #374151;">
-            <li>Professional photography services</li>
-            <li>Done-for-you listing creation</li>
-            <li>Lockbox installation services</li>
-            <li>Digital application processing</li>
-            <li>Marketing support and guidance</li>
-          </ul>
-
-          <div style="text-align: center; margin: 25px 0;">
-            <a href="https://portalhomehub.com/login" 
-               style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-              Login & Create Your First Listing
-            </a>
-          </div>
-        </div>
-
         <!-- Tips for Success -->
         <div style="background: #fef3c7; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e42; margin-bottom: 25px;">
-          <h3 style="color: #d97706; margin: 0 0 15px 0;">💡 Tips for Best Results:</h3>
+          <h3 style="color: #d97706; margin: 0 0 15px 0;">💡 Tips to Sell Your Property Fast:</h3>
           <ul style="margin: 0; padding-left: 20px; color: #374151;">
             <li style="margin-bottom: 8px;">📱 <strong>Use high-quality photos</strong> - properties with professional photos get 3x more views</li>
             <li style="margin-bottom: 8px;">📝 <strong>Write detailed descriptions</strong> - highlight unique features and neighborhood benefits</li>
@@ -86,6 +62,36 @@ export async function sendFSBOFoundingMemberEmail(to, firstName, spotNumber) {
             <li style="margin-bottom: 8px;">⏰ <strong>Respond quickly</strong> - fast responses lead to faster sales</li>
             <li style="margin-bottom: 8px;">🎯 <strong>Keep listing updated</strong> - fresh listings get priority placement</li>
           </ul>
+        </div>
+
+        <!-- Ready to Start -->
+        <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h3 style="color: #2563eb; margin: 0 0 15px 0;">🚀 Ready to List Your Property?</h3>
+          <p style="margin-bottom: 15px; color: #374151;">
+            Unlike agents, you can start immediately! No waiting for approval - just login and create your first listing.
+          </p>
+
+          <div style="text-align: center; margin: 25px 0;">
+            <a href="https://portalhomehub.com/login" 
+               style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+              Login & Create Your First Listing
+            </a>
+          </div>
+
+          <!-- Professional Services Available -->
+          <div style="background: #f0f9ff; padding: 20px; border-radius: 12px; border-left: 4px solid #2563eb; margin-top: 25px;">
+            <h4 style="color: #2563eb; margin: 0 0 15px 0;">📸 Additional Professional Services Available:</h4>
+            <ul style="margin: 0 0 15px 0; padding-left: 20px; color: #374151;">
+              <li style="margin-bottom: 8px;">Professional photography services</li>
+              <li style="margin-bottom: 8px;">Done-for-you listing creation</li>
+              <li style="margin-bottom: 8px;">Lockbox installation services</li>
+              <li style="margin-bottom: 8px;">Digital application processing</li>
+              <li style="margin-bottom: 8px;">Marketing support and guidance</li>
+            </ul>
+            <p style="margin: 0; font-size: 14px; color: #6b7280; font-style: italic;">
+              <strong>Note:</strong> Fees apply to these services. Service availability may vary depending on your location and local partnerships.
+            </p>
+          </div>
         </div>
 
         <!-- Beta Program Message -->
