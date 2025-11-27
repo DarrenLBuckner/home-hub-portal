@@ -48,6 +48,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
+    // Create profile record with proper subscription status
+    const subscriptionStatus = is_founding_member ? 'active' : 'pending_payment';
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        id: data.user.id,
+        email: email,
+        first_name: first_name,
+        last_name: last_name,
+        phone: phone,
+        user_type: 'owner',
+        subscription_status: subscriptionStatus,
+        is_founding_member: !!is_founding_member,
+        promo_code: promo_code || null,
+        promo_spot_number: promo_spot_number || null,
+        created_at: new Date().toISOString()
+      });
+
+    if (profileError) {
+      console.error('Profile creation error:', profileError);
+      // Don't fail the registration if profile creation fails, but log it
+    } else {
+      console.log(`✅ Profile created for ${is_founding_member ? 'founding member' : 'regular'} FSBO user`);
+    }
+
     // Handle promo code redemption if provided
     if (promo_code && data.user) {
       try {

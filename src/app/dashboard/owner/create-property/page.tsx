@@ -85,12 +85,12 @@ export default function CreateFSBOProperty() {
           setError('Property title is required');
           return false;
         }
-        if (!formData.description.trim()) {
-          setError('Property description is required');
+        if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
+          setError('Valid price is required');
           return false;
         }
-        if (!formData.price || isNaN(Number(formData.price))) {
-          setError('Valid price is required');
+        if (!formData.property_type) {
+          setError('Property type is required');
           return false;
         }
         break;
@@ -101,6 +101,10 @@ export default function CreateFSBOProperty() {
         }
         if (!formData.bathrooms || isNaN(Number(formData.bathrooms))) {
           setError('Number of bathrooms is required');
+          return false;
+        }
+        if (!formData.description.trim()) {
+          setError('Property description is required');
           return false;
         }
         break;

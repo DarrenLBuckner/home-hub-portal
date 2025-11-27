@@ -74,15 +74,19 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
           💰 Asking Price ({currencySymbol}) *
         </label>
         <input
-          type="number"
+          type="text"
+          inputMode="numeric"
           value={formData.price}
-          onChange={(e) => handleChange('price', e.target.value)}
+          onChange={(e) => {
+            // Only allow numbers and remove any non-digit characters except for temporary input
+            const value = e.target.value.replace(/[^0-9]/g, '');
+            handleChange('price', value);
+          }}
           placeholder="e.g., 25000000"
           className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white placeholder-gray-600 text-base"
-          min="0"
         />
         <p className="text-sm text-gray-500 mt-1">
-          {formData.price && !isNaN(Number(formData.price)) 
+          {formData.price && !isNaN(Number(formData.price)) && Number(formData.price) > 0
             ? `${Number(formData.price).toLocaleString()} ${currencyCode}`
             : `Enter the asking price for your property${formData.currency ? ` in ${currencyCode}` : ''}`
           }
