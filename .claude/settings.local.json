@@ -25,7 +25,8 @@
       "Bash(node:*)",
       "WebFetch(domain:guyanahomehub.com)",
       "Read(//home/DarrenLBuckner/**)",
-      "Read(//mnt/c/Users/darre/Pictures/Screenshots/**)"
+      "Read(//mnt/c/Users/darre/Pictures/Screenshots/**)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []
