@@ -16,11 +16,16 @@ function LoginContent() {
   
   const searchParams = useSearchParams();
 
-  // Check for session expiry message
+  // Check for session expiry and success messages
   useEffect(() => {
     const sessionExpired = searchParams?.get('sessionExpired');
+    const successType = searchParams?.get('success');
+    const firstName = searchParams?.get('firstName');
+    
     if (sessionExpired === 'admin') {
       setSessionMessage('🔐 Your admin session has expired after 4 hours for security. Please log in again.');
+    } else if (successType === 'fsbo-founding-member') {
+      setSessionMessage(`🎉 Welcome ${firstName}! Registration complete! Check your email for your founding member welcome message with exclusive benefits and tips to sell your property fast. Then login below to start listing immediately.`);
     }
   }, [searchParams]);
 

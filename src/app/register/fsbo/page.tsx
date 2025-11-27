@@ -168,10 +168,8 @@ function FSBORegistrationContent() {
           setCurrentStep(3); // Go back to registration form
         }
       } else {
-        // Regular users need to complete payment first
-        setTimeout(() => {
-          window.location.href = '/register/payment';
-        }, 1500);
+        // Regular users - show success message first, then redirect to payment
+        setCurrentStep(5);
       }
     } catch (error: any) {
       setError(error.message);
@@ -299,15 +297,18 @@ function FSBORegistrationContent() {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-green-600 mb-2">🎉 Registration Complete!</h2>
-              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg inline-block font-medium mb-4">
-                Founding Member #{promoSpotNumber}
-              </div>
+              {validPromoCode && promoSpotNumber && (
+                <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg inline-block font-medium mb-4">
+                  Founding Member #{promoSpotNumber}
+                </div>
+              )}
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
               <h3 className="text-lg font-semibold text-blue-800 mb-2">📧 Please Check Your Email</h3>
               <p className="text-blue-700 mb-4">
-                We've sent a welcome message to <strong>{formData.email}</strong> with important information about your founding member benefits and how to get started.
+                We've sent a welcome message to <strong>{formData.email}</strong> with 
+                {validPromoCode ? ' important information about your founding member benefits and how to get started.' : ' your account details and next steps.'}
               </p>
               <p className="text-sm text-blue-600">
                 Don't see it? Check your spam/junk folder and add info@portalhomehub.com to your contacts.
@@ -315,15 +316,26 @@ function FSBORegistrationContent() {
             </div>
 
             <div className="space-y-4">
-              <button
-                onClick={() => window.location.href = '/login'}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
-              >
-                Continue to Login
-              </button>
+              {validPromoCode ? (
+                <button
+                  onClick={() => window.location.href = `/login?success=fsbo-founding-member&firstName=${encodeURIComponent(formData.firstName)}`}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
+                >
+                  Continue to Login
+                </button>
+              ) : (
+                <button
+                  onClick={() => window.location.href = '/register/payment'}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
+                >
+                  Continue to Payment
+                </button>
+              )}
               
               <p className="text-sm text-gray-500">
-                Ready to list your first property? Login and start immediately - no approval needed!
+                {validPromoCode 
+                  ? 'Ready to list your first property? Login and start immediately - no approval needed!'
+                  : 'Complete your payment to activate your FSBO account and start listing.'}
               </p>
             </div>
           </div>
