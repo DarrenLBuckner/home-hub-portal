@@ -65,7 +65,11 @@ export async function POST(request: Request) {
       promo_benefits: promo_benefits ? JSON.stringify(promo_benefits) : null,
       promo_spot_number: promo_spot_number,
       is_founding_member: !!promo_code,
-      user_created: false // Flag to track if user account exists yet
+      user_created: false, // Flag to track if user account exists yet
+      
+      // Reference fields are now required in frontend - map contact field properly
+      reference1_contact: agentData.reference1_phone || agentData.reference1_contact || agentData.reference1_name,
+      reference2_contact: agentData.reference2_phone || agentData.reference2_contact || agentData.reference2_name,
     };
 
     const { error: vettingError } = await supabase

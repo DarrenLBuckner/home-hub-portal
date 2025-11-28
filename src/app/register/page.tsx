@@ -57,7 +57,7 @@ function RegistrationContent() {
     specialties: "",
     target_region: "",
     
-    // Step 4: References (Optional)
+    // Step 4: References (Required)
     reference1_name: "",
     reference1_phone: "",
     reference1_email: "",
@@ -140,7 +140,11 @@ function RegistrationContent() {
       case 2:
         return !!(form.first_name && form.last_name && form.phone && form.email && form.password && form.confirm_password && form.years_experience);
       case 3:
-        return true; // Professional details are now optional
+        return true; // Professional details are optional
+      case 4:
+        // References are now REQUIRED for proper agent vetting
+        return !!(form.reference1_name && form.reference1_phone && form.reference1_email && 
+                 form.reference2_name && form.reference2_phone && form.reference2_email);
       default:
         return true;
     }
@@ -598,18 +602,18 @@ function RegistrationContent() {
           </div>
         )}
 
-        {/* Step 4: References (Optional) */}
+        {/* Step 4: References (Required) */}
         {currentStep === 4 && (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Professional References</h2>
-              <p className="text-gray-600 text-sm">Optional - helps speed up verification process</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Professional References *</h2>
+              <p className="text-gray-600 text-sm">Required - Please provide 2 professional references for agent verification</p>
             </div>
 
             <div className="space-y-6">
               {/* Reference 1 */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-3">Reference 1 (Optional)</h3>
+                <h3 className="font-medium text-gray-900 mb-3">Reference 1 *</h3>
                 <div className="space-y-3">
                   <input
                     type="text"
@@ -617,7 +621,8 @@ function RegistrationContent() {
                     value={form.reference1_name}
                     onChange={handleChange}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                    placeholder="Reference name"
+                    placeholder="Reference name *"
+                    required
                   />
                   <div className="grid grid-cols-2 gap-3">
                     <input
@@ -626,7 +631,8 @@ function RegistrationContent() {
                       value={form.reference1_phone}
                       onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                      placeholder="Phone"
+                      placeholder="Phone *"
+                      required
                     />
                     <input
                       type="email"
@@ -634,7 +640,8 @@ function RegistrationContent() {
                       value={form.reference1_email}
                       onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                      placeholder="Email"
+                      placeholder="Email *"
+                      required
                     />
                   </div>
                 </div>
@@ -642,7 +649,7 @@ function RegistrationContent() {
 
               {/* Reference 2 */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <h3 className="font-medium text-gray-900 mb-3">Reference 2 (Optional)</h3>
+                <h3 className="font-medium text-gray-900 mb-3">Reference 2 *</h3>
                 <div className="space-y-3">
                   <input
                     type="text"
@@ -650,7 +657,8 @@ function RegistrationContent() {
                     value={form.reference2_name}
                     onChange={handleChange}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                    placeholder="Reference name"
+                    placeholder="Reference name *"
+                    required
                   />
                   <div className="grid grid-cols-2 gap-3">
                     <input
@@ -659,7 +667,8 @@ function RegistrationContent() {
                       value={form.reference2_phone}
                       onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                      placeholder="Phone"
+                      placeholder="Phone *"
+                      required
                     />
                     <input
                       type="email"
@@ -667,7 +676,8 @@ function RegistrationContent() {
                       value={form.reference2_email}
                       onChange={handleChange}
                       className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                      placeholder="Email"
+                      placeholder="Email *"
+                      required
                     />
                   </div>
                 </div>
@@ -718,17 +728,6 @@ function RegistrationContent() {
           )}
         </div>
 
-        {/* Skip References Option */}
-        {currentStep === 4 && (
-          <div className="text-center pt-4">
-            <button
-              onClick={handleSubmit}
-              className="text-blue-600 text-sm font-medium hover:text-blue-700"
-            >
-              Skip references and complete registration
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Footer */}
