@@ -490,12 +490,14 @@ function RegistrationContent() {
                     value={form.years_experience}
                     onChange={handleChange}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
+                    required
                   >
                     <option value="">Select experience level</option>
-                    <option value="0-1">New Agent (0-1 years)</option>
-                    <option value="2-5">Experienced (2-5 years)</option>
-                    <option value="6-10">Senior Agent (6-10 years)</option>
-                    <option value="10+">Expert (10+ years)</option>
+                    <option value="0-1">Less than 1 year</option>
+                    <option value="1-3">1-3 years</option>
+                    <option value="3-5">3-5 years</option>
+                    <option value="5-10">5-10 years</option>
+                    <option value="10+">10+ years</option>
                   </select>
                 </div>
                 <div>
