@@ -61,6 +61,7 @@ interface Statistics {
   totalRejected: number;
   totalDrafts: number;
   totalRentals: number;
+  activeRentals: number;
 }
 
 interface User {
@@ -130,6 +131,7 @@ export default function UnifiedAdminDashboard() {
     totalRejected: 0,
     totalDrafts: 0,
     totalRentals: 0,
+    activeRentals: 0,
   });
   const [processingPropertyId, setProcessingPropertyId] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -273,6 +275,7 @@ export default function UnifiedAdminDashboard() {
         totalRejected: stats?.filter((p: any) => p.status === 'rejected').length || 0,
         totalDrafts,
         totalRentals: stats?.filter((p: any) => p.listing_type === 'rent').length || 0,
+        activeRentals: stats?.filter((p: any) => p.listing_type === 'rent' && p.status === 'active').length || 0,
       });
 
     } catch (error) {
@@ -916,9 +919,9 @@ export default function UnifiedAdminDashboard() {
               </div>
               
               <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-4 border border-blue-200">
-                <div className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">RENTALS</div>
-                <div className="text-3xl font-black text-blue-900 mb-1">{statistics.totalRentals}</div>
-                <div className="text-xs text-blue-700">Rental Properties</div>
+                <div className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">ACTIVE RENTALS</div>
+                <div className="text-3xl font-black text-blue-900 mb-1">{statistics.activeRentals}</div>
+                <div className="text-xs text-blue-700">Currently listed for rent</div>
               </div>
               
               <div className="bg-gradient-to-br from-red-50 to-orange-50 rounded-2xl p-4 border border-red-200">
