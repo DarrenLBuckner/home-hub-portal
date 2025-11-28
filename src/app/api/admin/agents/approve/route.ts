@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       .from('agent_vetting')
       .select('*')
       .eq('id', agentId)
-      .eq('status', 'pending');
+      .eq('status', 'pending_review');
 
     // Apply country filtering for non-super admins
     if (profile.admin_level !== 'super' && profile.country_id) {
