@@ -484,8 +484,8 @@ export default function UnifiedAdminDashboard() {
     
     try {
       const agent = pendingAgents.find(a => a.id === agentId);
-      const agentName = agent?.profiles ? 
-        `${agent.profiles.first_name} ${agent.profiles.last_name}`.trim() || agent.profiles.email :
+      const agentName = agent ? 
+        `${agent.first_name} ${agent.last_name}`.trim() || agent.email :
         'Agent';
       
       // Get current session for authorization
@@ -530,7 +530,7 @@ export default function UnifiedAdminDashboard() {
         console.warn('⚠️ Failed to send approval email:', emailError);
       }
 
-      alert(`✅ Agent "${agentName}" has been approved and can now log in! A password reset email has been sent.`);
+      alert(`✅ Agent "${agentName}" has been approved! They can log in with their registration email and password.`);
       await loadAgents();
       
     } catch (error) {
