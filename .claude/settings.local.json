@@ -26,7 +26,8 @@
       "WebFetch(domain:guyanahomehub.com)",
       "Read(//home/DarrenLBuckner/**)",
       "Read(//mnt/c/Users/darre/Pictures/Screenshots/**)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx supabase db describe:*)"
     ],
     "deny": [],
     "ask": []
