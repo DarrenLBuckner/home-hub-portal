@@ -483,41 +483,36 @@ export default function UnifiedAdminDashboard() {
     setError('');
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) {
-        throw new Error('No authentication token available');
-      }
-      
-      const { error: updateError } = await supabase
-        .from('agent_vetting')
-        .update({ 
-          status: 'approved', 
-          approved_at: new Date().toISOString() 
-        })
-        .eq('id', agentId);
-
-      if (updateError) {
-        setError(updateError.message || 'Failed to approve agent');
-        return;
-      }
-
-      // Also activate the user's subscription status
       const agent = pendingAgents.find(a => a.id === agentId);
-      if (agent?.user_id) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ subscription_status: 'active' })
-          .eq('id', agent.user_id);
-
-        if (profileError) {
-          console.warn('⚠️ Failed to activate user subscription:', profileError);
-        } else {
-          console.log('✅ User subscription activated');
-        }
-      }
       const agentName = agent?.profiles ? 
         `${agent.profiles.first_name} ${agent.profiles.last_name}`.trim() || agent.profiles.email :
         'Agent';
+      
+      // Get current session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        setError('Authentication required');
+        return;
+      }
+
+      // Call the new approval API endpoint
+      const response = await fetch('/api/admin/agents/approve', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ agentId })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || 'Failed to approve agent');
+        return;
+      }
+
+      console.log('✅ Agent approved successfully:', result);
       
       // Send approval email notification
       try {
@@ -525,9 +520,9 @@ export default function UnifiedAdminDashboard() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            agentEmail: agent.profiles?.email || agent.email,
-            agentName: agentName,
-            country: agent.country || 'GY'
+            agentEmail: result.email,
+            agentName: result.name,
+            country: agent?.country || 'GY'
           })
         });
         console.log('✅ Agent approval email sent successfully');
@@ -535,7 +530,7 @@ export default function UnifiedAdminDashboard() {
         console.warn('⚠️ Failed to send approval email:', emailError);
       }
 
-      alert(`✅ Agent "${agentName}" has been approved and notified via email!`);
+      alert(`✅ Agent "${agentName}" has been approved and can now log in! A password reset email has been sent.`);
       await loadAgents();
       
     } catch (error) {

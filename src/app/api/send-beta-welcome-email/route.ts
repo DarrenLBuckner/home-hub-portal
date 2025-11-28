@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://portalhomehub.com/agent-dashboard" 
+          <a href="https://portalhomehub.com/dashboard/agent" 
              style="background: #059669; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
             🚀 Access Your Beta Dashboard
           </a>
@@ -96,7 +96,7 @@ HOW YOU CAN HELP US SUCCEED:
 📧 FOUND AN ISSUE OR HAVE FEEDBACK?
 Please send all issues, suggestions, and feedback to: info@portalhomehub.com
 
-Access your beta dashboard at: https://portalhomehub.com/agent-dashboard
+Access your beta dashboard at: https://portalhomehub.com/dashboard/agent
 
 Thank you for being part of this exciting journey. Together, we're not just building a platform - we're creating the future of Caribbean real estate.
 

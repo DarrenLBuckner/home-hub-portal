@@ -43,13 +43,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's admin profile  
-    const { data: profile, error: profileError } = await supabaseAdmin
+    const { data: profile, error: adminProfileError } = await supabaseAdmin
       .from('profiles')
       .select('user_type, admin_level, country_id, email')
       .eq('id', user.id)
       .single();
 
-    if (profileError || !profile) {
+    if (adminProfileError || !profile) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 403 });
     }
 

@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="https://portalhomehub.com/agent-dashboard" 
+          <a href="https://portalhomehub.com/dashboard/agent" 
              style="background: #3b82f6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
             🚀 Access Agent Dashboard
           </a>
@@ -90,7 +90,7 @@ NEXT STEPS:
 3. Start helping clients - Begin listing and managing properties
 4. Access training materials (Coming Soon) - Platform tutorials and guides
 
-Access your agent dashboard at: https://portalhomehub.com/agent-dashboard
+Access your agent dashboard at: https://portalhomehub.com/dashboard/agent
 
 IMPORTANT: Use the same email (${agentEmail}) to log in to your agent dashboard.
 
