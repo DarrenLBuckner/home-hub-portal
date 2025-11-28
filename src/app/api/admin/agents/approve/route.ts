@@ -108,10 +108,10 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Auth user created:', authUser.user.id);
 
-    // Create new profile record with Auth user's ID
+    // Create or update profile record with Auth user's ID (handles DB trigger conflict)
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
-      .insert({
+      .upsert({
         id: authUser.user.id,  // Profile id = Auth user id
         email: agentEmail,
         first_name: agentFirstName,
@@ -122,8 +122,9 @@ export async function POST(request: NextRequest) {
         subscription_status: 'active',
         approval_status: 'approved',
         approval_date: new Date().toISOString(),
-        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'id'
       });
 
     if (profileError) {
