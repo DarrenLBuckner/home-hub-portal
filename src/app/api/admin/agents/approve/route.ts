@@ -86,10 +86,10 @@ export async function POST(request: NextRequest) {
     const agentFirstName = agent.first_name;
     const agentLastName = agent.last_name;
 
-    // Create user account in Supabase Auth
+    // Create user account in Supabase Auth using their registration password
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: agentEmail,
-      password: generateTempPassword(), // Generate a temporary password
+      password: agent.temp_password, // Use password from registration
       email_confirm: true, // Auto-confirm the email
       user_metadata: {
         first_name: agentFirstName,
@@ -154,16 +154,11 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Send password reset email so user can set their password
-    const { error: resetError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'recovery',
-      email: agentEmail,
-    });
-
-    if (resetError) {
-      console.warn('⚠️ Failed to send password reset email:', resetError);
-      // Don't fail the approval if email fails
-    }
+    // Clear the temp password from database for security
+    await supabaseAdmin
+      .from('agent_vetting')
+      .update({ temp_password: null })
+      .eq('id', agentId);
 
     console.log('✅ Agent approved successfully:', {
       agentId,
@@ -186,12 +181,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateTempPassword(): string {
-  // Generate a random 16-character password
-  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
-  for (let i = 0; i < 16; i++) {
-    password += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return password;
-}
