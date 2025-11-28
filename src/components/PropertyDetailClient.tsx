@@ -137,20 +137,33 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
           </div>
         )}
         
-        {/* Listing Type Badge */}
-        <div className="absolute top-4 left-4 space-y-2">
-          <span className={`block px-4 py-2 rounded-lg font-semibold text-white shadow-lg ${
-            property.listing_type === 'rent' ? 'bg-blue-600' : 'bg-emerald-600'
-          }`}>
-            {property.listing_type === 'rent' ? 'FOR RENT' : 'FOR SALE'}
-          </span>
-          
-          {/* FSBO Badge - positioned below listing type badge */}
-          {(property.listed_by_type === 'owner' || property.listed_by_type === 'fsbo' || property.owner?.user_type === 'owner') && (
-            <span className="block px-3 py-1.5 rounded-lg font-semibold bg-orange-100 text-orange-700 shadow-lg text-sm">
-              For Sale By Owner
-            </span>
-          )}
+        {/* Property Status Ribbon - replaces "FOR SALE" when status changes */}
+        <div className="absolute top-4 left-4 z-20">
+          {(() => {
+            // Priority order: sold > under_contract > active (with listing type)
+            if (property.status === 'sold') {
+              return (
+                <div className="bg-red-600 text-white text-sm font-bold px-4 py-2 rounded-lg shadow-lg">
+                  SOLD
+                </div>
+              );
+            }
+            if (property.status === 'under_contract') {
+              return (
+                <div className="bg-orange-500 text-white text-sm font-bold px-4 py-2 rounded-lg shadow-lg">
+                  PENDING
+                </div>
+              );
+            }
+            // Active status - show listing type
+            return (
+              <div className={`text-white text-sm font-bold px-4 py-2 rounded-lg shadow-lg ${
+                property.listing_type === 'rent' ? 'bg-blue-600' : 'bg-green-600'
+              }`}>
+                {property.listing_type === 'rent' ? 'FOR RENT' : 'FOR SALE'}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
@@ -163,9 +176,17 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
             
             {/* Title and Price */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-                {property.title}
-              </h1>
+              <div className="flex items-start gap-3 mb-3">
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 flex-1">
+                  {property.title}
+                </h1>
+                {/* FSBO Badge - separate from status ribbon */}
+                {(property.listed_by_type === 'owner' || property.listed_by_type === 'fsbo' || property.owner?.user_type === 'owner') && (
+                  <span className="inline-flex items-center px-3 py-1.5 text-sm font-medium bg-orange-100 text-orange-800 border border-orange-300 rounded-full">
+                    🏠 For Sale By Owner
+                  </span>
+                )}
+              </div>
               
               <p className="text-3xl font-bold text-emerald-600 mb-2">
                 {formatPrice(property.price, property.currency)}
@@ -306,37 +327,88 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
                 userType={property.owner?.user_type}
                 whatsappLink={whatsappLink}
                 ownerEmail={property.owner_email || property.owner?.email}
+                propertyStatus={property.status}
+                listedByType={property.listed_by_type}
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Sticky Contact Button - Always Show */}
+      {/* Mobile Sticky Contact Button - Status-aware */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 lg:hidden z-50 shadow-lg">
-        {whatsappLink ? (
-          <a
-            href={whatsappLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300"
-          >
-            <WhatsAppIcon />
-            Contact via WhatsApp
-          </a>
-        ) : (
-          <a
-            href="https://wa.me/5926001234?text=Hi! I need help contacting the property owner for this listing."
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20.52 3.449c-2.28-1.23-4.99-1.89-7.77-1.89C6.03 1.56.84 6.74.84 12.45c0 2.18.58 4.32 1.68 6.22L0 24l5.42-1.44c1.84.98 3.9 1.49 6.02 1.49 6.72 0 12.18-5.46 12.18-12.18 0-3.25-1.26-6.3-3.55-8.63zm-7.77 18.73c-1.85 0-3.67-.5-5.27-1.44l-.38-.23-3.94 1.05 1.05-3.94-.23-.38c-1.02-1.62-1.56-3.49-1.56-5.41 0-5.6 4.55-10.15 10.15-10.15 2.71 0 5.25 1.05 7.17 2.97 1.92 1.92 2.97 4.46 2.97 7.17 0 5.6-4.55 10.15-10.15 10.15zm5.56-7.59c-.31-.16-1.8-.89-2.08-.99-.27-.11-.47-.16-.67.16-.2.31-.78.99-.96 1.2-.18.2-.36.23-.67.08-.31-.16-1.31-.48-2.49-1.54-.92-.82-1.54-1.84-1.72-2.15-.18-.31-.02-.48.14-.63.14-.14.31-.36.47-.54.16-.18.2-.31.31-.52.11-.2.05-.38-.03-.54-.08-.16-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51-.18-.01-.38-.01-.58-.01-.2 0-.52.08-.79.38-.27.31-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.16.2 2.13 3.25 5.16 4.56.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.8-.74 2.05-1.45.25-.72.25-1.33.18-1.45-.08-.12-.27-.2-.58-.35z"/>
-            </svg>
-            Contact Support
-          </a>
-        )}
+        {(() => {
+          // Sold properties - no contact button
+          if (property.status === 'sold') {
+            return (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                <p className="text-red-700 font-medium">🏆 This property has been sold</p>
+              </div>
+            );
+          }
+          
+          // Under contract - backup offers
+          if (property.status === 'under_contract') {
+            const buttonText = property.listed_by_type === 'owner' ? 'Contact Owner (Backup Offers)' : 'Contact Agent (Backup Offers)';
+            
+            if (whatsappLink) {
+              return (
+                <a
+                  href={whatsappLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300"
+                >
+                  <WhatsAppIcon />
+                  {buttonText}
+                </a>
+              );
+            } else {
+              return (
+                <a
+                  href="https://wa.me/5926001234?text=Hi! I'm interested in making a backup offer for this property that's under contract."
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300"
+                >
+                  <WhatsAppIcon />
+                  Backup Offers Welcome
+                </a>
+              );
+            }
+          }
+          
+          // Active - normal contact
+          const buttonText = property.listed_by_type === 'owner' ? 'Contact Owner via WhatsApp' : 'Contact via WhatsApp';
+          
+          if (whatsappLink) {
+            return (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300"
+              >
+                <WhatsAppIcon />
+                {buttonText}
+              </a>
+            );
+          } else {
+            return (
+              <a
+                href="https://wa.me/5926001234?text=Hi! I need help contacting the property owner for this listing."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300"
+              >
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M20.52 3.449c-2.28-1.23-4.99-1.89-7.77-1.89C6.03 1.56.84 6.74.84 12.45c0 2.18.58 4.32 1.68 6.22L0 24l5.42-1.44c1.84.98 3.9 1.49 6.02 1.49 6.72 0 12.18-5.46 12.18-12.18 0-3.25-1.26-6.3-3.55-8.63zm-7.77 18.73c-1.85 0-3.67-.5-5.27-1.44l-.38-.23-3.94 1.05 1.05-3.94-.23-.38c-1.02-1.62-1.56-3.49-1.56-5.41 0-5.6 4.55-10.15 10.15-10.15 2.71 0 5.25 1.05 7.17 2.97 1.92 1.92 2.97 4.46 2.97 7.17 0 5.6-4.55 10.15-10.15 10.15zm5.56-7.59c-.31-.16-1.8-.89-2.08-.99-.27-.11-.47-.16-.67.16-.2.31-.78.99-.96 1.2-.18.2-.36.23-.67.08-.31-.16-1.31-.48-2.49-1.54-.92-.82-1.54-1.84-1.72-2.15-.18-.31-.02-.48.14-.63.14-.14.31-.36.47-.54.16-.18.2-.31.31-.52.11-.2.05-.38-.03-.54-.08-.16-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51-.18-.01-.38-.01-.58-.01-.2 0-.52.08-.79.38-.27.31-1.04 1.02-1.04 2.48s1.07 2.88 1.22 3.08c.16.2 2.13 3.25 5.16 4.56.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.8-.74 2.05-1.45.25-.72.25-1.33.18-1.45-.08-.12-.27-.2-.58-.35z"/>
+                </svg>
+                Contact Support
+              </a>
+            );
+          }
+        })()}
       </div>
     </div>
   );
@@ -347,12 +419,16 @@ function ContactCard({
   ownerName, 
   userType, 
   whatsappLink,
-  ownerEmail
+  ownerEmail,
+  propertyStatus,
+  listedByType
 }: { 
   ownerName: string; 
   userType?: string; 
   whatsappLink: string | null;
   ownerEmail?: string;
+  propertyStatus?: string;
+  listedByType?: string;
 }) {
   const getUserTypeLabel = (type?: string) => {
     switch(type) {
@@ -373,23 +449,71 @@ function ContactCard({
         <p className="text-sm text-gray-600 mt-1">{getUserTypeLabel(userType)}</p>
       </div>
 
-      {whatsappLink ? (
-        <a
-          href={whatsappLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center justify-center gap-3 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 mb-4"
-        >
-          <WhatsAppIcon />
-          Contact via WhatsApp
-        </a>
-      ) : (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-          <p className="text-yellow-800 text-sm">
-            Contact information not available. Please call +592-762-9797 for assistance.
-          </p>
-        </div>
-      )}
+      {/* Contact Button Logic Based on Property Status */}
+      {(() => {
+        // Sold properties - no contact
+        if (propertyStatus === 'sold') {
+          return (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-red-700 text-sm font-medium text-center">
+                🏆 This property has been sold
+              </p>
+            </div>
+          );
+        }
+        
+        // Under contract - backup offers
+        if (propertyStatus === 'under_contract') {
+          const buttonText = listedByType === 'owner' ? 'Contact Owner (Backup Offers)' : 'Contact Agent (Backup Offers)';
+          
+          if (whatsappLink) {
+            return (
+              <a
+                href={whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-3 w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 mb-4"
+              >
+                <WhatsAppIcon />
+                {buttonText}
+              </a>
+            );
+          } else {
+            return (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                <p className="text-orange-800 text-sm">
+                  Property under contract. For backup offers, call +592-762-9797.
+                </p>
+              </div>
+            );
+          }
+        }
+        
+        // Active - normal contact
+        const buttonText = listedByType === 'owner' ? 'Contact Owner via WhatsApp' : 'Contact via WhatsApp';
+        
+        if (whatsappLink) {
+          return (
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-3 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300 transform hover:scale-105 mb-4"
+            >
+              <WhatsAppIcon />
+              {buttonText}
+            </a>
+          );
+        } else {
+          return (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+              <p className="text-yellow-800 text-sm">
+                Contact information not available. Please call +592-762-9797 for assistance.
+              </p>
+            </div>
+          );
+        }
+      })()}
 
       {ownerEmail && (
         <a

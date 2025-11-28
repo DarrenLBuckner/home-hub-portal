@@ -12,7 +12,7 @@ export default function TermsOfUsePage() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">PORTAL HOME HUB</h1>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">TERMS OF USE</h2>
-          <p className="text-gray-600 mb-8">Last Updated: November 6, 2025</p>
+          <p className="text-gray-600 mb-8">Last Updated: November 28, 2025</p>
 
           <div className="prose prose-lg max-w-none">
             <p className="text-gray-700 mb-6">
@@ -81,6 +81,35 @@ export default function TermsOfUsePage() {
               <li>Obtain necessary permissions and rights to list properties on the Services</li>
               <li>Respond promptly to inquiries from potential clients</li>
             </ul>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-4">4. PRIVATE LISTINGS AND USER DUE DILIGENCE</h3>
+            
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">4.1 Private Listing Verification</h4>
+            <p className="text-gray-700 mb-4">
+              Portal Home Hub allows property owners to list their properties directly ("For Sale By Owner" or "FSBO" listings). <strong>We do not independently verify the accuracy, completeness, or legitimacy of private listings.</strong> Private listings are posted solely by individual users and may not have undergone professional verification or compliance checks.
+            </p>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">4.2 User Due Diligence Responsibility</h4>
+            <p className="text-gray-700 mb-3">
+              When engaging with private listings, you acknowledge and agree that:
+            </p>
+            <ul className="list-disc list-inside text-gray-700 mb-4 space-y-1">
+              <li>You are solely responsible for conducting your own due diligence</li>
+              <li>You must independently verify property ownership, legal status, and listing accuracy</li>
+              <li>You should obtain professional inspections, legal advice, and financial consultation</li>
+              <li>You must comply with all applicable laws and regulations in your jurisdiction</li>
+              <li>Private listings may contain errors, omissions, or misrepresentations</li>
+            </ul>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">4.3 Limitation of Liability for Private Listings</h4>
+            <p className="text-gray-700 mb-4">
+              Portal Home Hub expressly disclaims all liability for any losses, damages, or issues arising from private listings, including but not limited to property condition misrepresentations, ownership disputes, legal complications, or financial losses. We strongly recommend working with licensed real estate professionals for significant property transactions.
+            </p>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">4.4 Reporting Concerns</h4>
+            <p className="text-gray-700 mb-6">
+              If you identify fraudulent, misleading, or suspicious private listings, please report them to us immediately at legal@portalhomehub.com. We reserve the right to remove listings that violate our Terms of Use.
+            </p>
 
             {/* Contact Section - moved to end for better flow */}
             <div className="bg-gray-100 p-6 rounded-lg mt-8">

@@ -42,7 +42,12 @@ export async function GET(
       `)
       .eq('id', id)
       .eq('site_id', siteId)
-      .eq('status', 'active')
+      .or(
+        // Sale properties: show active, under_contract, sold
+        `and(listing_type.eq.sale,status.in.(active,under_contract,sold)),` +
+        // Rental properties: show active only
+        `and(listing_type.eq.rent,status.eq.active)`
+      )
       .single()
 
     if (propertyError) {

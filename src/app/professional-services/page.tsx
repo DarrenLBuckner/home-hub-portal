@@ -12,7 +12,7 @@ export default function ProfessionalServicesAgreementPage() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">PORTAL HOME HUB</h1>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">PROFESSIONAL SERVICES AGREEMENT</h2>
-          <p className="text-gray-600 mb-4">Last Updated: November 6, 2025</p>
+          <p className="text-gray-600 mb-4">Last Updated: November 28, 2025</p>
           
           <div className="bg-red-50 border border-red-200 p-4 rounded-lg mb-8">
             <p className="text-red-800 font-bold text-center">IMPORTANT: READ CAREFULLY BEFORE PURCHASING</p>
@@ -329,7 +329,23 @@ export default function ProfessionalServicesAgreementPage() {
               <li>Not contain malicious code or tracking beyond what we approve</li>
             </ul>
 
-            <h4 className="text-lg font-semibold text-gray-800 mb-3">7.2 Prohibited Advertising Content</h4>
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">7.2 Prohibited Advertising Content & Private Listing Disclaimer</h4>
+            
+            <h5 className="text-base font-semibold text-gray-700 mb-3">Private Listing Verification Disclaimer</h5>
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded mb-4">
+              <p className="text-amber-800 font-semibold mb-2">⚠️ Important Notice for Private Listings:</p>
+              <p className="text-gray-700 mb-3">
+                Portal Home Hub hosts both professionally managed listings and private listings posted directly by property owners ("For Sale By Owner" or FSBO listings). <strong>We do not independently verify the accuracy, legitimacy, or compliance of private listings with local regulations.</strong>
+              </p>
+              <p className="text-gray-700 mb-3">
+                Private listings may not have undergone professional verification, compliance checks, or quality control that typically accompanies professionally managed properties. Users engaging with private listings do so at their own risk and should conduct thorough due diligence.
+              </p>
+              <p className="text-gray-700">
+                <strong>Professional Users:</strong> Exercise additional caution when working with private listings and ensure your clients understand the distinction between professionally managed and private listings.
+              </p>
+            </div>
+
+            <h5 className="text-base font-semibold text-gray-700 mb-3">Prohibited Advertising Content</h5>
             <p className="text-gray-700 mb-3">We do not accept advertisements for:</p>
             <ul className="list-disc list-inside text-gray-700 mb-4 space-y-1">
               <li>Illegal products, services, or activities</li>

@@ -23,7 +23,9 @@ export async function GET(request: NextRequest) {
     
     console.log(`🔍 Fetching properties - site: ${site}, listing_type: ${listing_type}, listing_type_multiple: ${listing_type_multiple}, category: ${propertyCategory}, search: "${searchQuery}", location: "${locationQuery}"`)
     
-    // Build the query - only show active properties (exclude off_market, draft, pending, etc.)
+    // Build the query - show properties with proper visibility logic:
+    // - SALE properties: show active, under_contract, sold (for social proof)
+    // - RENT properties: show active only (hide rented units)
     let query = supabase
       .from('properties')
       .select(`
@@ -35,7 +37,12 @@ export async function GET(request: NextRequest) {
           is_primary
         )
       `)
-      .eq('status', 'active') // Only show approved/active properties to the public
+      .or(
+        // Sale properties: show active, under_contract, sold for social proof
+        `and(listing_type.eq.sale,status.in.(active,under_contract,sold)),` +
+        // Rental properties: show active only (hide rented units)
+        `and(listing_type.eq.rent,status.eq.active)`
+      )
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     
@@ -90,11 +97,16 @@ export async function GET(request: NextRequest) {
       throw error
     }
     
-    // Get total count for pagination with same filters
+    // Get total count for pagination with same visibility filters
     let countQuery = supabase
       .from('properties')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'active') // Only count active properties visible to public
+      .or(
+        // Sale properties: count active, under_contract, sold
+        `and(listing_type.eq.sale,status.in.(active,under_contract,sold)),` +
+        // Rental properties: count active only
+        `and(listing_type.eq.rent,status.eq.active)`
+      )
 
     if (site) {
       countQuery = countQuery.eq('site_id', site)
