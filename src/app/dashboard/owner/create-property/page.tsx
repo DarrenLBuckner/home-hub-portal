@@ -55,7 +55,6 @@ export default function CreateFSBOProperty() {
     
     // Hidden fields
     listing_type: 'sale',
-    listed_by_type: 'owner',
     status: 'pending'
   });
   
@@ -179,7 +178,6 @@ export default function CreateFSBOProperty() {
         owner_email: formData.owner_email,
         owner_whatsapp: formData.owner_whatsapp || '',
         listing_type: 'sale',
-        listed_by_type: 'owner',
         images: [] // Initialize empty, will upload images separately
       };
       

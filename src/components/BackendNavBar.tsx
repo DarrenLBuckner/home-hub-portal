@@ -147,28 +147,46 @@ export default function BackendNavBar({ userType = "agent" }: BackendNavBarProps
 							</ul>
 						)}
 					</li>
-					{/* Create Property Dropdown */}
-					<li className="relative">
-						<button
-							className="bg-blue-700 px-3 py-1 rounded hover:bg-blue-600 flex items-center"
-							onClick={() => setShowCreateDropdown((prev) => !prev)}
-							onBlur={() => setTimeout(() => setShowCreateDropdown(false), 200)}
-						>
-							Create Property
-							<svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-						</button>
-						{showCreateDropdown && (
-							<ul className="absolute left-0 top-full mt-2 bg-white text-blue-900 rounded shadow-lg min-w-[220px] z-[60]">
-								<li>
-									<Link href="/dashboard/agent/create-property" className="block px-4 py-2 hover:bg-blue-100">Agent Property</Link>
-								</li>
-								<li>
-									<Link href="/dashboard/owner/create-property" className="block px-4 py-2 hover:bg-blue-100">Owner Sale Listing</Link>
-								</li>
-								<li>
-									<Link href="/dashboard/landlord/create-property" className="block px-4 py-2 hover:bg-blue-100">Landlord Rental</Link>
-								</li>
-							</ul>
+					{/* Create Property Button - User-Type Aware */}
+					<li>
+						{userType === 'admin' || userType === 'super_admin' ? (
+							// Admin users get the dropdown to create on behalf of different user types
+							<div className="relative">
+								<button
+									className="bg-blue-700 px-3 py-1 rounded hover:bg-blue-600 flex items-center"
+									onClick={() => setShowCreateDropdown((prev) => !prev)}
+									onBlur={() => setTimeout(() => setShowCreateDropdown(false), 200)}
+								>
+									Create Property
+									<svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+								</button>
+								{showCreateDropdown && (
+									<ul className="absolute left-0 top-full mt-2 bg-white text-blue-900 rounded shadow-lg min-w-[220px] z-[60]">
+										<li>
+											<Link href="/dashboard/agent/create-property" className="block px-4 py-2 hover:bg-blue-100">Agent Property</Link>
+										</li>
+										<li>
+											<Link href="/dashboard/owner/create-property" className="block px-4 py-2 hover:bg-blue-100">Owner Sale Listing</Link>
+										</li>
+										<li>
+											<Link href="/dashboard/landlord/create-property" className="block px-4 py-2 hover:bg-blue-100">Landlord Rental</Link>
+										</li>
+									</ul>
+								)}
+							</div>
+						) : (
+							// Non-admin users get direct routing based on their user type
+							<Link 
+								href={
+									userType === 'agent' ? '/dashboard/agent/create-property' :
+									userType === 'owner' || userType === 'fsbo' ? '/dashboard/owner/create-property' :
+									userType === 'landlord' ? '/dashboard/landlord/create-property' :
+									'/dashboard/owner/create-property' // fallback
+								}
+								className="bg-blue-700 px-3 py-1 rounded hover:bg-blue-600 inline-block"
+							>
+								Create Property
+							</Link>
 						)}
 					</li>
 					
