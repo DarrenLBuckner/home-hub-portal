@@ -139,6 +139,18 @@ export async function POST(req: NextRequest) {
     const isSale = body.propertyCategory === "sale";
     const isAgent = userType === "agent";
     
+    // Map user_type to listed_by_type
+    const getListedByType = (userType: string, propertyCategory?: string): string => {
+      if (userType === 'agent') return 'agent';
+      if (userType === 'owner') return 'owner';
+      if (userType === 'fsbo') return 'owner'; // FSBO users should also be 'owner'
+      if (userType === 'landlord') return 'landlord';
+      // Default fallback
+      return propertyCategory === 'rental' ? 'landlord' : 'owner';
+    };
+    
+    const listedByType = getListedByType(userType, body.propertyCategory);
+    
     // Skip validation for drafts
     if (!isDraftSave && !isRental && !isSale) {
       return NextResponse.json({ error: "Invalid propertyCategory. Must be 'rental' or 'sale'" }, { status: 400 });
@@ -438,7 +450,7 @@ export async function POST(req: NextRequest) {
         
         // Agent-specific fields
         currency: body.currency || 'GYD',
-        listed_by_type: 'agent',
+        listed_by_type: listedByType,
         
         // Video URL (for Pro/Elite tier agents)
         video_url: body.video_url || null,
@@ -496,7 +508,7 @@ export async function POST(req: NextRequest) {
         // System fields
         user_id: userId,
         listing_type: 'rent',
-        listed_by_type: 'landlord',
+        listed_by_type: listedByType,
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
         country_id: body.country || 'GY',  // Use country code from form data
@@ -540,7 +552,7 @@ export async function POST(req: NextRequest) {
         // System fields (auto-populated)
         user_id: userId,
         listing_type: 'sale',
-        listed_by_type: 'fsbo',
+        listed_by_type: listedByType,
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
         site_id: body.site_id || 'guyana',  // Multi-tenant support
         country_id: body.country || 'GY',  // Use country code from form data
