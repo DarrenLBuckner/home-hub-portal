@@ -6,23 +6,22 @@ import ListingOverview from './components/ListingOverview';
 import UploadArea from './components/UploadArea';
 import MyPropertiesTab from './components/MyPropertiesTab';
 // ...existing code...
-import AgentProfileSettings from './components/AgentProfileSettings';
 import AgentDashboardWelcome from './components/AgentDashboardWelcome';
 import PropertyEngagementMetrics from './components/PropertyEngagementMetrics';
 
-// Temporary: Hardcoded WhatsApp number for demo. Replace with agent profile integration.
 
-
-const agentWhatsapp = "5926001234";
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/supabase';
 
 export default function AgentPage() {
+  const router = useRouter();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [userId, setUserId] = useState<string | null>(null);
   const [userType, setUserType] = useState<string | null>(null);
   const [isAgent, setIsAgent] = useState(false);
+  const [agentWhatsapp, setAgentWhatsapp] = useState<string>('');
   
   useEffect(() => {
     const fetchUser = async () => {
@@ -45,7 +44,7 @@ export default function AgentPage() {
           // Basic admins should only review/approve, not create
           const { data: adminProfile } = await supabase
             .from('profiles')
-            .select('admin_level')
+            .select('admin_level, phone')
             .eq('id', data.user.id)
             .single();
             
@@ -53,23 +52,40 @@ export default function AgentPage() {
                                     adminProfile?.admin_level === 'super';
           
           setIsAgent(canCreateProperties); // Only owner/super admins get agent access
+          
+          // Set WhatsApp number from profile
+          if (adminProfile?.phone) {
+            setAgentWhatsapp(adminProfile.phone);
+          }
         } else {
           // Check profiles table for regular users
           const { data: profile } = await supabase
             .from('profiles')
-            .select('user_type')
+            .select('user_type, phone')
             .eq('id', data.user.id)
             .single();
           
           if (profile) {
             setUserType(profile.user_type);
             setIsAgent(profile.user_type === 'agent');
+            
+            // Set WhatsApp number from profile
+            if (profile.phone) {
+              setAgentWhatsapp(profile.phone);
+            }
           }
         }
       }
     };
     fetchUser();
   }, []);
+
+  // Redirect to full settings page when settings tab is selected
+  useEffect(() => {
+    if (activeSection === 'settings') {
+      router.push('/dashboard/agent/settings');
+    }
+  }, [activeSection, router]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -88,12 +104,14 @@ export default function AgentPage() {
                 <h1 className="text-lg font-bold text-gray-900">Agent</h1>
               </div>
             </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <span className="hidden sm:inline">WhatsApp:</span>
-              <a href={`https://wa.me/${agentWhatsapp}`} className="text-green-600 font-medium hover:text-green-700">
-                +{agentWhatsapp}
-              </a>
-            </div>
+            {agentWhatsapp && (
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <span className="hidden sm:inline">WhatsApp:</span>
+                <a href={`https://wa.me/${agentWhatsapp}`} className="text-green-600 font-medium hover:text-green-700">
+                  +{agentWhatsapp}
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -282,22 +300,7 @@ export default function AgentPage() {
           )
         )}
         
-        {activeSection === 'settings' && (
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="bg-gradient-to-r from-gray-500 to-gray-700 p-4 sm:p-6">
-              <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2">
-                <span>⚙️</span>
-                <span>Profile Settings</span>
-              </h2>
-              <p className="text-gray-200 text-sm sm:text-base mt-1">
-                Manage your agent profile and preferences
-              </p>
-            </div>
-            <div className="p-4 sm:p-6">
-              <AgentProfileSettings initialWhatsapp={agentWhatsapp} />
-            </div>
-          </div>
-        )}
+        {/* Settings section removed - redirects to /dashboard/agent/settings via useEffect */}
       </main>
     </div>
   );
