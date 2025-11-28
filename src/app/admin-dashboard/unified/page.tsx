@@ -230,7 +230,7 @@ export default function UnifiedAdminDashboard() {
       // Load statistics
       const { data: stats, error: statsError } = await supabase
         .from('properties')
-        .select('status, created_at, user_id, listed_by_type');
+        .select('status, created_at, user_id, listed_by_type, listing_type');
 
       if (statsError) {
         console.error('Stats error:', statsError);
