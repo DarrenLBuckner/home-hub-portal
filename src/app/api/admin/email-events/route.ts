@@ -64,3 +64,31 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const supabase = createAdminClient();
+    const { emailId } = await request.json();
+
+    if (!emailId) {
+      return NextResponse.json({ error: 'Email ID is required' }, { status: 400 });
+    }
+
+    // Delete the failed email record from the database
+    const { error } = await supabase
+      .from('failed_emails')
+      .delete()
+      .eq('id', emailId);
+
+    if (error) {
+      console.error('Error deleting failed email:', error);
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Email failure record deleted successfully' });
+
+  } catch (error: any) {
+    console.error('Delete email events API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
