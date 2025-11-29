@@ -797,13 +797,18 @@ export default function UnifiedAdminDashboard() {
           {/* PRIORITY 3.5: Agent Vetting - Agent Applications */}
           <button
             onClick={() => setActiveSection('agents')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors relative ${
               activeSection === 'agents'
                 ? 'bg-orange-600 text-white'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
             👤 Agents
+            {pendingAgents.length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {pendingAgents.length}
+              </span>
+            )}
           </button>
 
           {/* PRIORITY 4: User Management - Administrative Tasks */}

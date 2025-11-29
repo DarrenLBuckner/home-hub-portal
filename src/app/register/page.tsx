@@ -607,7 +607,14 @@ function RegistrationContent() {
           <div className="space-y-6">
             <div className="text-center">
               <h2 className="text-xl font-bold text-gray-900 mb-2">Professional References *</h2>
-              <p className="text-gray-600 text-sm">Required - Please provide 2 professional references for agent verification</p>
+              <div className="bg-red-50 border-2 border-red-300 rounded-lg p-4 mb-4">
+                <p className="text-red-700 text-base font-bold text-center">
+                  ⚠️ REQUIRED: Professional References Needed for Verification ⚠️
+                </p>
+                <p className="text-red-600 text-sm text-center mt-2">
+                  We need 2 professional references to verify you are a credible real estate agent. This helps us maintain the highest standards for our platform and protect all users.
+                </p>
+              </div>
             </div>
 
             <div className="space-y-6">
