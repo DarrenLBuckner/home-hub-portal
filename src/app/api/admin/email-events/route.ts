@@ -68,17 +68,26 @@ export async function GET(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const supabase = createAdminClient();
-    const { emailId } = await request.json();
+    const { emailId, recipient, created_at } = await request.json();
 
-    if (!emailId) {
-      return NextResponse.json({ error: 'Email ID is required' }, { status: 400 });
+    if (!emailId && !recipient) {
+      return NextResponse.json({ error: 'Email ID or recipient is required' }, { status: 400 });
     }
 
-    // Delete the failed email record from the database
-    const { error } = await supabase
-      .from('failed_emails')
-      .delete()
-      .eq('id', emailId);
+    let query = supabase.from('failed_emails').delete();
+
+    // If we have an ID, use it for deletion
+    if (emailId) {
+      query = query.eq('id', emailId);
+    } else {
+      // Fallback: use recipient and created_at timestamp to identify the record
+      query = query.eq('recipient', recipient);
+      if (created_at) {
+        query = query.eq('created_at', created_at);
+      }
+    }
+
+    const { error } = await query;
 
     if (error) {
       console.error('Error deleting failed email:', error);

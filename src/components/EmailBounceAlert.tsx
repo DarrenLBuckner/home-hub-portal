@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useAdminData } from '@/hooks/useAdminData';
 
 interface FailedEmail {
-  id: string;
+  id?: string;
   recipient: string;
   event_type: string;
   reason: string;
@@ -43,18 +43,23 @@ export default function EmailBounceAlert() {
     }
   };
 
-  const deleteFailedEmail = async (emailId: string) => {
-    setDeletingId(emailId);
+  const deleteFailedEmail = async (email: FailedEmail, index: number) => {
+    const identifier = email.id || `${email.recipient}-${index}`;
+    setDeletingId(identifier);
     try {
       const response = await fetch('/api/admin/email-events', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailId })
+        body: JSON.stringify({ 
+          emailId: email.id,
+          recipient: email.recipient,
+          created_at: email.created_at
+        })
       });
 
       if (response.ok) {
         // Remove the email from the local state
-        setFailedEmails(prev => prev.filter(email => email.id !== emailId));
+        setFailedEmails(prev => prev.filter((_, i) => i !== index));
       } else {
         const data = await response.json();
         alert(`Failed to delete email failure: ${data.error}`);
@@ -95,12 +100,12 @@ export default function EmailBounceAlert() {
               </div>
             </div>
             <button
-              onClick={() => deleteFailedEmail(email.id)}
-              disabled={deletingId === email.id}
+              onClick={() => deleteFailedEmail(email, index)}
+              disabled={deletingId === (email.id || `${email.recipient}-${index}`)}
               className="ml-2 px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-xs rounded-md transition-colors disabled:opacity-50"
               title="Delete this email failure record"
             >
-              {deletingId === email.id ? '⏳' : '🗑️'}
+              {deletingId === (email.id || `${email.recipient}-${index}`) ? '⏳' : '🗑️'}
             </button>
           </div>
         ))}
