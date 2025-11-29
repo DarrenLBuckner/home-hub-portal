@@ -76,7 +76,10 @@ export async function POST(request: Request) {
     // Handle promo code redemption if provided
     if (promo_code && data.user) {
       try {
-        const redeemResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/promo-codes/redeem`, {
+        const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL?.startsWith('http') 
+          ? process.env.NEXT_PUBLIC_FRONTEND_URL 
+          : 'http://localhost:3000';
+        const redeemResponse = await fetch(`${baseUrl}/api/promo-codes/redeem`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
