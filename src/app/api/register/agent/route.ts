@@ -83,7 +83,11 @@ export async function POST(request: Request) {
 
     // Send confirmation email
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/send-agent-confirmation-email`, {
+      const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL?.startsWith('http') 
+        ? process.env.NEXT_PUBLIC_FRONTEND_URL 
+        : 'http://localhost:3000';
+      
+      await fetch(`${baseUrl}/api/send-agent-confirmation-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
