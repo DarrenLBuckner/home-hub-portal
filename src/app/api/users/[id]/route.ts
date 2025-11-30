@@ -113,7 +113,7 @@ export async function DELETE(
     // Get the target user's current data before deletion
     const { data: targetUser, error: fetchError } = await supabase
       .from('profiles')
-      .select('email')
+      .select('email, subscription_tier')
       .eq('id', id)
       .single()
     
@@ -123,7 +123,7 @@ export async function DELETE(
     }
     
     // Type assertion to help TypeScript
-    const userProfile = targetUser as { email: string }
+    const userProfile = targetUser as { email: string, subscription_tier?: string }
     
     // Block any attempt to delete Super Admin
     if (userProfile.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
@@ -137,17 +137,70 @@ export async function DELETE(
       }, { status: 403 })
     }
     
-    const { error } = await supabase
+    // Check if this user is a founding agent (professional tier) and handle counter decrement
+    const isFoundingAgent = userProfile.subscription_tier === 'professional' || userProfile.subscription_tier === 'founding_member'
+    let foundingAgentRedemption = null
+    
+    if (isFoundingAgent) {
+      // Get their founding agent redemption record
+      const { data: redemption } = await supabase
+        .from('promo_code_redemptions')
+        .select('id, promo_code_id')
+        .eq('user_id', id)
+        .single()
+      
+      foundingAgentRedemption = redemption
+    }
+    
+    // Delete from Supabase Auth first (this will cascade delete the profile via RLS)
+    const { error: authError } = await supabase.auth.admin.deleteUser(id)
+    
+    if (authError) {
+      console.error('Auth user deletion error:', authError)
+      return NextResponse.json({ error: 'Failed to delete user from auth system' }, { status: 500 })
+    }
+    
+    // Also manually delete from profiles table as backup (in case auth delete doesn't cascade)
+    const { error: profileError } = await supabase
       .from('profiles')
       .delete()
       .eq('id', id)
     
-    if (error) {
-      console.error('User deletion error:', error)
-      return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 })
+    // Don't fail if profile is already gone (auth deletion might have cascaded)
+    if (profileError && !profileError.message.includes('No rows found')) {
+      console.error('Profile deletion error:', profileError)
+      // Continue anyway since auth user is already deleted
     }
     
-    return NextResponse.json({ message: 'User deleted successfully' })
+    // If this was a founding agent, decrement the counter and remove redemption
+    if (isFoundingAgent && foundingAgentRedemption) {
+      try {
+        // Delete the redemption record (this should trigger counter decrement)
+        await supabase
+          .from('promo_code_redemptions')
+          .delete()
+          .eq('id', foundingAgentRedemption.id)
+        
+        // Manual counter decrement as backup (in case trigger doesn't exist)
+        await supabase
+          .from('promo_codes')
+          .update({ 
+            current_redemptions: supabase.raw('current_redemptions - 1'),
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', foundingAgentRedemption.promo_code_id)
+        
+        console.log(`✅ Founding agent deleted and counter decremented: ${userProfile.email}`)
+      } catch (counterError) {
+        console.error('Failed to decrement founding agent counter:', counterError)
+        // Don't fail the deletion, but log the issue
+      }
+    }
+    
+    return NextResponse.json({ 
+      message: 'User deleted successfully',
+      wasFoundingAgent: isFoundingAgent 
+    })
   } catch (error) {
     console.error('User deletion API error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

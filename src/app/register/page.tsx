@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { usePricing } from '@/hooks/usePricing';
 import PromoCodeInput from '@/components/PromoCodeInput';
+import FoundingAgentCounter from '@/components/FoundingAgentCounter';
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -252,6 +253,12 @@ function RegistrationContent() {
                 <div className="text-base font-medium text-gray-900">{selectedCountry.name}</div>
               </div>
             </div>
+
+            {/* Founding Agent Counter */}
+            <FoundingAgentCounter
+              userType="agent"
+              countryId={selectedCountry.code}
+            />
 
             {/* Promo Code Input */}
             <PromoCodeInput

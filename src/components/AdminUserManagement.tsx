@@ -46,6 +46,8 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showSuspensionModal, setShowSuspensionModal] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
   
   const supabase = createClient();
 
@@ -88,7 +90,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
           phone,
           company
         `)
-        .not('user_type', 'is', null) // Only users with user types
+        .in('user_type', ['agent', 'landlord', 'fsbo']) // Only regular users, not admins
         .neq('id', adminUserId) // Exclude current admin
         .order('created_at', { ascending: false });
 
@@ -317,6 +319,68 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
     }
   };
 
+  const handleDeleteUser = async (user: User) => {
+    // CRITICAL SECURITY: Block deletion of Super Admin accounts
+    if (isSuperAdmin(user.email)) {
+      alert('🔒 SECURITY BLOCK: Super Admin accounts cannot be deleted by any user!\n\nThis is a critical security protection that prevents system lockout.');
+      console.error('SECURITY VIOLATION: Attempt to delete Super Admin account blocked', {
+        targetEmail: user.email,
+        adminUserId: adminUserId,
+        timestamp: new Date().toISOString()
+      });
+      return;
+    }
+    
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeletion = async () => {
+    if (!selectedUser || deleteConfirmation !== 'DELETE') return;
+
+    // DOUBLE-CHECK SECURITY: Block deletion of Super Admin accounts
+    if (isSuperAdmin(selectedUser.email)) {
+      alert('🔒 CRITICAL SECURITY ERROR: Super Admin accounts cannot be deleted!\n\nThis operation is blocked for system security.');
+      console.error('CRITICAL SECURITY VIOLATION: Attempted Super Admin deletion in confirmDeletion', {
+        targetEmail: selectedUser.email,
+        adminUserId: adminUserId,
+        timestamp: new Date().toISOString()
+      });
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+      setDeleteConfirmation('');
+      return;
+    }
+
+    try {
+      // Call the DELETE API endpoint that handles both Auth and Profile deletion
+      const response = await fetch(`/api/users/${selectedUser.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete user');
+      }
+
+      // Remove from local state
+      setUsers(prev => prev.filter(user => user.id !== selectedUser.id));
+
+      setShowDeleteModal(false);
+      setSelectedUser(null);
+      setDeleteConfirmation('');
+
+      alert(`✅ User ${selectedUser.first_name} ${selectedUser.last_name} has been permanently deleted.\n\n${result.wasFoundingAgent ? '🏆 Founding agent counter has been decremented.' : ''}\n\n⚠️ Email address is now available for reuse.`);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert(`Failed to delete user: ${error}`);
+    }
+  };
+
   const getUserTypeDisplay = (userType: string) => {
     const types: { [key: string]: { label: string; icon: string; color: string } } = {
       'agent': { label: 'Real Estate Agent', icon: '🏢', color: 'bg-blue-100 text-blue-800' },
@@ -535,6 +599,17 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                     >
                       📧 Email
                     </button>
+
+                    {/* DANGER ZONE: Delete User */}
+                    {!isSuperAdmin(user.email) && permissions.canManageUsers && (
+                      <button
+                        onClick={() => handleDeleteUser(user)}
+                        className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition-colors text-sm border-2 border-red-600"
+                        title="⚠️ PERMANENT DELETION - Use extreme caution"
+                      >
+                        🗑️ DELETE
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -596,6 +671,89 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Suspend User
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DANGER: Delete User Modal */}
+      {showDeleteModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 border-4 border-red-600">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h3 className="text-2xl font-bold text-red-900 mb-2">
+                DANGER: PERMANENT USER DELETION
+              </h3>
+              <p className="text-red-700 font-medium">
+                This action CANNOT be undone!
+              </p>
+            </div>
+            
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-red-900 mb-2">You are about to PERMANENTLY DELETE:</h4>
+              <div className="text-red-800 text-sm">
+                <p><strong>Name:</strong> {selectedUser.display_name || `${selectedUser.first_name} ${selectedUser.last_name}`}</p>
+                <p><strong>Email:</strong> {selectedUser.email}</p>
+                <p><strong>Account:</strong> {selectedUser.account_code}</p>
+                <p><strong>User Type:</strong> {selectedUser.user_type}</p>
+                <p><strong>Properties:</strong> {selectedUser.property_count} listings</p>
+                <p><strong>Status:</strong> {selectedUser.subscription_status}</p>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-yellow-900 mb-2">🔥 What will be deleted:</h4>
+              <ul className="text-yellow-800 text-sm space-y-1">
+                <li>✅ User account from Supabase Auth (email becomes reusable)</li>
+                <li>✅ Profile data and settings</li>
+                <li>✅ All property listings and media</li>
+                <li>✅ Payment and subscription history</li>
+                <li>✅ Founding agent status (if applicable - counter decrements)</li>
+                <li>❌ <strong>This CANNOT be recovered!</strong></li>
+              </ul>
+            </div>
+
+            {selectedUser.user_type === 'agent' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <h4 className="font-semibold text-blue-900 mb-2">🏆 Founding Agent Check:</h4>
+                <p className="text-blue-800 text-sm">
+                  If this agent used the FOUNDERS-AGENT-GY code, deleting them will automatically decrement the founding agent counter, making that spot available again for testing.
+                </p>
+              </div>
+            )}
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type <span className="bg-red-100 px-2 py-1 rounded font-mono text-red-800">DELETE</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder="Type DELETE to confirm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedUser(null);
+                  setDeleteConfirmation('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeletion}
+                disabled={deleteConfirmation !== 'DELETE'}
+                className="flex-1 px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+              >
+                🗑️ PERMANENTLY DELETE
               </button>
             </div>
           </div>

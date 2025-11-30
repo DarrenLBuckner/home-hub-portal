@@ -15,6 +15,10 @@ interface User {
   admin_level?: string;
   created_at: string;
   updated_at: string;
+  is_suspended?: boolean;
+  suspended_at?: string;
+  suspension_reason?: string;
+  suspended_by?: string;
 }
 
 export default function UserManagement() {
@@ -30,6 +34,12 @@ export default function UserManagement() {
   const [newAdminLastName, setNewAdminLastName] = useState("");
   const [newAdminLevel, setNewAdminLevel] = useState("basic");
   const [addingAdmin, setAddingAdmin] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showSuspendModal, setShowSuspendModal] = useState(false);
+  const [suspendReason, setSuspendReason] = useState("");
+  const [selectedAdmin, setSelectedAdmin] = useState<User | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState("");
 
   useEffect(() => {
     async function checkUserManagementAccess() {
@@ -95,11 +105,12 @@ export default function UserManagement() {
 
   async function loadUsers() {
     try {
-      console.log('Loading users data...');
+      console.log('Loading admin accounts only...');
       
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('*')
+        .eq('user_type', 'admin')  // Only load admin accounts
         .order('created_at', { ascending: false });
 
       if (usersError) {
@@ -281,6 +292,142 @@ export default function UserManagement() {
     }
   };
 
+  const handleSuspendAdmin = (admin: User) => {
+    // CRITICAL SECURITY: Block suspension of Super Admin accounts
+    if (admin.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+      alert('🔒 SECURITY BLOCK: Super Admin accounts cannot be suspended by any user!\n\nThis is a critical security protection.');
+      return;
+    }
+    
+    setSelectedAdmin(admin);
+    setShowSuspendModal(true);
+  };
+
+  const confirmSuspension = async () => {
+    if (!selectedAdmin || !suspendReason.trim()) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          is_suspended: true,
+          suspended_at: new Date().toISOString(),
+          suspension_reason: suspendReason.trim(),
+          suspended_by: user?.id
+        })
+        .eq('id', selectedAdmin.id);
+
+      if (error) throw error;
+
+      // Reload admins
+      await loadUsers();
+      
+      setShowSuspendModal(false);
+      setSelectedAdmin(null);
+      setSuspendReason('');
+      
+      alert(`✅ Admin ${selectedAdmin.first_name} ${selectedAdmin.last_name} has been suspended.`);
+    } catch (error) {
+      console.error('Error suspending admin:', error);
+      alert('Failed to suspend admin. Please try again.');
+    }
+  };
+
+  const handleReactivateAdmin = async (adminId: string) => {
+    if (!confirm('Are you sure you want to reactivate this admin account?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          is_suspended: false,
+          suspended_at: null,
+          suspension_reason: null,
+          suspended_by: null
+        })
+        .eq('id', adminId);
+
+      if (error) throw error;
+
+      await loadUsers();
+      alert('✅ Admin account reactivated successfully!');
+    } catch (error) {
+      console.error('Error reactivating admin:', error);
+      alert('Failed to reactivate admin. Please try again.');
+    }
+  };
+
+  const handleDeleteAdmin = (admin: User) => {
+    // CRITICAL SECURITY: Block deletion of Super Admin accounts
+    if (admin.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+      alert('🔒 SECURITY BLOCK: Super Admin accounts cannot be deleted by any user!\n\nThis is a critical security protection.');
+      return;
+    }
+
+    // Permission hierarchy check
+    const currentAdminLevel = user?.admin_level;
+    const targetAdminLevel = admin.admin_level;
+
+    // Basic Admin cannot delete any other admin
+    if (currentAdminLevel === 'basic') {
+      alert('🔒 ACCESS DENIED: Basic Admins cannot delete other admin accounts.\n\nOnly Owner Admin and Super Admin can delete admin accounts.');
+      return;
+    }
+
+    // Owner Admin cannot delete other Owner Admins or Super Admins
+    if (currentAdminLevel === 'owner' && (targetAdminLevel === 'owner' || targetAdminLevel === 'super')) {
+      alert('🔒 ACCESS DENIED: Owner Admins cannot delete other Owner Admin or Super Admin accounts.\n\nOnly Super Admin can delete these high-level accounts.');
+      return;
+    }
+
+    // Only Super Admin can delete Super Admin accounts (already blocked above, but double check)
+    if (targetAdminLevel === 'super' && currentAdminLevel !== 'super') {
+      alert('🔒 ACCESS DENIED: Only Super Admin can delete Super Admin accounts.');
+      return;
+    }
+    
+    setSelectedAdmin(admin);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeletion = async () => {
+    if (!selectedAdmin || deleteConfirmation !== 'DELETE') return;
+
+    // DOUBLE-CHECK SECURITY: All the same checks as above
+    if (selectedAdmin.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
+      alert('🔒 CRITICAL SECURITY ERROR: Super Admin accounts cannot be deleted!');
+      return;
+    }
+
+    try {
+      // Call the DELETE API endpoint that handles both Auth and Profile deletion
+      const response = await fetch(`/api/users/${selectedAdmin.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to delete admin');
+      }
+
+      // Remove from local state
+      await loadUsers();
+
+      setShowDeleteModal(false);
+      setSelectedAdmin(null);
+      setDeleteConfirmation('');
+
+      alert(`✅ Admin ${selectedAdmin.first_name} ${selectedAdmin.last_name} has been permanently deleted.\n\n⚠️ Email address is now available for reuse.`);
+    } catch (error) {
+      console.error('Error deleting admin:', error);
+      alert(`Failed to delete admin: ${error}`);
+    }
+  };
+
   if (loading) {
     return (
       <main className="max-w-6xl mx-auto py-12 px-4 text-center">
@@ -309,9 +456,9 @@ export default function UserManagement() {
     <main className="min-h-screen bg-gray-50">
       {/* Standardized Header with Back Button */}
       <DashboardHeader
-        title="User Management"
-        description="Manage user roles and permissions across the platform"
-        icon="👥"
+        title="Admin Management"
+        description="Create and manage admin accounts (Super, Owner, Basic admins only)"
+        icon="🛡️"
         actions={
           <button
             onClick={handleLogout}
@@ -338,12 +485,38 @@ export default function UserManagement() {
           </ul>
         </div>
 
-        {/* Users Table */}
+        {/* Search Bar */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <input
+                type="text"
+                placeholder="Search admin accounts by name or email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <button 
+              onClick={loadUsers}
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded-lg"
+            >
+              🔄 Refresh
+            </button>
+          </div>
+        </div>
+
+        {/* Admin Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
-                System Users ({users.length})
+                Admin Accounts ({users.filter(user => {
+                  if (!searchTerm) return true;
+                  const search = searchTerm.toLowerCase();
+                  return user.email.toLowerCase().includes(search) ||
+                         `${user.first_name} ${user.last_name}`.toLowerCase().includes(search);
+                }).length})
               </h2>
               <div className="flex items-center space-x-3">
                 <button 
@@ -352,12 +525,6 @@ export default function UserManagement() {
                 >
                   + Add Admin
                 </button>
-                <button 
-                  onClick={loadUsers}
-                  className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                >
-                  🔄 Refresh
-                </button>
               </div>
             </div>
           </div>
@@ -365,8 +532,8 @@ export default function UserManagement() {
           {users.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">👥</div>
-              <h3 className="text-xl font-medium text-gray-600 mb-2">No users found</h3>
-              <p className="text-gray-500">User profiles will appear here when they register.</p>
+              <h3 className="text-xl font-medium text-gray-600 mb-2">No admin accounts found</h3>
+              <p className="text-gray-500">Admin accounts will appear here when they are created.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -391,7 +558,12 @@ export default function UserManagement() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((userData) => (
+                  {users.filter(user => {
+                    if (!searchTerm) return true;
+                    const search = searchTerm.toLowerCase();
+                    return user.email.toLowerCase().includes(search) ||
+                           `${user.first_name} ${user.last_name}`.toLowerCase().includes(search);
+                  }).map((userData) => (
                     <tr key={userData.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div>
@@ -410,73 +582,93 @@ export default function UserManagement() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          userData.admin_level === 'super' 
-                            ? 'bg-red-100 text-red-800'
-                            : userData.admin_level === 'owner'
-                            ? 'bg-purple-100 text-purple-800'
-                            : userData.admin_level === 'basic'
-                            ? 'bg-blue-100 text-blue-800'
-                            : userData.user_type === 'agent'
-                            ? 'bg-green-100 text-green-800'
-                            : userData.user_type === 'landlord'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : userData.user_type === 'fsbo'
-                            ? 'bg-orange-100 text-orange-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {userData.admin_level === 'super' 
-                            ? 'super admin'
-                            : userData.admin_level === 'owner'
-                            ? 'owner admin'
-                            : userData.admin_level === 'basic' 
-                            ? 'basic admin'
-                            : userData.user_type || 'user'}
-                        </span>
+                        <div className="flex flex-col space-y-1">
+                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            userData.admin_level === 'super' 
+                              ? 'bg-red-100 text-red-800'
+                              : userData.admin_level === 'owner'
+                              ? 'bg-purple-100 text-purple-800'
+                              : userData.admin_level === 'basic'
+                              ? 'bg-blue-100 text-blue-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {userData.admin_level === 'super' 
+                              ? 'Super Admin'
+                              : userData.admin_level === 'owner'
+                              ? 'Owner Admin'
+                              : userData.admin_level === 'basic' 
+                              ? 'Basic Admin'
+                              : 'Admin'}
+                          </span>
+                          {userData.is_suspended && (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                              SUSPENDED
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(userData.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         {userData.id !== user?.id ? (
-                          <>
-                            {/* SECURITY: Super Admins can NEVER be changed by anyone except themselves */}
+                          <div className="flex space-x-2">
+                            {/* SECURITY: Super Admins are PROTECTED */}
                             {userData.admin_level === 'super' ? (
-                              <span className="text-red-600 font-medium text-sm">
-                                🔒 Super Admin (Protected)
+                              <span className="text-red-600 font-medium text-sm px-3 py-2 bg-red-50 rounded">
+                                🛡️ Protected
                               </span>
                             ) : (
-                              <select
-                                value={userData.admin_level === 'owner' ? 'owner' :
-                                       userData.admin_level === 'basic' ? 'basic_admin' :
-                                       userData.user_type || 'user'}
-                                onChange={(e) => updateUserRole(userData.id, e.target.value)}
-                                className="text-sm border border-gray-300 rounded px-2 py-1"
-                              >
-                                <option value="user">User</option>
-                                
-                                {/* BUSINESS SECURITY: Only Super Admins can assign PAID roles */}
-                                {user?.admin_level === 'super' && (
-                                  <>
-                                    <option value="agent">Agent (Paid)</option>
-                                    <option value="landlord">Landlord (Paid)</option>
-                                    <option value="fsbo">FSBO (Paid)</option>
-                                  </>
+                              <>
+                                {userData.is_suspended ? (
+                                  <button
+                                    onClick={() => handleReactivateAdmin(userData.id)}
+                                    className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                                  >
+                                    ✅ Reactivate
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleSuspendAdmin(userData)}
+                                    className="px-3 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700"
+                                  >
+                                    ⏸️ Suspend
+                                  </button>
                                 )}
-                                
-                                {/* Admin roles based on permission level */}
-                                <option value="basic_admin">Basic Admin</option>
-                                {user?.admin_level === 'super' && (
-                                  <>
+                                <select
+                                  value={userData.admin_level === 'owner' ? 'owner' :
+                                         userData.admin_level === 'basic' ? 'basic_admin' :
+                                         'basic_admin'}
+                                  onChange={(e) => updateUserRole(userData.id, e.target.value)}
+                                  className="text-xs border border-gray-300 rounded px-2 py-1"
+                                  disabled={userData.is_suspended}
+                                >
+                                  <option value="basic_admin">Basic Admin</option>
+                                  {(user?.admin_level === 'super' || user?.admin_level === 'owner') && (
                                     <option value="owner">Owner Admin</option>
+                                  )}
+                                  {user?.admin_level === 'super' && (
                                     <option value="super">Super Admin</option>
-                                  </>
+                                  )}
+                                </select>
+                                
+                                {/* DELETE BUTTON - With permission hierarchy */}
+                                {(user?.admin_level === 'super' || 
+                                  (user?.admin_level === 'owner' && userData.admin_level === 'basic') ||
+                                  (user?.admin_level === 'owner' && !userData.admin_level)) && (
+                                  <button
+                                    onClick={() => handleDeleteAdmin(userData)}
+                                    className="px-3 py-1 bg-red-800 text-white rounded text-xs hover:bg-red-900 border-2 border-red-600"
+                                    title="⚠️ PERMANENT DELETION - Use extreme caution"
+                                  >
+                                    🗑️ DELETE
+                                  </button>
                                 )}
-                              </select>
+                              </>
                             )}
-                          </>
+                          </div>
                         ) : (
-                          <span className="text-gray-500 text-sm">Current User</span>
+                          <span className="text-gray-500 text-sm px-3 py-2 bg-gray-50 rounded">Current User</span>
                         )}
                       </td>
                     </tr>
@@ -621,6 +813,140 @@ export default function UserManagement() {
                 • <strong>Owner:</strong> Full country management & user creation<br/>
                 • <strong>Super:</strong> Global system access (Super Admin only)
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Suspend Admin Modal */}
+      {showSuspendModal && selectedAdmin && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Suspend Admin Account
+            </h3>
+            <p className="text-gray-600 mb-4">
+              You are about to suspend <strong>{selectedAdmin.first_name} {selectedAdmin.last_name}</strong> ({selectedAdmin.admin_level} admin).
+            </p>
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-yellow-800">
+                <strong>⚠️ Important:</strong> Suspended admins will lose access to the admin dashboard but their account remains in the system.
+              </p>
+            </div>
+            
+            <textarea
+              value={suspendReason}
+              onChange={(e) => setSuspendReason(e.target.value)}
+              placeholder="Please provide a reason for suspension..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent mb-4"
+              rows={3}
+              required
+            />
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowSuspendModal(false);
+                  setSelectedAdmin(null);
+                  setSuspendReason('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSuspension}
+                disabled={!suspendReason.trim()}
+                className="flex-1 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Suspend Admin
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DANGER: Delete Admin Modal */}
+      {showDeleteModal && selectedAdmin && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-lg w-full mx-4 border-4 border-red-600">
+            <div className="text-center mb-6">
+              <div className="text-6xl mb-4">⚠️</div>
+              <h3 className="text-2xl font-bold text-red-900 mb-2">
+                DANGER: PERMANENT ADMIN DELETION
+              </h3>
+              <p className="text-red-700 font-medium">
+                This action CANNOT be undone!
+              </p>
+            </div>
+            
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-red-900 mb-2">You are about to PERMANENTLY DELETE:</h4>
+              <div className="text-red-800 text-sm">
+                <p><strong>Name:</strong> {selectedAdmin.first_name} {selectedAdmin.last_name}</p>
+                <p><strong>Email:</strong> {selectedAdmin.email}</p>
+                <p><strong>Admin Level:</strong> {selectedAdmin.admin_level || 'Basic'} Admin</p>
+                <p><strong>Created:</strong> {new Date(selectedAdmin.created_at).toLocaleDateString()}</p>
+              </div>
+            </div>
+
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-yellow-900 mb-2">🔥 What will be deleted:</h4>
+              <ul className="text-yellow-800 text-sm space-y-1">
+                <li>✅ Admin account from Supabase Auth (email becomes reusable)</li>
+                <li>✅ All admin permissions and access rights</li>
+                <li>✅ Profile data and settings</li>
+                <li>✅ Account creation history</li>
+                <li>❌ <strong>This CANNOT be recovered!</strong></li>
+              </ul>
+            </div>
+
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-orange-900 mb-2">🔒 Permission Check:</h4>
+              <p className="text-orange-800 text-sm">
+                <strong>Your Level:</strong> {user?.admin_level || 'Basic'} Admin<br/>
+                <strong>Target Level:</strong> {selectedAdmin.admin_level || 'Basic'} Admin<br/>
+                {user?.admin_level === 'super' ? (
+                  <span className="text-green-800">✅ <strong>AUTHORIZED:</strong> Super Admin can delete any admin level</span>
+                ) : user?.admin_level === 'owner' && (selectedAdmin.admin_level === 'basic' || !selectedAdmin.admin_level) ? (
+                  <span className="text-green-800">✅ <strong>AUTHORIZED:</strong> Owner Admin can delete Basic Admin</span>
+                ) : (
+                  <span className="text-red-800">❌ <strong>UNAUTHORIZED:</strong> Insufficient permissions</span>
+                )}
+              </p>
+            </div>
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Type <span className="bg-red-100 px-2 py-1 rounded font-mono text-red-800">DELETE</span> to confirm:
+              </label>
+              <input
+                type="text"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder="Type DELETE to confirm"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+              />
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedAdmin(null);
+                  setDeleteConfirmation('');
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeletion}
+                disabled={deleteConfirmation !== 'DELETE'}
+                className="flex-1 px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+              >
+                🗑️ PERMANENTLY DELETE
+              </button>
             </div>
           </div>
         </div>
