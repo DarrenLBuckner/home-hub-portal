@@ -18,12 +18,6 @@ const nextConfig = {
         source: '/api/email-signup',
         headers: [
           {
-            key: 'Access-Control-Allow-Origin',
-            value: process.env.NODE_ENV === 'production' 
-              ? 'https://guyanahomehub.com,https://jamaicahomehub.com,https://guyana-home-hub.vercel.app'
-              : '*'
-          },
-          {
             key: 'Access-Control-Allow-Methods',
             value: 'POST, OPTIONS'
           },

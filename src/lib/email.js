@@ -184,3 +184,101 @@ export async function sendPropertyRejectionEmail({ to, propertyTitle }) {
     </div>`,
   });
 }
+
+export async function sendPropertyGuideEmail(to) {
+  return resend.emails.send({
+    from: 'Guyana Home Hub <info@portalhomehub.com>',
+    to,
+    subject: '🏡 Your Free Property Guide: Complete Guide to Buying Property in Guyana from Abroad',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 0; background: #f8fafc;">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: white; padding: 40px 30px; text-align: center;">
+          <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">🏡 Guyana Home Hub</div>
+          <h1 style="margin: 0; font-size: 28px; font-weight: bold;">Your Free Property Guide is Here!</h1>
+          <p style="margin: 15px 0 0 0; font-size: 18px; opacity: 0.95;">Complete Guide to Buying Property in Guyana from Abroad</p>
+        </div>
+
+        <!-- Welcome Message -->
+        <div style="background: white; padding: 30px; margin: 0;">
+          <h2 style="color: #2563eb; margin: 0 0 20px 0;">Thank you for your interest in Guyanese real estate!</h2>
+          
+          <p style="font-size: 16px; line-height: 1.6; color: #374151; margin-bottom: 20px;">
+            Whether you're part of the diaspora looking to invest in your homeland, planning to retire in Guyana, 
+            or exploring real estate opportunities during this exciting oil boom period, this comprehensive guide 
+            will walk you through everything you need to know.
+          </p>
+
+          <!-- Key Benefits -->
+          <div style="background: #f0f9ff; padding: 25px; border-radius: 12px; border-left: 4px solid #2563eb; margin: 25px 0;">
+            <h3 style="color: #2563eb; margin: 0 0 15px 0;">🌟 What You'll Learn in This Guide:</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #374151; line-height: 1.8;">
+              <li><strong>Legal Requirements:</strong> Can foreigners buy property in Guyana? (Yes, with some conditions)</li>
+              <li><strong>Step-by-Step Process:</strong> Complete buying process from search to ownership</li>
+              <li><strong>Cost Breakdown:</strong> All fees, taxes, and hidden costs explained</li>
+              <li><strong>Investment Opportunities:</strong> Why now is the perfect time to invest</li>
+              <li><strong>Fraud Prevention:</strong> How to protect yourself from property scams</li>
+              <li><strong>Financing Options:</strong> Different ways to fund your property purchase</li>
+              <li><strong>Property Management:</strong> Managing your investment from abroad</li>
+            </ul>
+          </div>
+
+          <!-- Download Button -->
+          <div style="text-align: center; margin: 30px 0;">
+            <p style="margin-bottom: 20px; color: #374151; font-size: 16px;">
+              Your comprehensive guide is ready for download:
+            </p>
+            <a href="https://www.portalhomehub.com/diaspora-property-guide.html" 
+               style="background: #2563eb; color: white; padding: 15px 35px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; display: inline-block;">
+              📄 Download Your Free Guide
+            </a>
+          </div>
+
+          <!-- Market Highlights -->
+          <div style="background: #dcfce7; padding: 25px; border-radius: 12px; border-left: 4px solid #16a34a; margin: 25px 0;">
+            <h3 style="color: #16a34a; margin: 0 0 15px 0;">📈 Current Market Highlights:</h3>
+            <ul style="margin: 0; padding-left: 20px; color: #374151; line-height: 1.8;">
+              <li><strong>Oil Boom Impact:</strong> Massive offshore discoveries driving economic growth</li>
+              <li><strong>GDP Growth:</strong> 20-60% annual growth projections through 2025</li>
+              <li><strong>Property Appreciation:</strong> Prime locations seeing 10-20% annual increases</li>
+              <li><strong>Rental Yields:</strong> Strong diaspora demand creating 5-10% annual returns</li>
+              <li><strong>Limited Supply:</strong> Desirable areas have restricted land availability</li>
+            </ul>
+          </div>
+
+          <!-- Next Steps -->
+          <div style="background: #fef3c7; padding: 25px; border-radius: 12px; border-left: 4px solid #f59e0b; margin: 25px 0;">
+            <h3 style="color: #d97706; margin: 0 0 15px 0;">🚀 Ready to Take Action?</h3>
+            <p style="margin: 0 0 15px 0; color: #374151; line-height: 1.6;">
+              After reading your guide, if you're ready to explore properties or need personalized advice:
+            </p>
+            <ul style="margin: 0; padding-left: 20px; color: #374151; line-height: 1.8;">
+              <li>Browse current properties at <a href="https://www.guyanahomehub.com" style="color: #2563eb; text-decoration: none;"><strong>GuyanHome Hub</strong></a></li>
+              <li>Connect with verified real estate agents</li>
+              <li>Get personalized investment advice</li>
+              <li>Join our diaspora investor community</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="background: #374151; color: white; padding: 30px; text-align: center;">
+          <div style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">🏡 Guyana Home Hub</div>
+          <p style="margin: 0 0 10px 0; font-size: 16px; opacity: 0.9;">Buy. Rent. Sell — All in One Place.</p>
+          <p style="margin: 0 0 20px 0; color: #d1d5db;">Your trusted partner for Guyanese real estate</p>
+          
+          <div style="margin: 20px 0;">
+            <a href="https://www.guyanahomehub.com" style="color: #60a5fa; text-decoration: none; margin: 0 15px;">🌐 Browse Properties</a>
+            <a href="https://wa.me/5927629797" style="color: #34d399; text-decoration: none; margin: 0 15px;">💬 WhatsApp Support</a>
+          </div>
+          
+          <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #4b5563; font-size: 13px; color: #9ca3af;">
+            <p style="margin: 0;">Caribbean Home Hub LLC | Bringing you closer to home</p>
+            <p style="margin: 5px 0 0 0;">This guide is for informational purposes only. Always consult qualified professionals.</p>
+          </div>
+        </div>
+      </div>
+    `,
+  });
+}
