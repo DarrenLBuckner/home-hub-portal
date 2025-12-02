@@ -374,7 +374,19 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
       setSelectedUser(null);
       setDeleteConfirmation('');
 
-      alert(`✅ User ${selectedUser.first_name} ${selectedUser.last_name} has been permanently deleted.\n\n${result.wasFoundingAgent ? '🏆 Founding agent counter has been decremented.' : ''}\n\n⚠️ Email address is now available for reuse.`);
+      const deletionMessage = [
+        `✅ User ${selectedUser.first_name} ${selectedUser.last_name} has been permanently deleted.`,
+        result.wasFoundingAgent ? '\n🏆 Founding agent counter has been decremented.' : '',
+        '\n📊 Deletion Details:',
+        `• Auth System: ${result.deletionDetails?.authDeleted ? 'Deleted ✅' : 'Failed to delete ⚠️'}`,
+        `• Profile Database: ${result.deletionDetails?.profileDeleted ? 'Deleted ✅' : 'Failed to delete ⚠️'}`,
+        `• Method Used: ${result.deletionDetails?.method || 'Unknown'}`,
+        result.deletionDetails?.authDeleted 
+          ? '\n✅ Email address is now available for reuse.' 
+          : '\n⚠️ WARNING: Email may still exist in Auth system - check Supabase Auth panel.'
+      ].filter(Boolean).join('\n');
+      
+      alert(deletionMessage);
     } catch (error) {
       console.error('Error deleting user:', error);
       alert(`Failed to delete user: ${error}`);

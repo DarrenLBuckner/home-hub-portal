@@ -199,15 +199,40 @@ export async function DELETE(
     })
     
     try {
+      // First, try to get user info to debug potential issues
+      const { data: authUserBefore, error: getUserError } = await supabase.auth.admin.getUserById(id)
+      
+      if (getUserError) {
+        console.log('⚠️ Could not fetch auth user before deletion:', getUserError.message)
+      } else if (authUserBefore?.user) {
+        console.log('👤 Auth user before deletion:', {
+          id: authUserBefore.user.id,
+          email: authUserBefore.user.email,
+          created_at: authUserBefore.user.created_at,
+          confirmed_at: authUserBefore.user.confirmed_at,
+          last_sign_in_at: authUserBefore.user.last_sign_in_at
+        })
+      }
+      
       const { error: authError } = await supabase.auth.admin.deleteUser(id)
       
       if (authError) {
         console.error('❌ Auth deletion failed:', {
           message: authError.message,
           status: authError.status,
-          name: authError.name
+          name: authError.name,
+          code: authError.code
         })
         authErrorDetails = authError
+        
+        // Log specific error types for debugging
+        if (authError.message?.includes('service_role')) {
+          console.error('🔑 Service role key issue detected!')
+        } else if (authError.message?.includes('foreign key') || authError.message?.includes('constraint')) {
+          console.error('🔗 Foreign key constraint preventing deletion')
+        } else if (authError.message?.includes('session') || authError.message?.includes('active')) {
+          console.error('🔓 User may have active sessions preventing deletion')
+        }
         
         // Check if user actually exists in auth
         const { data: authUser, error: checkError } = await supabase.auth.admin.getUserById(id)
@@ -262,25 +287,55 @@ export async function DELETE(
       console.log('4️⃣ Method 3: Auth deletion failed, trying alternative cleanup...')
       
       try {
-        // Sometimes updating the user to a "deleted" state helps before deletion
-        console.log('🔄 Attempting to update user state before deletion...')
+        console.log('🔄 Method 3A: Attempting to clear user sessions...')
         
+        // Try to invalidate all user sessions first
+        try {
+          await supabase.auth.admin.signOut(id, 'global')
+          console.log('✅ User sessions cleared')
+        } catch (signOutError) {
+          console.log('⚠️ Could not clear sessions:', signOutError)
+        }
+        
+        console.log('🔄 Method 3B: Attempting to update user state...')
+        
+        // Clear user metadata and disable account
         await supabase.auth.admin.updateUserById(id, {
           email_confirm: false,
-          ban_duration: 'none'
+          ban_duration: '24h',  // Temporarily ban to clear sessions
+          user_metadata: {},
+          app_metadata: {}
         })
         
-        // Try auth deletion again
+        console.log('🔄 Method 3C: Retrying auth deletion after cleanup...')
+        
+        // Try auth deletion again after cleanup
         const { error: retryAuthError } = await supabase.auth.admin.deleteUser(id)
         
         if (!retryAuthError) {
-          console.log('✅ Auth deletion successful on retry')
+          console.log('✅ Auth deletion successful after user state cleanup')
           authDeleted = true
         } else {
-          console.log('❌ Auth deletion still failing on retry:', retryAuthError.message)
+          console.log('❌ Auth deletion still failing after cleanup:', {
+            message: retryAuthError.message,
+            status: retryAuthError.status,
+            code: retryAuthError.code
+          })
+          
+          // Last resort: Try to use the shouldSoftDelete parameter
+          console.log('🔄 Method 3D: Trying soft delete approach...')
+          
+          const { error: softDeleteError } = await supabase.auth.admin.deleteUser(id, false) // Hard delete
+          
+          if (!softDeleteError) {
+            console.log('✅ Hard delete successful')
+            authDeleted = true
+          } else {
+            console.log('❌ Hard delete also failed:', softDeleteError.message)
+          }
         }
       } catch (retryException) {
-        console.log('⚠️ Retry attempt failed:', retryException)
+        console.log('⚠️ Advanced retry attempts failed:', retryException)
       }
     }
     
