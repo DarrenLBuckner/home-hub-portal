@@ -152,6 +152,8 @@ export default function CreateAgentProperty() {
     setIsSubmitting(true);
     setError('');
     
+    console.log('🎯 Starting save draft process...');
+    
     try {
       // Initialize Supabase client
       const supabase = createClient();
@@ -189,6 +191,8 @@ export default function CreateAgentProperty() {
         for (let i = 0; i < images.length; i++) {
           const file = images[i];
           try {
+            console.log(`📤 Uploading image ${i + 1}/${images.length}: ${file.name}`);
+            
             // Create unique filename
             const timestamp = Date.now();
             const extension = file.name.split('.').pop() || 'jpg';
@@ -199,7 +203,10 @@ export default function CreateAgentProperty() {
               .from('property-images')
               .upload(fileName, file);
             
-            if (uploadError) throw uploadError;
+            if (uploadError) {
+              console.error(`❌ Image upload error for ${fileName}:`, uploadError);
+              throw uploadError;
+            }
             
             // Get public URL
             const { data: urlData } = supabase.storage
@@ -209,9 +216,13 @@ export default function CreateAgentProperty() {
             if (urlData?.publicUrl) {
               uploadedImageUrls.push(urlData.publicUrl);
               console.log(`✅ Uploaded image ${i + 1}:`, urlData.publicUrl);
+            } else {
+              console.error(`❌ Failed to get public URL for ${fileName}`);
             }
-          } catch (uploadErr) {
-            console.warn(`❌ Failed to upload image ${i + 1}:`, uploadErr);
+          } catch (uploadErr: any) {
+            console.error(`❌ Failed to upload image ${i + 1}:`, uploadErr);
+            setError(`Failed to upload image "${file.name}": ${uploadErr.message}`);
+            return; // Stop the process if image upload fails
           }
         }
         
@@ -221,7 +232,22 @@ export default function CreateAgentProperty() {
           isPrimary: index === 0,
           altText: `Property image ${index + 1}`
         }));
+        
+        console.log(`✅ All ${images.length} images uploaded successfully`);
       }
+      
+      console.log('🚀 Sending draft to API...', { 
+        hasImages: draftData.images.length > 0,
+        title: draftData.title,
+        email: formData.owner_email 
+      });
+      
+      // Create AbortController for timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        controller.abort();
+        console.error('❌ API request timed out after 30 seconds');
+      }, 30000); // 30 second timeout
       
       // Use new draft API instead of direct database insert
       const response = await fetch('/api/properties/drafts', {
@@ -233,12 +259,25 @@ export default function CreateAgentProperty() {
           draft_type: 'sale',
           site_id: 'guyana', // Default for agent created properties - could be made dynamic later
           ...draftData
-        })
+        }),
+        signal: controller.signal
       });
 
-      const result = await response.json();
+      clearTimeout(timeoutId);
       
-      if (!response.ok || !result.success) {
+      console.log('📡 API Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API returned error status:', response.status, errorText);
+        throw new Error(`Server error (${response.status}): ${errorText || 'Unknown error'}`);
+      }
+
+      const result = await response.json();
+      console.log('📊 API Response:', result);
+      
+      if (!result.success) {
+        console.error('❌ API returned failure:', result.error);
         throw new Error(result.error || 'Failed to save draft');
       }
       
@@ -248,10 +287,25 @@ export default function CreateAgentProperty() {
       router.push('/dashboard/agent?success=Property saved as draft');
       
     } catch (error: any) {
-      console.error('Save draft error:', error);
-      setError(`Failed to save draft: ${error.message}`);
+      console.error('💥 Save draft error:', error);
+      
+      // Provide specific error messages for common issues
+      if (error.name === 'AbortError') {
+        setError('Request timed out. Please check your internet connection and try again.');
+      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+        setError('Network error. Please check your internet connection and try again.');
+      } else if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+        setError('Session expired. Please refresh the page and log in again.');
+      } else {
+        setError(`Failed to save draft: ${error.message || 'Unknown error occurred'}`);
+      }
+      
+      // Also log to help debugging
+      console.error('📝 Form data at time of error:', formData);
+      console.error('📸 Images at time of error:', images.length);
     } finally {
       setIsSubmitting(false);
+      console.log('🏁 Save draft process completed');
     }
   };
 

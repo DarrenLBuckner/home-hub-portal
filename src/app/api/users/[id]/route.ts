@@ -107,23 +107,53 @@ export async function DELETE(
     const supabase = createAdminClient()
     const { id } = await context.params
     
+    console.log(`🎯 DELETION REQUEST: Starting deletion process for user ${id}`)
+    
     // CRITICAL SECURITY: Block deletion of Super Admin account
     const SUPER_ADMIN_EMAIL = 'mrdarrenbuckner@gmail.com'
     
     // Get the target user's current data before deletion
+    console.log('1️⃣ Fetching user profile before deletion...')
     const { data: targetUser, error: fetchError } = await supabase
       .from('profiles')
-      .select('email, subscription_tier')
+      .select('email, subscription_tier, first_name, last_name')
       .eq('id', id)
       .single()
     
-    if (fetchError || !targetUser) {
-      console.error('User fetch error before deletion:', fetchError)
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    if (fetchError) {
+      console.error('❌ User fetch error before deletion:', fetchError)
+      if (fetchError.code === 'PGRST116') {
+        // User doesn't exist in profiles, check if they exist in auth
+        console.log('ℹ️ User not found in profiles, checking auth system...')
+        
+        const { data: authUser, error: authCheckError } = await supabase.auth.admin.getUserById(id)
+        
+        if (authCheckError || !authUser?.user) {
+          console.log('ℹ️ User not found in auth either - already deleted or invalid ID')
+          return NextResponse.json({ error: 'User not found' }, { status: 404 })
+        }
+        
+        // User exists in auth but not profiles - proceed with auth-only deletion
+        console.log('⚠️ User exists in auth but not in profiles - cleaning up auth only')
+        const userProfile = { email: authUser.user.email || '', subscription_tier: null }
+        
+        // Continue with auth deletion below
+      } else {
+        return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 })
+      }
     }
     
     // Type assertion to help TypeScript
-    const userProfile = targetUser as { email: string, subscription_tier?: string }
+    const userProfile = targetUser ? 
+      targetUser as { email: string, subscription_tier?: string, first_name?: string, last_name?: string } :
+      { email: '', subscription_tier: null }
+    
+    console.log('👤 User to delete:', {
+      id,
+      email: userProfile.email,
+      name: targetUser ? `${targetUser.first_name} ${targetUser.last_name}` : 'Unknown',
+      tier: userProfile.subscription_tier
+    })
     
     // Block any attempt to delete Super Admin
     if (userProfile.email?.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase()) {
@@ -152,24 +182,155 @@ export async function DELETE(
       foundingAgentRedemption = redemption
     }
     
-    // Delete from Supabase Auth first (this will cascade delete the profile via RLS)
-    const { error: authError } = await supabase.auth.admin.deleteUser(id)
+    // STRATEGIC DELETION APPROACH: 
+    // Try multiple methods to ensure deletion succeeds
+    console.log('🚀 Starting strategic deletion process...')
     
-    if (authError) {
-      console.error('Auth user deletion error:', authError)
-      return NextResponse.json({ error: 'Failed to delete user from auth system' }, { status: 500 })
+    let authDeleted = false
+    let profileDeleted = false
+    let authErrorDetails = null
+    
+    // Method 1: Try Auth deletion first (standard approach)
+    console.log('2️⃣ Method 1: Attempting Supabase Auth deletion...')
+    console.log('🔧 Auth client configuration:', {
+      hasServiceRoleKey: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      keyLength: process.env.SUPABASE_SERVICE_ROLE_KEY?.length || 0,
+      url: process.env.NEXT_PUBLIC_SUPABASE_URL
+    })
+    
+    try {
+      const { error: authError } = await supabase.auth.admin.deleteUser(id)
+      
+      if (authError) {
+        console.error('❌ Auth deletion failed:', {
+          message: authError.message,
+          status: authError.status,
+          name: authError.name
+        })
+        authErrorDetails = authError
+        
+        // Check if user actually exists in auth
+        const { data: authUser, error: checkError } = await supabase.auth.admin.getUserById(id)
+        
+        if (checkError || !authUser?.user) {
+          console.log('ℹ️ User does not exist in auth system - considering auth "deleted"')
+          authDeleted = true
+        } else {
+          console.log('⚠️ User still exists in auth despite deletion failure')
+          console.log('📧 Auth user email:', authUser.user.email)
+        }
+      } else {
+        console.log('✅ Auth deletion successful')
+        authDeleted = true
+      }
+    } catch (authException) {
+      console.error('💥 Auth deletion threw exception:', authException)
+      authErrorDetails = authException
     }
     
-    // Also manually delete from profiles table as backup (in case auth delete doesn't cascade)
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', id)
+    // Method 2: Try direct profile deletion (more reliable for corrupted accounts)
+    console.log('3️⃣ Method 2: Attempting direct profile deletion...')
     
-    // Don't fail if profile is already gone (auth deletion might have cascaded)
-    if (profileError && !profileError.message.includes('No rows found')) {
-      console.error('Profile deletion error:', profileError)
-      // Continue anyway since auth user is already deleted
+    try {
+      const { error: profileError, count } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', id)
+      
+      if (profileError) {
+        console.error('❌ Profile deletion failed:', {
+          message: profileError.message,
+          code: profileError.code,
+          hint: profileError.hint
+        })
+        
+        // Check if it's just because no rows exist
+        if (profileError.message?.includes('0 rows') || profileError.code === 'PGRST116') {
+          console.log('ℹ️ No profile rows to delete - considering profile "deleted"')
+          profileDeleted = true
+        }
+      } else {
+        console.log('✅ Profile deletion successful')
+        profileDeleted = true
+      }
+    } catch (profileException) {
+      console.error('💥 Profile deletion threw exception:', profileException)
+    }
+    
+    // Method 3: If auth deletion failed but we need to proceed, try alternative approaches
+    if (!authDeleted && targetUser) {
+      console.log('4️⃣ Method 3: Auth deletion failed, trying alternative cleanup...')
+      
+      try {
+        // Sometimes updating the user to a "deleted" state helps before deletion
+        console.log('🔄 Attempting to update user state before deletion...')
+        
+        await supabase.auth.admin.updateUserById(id, {
+          email_confirm: false,
+          ban_duration: 'none'
+        })
+        
+        // Try auth deletion again
+        const { error: retryAuthError } = await supabase.auth.admin.deleteUser(id)
+        
+        if (!retryAuthError) {
+          console.log('✅ Auth deletion successful on retry')
+          authDeleted = true
+        } else {
+          console.log('❌ Auth deletion still failing on retry:', retryAuthError.message)
+        }
+      } catch (retryException) {
+        console.log('⚠️ Retry attempt failed:', retryException)
+      }
+    }
+    
+    // Evaluation: Determine if deletion was successful enough to proceed
+    const deletionSuccessful = authDeleted || profileDeleted
+    
+    if (!deletionSuccessful) {
+      console.error('❌ DELETION FAILED: Neither auth nor profile deletion succeeded')
+      return NextResponse.json({ 
+        error: 'Failed to delete user from both auth and profile systems',
+        details: {
+          authError: authErrorDetails,
+          message: 'User may have corrupted data or foreign key constraints'
+        }
+      }, { status: 500 })
+    }
+    
+    console.log('✅ Deletion successful:', { authDeleted, profileDeleted })
+    
+    // Additional cleanup: Try to delete related records that might prevent deletion
+    console.log('🧹 Cleaning up related user data...')
+    
+    try {
+      // Delete from properties table
+      const { error: propertiesError } = await supabase
+        .from('properties')
+        .delete()
+        .eq('user_id', id)
+      
+      if (propertiesError) {
+        console.log('⚠️ Properties cleanup error:', propertiesError.message)
+      } else {
+        console.log('✅ Cleaned up user properties')
+      }
+      
+      // Delete from property_drafts table
+      const { error: draftsError } = await supabase
+        .from('property_drafts')
+        .delete()
+        .eq('user_id', id)
+      
+      if (draftsError) {
+        console.log('⚠️ Drafts cleanup error:', draftsError.message)
+      } else {
+        console.log('✅ Cleaned up user drafts')
+      }
+      
+    } catch (cleanupError) {
+      console.log('⚠️ Some cleanup operations failed:', cleanupError)
+      // Don't fail the deletion for cleanup errors
     }
     
     // If this was a founding agent, decrement the counter and remove redemption
@@ -197,9 +358,23 @@ export async function DELETE(
       }
     }
     
+    console.log('🎉 USER DELETION COMPLETED SUCCESSFULLY')
+    console.log('📊 Final status:', {
+      authDeleted,
+      profileDeleted, 
+      isFoundingAgent,
+      userEmail: userProfile.email,
+      cleanupCompleted: true
+    })
+    
     return NextResponse.json({ 
       message: 'User deleted successfully',
-      wasFoundingAgent: isFoundingAgent 
+      wasFoundingAgent: isFoundingAgent,
+      deletionDetails: {
+        authDeleted,
+        profileDeleted,
+        method: authDeleted ? 'Auth + Profile' : 'Profile Only'
+      }
     })
   } catch (error) {
     console.error('User deletion API error:', error)

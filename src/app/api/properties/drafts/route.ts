@@ -10,6 +10,12 @@ export const runtime = 'nodejs';
 export async function POST(req: NextRequest) {
   try {
     console.log('💾 Saving property draft...');
+    console.log('📡 Request headers:', {
+      'content-type': req.headers.get('content-type'),
+      'user-agent': req.headers.get('user-agent'),
+      'origin': req.headers.get('origin'),
+      'authorization': req.headers.get('authorization') ? 'Present' : 'Missing'
+    });
     
     // Create supabase server client
     const cookieStore = await cookies();
@@ -31,6 +37,8 @@ export async function POST(req: NextRequest) {
       }
     );
     
+    console.log('🔐 Checking authentication...');
+    
     // Authenticate the user
     const {
       data: { user },
@@ -38,9 +46,15 @@ export async function POST(req: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (userErr || !user) {
-      console.error('Auth error:', userErr?.message);
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      console.error('❌ Auth error:', userErr?.message || 'No user found');
+      console.log('🍪 Available cookies:', Array.from(cookieStore.getAll()).map(c => c.name));
+      return NextResponse.json({ 
+        error: 'Unauthorized - Please log in again',
+        details: userErr?.message 
+      }, { status: 401 });
     }
+    
+    console.log('✅ User authenticated:', user.email, 'ID:', user.id);
 
     // Get user profile for country_id
     const { data: userProfile, error: profileError } = await supabase
@@ -55,10 +69,24 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
+    console.log('📦 Request body received:', {
+      hasTitle: !!body.title,
+      hasDraftType: !!body.draft_type,
+      hasDraftId: !!body.draft_id,
+      keys: Object.keys(body),
+      ownerEmail: body.owner_email || 'Not provided'
+    });
+    
     const { draft_id, title, draft_type, ...draftData } = body;
 
     // Sanitize draft data (remove file objects if any)
     const sanitizedData = JSON.parse(JSON.stringify(draftData));
+    console.log('🧹 Sanitized data:', {
+      title: sanitizedData.title || 'No title',
+      price: sanitizedData.price,
+      hasImages: !!sanitizedData.images?.length,
+      ownerEmail: sanitizedData.owner_email
+    });
 
     if (draft_id) {
       // Update existing draft
@@ -199,12 +227,19 @@ export async function POST(req: NextRequest) {
 
       if (createError) {
         console.error('❌ Error creating draft:', createError);
+        console.error('❌ Create error details:', {
+          code: createError.code,
+          message: createError.message,
+          details: createError.details,
+          hint: createError.hint
+        });
         return NextResponse.json({ 
-          error: 'Failed to create draft' 
+          error: `Database error: ${createError.message}`,
+          details: createError.details 
         }, { status: 500 });
       }
 
-      console.log('✅ Draft created successfully');
+      console.log('✅ Draft created successfully:', newDraft.id);
       return NextResponse.json({ 
         success: true, 
         draft_id: newDraft.id,
@@ -214,8 +249,10 @@ export async function POST(req: NextRequest) {
     
   } catch (err: any) {
     console.error('💥 Draft save error:', err);
+    console.error('💥 Error stack:', err.stack);
     return NextResponse.json({ 
-      error: `Failed to save draft: ${err?.message || 'Unknown error'}` 
+      error: `Failed to save draft: ${err?.message || 'Unknown error'}`,
+      details: err?.stack || 'No stack trace available' 
     }, { status: 500 });
   }
 }
