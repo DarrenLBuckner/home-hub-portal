@@ -108,8 +108,8 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Auth user created:', authUser.user.id);
 
-    // Determine subscription tier - founding agents get Professional tier
-    const subscriptionTier = agent.is_founding_member ? 'professional' : 'basic';
+    // Determine subscription tier - founding agents get premium tier  
+    const subscriptionTier = agent.is_founding_member ? 'premium' : 'basic';
     
     // Create or update profile record with Auth user's ID (handles DB trigger conflict)
     const { error: profileError } = await supabaseAdmin

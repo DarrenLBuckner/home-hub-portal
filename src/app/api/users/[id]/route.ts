@@ -359,28 +359,52 @@ export async function DELETE(
     console.log('🧹 Cleaning up related user data...')
     
     try {
-      // Delete from properties table
-      const { error: propertiesError } = await supabase
-        .from('properties')
-        .delete()
-        .eq('user_id', id)
+      // Comprehensive cleanup of ALL user data
+      const cleanupOperations = [
+        // Core user data
+        { table: 'properties', field: 'user_id', name: 'properties' },
+        { table: 'property_drafts', field: 'user_id', name: 'drafts' },
+        
+        // Email-based records (use email as fallback)
+        { table: 'viewing_requests', field: 'user_id', emailField: 'email', name: 'viewing requests' },
+        { table: 'leads', field: 'user_id', emailField: 'email', name: 'leads' },
+        { table: 'franchise_applications', field: 'user_id', emailField: 'email', name: 'franchise applications' },
+        { table: 'email_events', field: 'user_id', name: 'email events' },
+        
+        // Agent-specific data
+        { table: 'agent_vetting', field: 'user_id', emailField: 'email', name: 'agent vetting records' }
+      ]
       
-      if (propertiesError) {
-        console.log('⚠️ Properties cleanup error:', propertiesError.message)
-      } else {
-        console.log('✅ Cleaned up user properties')
-      }
-      
-      // Delete from property_drafts table
-      const { error: draftsError } = await supabase
-        .from('property_drafts')
-        .delete()
-        .eq('user_id', id)
-      
-      if (draftsError) {
-        console.log('⚠️ Drafts cleanup error:', draftsError.message)
-      } else {
-        console.log('✅ Cleaned up user drafts')
+      for (const operation of cleanupOperations) {
+        try {
+          // Delete by user_id first
+          const { error: userIdError } = await supabase
+            .from(operation.table)
+            .delete()
+            .eq(operation.field, id)
+          
+          if (userIdError) {
+            console.log(`⚠️ ${operation.name} cleanup (user_id) error:`, userIdError.message)
+          } else {
+            console.log(`✅ Cleaned up ${operation.name} (by user_id)`)
+          }
+          
+          // Also delete by email if email field exists and we have the email
+          if (operation.emailField && userProfile.email) {
+            const { error: emailError } = await supabase
+              .from(operation.table)
+              .delete()
+              .eq(operation.emailField, userProfile.email)
+            
+            if (emailError) {
+              console.log(`⚠️ ${operation.name} cleanup (email) error:`, emailError.message)
+            } else {
+              console.log(`✅ Cleaned up ${operation.name} (by email)`)
+            }
+          }
+        } catch (opError) {
+          console.log(`⚠️ Failed to cleanup ${operation.name}:`, opError)
+        }
       }
       
     } catch (cleanupError) {

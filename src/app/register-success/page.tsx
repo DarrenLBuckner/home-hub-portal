@@ -23,9 +23,7 @@ export default function RegisterSuccess() {
         alignItems: 'center',
       }}>
         {/* Portal Home Hub logo */}
-        <Image src="/portal-logo.svg" alt="Portal Home Hub Logo" width={72} height={72} style={{ marginBottom: '1.2rem' }} />
-        {/* Professional red house-shaped logo */}
-        <Image src="/red-house-logo.svg" alt="Red House Logo" width={54} height={54} style={{ marginBottom: '1.2rem' }} />
+        <Image src="/images/PHH Logo.png" alt="Portal Home Hub Logo" width={72} height={72} style={{ marginBottom: '1.2rem' }} />
         <h2 style={{ color: '#0a2240', fontWeight: 700, fontSize: '1.35rem', marginBottom: '1.1rem' }}>
           Thanks for registering with Portal Home Hub!
         </h2>

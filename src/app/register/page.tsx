@@ -221,8 +221,15 @@ function RegistrationContent() {
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-md mx-auto lg:max-w-6xl px-4 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold text-gray-900">Agent Registration</h1>
-            <div className="text-sm text-gray-500">Step {currentStep} of 4</div>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/images/PHH Logo.png" 
+                alt="Portal Home Hub Logo" 
+                className="w-8 h-8 sm:w-10 sm:h-10 object-contain flex-shrink-0" 
+              />
+              <h1 className="text-lg font-bold text-gray-900">Agent Registration</h1>
+            </div>
+            <div className="text-sm text-gray-500 flex-shrink-0">Step {currentStep} of 4</div>
           </div>
           
           {/* Progress Bar */}
