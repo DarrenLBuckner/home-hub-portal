@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Auth user created:', authUser.user.id);
 
-    // Determine subscription tier - founding agents get premium tier  
+    // Determine subscription tier - founding agents get premium tier (maps to Professional plan)  
     const subscriptionTier = agent.is_founding_member ? 'premium' : 'basic';
     
     // Create or update profile record with Auth user's ID (handles DB trigger conflict)

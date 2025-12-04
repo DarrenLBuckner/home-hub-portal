@@ -502,23 +502,47 @@ export default function SuperSimplePricingManagement() {
                   <p className="text-gray-500 text-sm">per {plan.plan_type}</p>
                 </div>
 
-                {/* Plan Features (Simplified) */}
+                {/* Plan Features (Enhanced to match registration page) */}
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center text-sm">
                     <span className="mr-2">🏠</span>
-                    <span>{plan.max_properties ? `${plan.max_properties} Properties` : 'Unlimited Properties'}</span>
+                    <span>{plan.max_properties ? `${plan.max_properties} ${plan.max_properties === 1 ? 'property' : 'properties'}` : 'Unlimited properties'}</span>
                   </div>
-                  <div className="flex items-center text-sm">
-                    <span className="mr-2">⭐</span>
-                    <span>{plan.featured_listings_included} Featured Listings</span>
-                  </div>
+                  {plan.featured_listings_included > 0 && (
+                    <div className="flex items-center text-sm">
+                      <span className="mr-2">⭐</span>
+                      <span>{plan.featured_listings_included} featured listings</span>
+                    </div>
+                  )}
                   <div className="flex items-center text-sm">
                     <span className="mr-2">📅</span>
-                    <span>{plan.listing_duration_days} Days Duration</span>
+                    <span>{plan.listing_duration_days ? `${plan.listing_duration_days} days duration` : 'Listings never expire'}</span>
                   </div>
-                  <div className="flex items-center text-sm">
+                  {plan.features?.photos && (
+                    <div className="flex items-center text-sm">
+                      <span className="mr-2">📸</span>
+                      <span>{plan.features.photos} photos/property</span>
+                    </div>
+                  )}
+                  {plan.features?.support && (
+                    <div className="flex items-center text-sm">
+                      <span className="mr-2">🎧</span>
+                      <span>{plan.features.support} support</span>
+                    </div>
+                  )}
+                  {plan.features?.videos && (
+                    <div className="flex items-center text-sm">
+                      <span className="mr-2">🎥</span>
+                      <span>Video uploads included</span>
+                    </div>
+                  )}
+                  <div className="flex items-center text-sm text-gray-600">
                     <span className="mr-2">👥</span>
-                    <span>{plan.active_subscriptions} Active Users</span>
+                    <span>{plan.active_subscriptions} active subscribers</span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600">
+                    <span className="mr-2">📊</span>
+                    <span>{plan.total_purchases} total purchases</span>
                   </div>
                 </div>
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { getTierBenefits } from '@/lib/subscription-utils';
 
 export const runtime = 'nodejs'; // avoid Edge runtime issues
 export const maxDuration = 60; // Allow up to 60 seconds for image processing
@@ -279,49 +280,78 @@ export async function POST(req: NextRequest) {
       }
       
     } else {
-      // For all other users (agents, landlords, FSBO) - use enhanced property limits system
+      // For all other users (agents, landlords, FSBO) - use local property limits system
       
-      // Use the new enhanced property limits check
-      const { data: limitResult, error: limitCheckError } = await supabase
-        .rpc('can_user_create_property_enhanced', { 
-          user_uuid: userId,
-          property_listing_type: normalizedPayload.listing_type,
-          property_category: body.propertyCategory 
-        });
+      // Get user's subscription tier from profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('id', userId)
+        .single();
 
-      if (limitCheckError) {
-        console.error('Enhanced property limit check error:', limitCheckError);
+      if (profileError) {
+        console.error('Profile fetch error for limits check:', profileError);
         return NextResponse.json({ 
           error: "Unable to verify property limits. Please contact support." 
         }, { status: 500 });
       }
 
-      const result = limitResult?.[0];
-      if (!result?.can_create) {
-        console.error('❌ Enhanced property limit exceeded for non-admin user');
+      // Get tier benefits using the updated subscription utils
+      const tierBenefits = getTierBenefits(userProfile.user_type, profile?.subscription_tier || 'basic');
+      const maxAllowed = tierBenefits.maxListings;
+
+      console.log('🔍 Property limits check:', {
+        userType: userProfile.user_type,
+        subscriptionTier: profile?.subscription_tier || 'basic',
+        maxAllowed,
+        isUnlimited: maxAllowed === 999
+      });
+
+      // Count current properties (exclude rejected ones)
+      const { count: currentCount, error: countError } = await supabase
+        .from('properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .in('status', ['active', 'pending', 'draft']);
+
+      if (countError) {
+        console.error('Property count error:', countError);
+        return NextResponse.json({ 
+          error: "Unable to verify property limits. Please contact support." 
+        }, { status: 500 });
+      }
+
+      // Check if limit exceeded (999 means unlimited)
+      if (maxAllowed !== 999 && (currentCount || 0) >= maxAllowed) {
+        console.error('❌ Property limit exceeded for non-admin user');
         
         // Provide specific error messages based on user type
-        let errorMessage = result?.reason || 'Property limit exceeded';
+        let errorMessage = 'Property limit exceeded';
         
         if (userProfile.user_type === 'landlord') {
-          errorMessage = `Landlord limit reached: You can list only 1 property for free. You currently have ${result?.current_count || 0} properties. Please upgrade to list more.`;
+          errorMessage = `Landlord limit reached: You can list ${maxAllowed} ${maxAllowed === 1 ? 'property' : 'properties'}. You currently have ${currentCount || 0} properties. Please upgrade to list more.`;
         } else if (userProfile.user_type === 'fsbo') {
-          errorMessage = `FSBO limit reached: You can list only 1 property for free. You currently have ${result?.current_count || 0} properties. Please upgrade to list more.`;
-        } else if (result?.trial_active && result?.trial_expires) {
-          const daysRemaining = Math.max(0, Math.ceil((new Date(result.trial_expires).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)));
-          errorMessage = `Free trial limit reached: ${result?.current_count || 0}/${result?.max_allowed || 10} properties used. ${daysRemaining} days remaining in trial. Please upgrade to list more properties.`;
+          errorMessage = `FSBO limit reached: You can list ${maxAllowed} ${maxAllowed === 1 ? 'property' : 'properties'}. You currently have ${currentCount || 0} properties. Please upgrade to list more.`;
+        } else if (userProfile.user_type === 'agent') {
+          errorMessage = `Agent limit reached: Your ${profile?.subscription_tier || 'basic'} plan allows ${maxAllowed} ${maxAllowed === 1 ? 'property' : 'properties'}. You currently have ${currentCount || 0} properties. Please upgrade to list more.`;
         }
         
         return NextResponse.json({ 
           error: errorMessage,
           details: {
-            current_count: result?.current_count || 0,
-            max_allowed: result?.max_allowed || 0,
-            trial_active: result?.trial_active || false,
-            trial_expires: result?.trial_expires || null
+            current_count: currentCount || 0,
+            max_allowed: maxAllowed,
+            subscription_tier: profile?.subscription_tier || 'basic',
+            user_type: userProfile.user_type
           }
         }, { status: 403 });
       }
+
+      console.log('✅ Property limit check passed:', {
+        currentCount: currentCount || 0,
+        maxAllowed,
+        subscriptionTier: profile?.subscription_tier || 'basic'
+      });
 
     }
 

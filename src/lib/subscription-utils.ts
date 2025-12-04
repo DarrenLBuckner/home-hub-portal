@@ -53,7 +53,7 @@ export function canUploadVideo(profile: UserProfile): boolean {
   const tier = profile.subscription_tier?.toLowerCase()
 
   if (userType === 'agent') {
-    return tier === 'pro' || tier === 'elite'
+    return tier === 'premium' || tier === 'platinum' || tier === 'elite'
   }
 
   if (userType === 'landlord') {
@@ -127,9 +127,10 @@ export function getTierBenefits(userType: string, tier: string) {
 
   const benefits = {
     agent: {
-      basic: { canUploadVideo: false, maxPhotos: 8, maxListings: 5 },
-      pro: { canUploadVideo: true, maxPhotos: 15, maxListings: 20 },
-      elite: { canUploadVideo: true, maxPhotos: 20, maxListings: 999 }
+      basic: { canUploadVideo: false, maxPhotos: 8, maxListings: 10 },        // Maps to "Agent Basic" pricing plan
+      premium: { canUploadVideo: true, maxPhotos: 15, maxListings: 30 },       // Maps to "Agent Professional" pricing plan (founding members)
+      platinum: { canUploadVideo: true, maxPhotos: 20, maxListings: 75 },      // Maps to "Agent Premium" pricing plan
+      elite: { canUploadVideo: true, maxPhotos: 25, maxListings: 999 }         // Elite/unlimited tier
     },
     landlord: {
       basic: { canUploadVideo: false, maxPhotos: 8, maxListings: 1 },
