@@ -508,14 +508,12 @@ export default function PropertyReviewPage() {
                             💰 Change Price
                           </button>
 
-                          {/* Edit Property - Temporarily disabled for admin security */}
-                          <button 
-                            disabled
-                            className="px-4 py-2 bg-gray-400 text-gray-300 font-bold rounded-lg cursor-not-allowed flex items-center gap-2"
-                            title="Admin property editing coming soon"
-                          >
-                            ✏️ Edit Property
-                          </button>
+                          {/* Edit Property */}
+                          <Link href={getEditUrl(property)}>
+                            <button className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                              ✏️ Edit Property
+                            </button>
+                          </Link>
 
                           {/* Status Management */}
                           {(property.status === 'pending' || property.status === 'draft') && (
@@ -552,11 +550,11 @@ export default function PropertyReviewPage() {
                             </>
                           )}
 
-                          {/* View Details - Route not implemented */}
+                          {/* View Details - Opens property in new tab */}
                           <button 
-                            disabled
-                            className="px-4 py-2 border border-gray-300 text-gray-400 font-medium rounded-lg cursor-not-allowed transition-colors"
-                            title="Property details view coming soon"
+                            onClick={() => window.open(getEditUrl(property), '_blank')}
+                            className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                            title="View/edit property details in new tab"
                           >
                             👁 View Details
                           </button>

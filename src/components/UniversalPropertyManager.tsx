@@ -215,8 +215,9 @@ export default function UniversalPropertyManager({
         } else if (adminPermissions && adminPermissions.canViewAllCountries) {
           console.log('🌍 Super Admin: Loading ALL properties from ALL countries');
         } else {
-          console.log('⏳ Admin permissions not loaded yet, defaulting to user-specific properties');
-          query = query.eq('user_id', userId);
+          console.log('⚠️ Admin permissions not loaded yet, but admin user should see all properties');
+          console.log('🔍 Loading ALL properties for admin (no country filter applied)');
+          // Don't filter by user_id for admin users - they should see all properties
         }
       } else {
         // Regular users (agent, landlord, fsbo) only see their own properties
@@ -405,6 +406,13 @@ export default function UniversalPropertyManager({
     if (!property) {
       console.error('Property not found for editing:', id);
       return;
+    }
+
+    // For admin users, allow editing but with admin awareness
+    if (userType === 'admin') {
+      // Admins can edit any property - route to the appropriate user edit form
+      // but add admin context awareness for better UX
+      console.log(`Admin editing property ${id} from user type: ${property.listed_by_type}`);
     }
 
     // Route to user-specific edit form based on property's listed_by_type
