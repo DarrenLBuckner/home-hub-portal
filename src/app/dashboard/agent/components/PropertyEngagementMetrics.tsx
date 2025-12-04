@@ -30,7 +30,7 @@ export default function PropertyEngagementMetrics({ userId }: { userId: string }
       // Get agent's properties
       const { data: properties, error: propertiesError } = await supabase
         .from('properties')
-        .select('id, title, price, location, image_urls')
+        .select('id, title, price, location, images')
         .eq('user_id', userId)
         .eq('status', 'active');
 
@@ -79,7 +79,7 @@ export default function PropertyEngagementMetrics({ userId }: { userId: string }
           likes_count: likes,
           favorites_count: favorites,
           total_engagement: likes + favorites,
-          image_url: property.image_urls?.[0] || null
+          image_url: property.images?.[0] || null
         };
       });
 

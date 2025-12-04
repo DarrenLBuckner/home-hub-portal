@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         site_id,
         user_id,
         created_at,
-        image_urls,
+        images,
         profiles!properties_user_id_fkey (
           first_name,
           last_name,
@@ -169,7 +169,7 @@ export async function GET(request: NextRequest) {
         likes_count: likesCount[property.id] || 0,
         favorites_count: Math.floor((likesCount[property.id] || 0) * 0.3),
         total_engagement: (likesCount[property.id] || 0) + Math.floor((likesCount[property.id] || 0) * 0.3),
-        image_url: property.image_urls?.[0] || null
+        image_url: property.images?.[0] || null
       }))
       .sort((a, b) => b.total_engagement - a.total_engagement)
       .slice(0, 10)
