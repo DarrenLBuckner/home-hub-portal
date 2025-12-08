@@ -2,12 +2,83 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// Country detection helper
-function getCountryFromHost(hostname: string): 'GY' | 'JM' {
-  if (hostname.includes('jamaica') || hostname.includes('jm')) {
-    return 'JM';
+// Country code mapping from domain keywords
+// Add new countries here as they launch
+const COUNTRY_DOMAIN_MAP: Record<string, string> = {
+  // Caribbean (7 countries)
+  'guyana': 'GY',
+  'jamaica': 'JM',
+  'trinidad': 'TT',
+  'barbados': 'BB',
+  'bahamas': 'BS',
+  'dominican': 'DO',
+  'haiti': 'HT',
+  'belize': 'BZ',
+
+  // Latin America (15 countries)
+  'argentina': 'AR',
+  'bolivia': 'BO',
+  'brasil': 'BR',
+  'brazil': 'BR',  // Alternative spelling
+  'chile': 'CL',
+  'colombia': 'CO',
+  'costarica': 'CR',
+  'ecuador': 'EC',
+  'elsalvador': 'SV',
+  'guatemala': 'GT',
+  'honduras': 'HN',
+  'mexico': 'MX',
+  'nicaragua': 'NI',
+  'panama': 'PA',
+  'paraguay': 'PY',
+  'peru': 'PE',
+  'uruguay': 'UY',
+
+  // Africa (16 countries)
+  'botswana': 'BW',
+  'ivorycoast': 'CI',
+  'cotedivoire': 'CI',  // Alternative spelling
+  'egypt': 'EG',
+  'ethiopia': 'ET',
+  'ghana': 'GH',
+  'kenya': 'KE',
+  'morocco': 'MA',
+  'namibia': 'NA',
+  'nigeria': 'NG',
+  'rwanda': 'RW',
+  'senegal': 'SN',
+  'southafrica': 'ZA',
+  'tanzania': 'TZ',
+  'uganda': 'UG',
+  'zambia': 'ZM',
+  'zimbabwe': 'ZW',
+
+  // Asia (4 countries)
+  'cambodia': 'KH',
+  'philippines': 'PH',
+  'thailand': 'TH',
+  'vietnam': 'VN',
+};
+
+/**
+ * Detects country code from hostname
+ * Supports all 42 HomeHub countries
+ *
+ * @param hostname - The request hostname (e.g., 'guyanahomehub.com')
+ * @returns ISO 3166-1 alpha-2 country code
+ */
+function getCountryFromHost(hostname: string): string {
+  const lowerHost = hostname.toLowerCase();
+
+  for (const [keyword, code] of Object.entries(COUNTRY_DOMAIN_MAP)) {
+    if (lowerHost.includes(keyword)) {
+      return code;
+    }
   }
-  return 'GY'; // Default to Guyana
+
+  // Default to Guyana for unrecognized domains
+  // This ensures portal-home-hub.com and localhost work
+  return 'GY';
 }
 
 // Site type detection helper

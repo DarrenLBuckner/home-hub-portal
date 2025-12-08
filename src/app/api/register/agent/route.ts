@@ -83,11 +83,15 @@ export async function POST(request: Request) {
 
     // Send confirmation email
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL?.startsWith('http') 
-        ? process.env.NEXT_PUBLIC_FRONTEND_URL 
-        : 'http://localhost:3000';
-      
-      await fetch(`${baseUrl}/api/send-agent-confirmation-email`, {
+      // Use 127.0.0.1 instead of localhost for server-to-server calls on Windows
+      // localhost can have IPv6 resolution issues causing ECONNREFUSED
+      const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL?.startsWith('http')
+        ? process.env.NEXT_PUBLIC_FRONTEND_URL
+        : 'http://127.0.0.1:3000';
+
+      console.log('📧 Sending confirmation email to:', email, 'via:', `${baseUrl}/api/send-agent-confirmation-email`);
+
+      const emailResponse = await fetch(`${baseUrl}/api/send-agent-confirmation-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -97,9 +101,16 @@ export async function POST(request: Request) {
           submittedAt: new Date().toLocaleDateString()
         })
       });
-      console.log('✅ Agent confirmation email sent successfully');
+
+      const emailResult = await emailResponse.json();
+
+      if (emailResponse.ok && emailResult.success) {
+        console.log('✅ Agent confirmation email sent successfully');
+      } else {
+        console.warn('⚠️ Email API returned error:', emailResult.error || emailResult.message);
+      }
     } catch (emailError) {
-      console.warn('⚠️ Failed to send confirmation email:', emailError);
+      console.error('❌ Failed to send confirmation email:', emailError);
       // Continue registration even if email fails
     }
     

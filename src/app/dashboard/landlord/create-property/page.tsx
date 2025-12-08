@@ -41,48 +41,32 @@ export default function CreateLandlordProperty() {
 
   useEffect(() => {
     async function checkAuth() {
-      // Authentication now handled server-side - no client-side auth needed
-      setLoading(false);
-      return;
-      
-      /* DISABLED - Authentication now server-side
-      // Get current user
+      const { createClient } = await import('@/supabase');
+      const supabase = createClient();
+
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
         window.location.href = '/login';
         return;
       }
 
-      // Check if user is landlord or admin
       const { data: profile } = await supabase
         .from('profiles')
-        .select('user_type, subscription_status, admin_level')
+        .select('user_type, subscription_status')
         .eq('id', authUser.id)
         .single();
 
-      if (!profile || (profile.user_type !== 'landlord' && profile.user_type !== 'admin')) {
+      // Allow landlords and eligible admins
+      const adminEmails = ['mrdarrenbuckner@gmail.com', 'qumar@guyanahomehub.com'];
+      const isAdmin = profile?.user_type === 'admin' && adminEmails.includes(authUser.email || '');
+
+      if (!profile || (profile.user_type !== 'landlord' && !isAdmin)) {
         window.location.href = '/dashboard';
-        return;
-      }
-
-      // Check admin config for admin levels
-      const adminConfig: { [email: string]: { level: string } } = {
-        'mrdarrenbuckner@gmail.com': { level: 'super' },
-        'qumar@guyanahomehub.com': { level: 'owner' }
-      };
-      
-      const adminInfo = adminConfig[authUser.email];
-      const isEligibleAdmin = profile.user_type === 'admin' && adminInfo && ['super', 'owner'].includes(adminInfo.level);
-
-      // Allow if: regular landlord with active subscription OR eligible admin
-      if (!isEligibleAdmin && (profile.user_type !== 'landlord' || profile.subscription_status !== 'active')) {
-        window.location.href = '/dashboard/landlord';
         return;
       }
 
       setUser(authUser);
       setLoading(false);
-      */
     }
 
     checkAuth();
@@ -199,7 +183,7 @@ export default function CreateLandlordProperty() {
     setIsSubmitting(true);
 
     // Validate required fields (squareFootage optional, location required for verification)
-    const required: (keyof PropertyForm)[] = ["title", "description", "price", "propertyType", "bedrooms", "bathrooms", "location", "attestation"];
+    const required: (keyof PropertyForm)[] = ["title", "description", "price", "propertyType", "bedrooms", "bathrooms", "location", "attestation", "owner_whatsapp"];
     for (const field of required) {
       if (!form[field]) {
         setError(`Missing field: ${field}`);
@@ -242,7 +226,7 @@ export default function CreateLandlordProperty() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          images: imagesForUpload,
+          imageUrls: imageUrls,
           userId,
           status: "pending",
           country: selectedCountry,

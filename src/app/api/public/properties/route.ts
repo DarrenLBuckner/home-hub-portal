@@ -47,6 +47,9 @@ export async function GET(request: NextRequest) {
       .range(offset, offset + limit - 1)
     
     // Add site filtering if provided
+    // site_id is the lowercase country name (e.g., 'guyana', 'jamaica')
+    // It maps to country_id which is the ISO code (e.g., 'GY', 'JM')
+    // The public site passes site_id based on the domain (guyanahomehub.com → 'guyana')
     if (site) {
       console.log(`Filtering properties for site: ${site}`)
       query = query.eq('site_id', site)

@@ -33,6 +33,7 @@ export default function UserManagement() {
   const [newAdminFirstName, setNewAdminFirstName] = useState("");
   const [newAdminLastName, setNewAdminLastName] = useState("");
   const [newAdminLevel, setNewAdminLevel] = useState("basic");
+  const [newAdminPassword, setNewAdminPassword] = useState("");
   const [addingAdmin, setAddingAdmin] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuspendModal, setShowSuspendModal] = useState(false);
@@ -199,12 +200,19 @@ export default function UserManagement() {
   };
 
   const addNewAdmin = async () => {
-    if (!newAdminEmail.trim() || !newAdminFirstName.trim() || !newAdminLastName.trim()) {
-      alert('Please fill in all fields');
+    // Validate all required fields including password
+    if (!newAdminEmail.trim() || !newAdminFirstName.trim() || !newAdminLastName.trim() || !newAdminPassword) {
+      alert('Please fill in all fields including password');
       return;
     }
 
-    // Validate admin level permissions
+    // Validate password length
+    if (newAdminPassword.length < 8) {
+      alert('Password must be at least 8 characters');
+      return;
+    }
+
+    // Validate admin level permissions (client-side check - API will verify again)
     if (newAdminLevel === 'super' && user?.admin_level !== 'super') {
       alert('🔒 ACCESS DENIED: Only Super Admins can create Super Admin accounts!');
       return;
@@ -217,73 +225,53 @@ export default function UserManagement() {
 
     setAddingAdmin(true);
     try {
-      // Check if email already exists
-      const { data: existingUser } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', newAdminEmail.trim())
-        .single();
-
-      if (existingUser) {
-        alert('A user with this email already exists');
-        setAddingAdmin(false);
-        return;
-      }
-
-      // CRITICAL: Country assignment logic - new admins inherit creator's country
-      let countryId = null;
-      if (user?.admin_level === 'super') {
-        // Super Admin can create admins for any country - inherit their country as default
-        countryId = adminData?.country_id || null; 
-      } else if (user?.admin_level === 'owner') {
-        // Owner Admin creating admin - MUST inherit their country (security requirement)
-        countryId = adminData?.country_id;
-        
-        if (!countryId) {
-          alert('❌ ERROR: Cannot determine your country assignment. Please contact Super Admin.');
-          setAddingAdmin(false);
-          return;
-        }
-      }
-
-      // Create new admin profile
-      const { data: newProfile, error } = await supabase
-        .from('profiles')
-        .insert({
+      // Call the API to create admin with real auth user
+      const response = await fetch('/api/admin/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           email: newAdminEmail.trim(),
-          first_name: newAdminFirstName.trim(),
-          last_name: newAdminLastName.trim(),
-          user_type: 'admin',
-          admin_level: newAdminLevel,
-          country_id: countryId,
-          created_by_admin: user?.id,
-          admin_created_at: new Date().toISOString()
+          firstName: newAdminFirstName.trim(),
+          lastName: newAdminLastName.trim(),
+          password: newAdminPassword,
+          adminLevel: newAdminLevel,
+          countryId: adminData?.country_id || null
         })
-        .select()
-        .single();
+      });
 
-      if (error) {
-        throw error;
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create admin');
       }
 
       const levelNames: {[key: string]: string} = {
         'super': 'Super Admin',
-        'owner': 'Owner Admin', 
+        'owner': 'Owner Admin',
         'basic': 'Basic Admin'
       };
 
-      alert(`✅ ${levelNames[newAdminLevel]} ${newAdminFirstName} ${newAdminLastName} created successfully!\n🏴 Country: ${countryId || 'Global'}\n👤 Created by: ${user?.name || user?.email}`);
-      
+      // Success - show credentials
+      alert(
+        `✅ ${levelNames[newAdminLevel]} created successfully!\n\n` +
+        `📧 Email: ${newAdminEmail.trim()}\n` +
+        `🔑 Password: ${newAdminPassword}\n` +
+        `🏴 Country: ${result.admin?.countryId || 'Global'}\n\n` +
+        `⚠️ Share these credentials with the new admin securely.\n` +
+        `They can change their password after logging in.`
+      );
+
       // Clear form
       setNewAdminEmail('');
       setNewAdminFirstName('');
       setNewAdminLastName('');
+      setNewAdminPassword('');
       setNewAdminLevel('basic');
       setShowAddAdmin(false);
-      
-      // Reload users
+
+      // Reload users list
       await loadUsers();
-      
+
     } catch (err: any) {
       console.error('Error creating admin:', err);
       alert(`Failed to create admin: ${err?.message || 'Unknown error'}`);
@@ -781,6 +769,24 @@ export default function UserManagement() {
                   )}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Temporary Password *
+                </label>
+                <input
+                  type="password"
+                  value={newAdminPassword}
+                  onChange={(e) => setNewAdminPassword(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  placeholder="Min 8 characters"
+                  minLength={8}
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Share this password with the new admin. They can change it after first login.
+                </p>
+              </div>
             </div>
 
             <div className="mt-6 flex space-x-3">
@@ -797,6 +803,7 @@ export default function UserManagement() {
                   setNewAdminEmail('');
                   setNewAdminFirstName('');
                   setNewAdminLastName('');
+                  setNewAdminPassword('');
                   setNewAdminLevel('basic');
                 }}
                 className="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium transition-colors"

@@ -108,8 +108,9 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Auth user created:', authUser.user.id);
 
-    // Determine subscription tier - founding agents get premium tier (maps to Professional plan)  
-    const subscriptionTier = agent.is_founding_member ? 'premium' : 'basic';
+    // Determine subscription tier - founding agents get professional tier (30 listings)
+    // This will be overwritten by promo redemption with the actual tier from promo_codes.assigns_to_tier
+    const subscriptionTier = agent.is_founding_member ? 'professional' : 'basic';
     
     // Create or update profile record with Auth user's ID (handles DB trigger conflict)
     const { error: profileError } = await supabaseAdmin
@@ -163,6 +164,59 @@ export async function POST(request: NextRequest) {
       .from('agent_vetting')
       .update({ temp_password: null })
       .eq('id', agentId);
+
+    // Redeem promo code if agent used one
+    if (agent.promo_code) {
+      try {
+        // Use 127.0.0.1 instead of localhost for server-to-server calls on Windows
+        const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://127.0.0.1:3000';
+        const redeemResponse = await fetch(`${baseUrl}/api/promo-codes/redeem`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code: agent.promo_code,
+            userId: authUser.user.id
+          })
+        });
+
+        const redeemResult = await redeemResponse.json();
+        if (redeemResult.success) {
+          console.log('✅ Promo code redeemed for agent:', redeemResult.message);
+
+          // Update profile with founding member fields
+          await supabaseAdmin.from('profiles').update({
+            is_founding_member: true,
+            promo_code: agent.promo_code,
+            promo_spot_number: redeemResult.spotNumber
+          }).eq('id', authUser.user.id);
+        } else {
+          console.warn('⚠️ Promo redemption failed:', redeemResult.error);
+        }
+      } catch (error) {
+        console.error('❌ Promo redemption error:', error);
+        // Don't block approval if promo fails
+      }
+    }
+
+    // Send approval email to agent
+    try {
+      // Use 127.0.0.1 instead of localhost for server-to-server calls on Windows
+      const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://127.0.0.1:3000';
+      await fetch(`${baseUrl}/api/send-agent-approval-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          agentEmail: agentEmail,
+          agentName: `${agentFirstName} ${agentLastName}`.trim(),
+          isFoundingMember: !!agent.promo_code,
+          spotNumber: agent.promo_spot_number || null
+        })
+      });
+      console.log('✅ Approval email sent to:', agentEmail);
+    } catch (error) {
+      console.warn('⚠️ Failed to send approval email:', error);
+      // Don't block approval if email fails
+    }
 
     console.log('✅ Agent approved successfully:', {
       agentId,

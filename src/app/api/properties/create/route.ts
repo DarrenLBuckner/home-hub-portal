@@ -3,6 +3,26 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { getTierBenefits } from '@/lib/subscription-utils';
 
+// Map country codes to site IDs for multi-tenant support
+// site_id is the lowercase country name used in domain (e.g., 'guyana' for guyanahomehub.com)
+// country_id is the ISO code (e.g., 'GY')
+const COUNTRY_TO_SITE: Record<string, string> = {
+  'GY': 'guyana',
+  'JM': 'jamaica',
+  'TT': 'trinidad',
+  'BB': 'barbados',
+  'BS': 'bahamas',
+  'KE': 'kenya',
+  'NG': 'nigeria',
+  'GH': 'ghana',
+  'ZA': 'southafrica',
+};
+
+function getSiteIdFromCountry(countryCode: string | undefined): string {
+  if (!countryCode) return 'guyana';
+  return COUNTRY_TO_SITE[countryCode.toUpperCase()] || countryCode.toLowerCase();
+}
+
 export const runtime = 'nodejs'; // avoid Edge runtime issues
 export const maxDuration = 60; // Allow up to 60 seconds for image processing
 // Note: Vercel free tier has 4.5MB body limit, Pro has 4.5MB, Enterprise can go higher
@@ -498,8 +518,8 @@ export async function POST(req: NextRequest) {
         
         // System fields
         user_id: userId,
-        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'draft'),
-        site_id: body.site_id || 'guyana',  // Multi-tenant support
+        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
+        site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
         created_at: new Date().toISOString(),
       };
@@ -540,7 +560,7 @@ export async function POST(req: NextRequest) {
         listing_type: 'rent',
         listed_by_type: listedByType,
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
-        site_id: body.site_id || 'guyana',  // Multi-tenant support
+        site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
         propertyCategory: 'rental',
         created_at: new Date().toISOString(),
@@ -584,7 +604,7 @@ export async function POST(req: NextRequest) {
         listing_type: 'sale',
         listed_by_type: listedByType,
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
-        site_id: body.site_id || 'guyana',  // Multi-tenant support
+        site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
         
         // Legacy/additional fields

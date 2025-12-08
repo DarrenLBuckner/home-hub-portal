@@ -78,6 +78,9 @@ interface User {
 interface AgentVetting {
   id: string;
   user_id: string;
+  email?: string;
+  first_name?: string;
+  last_name?: string;
   selected_plan?: string;
   country: string;
   years_experience?: string;
@@ -1483,12 +1486,11 @@ export default function UnifiedAdminDashboard() {
                         </span>
                       </div>
                       <h3 className="font-bold text-lg text-gray-900">
-                        {agent.profiles ? 
-                          `${agent.profiles.first_name || ''} ${agent.profiles.last_name || ''}`.trim() || agent.profiles.email :
-                          'Unknown Applicant'
-                        }
+                        {/* Use direct agent_vetting fields first, then profiles as fallback */}
+                        {`${agent.first_name || agent.profiles?.first_name || ''} ${agent.last_name || agent.profiles?.last_name || ''}`.trim() ||
+                          agent.email || agent.profiles?.email || 'Unknown Applicant'}
                       </h3>
-                      <p className="text-sm text-gray-600">{agent.profiles?.email || 'No email'}</p>
+                      <p className="text-sm text-gray-600">{agent.email || agent.profiles?.email || 'No email'}</p>
                     </div>
 
                     {/* Agent Details */}

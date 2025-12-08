@@ -71,7 +71,7 @@ ${rejectionReason}
           <strong>Portal Home Hub Agent Review Team</strong><br>
           Email: agents@portalhomehub.com<br>
           Website: <a href="https://portalhomehub.com">portalhomehub.com</a><br>
-          ${country === 'GY' ? 'Guyana Office: +592-XXX-XXXX' : 'Main Office: +1-XXX-XXX-XXXX'}
+          ${country === 'GY' ? 'Guyana Office: +592-762-9797' : 'Main Office: +592-762-9797'}
         </p>
       </div>
     `;
@@ -113,7 +113,7 @@ We look forward to welcoming you to the Portal Home Hub agent network!
 Portal Home Hub Agent Review Team
 Email: agents@portalhomehub.com
 Website: portalhomehub.com
-${country === 'GY' ? 'Guyana Office: +592-XXX-XXXX' : 'Main Office: +1-XXX-XXX-XXXX'}
+${country === 'GY' ? 'Guyana Office: +592-762-9797' : 'Main Office: +592-762-9797'}
     `;
 
     await resend.emails.send({

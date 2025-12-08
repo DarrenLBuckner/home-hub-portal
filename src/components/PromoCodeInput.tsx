@@ -132,7 +132,7 @@ export default function PromoCodeInput({
             </li>
             <li className="flex items-center text-gray-700">
               <span className="text-green-500 mr-2 text-xl">✅</span>
-              <span><strong>{validatedData.benefits.discountPercentage}% off</strong> when you continue after trial</span>
+              <span><strong>{validatedData.benefits.discountPercentage}% off for life</strong> when you continue after trial</span>
             </li>
             <li className="flex items-center text-gray-700">
               <span className="text-green-500 mr-2 text-xl">✅</span>

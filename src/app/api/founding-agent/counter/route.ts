@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
     const { data: promoCode, error } = await supabase
       .from('promo_codes')
       .select('max_redemptions, current_redemptions, is_active')
-      .eq('code', 'FOUNDERS-AGENT-GY')
+      .eq('code', 'FOUNDING-AGENT-GY')
       .eq('country_id', countryId || 'GY')
       .eq('user_type', 'agent')
       .single();

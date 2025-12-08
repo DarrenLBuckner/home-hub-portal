@@ -731,7 +731,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <h4 className="font-semibold text-blue-900 mb-2">🏆 Founding Agent Check:</h4>
                 <p className="text-blue-800 text-sm">
-                  If this agent used the FOUNDERS-AGENT-GY code, deleting them will automatically decrement the founding agent counter, making that spot available again for testing.
+                  If this agent used the FOUNDING-AGENT-GY code, deleting them will automatically decrement the founding agent counter, making that spot available again for testing.
                 </p>
               </div>
             )}
