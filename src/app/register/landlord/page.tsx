@@ -271,12 +271,12 @@ function LandlordRegistrationContent() {
             </div>
 
             {/* Plan Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8 items-stretch">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 items-stretch">
               {plansLoading ? (
                 <>
                   {[1, 2, 3].map(i => (
                     <div key={i} className="animate-pulse">
-                      <div className="bg-gray-200 h-48 rounded-xl"></div>
+                      <div className="bg-gray-200 h-80 rounded-2xl"></div>
                     </div>
                   ))}
                 </>
@@ -286,62 +286,148 @@ function LandlordRegistrationContent() {
                   <div className="text-sm text-gray-400">Please select a different country or contact support.</div>
                 </div>
               ) : (
-                landlordPlans.map(plan => {
+                landlordPlans.map((plan, index) => {
                   const isSelected = formData.plan === plan.id;
                   const features = plan.features || {};
                   const monthlyPrice = plan.listing_duration_days ? Math.round(plan.price_display / (plan.listing_duration_days / 30)) : plan.price_display;
-                  
+
+                  // Tier icons and colors based on plan name/position
+                  const tierConfig: Record<string, { icon: string; gradient: string; borderColor: string; description: string }> = {
+                    'basic': {
+                      icon: '🏠',
+                      gradient: 'from-slate-50 to-slate-100',
+                      borderColor: 'border-slate-300',
+                      description: 'Perfect for getting started with your first rental property'
+                    },
+                    'standard': {
+                      icon: '⭐',
+                      gradient: 'from-emerald-50 to-green-100',
+                      borderColor: 'border-emerald-400',
+                      description: 'Most popular choice for growing landlords'
+                    },
+                    'premium': {
+                      icon: '👑',
+                      gradient: 'from-amber-50 to-yellow-100',
+                      borderColor: 'border-amber-400',
+                      description: 'Maximum visibility and premium features'
+                    },
+                    'multi-property': {
+                      icon: '🏢',
+                      gradient: 'from-blue-50 to-indigo-100',
+                      borderColor: 'border-blue-400',
+                      description: 'Ideal for managing multiple rental units'
+                    },
+                    'property manager': {
+                      icon: '🏗️',
+                      gradient: 'from-purple-50 to-violet-100',
+                      borderColor: 'border-purple-400',
+                      description: 'Professional tools for property managers'
+                    },
+                  };
+
+                  // Determine tier based on plan name
+                  const planNameLower = plan.plan_name.toLowerCase();
+                  let tier = tierConfig['basic'];
+                  if (planNameLower.includes('premium') || planNameLower.includes('pro')) {
+                    tier = tierConfig['premium'];
+                  } else if (planNameLower.includes('standard') || plan.is_popular) {
+                    tier = tierConfig['standard'];
+                  } else if (planNameLower.includes('multi') || planNameLower.includes('portfolio')) {
+                    tier = tierConfig['multi-property'];
+                  } else if (planNameLower.includes('manager') || planNameLower.includes('enterprise')) {
+                    tier = tierConfig['property manager'];
+                  }
+
                   return (
                     <div
                       key={plan.id}
                       onClick={() => setFormData({ ...formData, plan: plan.id })}
-                      className={`relative flex flex-col h-full min-h-[200px] lg:min-h-[360px] p-3 lg:p-6 border-2 rounded-xl cursor-pointer transition-all shadow-lg hover:shadow-xl touch-manipulation ${
-                        isSelected 
-                          ? 'border-green-600 bg-green-50' 
-                          : 'border-gray-200 bg-white'
-                      }`}
+                      className={`relative flex flex-col h-full min-h-[320px] lg:min-h-[400px] p-4 lg:p-6 border-2 rounded-2xl cursor-pointer transition-all duration-300 touch-manipulation
+                        ${isSelected
+                          ? 'border-green-500 bg-gradient-to-br from-green-50 to-emerald-100 shadow-xl shadow-green-200/50 scale-[1.02]'
+                          : `${tier.borderColor} bg-gradient-to-br ${tier.gradient} shadow-lg hover:shadow-xl hover:scale-[1.02]`
+                        }
+                        ${plan.is_popular ? 'ring-2 ring-green-400 ring-offset-2' : ''}
+                      `}
                     >
+                      {/* RECOMMENDED Badge for popular plan */}
                       {plan.is_popular && (
-                        <div className="absolute -top-2 left-3 bg-green-600 text-white text-xs px-2 py-0.5 rounded">
-                          Most Popular
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                          <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg whitespace-nowrap">
+                            ✨ RECOMMENDED
+                          </div>
                         </div>
                       )}
-                      
-                      <div className="flex justify-between items-start mb-2 gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-gray-900 text-base lg:text-xl">{plan.plan_name}</h3>
-                          <div className="text-xs text-gray-500 mt-0.5">{plan.listing_duration_days} days</div>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <div className="text-base lg:text-2xl font-bold text-gray-900">
-                            {plan.price_formatted}
-                          </div>
-                          {plan.plan_type === 'listing' && (
-                            <div className="text-xs text-gray-500">
-                              ≈ {pricingCountry?.currency_symbol || ''}${monthlyPrice.toLocaleString()}/mo
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-0.5 lg:space-y-1 text-xs lg:text-base text-gray-600 flex-grow">
-                        <div>• {plan.max_properties ? `${plan.max_properties} ${plan.max_properties === 1 ? 'property' : 'properties'}` : 'Unlimited properties'}</div>
-                        {plan.featured_listings_included > 0 && <div>• {plan.featured_listings_included} featured listings</div>}
-                        <div>• {plan.listing_duration_days ? `${plan.listing_duration_days} days duration` : 'Listings never expire'}</div>
-                        {features.photos && <div>• {features.photos}</div>}
-                        {features.support && <div>• {features.support} support</div>}
+
+                      {/* Tier Icon */}
+                      <div className="text-center mb-3 pt-2">
+                        <span className="text-4xl lg:text-5xl">{tier.icon}</span>
                       </div>
 
-                      {/* Selection Indicator */}
-                      <div className="absolute top-3 right-3">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                          isSelected ? 'border-green-600 bg-green-600' : 'border-gray-300'
+                      {/* Plan Name & Duration */}
+                      <div className="text-center mb-3">
+                        <h3 className="font-bold text-gray-900 text-lg lg:text-xl">{plan.plan_name}</h3>
+                        <div className="text-xs text-gray-500 mt-1">{plan.listing_duration_days} day listing</div>
+                      </div>
+
+                      {/* Price */}
+                      <div className="text-center mb-4">
+                        <div className="text-2xl lg:text-3xl font-bold text-gray-900">
+                          {plan.price_formatted}
+                        </div>
+                        {plan.plan_type === 'listing' && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            ≈ {pricingCountry?.currency_symbol || ''}{monthlyPrice.toLocaleString()}/mo
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Tier Description */}
+                      <div className="text-center text-sm text-gray-600 mb-4 px-2">
+                        {tier.description}
+                      </div>
+
+                      {/* Divider */}
+                      <div className="border-t border-gray-200 my-3"></div>
+
+                      {/* Features List */}
+                      <div className="space-y-2 text-sm text-gray-700 flex-grow">
+                        <div className="flex items-center">
+                          <span className="text-green-500 mr-2">✓</span>
+                          {plan.max_properties ? `${plan.max_properties} ${plan.max_properties === 1 ? 'property' : 'properties'}` : 'Unlimited properties'}
+                        </div>
+                        {plan.featured_listings_included > 0 && (
+                          <div className="flex items-center">
+                            <span className="text-green-500 mr-2">✓</span>
+                            {plan.featured_listings_included} featured listing{plan.featured_listings_included > 1 ? 's' : ''}
+                          </div>
+                        )}
+                        <div className="flex items-center">
+                          <span className="text-green-500 mr-2">✓</span>
+                          {plan.listing_duration_days ? `${plan.listing_duration_days} days active` : 'Never expires'}
+                        </div>
+                        {features.photos && (
+                          <div className="flex items-center">
+                            <span className="text-green-500 mr-2">✓</span>
+                            {features.photos}
+                          </div>
+                        )}
+                        {features.support && (
+                          <div className="flex items-center">
+                            <span className="text-green-500 mr-2">✓</span>
+                            {features.support} support
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Selection Button */}
+                      <div className="mt-4">
+                        <div className={`w-full py-2.5 rounded-lg text-center font-semibold transition-all ${
+                          isSelected
+                            ? 'bg-green-600 text-white'
+                            : 'bg-white border-2 border-gray-300 text-gray-700 hover:border-green-500 hover:text-green-600'
                         }`}>
-                          {isSelected && (
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
+                          {isSelected ? '✓ Selected' : 'Select Plan'}
                         </div>
                       </div>
                     </div>
