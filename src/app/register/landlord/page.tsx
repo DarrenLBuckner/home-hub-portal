@@ -108,6 +108,9 @@ function LandlordRegistrationContent() {
     // Set a special founding member "plan" that will be handled during submission
     setFormData({ ...formData, plan: 'founding_member' });
     setSelectedPlan('founding_member');
+    // Advance to step 2
+    setCurrentStep(2);
+    setError('');
   };
 
   const validateStep = (step: number): boolean => {
