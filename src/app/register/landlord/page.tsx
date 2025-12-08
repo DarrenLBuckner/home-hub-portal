@@ -239,7 +239,7 @@ function LandlordRegistrationContent() {
 
             {/* Promo Code Input */}
             <PromoCodeInput
-              userType="property_owner"
+              userType="landlord"
               countryId={selectedCountry.code}
               onValidCode={handleValidPromoCode}
               onClearCode={handleClearPromoCode}

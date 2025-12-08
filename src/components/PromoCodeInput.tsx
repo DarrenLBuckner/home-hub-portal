@@ -11,7 +11,7 @@ interface PromoCodeBenefits {
 }
 
 interface PromoCodeInputProps {
-  userType: 'agent' | 'property_owner' | 'fsbo';
+  userType: 'agent' | 'landlord' | 'fsbo';
   countryId: string;
   onValidCode: (code: string, benefits: PromoCodeBenefits, spotNumber: number) => void;
   onClearCode: () => void;
@@ -89,7 +89,7 @@ export default function PromoCodeInput({
     // Calculate approximate value based on cheapest plan
     const monthlyValues: Record<string, number> = {
       'agent': 14560, // GY$ per month
-      'property_owner': 10400, // GY$ per listing
+      'landlord': 10400, // GY$ per listing
       'fsbo': 20592 // GY$ per listing
     };
     
