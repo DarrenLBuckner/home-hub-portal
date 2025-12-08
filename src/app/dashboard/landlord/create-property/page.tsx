@@ -251,11 +251,16 @@ export default function CreateLandlordProperty() {
       }
 
       setSuccess(true);
-      setTimeout(() => router.push("/dashboard/landlord"), 2000);
+      setIsSubmitting(false);
+      // Redirect to dashboard after showing success message
+      setTimeout(() => {
+        router.push("/dashboard/landlord");
+      }, 2500);
+      return;
     } catch (err: any) {
       setError(err?.message || "Failed to submit property. Please try again.");
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   }
 
   if (loading) {
