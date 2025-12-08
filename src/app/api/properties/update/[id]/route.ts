@@ -360,11 +360,11 @@ export async function POST(
 
     // Send notification email to property owner
     try {
-      // Get property owner details
+      // Get property owner details with site_id for correct domain
       const { data: propertyWithOwner, error: ownerError } = await adminSupabase
         .from('properties')
         .select(`
-          id, title, owner_email, user_id,
+          id, title, owner_email, user_id, site_id,
           owner:profiles!user_id (
             email, first_name, last_name
           )
@@ -375,24 +375,27 @@ export async function POST(
       if (!ownerError && propertyWithOwner) {
         // Determine owner email and name
         const ownerEmail = propertyWithOwner.owner_email || propertyWithOwner.owner?.email;
-        const ownerName = propertyWithOwner.owner 
-          ? `${propertyWithOwner.owner.first_name || ''} ${propertyWithOwner.owner.last_name || ''}`.trim() 
+        const ownerName = propertyWithOwner.owner
+          ? `${propertyWithOwner.owner.first_name || ''} ${propertyWithOwner.owner.last_name || ''}`.trim()
           : 'Property Owner';
 
         if (ownerEmail && propertyWithOwner.title) {
           // Import and send appropriate email
           const { sendPropertyApprovalEmail, sendPropertyRejectionEmail } = await import('@/lib/email.js');
-          
+
           if (body.status === 'active') {
             await sendPropertyApprovalEmail({
               to: ownerEmail,
-              propertyTitle: propertyWithOwner.title
+              propertyTitle: propertyWithOwner.title,
+              propertyId: propertyWithOwner.id,
+              siteId: propertyWithOwner.site_id
             });
             console.log('✅ Property approval email sent to:', ownerEmail);
           } else if (body.status === 'rejected') {
             await sendPropertyRejectionEmail({
               to: ownerEmail,
-              propertyTitle: propertyWithOwner.title
+              propertyTitle: propertyWithOwner.title,
+              rejectionReason: body.rejection_reason
             });
             console.log('✅ Property rejection email sent to:', ownerEmail);
           }

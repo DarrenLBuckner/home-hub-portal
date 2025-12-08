@@ -136,6 +136,48 @@ export async function PUT(
       return NextResponse.json({ error: 'Failed to update property status' }, { status: 500 });
     }
 
+    // Send notification email to property owner
+    try {
+      // Get property owner details with site_id for correct domain
+      const { data: propertyWithOwner, error: ownerError } = await adminSupabase
+        .from('properties')
+        .select(`
+          id, title, owner_email, user_id, site_id,
+          owner:profiles!user_id (
+            email, first_name, last_name
+          )
+        `)
+        .eq('id', propertyId)
+        .single();
+
+      if (!ownerError && propertyWithOwner) {
+        const ownerEmail = propertyWithOwner.owner_email || propertyWithOwner.owner?.email;
+
+        if (ownerEmail && propertyWithOwner.title) {
+          const { sendPropertyApprovalEmail, sendPropertyRejectionEmail } = await import('@/lib/email.js');
+
+          if (body.status === 'active') {
+            await sendPropertyApprovalEmail({
+              to: ownerEmail,
+              propertyTitle: propertyWithOwner.title,
+              propertyId: propertyWithOwner.id,
+              siteId: propertyWithOwner.site_id
+            });
+            console.log('✅ Property approval email sent to:', ownerEmail);
+          } else if (body.status === 'rejected') {
+            await sendPropertyRejectionEmail({
+              to: ownerEmail,
+              propertyTitle: propertyWithOwner.title,
+              rejectionReason: body.rejection_reason
+            });
+            console.log('✅ Property rejection email sent to:', ownerEmail);
+          }
+        }
+      }
+    } catch (emailError) {
+      console.warn('⚠️ Failed to send property notification email:', emailError);
+    }
+
     // Try to log the admin action (optional, won't fail if table doesn't exist)
     try {
       await adminSupabase
@@ -156,8 +198,8 @@ export async function PUT(
       // Continue without failing the main operation
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       property: updatedProperty,
       message: `Property ${body.status === 'active' ? 'approved' : 'rejected'} successfully`
     });

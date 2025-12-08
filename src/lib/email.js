@@ -149,37 +149,103 @@ export async function sendSubscriptionExpiryEmail(to) {
   });
 }
 
-export async function sendPropertyApprovalEmail({ to, propertyTitle }) {
+export async function sendPropertyApprovalEmail({ to, propertyTitle, propertyId, siteId }) {
+  // Determine the correct domain based on site_id
+  const domain = siteId === 'jamaica' ? 'jamaicahomehub.com' : 'guyanahomehub.com';
+  const propertyUrl = propertyId ? `https://${domain}/property/${propertyId}` : `https://${domain}`;
+
   return resend.emails.send({
+    from: FROM_EMAIL,
     to,
-    subject: `Your property "${propertyTitle}" has been approved!`,
-    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #16a34a;">🎉 Property Approved!</h2>
-      <p>Your property listing <b>${propertyTitle}</b> is now live and visible to buyers!</p>
+    subject: `🎉 Your property listing is now live!`,
+    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+
+      <!-- Header -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #16a34a; margin: 0;">🎉 Property Approved!</h1>
+      </div>
+
+      <!-- Main Content -->
+      <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e5e7eb;">
+        <p style="font-size: 16px; color: #374151; margin: 0 0 16px 0;">
+          Great news! Your property listing <b>"${propertyTitle}"</b> has been approved and is now live on ${domain}!
+        </p>
+
+        <!-- View Property Button -->
+        <div style="text-align: center; margin: 24px 0;">
+          <a href="${propertyUrl}"
+             style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #16a34a, #22c55e); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            👀 View Your Live Listing
+          </a>
+        </div>
+
+        <p style="font-size: 14px; color: #6b7280; margin: 16px 0 0 0;">
+          Your property is now visible to thousands of potential buyers searching for properties in the Caribbean.
+        </p>
+      </div>
+
+      <!-- WhatsApp Support -->
       <div style="margin: 20px 0; padding: 16px; background: #dcfce7; border-radius: 8px; border: 1px solid #16a34a;">
-        <p style="margin: 0 0 12px 0;">Need help managing your listing? Contact us on WhatsApp:</p>
-        <a href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20My%20property%20was%20just%20approved%20and%20I%20need%20help." 
+        <p style="margin: 0 0 12px 0; color: #166534;">Need help managing your listing? Contact us on WhatsApp:</p>
+        <a href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20My%20property%20was%20just%20approved%20and%20I%20need%20help."
            style="display: inline-block; padding: 12px 24px; background: #16a34a; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold;">
           📱 WhatsApp Support: +592 762-9797
         </a>
+      </div>
+
+      <!-- Footer -->
+      <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+        <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+          © 2025 Portal Home Hub. All rights reserved.
+        </p>
       </div>
     </div>`,
   });
 }
 
-export async function sendPropertyRejectionEmail({ to, propertyTitle }) {
+export async function sendPropertyRejectionEmail({ to, propertyTitle, rejectionReason }) {
   return resend.emails.send({
+    from: FROM_EMAIL,
     to,
-    subject: `Your property "${propertyTitle}" was not approved`,
-    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-      <h2 style="color: #dc2626;">📋 Property Review Required</h2>
-      <p>Your property listing <b>${propertyTitle}</b> was not approved. Please review and resubmit.</p>
+    subject: `Your property "${propertyTitle}" needs attention`,
+    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+
+      <!-- Header -->
+      <div style="text-align: center; margin-bottom: 24px;">
+        <h1 style="color: #dc2626; margin: 0;">📋 Property Review Required</h1>
+      </div>
+
+      <!-- Main Content -->
+      <div style="background: white; padding: 24px; border-radius: 12px; border: 1px solid #e5e7eb;">
+        <p style="font-size: 16px; color: #374151; margin: 0 0 16px 0;">
+          Your property listing <b>"${propertyTitle}"</b> was not approved at this time.
+        </p>
+
+        ${rejectionReason ? `
+        <div style="margin: 16px 0; padding: 12px; background: #fef2f2; border-radius: 8px; border-left: 4px solid #dc2626;">
+          <p style="margin: 0; color: #991b1b; font-size: 14px;"><b>Reason:</b> ${rejectionReason}</p>
+        </div>
+        ` : ''}
+
+        <p style="font-size: 14px; color: #6b7280; margin: 16px 0 0 0;">
+          Please review and update your listing, then resubmit for approval.
+        </p>
+      </div>
+
+      <!-- WhatsApp Support -->
       <div style="margin: 20px 0; padding: 16px; background: #fef2f2; border-radius: 8px; border: 1px solid #dc2626;">
-        <p style="margin: 0 0 12px 0;">Need help understanding why or fixing your listing? Contact us on WhatsApp:</p>
-        <a href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20My%20property%20listing%20was%20not%20approved%20and%20I%20need%20help." 
+        <p style="margin: 0 0 12px 0; color: #991b1b;">Need help understanding why or fixing your listing? Contact us on WhatsApp:</p>
+        <a href="https://wa.me/5927629797?text=Hi%20Portal%20Home%20Hub!%20My%20property%20listing%20was%20not%20approved%20and%20I%20need%20help."
            style="display: inline-block; padding: 12px 24px; background: #16a34a; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold;">
           📱 WhatsApp Support: +592 762-9797
         </a>
+      </div>
+
+      <!-- Footer -->
+      <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+        <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+          © 2025 Portal Home Hub. All rights reserved.
+        </p>
       </div>
     </div>`,
   });
