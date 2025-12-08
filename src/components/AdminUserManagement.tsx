@@ -43,7 +43,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'suspended' | 'payment_issues'>('all');
-  const [filterUserType, setFilterUserType] = useState<'all' | 'agent' | 'landlord' | 'fsbo' | 'owner'>('all');
+  const [filterUserType, setFilterUserType] = useState<'all' | 'agent' | 'landlord' | 'fsbo'>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showSuspensionModal, setShowSuspensionModal] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState('');
@@ -91,7 +91,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
           phone,
           company
         `)
-        .in('user_type', ['agent', 'landlord', 'fsbo', 'owner']) // All non-admin user types
+        .in('user_type', ['agent', 'landlord', 'fsbo']) // All non-admin user types
         .neq('id', adminUserId) // Exclude current admin
         .order('created_at', { ascending: false });
 
@@ -404,7 +404,6 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
       'agent': { label: 'Real Estate Agent', icon: '🏢', color: 'bg-blue-100 text-blue-800' },
       'landlord': { label: 'Landlord', icon: '🏠', color: 'bg-green-100 text-green-800' },
       'fsbo': { label: 'FSBO Seller', icon: '📋', color: 'bg-amber-100 text-amber-800' },
-      'owner': { label: 'Property Owner', icon: '👤', color: 'bg-purple-100 text-purple-800' },
       'admin': { label: 'Administrator', icon: '⚖️', color: 'bg-orange-100 text-orange-800' }
     };
     return types[userType] || { label: userType, icon: '❓', color: 'bg-gray-100 text-gray-800' };
@@ -456,7 +455,6 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
               <option value="agent">🏢 Agents</option>
               <option value="landlord">🏠 Landlords</option>
               <option value="fsbo">📋 FSBO</option>
-              <option value="owner">👤 Owners</option>
             </select>
             <select
               value={filterStatus}
