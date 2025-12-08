@@ -43,6 +43,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'suspended' | 'payment_issues'>('all');
+  const [filterUserType, setFilterUserType] = useState<'all' | 'agent' | 'landlord' | 'fsbo' | 'owner'>('all');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showSuspensionModal, setShowSuspensionModal] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState('');
@@ -64,7 +65,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
 
   useEffect(() => {
     filterUsers();
-  }, [users, searchTerm, filterStatus]);
+  }, [users, searchTerm, filterStatus, filterUserType]);
 
   const loadUsers = async () => {
     try {
@@ -90,7 +91,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
           phone,
           company
         `)
-        .in('user_type', ['agent', 'landlord', 'fsbo']) // Only regular users, not admins
+        .in('user_type', ['agent', 'landlord', 'fsbo', 'owner']) // All non-admin user types
         .neq('id', adminUserId) // Exclude current admin
         .order('created_at', { ascending: false });
 
@@ -139,12 +140,17 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
     // Apply search filter (account code, name, email)
     if (searchTerm) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(user => 
+      filtered = filtered.filter(user =>
         user.account_code?.toLowerCase().includes(search) ||
         user.email.toLowerCase().includes(search) ||
         `${user.first_name} ${user.last_name}`.toLowerCase().includes(search) ||
         user.display_name?.toLowerCase().includes(search)
       );
+    }
+
+    // Apply user type filter
+    if (filterUserType !== 'all') {
+      filtered = filtered.filter(user => user.user_type === filterUserType);
     }
 
     // Apply status filter
@@ -397,7 +403,8 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
     const types: { [key: string]: { label: string; icon: string; color: string } } = {
       'agent': { label: 'Real Estate Agent', icon: '🏢', color: 'bg-blue-100 text-blue-800' },
       'landlord': { label: 'Landlord', icon: '🏠', color: 'bg-green-100 text-green-800' },
-      'owner': { label: 'FSBO Owner', icon: '👤', color: 'bg-purple-100 text-purple-800' },
+      'fsbo': { label: 'FSBO Seller', icon: '📋', color: 'bg-amber-100 text-amber-800' },
+      'owner': { label: 'Property Owner', icon: '👤', color: 'bg-purple-100 text-purple-800' },
       'admin': { label: 'Administrator', icon: '⚖️', color: 'bg-orange-100 text-orange-800' }
     };
     return types[userType] || { label: userType, icon: '❓', color: 'bg-gray-100 text-gray-800' };
@@ -441,11 +448,22 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
           </div>
           <div className="flex gap-2">
             <select
+              value={filterUserType}
+              onChange={(e) => setFilterUserType(e.target.value as any)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">All Types</option>
+              <option value="agent">🏢 Agents</option>
+              <option value="landlord">🏠 Landlords</option>
+              <option value="fsbo">📋 FSBO</option>
+              <option value="owner">👤 Owners</option>
+            </select>
+            <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value as any)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="all">All Users</option>
+              <option value="all">All Status</option>
               <option value="active">Active Only</option>
               <option value="suspended">Suspended Only</option>
               <option value="payment_issues">Payment Issues</option>
