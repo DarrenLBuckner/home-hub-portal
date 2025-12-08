@@ -66,7 +66,7 @@ export async function POST(request: Request) {
         profileData.beta_expiry = trialExpiry.toISOString();
         profileData.property_limit = promoCode.property_limit;
         profileData.subscription_tier = promoCode.assigns_to_tier || 'founding_member';
-        profileData.subscription_status = 'trial';
+        profileData.subscription_status = 'active';
 
         console.log('Applying promo benefits:', {
           beta_expiry: profileData.beta_expiry,
