@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
     // Build the query - show properties with proper visibility logic:
     // - SALE properties: show active, under_contract, sold (for social proof)
     // - RENT properties: show active only (hide rented units)
+    // - LEASE properties: show active, under_contract (commercial leases)
     let query = supabase
       .from('properties')
       .select(`
@@ -41,7 +42,11 @@ export async function GET(request: NextRequest) {
         // Sale properties: show active, under_contract, sold for social proof
         `and(listing_type.eq.sale,status.in.(active,under_contract,sold)),` +
         // Rental properties: show active only (hide rented units)
-        `and(listing_type.eq.rent,status.eq.active)`
+        `and(listing_type.eq.rent,status.eq.active),` +
+        // Lease properties: show active, under_contract (commercial leases)
+        `and(listing_type.eq.lease,status.in.(active,under_contract)),` +
+        // Short-term rent properties: show active only
+        `and(listing_type.eq.short_term_rent,status.eq.active)`
       )
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -108,7 +113,11 @@ export async function GET(request: NextRequest) {
         // Sale properties: count active, under_contract, sold
         `and(listing_type.eq.sale,status.in.(active,under_contract,sold)),` +
         // Rental properties: count active only
-        `and(listing_type.eq.rent,status.eq.active)`
+        `and(listing_type.eq.rent,status.eq.active),` +
+        // Lease properties: count active, under_contract
+        `and(listing_type.eq.lease,status.in.(active,under_contract)),` +
+        // Short-term rent properties: count active only
+        `and(listing_type.eq.short_term_rent,status.eq.active)`
       )
 
     if (site) {

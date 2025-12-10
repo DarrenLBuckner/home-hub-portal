@@ -26,8 +26,11 @@ export default function CreateAgentProperty() {
     title: '',
     description: '',
     price: '',
-    property_type: 'Single Family Home',
-    
+    property_type: '',
+
+    // NEW: Property Category (residential or commercial)
+    property_category: 'residential' as 'residential' | 'commercial',
+
     // Property Details
     bedrooms: '',
     bathrooms: '',
@@ -36,26 +39,46 @@ export default function CreateAgentProperty() {
     land_size_value: '',
     land_size_unit: 'sq ft',
     year_built: '',
-    amenities: [],
-    
+    amenities: [] as string[],
+
     // Lot Dimensions
     lot_length: '',
     lot_width: '',
     lot_dimension_unit: 'ft',
-    
+
     // Location
     region: '',
     city: '',
     neighborhood: '',
     address: '',
-    
+    country: 'GY',
+    currency: 'GYD',
+
     // Contact
     owner_email: '',
     owner_whatsapp: '',
-    
-    // Hidden fields
+
+    // Listing fields
     listing_type: 'sale',
-    status: 'pending'
+    status: 'pending',
+
+    // NEW: Commercial fields
+    commercial_type: '',
+    floor_size_sqft: '',
+    building_floor: '',
+    number_of_floors: '',
+    parking_spaces: '',
+    loading_dock: false,
+    elevator_access: false,
+    climate_controlled: false,
+    commercial_garage_entrance: false,
+    zoning_type: '',
+
+    // NEW: Lease fields (for commercial)
+    lease_term_years: '',
+    lease_type: '',
+    financing_available: false,
+    financing_details: '',
   });
   
   const [images, setImages] = useState<File[]>([]);
@@ -94,12 +117,26 @@ export default function CreateAgentProperty() {
         }
         break;
       case 2:
-        if (!formData.bedrooms || isNaN(Number(formData.bedrooms))) {
-          setError('Number of bedrooms is required');
-          return false;
+        // Check if this is a land property (land doesn't have bedrooms/bathrooms)
+        const isLandProperty = formData.property_type?.toLowerCase().includes('land') ||
+                               formData.property_type?.toLowerCase().includes('farmland');
+        const isCommercial = formData.property_category === 'commercial';
+
+        // Only require beds/baths for residential non-land properties
+        if (!isLandProperty && !isCommercial) {
+          if (!formData.bedrooms || isNaN(Number(formData.bedrooms))) {
+            setError('Number of bedrooms is required');
+            return false;
+          }
+          if (!formData.bathrooms || isNaN(Number(formData.bathrooms))) {
+            setError('Number of bathrooms is required');
+            return false;
+          }
         }
-        if (!formData.bathrooms || isNaN(Number(formData.bathrooms))) {
-          setError('Number of bathrooms is required');
+
+        // Require commercial_type for commercial properties
+        if (isCommercial && !formData.commercial_type) {
+          setError('Commercial type is required');
           return false;
         }
         if (!formData.description.trim()) {
@@ -340,49 +377,73 @@ export default function CreateAgentProperty() {
       console.log('Form data:', formData);
       
       // Prepare data for API submission
+      const isCommercialProperty = formData.property_category === 'commercial';
+      const isLandProperty = formData.property_type?.toLowerCase().includes('land') ||
+                             formData.property_type?.toLowerCase().includes('farmland');
+
       const propertyData = {
         title: formData.title || 'Untitled Property',
         description: formData.description || '',
         price: formData.price || '0',
         property_type: formData.property_type || 'Single Family Home',
-        listing_type: 'sale',
-        propertyCategory: 'sale',
-        
-        // Numeric fields
-        bedrooms: formData.bedrooms || '1',
-        bathrooms: formData.bathrooms || '1',
-        house_size_value: formData.house_size_value || '1000',
+        listing_type: formData.listing_type || 'sale',
+
+        // Property category (residential or commercial)
+        property_category: formData.property_category || 'residential',
+
+        // Numeric fields - only include beds/baths for residential non-land
+        bedrooms: (!isCommercialProperty && !isLandProperty) ? (formData.bedrooms || '0') : '0',
+        bathrooms: (!isCommercialProperty && !isLandProperty) ? (formData.bathrooms || '0') : '0',
+        house_size_value: formData.house_size_value || null,
         house_size_unit: formData.house_size_unit || 'sq ft',
         land_size_value: formData.land_size_value || null,
         land_size_unit: formData.land_size_unit || 'sq ft',
         year_built: formData.year_built || null,
-        
+
         // Lot dimensions
         lot_length: formData.lot_length || null,
         lot_width: formData.lot_width || null,
         lot_dimension_unit: formData.lot_dimension_unit || 'ft',
-        
+
         // Location
         region: formData.region || '',
         city: formData.city || '',
         neighborhood: formData.neighborhood || null,
         country: formData.country || 'GY',
-        
+
         // Contact info
         owner_email: formData.owner_email || '',
         owner_whatsapp: formData.owner_whatsapp || '',
-        
+
         // Amenities
         amenities: formData.amenities || [],
-        
+
+        // Commercial fields
+        commercial_type: isCommercialProperty ? (formData.commercial_type || null) : null,
+        floor_size_sqft: formData.floor_size_sqft ? parseInt(formData.floor_size_sqft) : null,
+        building_floor: formData.building_floor || null,
+        number_of_floors: formData.number_of_floors ? parseInt(formData.number_of_floors) : null,
+        parking_spaces: formData.parking_spaces ? parseInt(formData.parking_spaces) : null,
+        loading_dock: formData.loading_dock || false,
+        elevator_access: formData.elevator_access || false,
+        climate_controlled: formData.climate_controlled || false,
+        commercial_garage_entrance: formData.commercial_garage_entrance || false,
+        zoning_type: formData.zoning_type || null,
+
+        // Lease fields (for commercial)
+        lease_term_years: formData.lease_term_years || null,
+        lease_type: formData.lease_type || null,
+        financing_available: formData.financing_available || false,
+        financing_details: formData.financing_details || null,
+
         // Images (prepare for API)
-        images: images.length > 0 ? images.map((file, index) => ({
+        images: images.length > 0 ? images.map((file) => ({
           name: file.name,
           type: file.type,
           size: file.size,
           data: null // Will be set below
         })) : [],
-        
+
         // Status
         status: 'pending'
       };

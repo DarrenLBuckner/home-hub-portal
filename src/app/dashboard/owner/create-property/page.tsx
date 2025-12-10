@@ -94,13 +94,20 @@ export default function CreateFSBOProperty() {
         }
         break;
       case 2:
-        if (!formData.bedrooms || isNaN(Number(formData.bedrooms))) {
-          setError('Number of bedrooms is required');
-          return false;
-        }
-        if (!formData.bathrooms || isNaN(Number(formData.bathrooms))) {
-          setError('Number of bathrooms is required');
-          return false;
+        // Check if this is a land property (land doesn't have bedrooms/bathrooms)
+        const isLandProperty = formData.property_type?.toLowerCase().includes('land') ||
+                               formData.property_type?.toLowerCase().includes('farmland');
+
+        // Only require beds/baths for non-land residential properties
+        if (!isLandProperty) {
+          if (!formData.bedrooms || isNaN(Number(formData.bedrooms))) {
+            setError('Number of bedrooms is required');
+            return false;
+          }
+          if (!formData.bathrooms || isNaN(Number(formData.bathrooms))) {
+            setError('Number of bathrooms is required');
+            return false;
+          }
         }
         if (!formData.description.trim()) {
           setError('Property description is required');

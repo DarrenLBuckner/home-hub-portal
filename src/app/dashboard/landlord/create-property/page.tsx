@@ -12,8 +12,20 @@ import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
 import LotDimensions from "@/components/LotDimensions";
 import { DimensionUnit } from "@/lib/lotCalculations";
 
-const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Townhouse", "Studio", "Room"];
 const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym", "Gated", "Fruit Trees", "Farmland", "Backup Generator", "Solar", "Electric Gate"];
+
+// Property types with enabled/disabled status for landlords
+const LANDLORD_PROPERTY_TYPES = [
+  { value: 'House', label: 'House', icon: '🏠', enabled: true },
+  { value: 'Apartment', label: 'Apartment', icon: '🏢', enabled: true },
+  { value: 'Condo', label: 'Condo', icon: '🏠', enabled: true },
+  { value: 'Townhouse', label: 'Townhouse', icon: '🏠', enabled: true },
+  { value: 'Studio', label: 'Studio', icon: '🏢', enabled: true },
+  { value: 'Room', label: 'Room', icon: '🛏️', enabled: true },
+  // Disabled - Agent Only
+  { value: 'Land', label: 'Land', icon: '🌿', enabled: false },
+  { value: 'Commercial', label: 'Commercial', icon: '🏢', enabled: false },
+];
 
 type PropertyForm = {
   title: string;
@@ -78,7 +90,7 @@ export default function CreateLandlordProperty() {
     description: "",
     price: "",
     location: "",
-    propertyType: PROPERTY_TYPES[0],
+    propertyType: LANDLORD_PROPERTY_TYPES[0].value,
     bedrooms: "",
     bathrooms: "",
     squareFootage: "",
@@ -378,17 +390,53 @@ export default function CreateLandlordProperty() {
                   className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
                 />
               </div>
-              <div>
+              <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
-                <select 
-                  name="propertyType" 
-                  value={form.propertyType} 
-                  onChange={handleChange} 
-                  required
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
-                >
-                  {PROPERTY_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-                </select>
+                <div className="grid grid-cols-4 gap-2">
+                  {LANDLORD_PROPERTY_TYPES.map((type) => (
+                    <button
+                      key={type.value}
+                      type="button"
+                      onClick={() => type.enabled && setForm({ ...form, propertyType: type.value })}
+                      disabled={!type.enabled}
+                      className={`p-3 rounded-lg border-2 text-center transition-all relative ${
+                        !type.enabled
+                          ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                          : form.propertyType === type.value
+                            ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                            : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="text-2xl mb-1">{type.icon}</div>
+                      <div className={`text-xs font-medium truncate ${
+                        !type.enabled ? 'text-gray-400' : 'text-gray-700'
+                      }`}>
+                        {type.label}
+                      </div>
+                      {!type.enabled && (
+                        <div className="absolute -top-1 -right-1 bg-gray-400 text-white text-[10px] px-1.5 py-0.5 rounded-full">
+                          🔒
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Agent CTA */}
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-sm text-amber-800">
+                    <span className="font-medium">🔒 Leasing land or commercial property?</span>
+                    <br />
+                    These property types require a licensed real estate agent.
+                  </p>
+                  <a
+                    href="/contact"
+                    className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+                  >
+                    📞 Contact us for agent referral
+                    <span>→</span>
+                  </a>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Rental Period *</label>

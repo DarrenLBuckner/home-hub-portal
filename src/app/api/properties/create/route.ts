@@ -155,26 +155,34 @@ export async function POST(req: NextRequest) {
       }, { status: 403 });
     }
     
-    // Determine property type based on propertyCategory and userType
-    const isRental = body.propertyCategory === "rental";
-    const isSale = body.propertyCategory === "sale";
-    const isAgent = userType === "agent";
-    
+    // Determine listing type from the form
+    const listingType = body.listing_type || 'sale';
+    const isRental = listingType === 'rent';
+    const isSale = listingType === 'sale';
+    const isLease = listingType === 'lease';
+    const isAgent = userType === 'agent';
+
+    // Property category (residential vs commercial)
+    const propertyCategory = body.property_category || 'residential';
+
     // Map user_type to listed_by_type
-    const getListedByType = (userType: string, propertyCategory?: string): string => {
+    const getListedByType = (userType: string, listingType?: string): string => {
       if (userType === 'agent') return 'agent';
       if (userType === 'owner') return 'owner';
-      if (userType === 'fsbo') return 'owner'; // FSBO users should also be 'owner'
+      if (userType === 'fsbo') return 'owner';
       if (userType === 'landlord') return 'landlord';
-      // Default fallback
-      return propertyCategory === 'rental' ? 'landlord' : 'owner';
+      return listingType === 'rent' ? 'landlord' : 'owner';
     };
-    
-    const listedByType = getListedByType(userType, body.propertyCategory);
-    
-    // Skip validation for drafts
-    if (!isDraftSave && !isRental && !isSale) {
-      return NextResponse.json({ error: "Invalid propertyCategory. Must be 'rental' or 'sale'" }, { status: 400 });
+    const listedByType = getListedByType(userType, listingType);
+
+    // Validate listing_type (skip for drafts)
+    if (!isDraftSave && !['sale', 'rent', 'lease', 'short_term_rent'].includes(listingType)) {
+      return NextResponse.json({ error: "Invalid listing_type. Must be 'sale', 'rent', 'lease', or 'short_term_rent'" }, { status: 400 });
+    }
+
+    // Validate property_category
+    if (!['residential', 'commercial'].includes(propertyCategory)) {
+      return NextResponse.json({ error: "Invalid property_category. Must be 'residential' or 'commercial'" }, { status: 400 });
     }
     
     // Validate required fields - more lenient for drafts
@@ -475,7 +483,7 @@ export async function POST(req: NextRequest) {
         description: body.description,
         price: parseInt(body.price),
         property_type: body.property_type,
-        listing_type: body.listing_type, // 'sale' or 'rent'
+        listing_type: listingType, // 'sale', 'rent', 'lease', or 'short_term_rent'
         
         // Property Details
         bedrooms: parseInt(body.bedrooms) || null,
@@ -506,7 +514,7 @@ export async function POST(req: NextRequest) {
         video_url: body.video_url || null,
         
         // Commercial Property Fields
-        property_category: body.property_category || 'residential',
+        property_category: propertyCategory,
         commercial_type: body.commercial_type || null,
         floor_size_sqft: body.floor_size_sqft ? parseInt(body.floor_size_sqft) : null,
         building_floor: body.building_floor || null,
@@ -557,12 +565,12 @@ export async function POST(req: NextRequest) {
         
         // System fields
         user_id: userId,
-        listing_type: 'rent',
+        listing_type: listingType,
         listed_by_type: listedByType,
+        property_category: propertyCategory,
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
         site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
-        propertyCategory: 'rental',
         created_at: new Date().toISOString(),
       };
     } else {
@@ -601,14 +609,12 @@ export async function POST(req: NextRequest) {
         
         // System fields (auto-populated)
         user_id: userId,
-        listing_type: 'sale',
+        listing_type: listingType,
         listed_by_type: listedByType,
+        property_category: propertyCategory,
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
         site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
-        
-        // Legacy/additional fields
-        propertyCategory: 'sale',
         created_at: new Date().toISOString(),
       };
     }

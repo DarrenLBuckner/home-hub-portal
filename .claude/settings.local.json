@@ -29,7 +29,10 @@
       "Bash(grep:*)",
       "Bash(npx supabase db describe:*)",
       "Bash(rm:*)",
-      "WebFetch(domain:www.guyanahomehub.com)"
+      "WebFetch(domain:www.guyanahomehub.com)",
+      "Bash(dir:*)",
+      "Bash(attrib:*)",
+      "Bash(npx next:*)"
     ],
     "deny": [],
     "ask": []
