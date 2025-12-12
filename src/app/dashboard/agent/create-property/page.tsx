@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/supabase';
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
+import PropertySuccessScreen from "@/components/PropertySuccessScreen";
 
 // Step components
 import Step1BasicInfo from './components/Step1BasicInfo';
@@ -21,6 +22,7 @@ export default function CreateAgentProperty() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false); // Bulletproof double-submit prevention
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const [formData, setFormData] = useState({
     // Basic Info
     title: '',
@@ -441,7 +443,7 @@ export default function CreateAgentProperty() {
           name: file.name,
           type: file.type,
           size: file.size,
-          data: null // Will be set below
+          data: null as string | null // Will be set below
         })) : [],
 
         // Status
@@ -493,10 +495,12 @@ export default function CreateAgentProperty() {
       }
       
       console.log('Success! Property created via API:', result);
-      
-      // Success - redirect to dashboard with message from API
-      console.log('Property submission complete, redirecting...');
-      router.push(`/dashboard/agent?success=${encodeURIComponent(result.message || 'Property submitted for review')}`);
+
+      // Success - show success screen (PropertySuccessScreen will handle redirect)
+      console.log('Property submission complete, showing success screen...');
+      setSuccess(true);
+      setIsSubmitting(false);
+      submittingRef.current = false;
       
     } catch (err: any) {
       console.error('Unexpected error:', err);
@@ -507,6 +511,17 @@ export default function CreateAgentProperty() {
   };
 
   const steps = ['Basic Info', 'Details', 'Location', 'Photos', 'Contact', 'Review'];
+
+  // Show success screen when property is submitted
+  if (success) {
+    return (
+      <PropertySuccessScreen
+        redirectPath="/dashboard/agent"
+        redirectDelay={3000}
+        userType="agent"
+      />
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6">

@@ -108,10 +108,45 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Auth user created:', authUser.user.id);
 
-    // Determine subscription tier - founding agents get professional tier (30 listings)
-    // This will be overwritten by promo redemption with the actual tier from promo_codes.assigns_to_tier
-    const subscriptionTier = agent.is_founding_member ? 'professional' : 'basic';
-    
+    // Determine subscription tier and property limit based on selected plan
+    let subscriptionTier = 'basic';
+    let propertyLimit = 10; // Default for basic tier
+
+    if (agent.is_founding_member) {
+      // Founding members get professional tier with 25 properties
+      subscriptionTier = 'professional';
+      propertyLimit = 25;
+      console.log('🎖️ Founding member - assigning professional tier with 25 property limit');
+    } else if (agent.selected_plan) {
+      // Look up the selected plan from pricing_plans table
+      const { data: selectedPlan, error: planError } = await supabaseAdmin
+        .from('pricing_plans')
+        .select('plan_name, max_properties')
+        .eq('id', agent.selected_plan)
+        .single();
+
+      if (planError || !selectedPlan) {
+        console.warn('⚠️ Could not find selected plan, using basic defaults:', planError);
+      } else {
+        // Derive tier from plan_name
+        const planNameLower = selectedPlan.plan_name.toLowerCase();
+        if (planNameLower.includes('platinum')) {
+          subscriptionTier = 'platinum';
+          propertyLimit = selectedPlan.max_properties || 50;
+        } else if (planNameLower.includes('premium')) {
+          subscriptionTier = 'premium';
+          propertyLimit = selectedPlan.max_properties || 50;
+        } else if (planNameLower.includes('professional')) {
+          subscriptionTier = 'professional';
+          propertyLimit = selectedPlan.max_properties || 25;
+        } else {
+          subscriptionTier = 'basic';
+          propertyLimit = selectedPlan.max_properties || 10;
+        }
+        console.log(`📋 Selected plan: ${selectedPlan.plan_name} → tier: ${subscriptionTier}, property_limit: ${propertyLimit}`);
+      }
+    }
+
     // Create or update profile record with Auth user's ID (handles DB trigger conflict)
     const { error: profileError } = await supabaseAdmin
       .from('profiles')
@@ -125,6 +160,7 @@ export async function POST(request: NextRequest) {
         country_id: agent.country_id || agent.country || 'GY',
         subscription_status: 'active',
         subscription_tier: subscriptionTier,
+        property_limit: propertyLimit,
         approval_status: 'approved',
         approval_date: new Date().toISOString(),
         updated_at: new Date().toISOString()
