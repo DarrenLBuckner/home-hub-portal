@@ -45,8 +45,12 @@ export async function GET(
       .or(
         // Sale properties: show active, under_contract, sold
         `and(listing_type.eq.sale,status.in.(active,under_contract,sold)),` +
-        // Rental properties: show active only
-        `and(listing_type.eq.rent,status.eq.active)`
+        // Rental properties: show active only (rented properties hidden)
+        `and(listing_type.eq.rent,status.eq.active),` +
+        // Lease properties: show active, under_contract
+        `and(listing_type.eq.lease,status.in.(active,under_contract)),` +
+        // Short-term rent: show active only
+        `and(listing_type.eq.short_term_rent,status.eq.active)`
       )
       .single()
 
@@ -116,7 +120,7 @@ export async function GET(
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
       }
     })
   } catch (error) {
