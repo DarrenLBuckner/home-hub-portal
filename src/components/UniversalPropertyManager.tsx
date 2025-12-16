@@ -434,21 +434,29 @@ export default function UniversalPropertyManager({
   };
 
   const updatePropertyStatus = async (propertyId: string, newStatus: string) => {
+    console.log('🔄 updatePropertyStatus called:', { propertyId, newStatus, userType });
     try {
       const supabase = createClient();
-      const { error } = await supabase
+
+      // Build query - admins can update any property, others only their own
+      let query = supabase
         .from('properties')
-        .update({ status: newStatus })
-        .eq('id', propertyId)
-        .eq('user_id', userId);
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', propertyId);
+
+      if (userType !== 'admin') {
+        query = query.eq('user_id', userId);
+      }
+
+      const { error } = await query;
 
       if (error) throw error;
-      
+
       await fetchProperties();
-      alert(`Property status updated to ${newStatus}!`);
+      alert(`Property marked as ${newStatus}!`);
     } catch (err) {
+      console.error('❌ Error updating property status:', err);
       alert('Error updating property status');
-      console.error(err);
     }
   };
 
