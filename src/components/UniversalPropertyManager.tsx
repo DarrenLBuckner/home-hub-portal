@@ -435,28 +435,54 @@ export default function UniversalPropertyManager({
 
   const updatePropertyStatus = async (propertyId: string, newStatus: string) => {
     console.log('🔄 updatePropertyStatus called:', { propertyId, newStatus, userType });
+
     try {
-      const supabase = createClient();
+      if (userType === 'admin') {
+        // Admin: Use API route with service role to bypass RLS
+        console.log('👑 Admin mode: Using API route to bypass RLS');
+        const response = await fetch(`/api/properties/status/${propertyId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
 
-      // Build query - admins can update any property, others only their own
-      let query = supabase
-        .from('properties')
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq('id', propertyId);
+        const result = await response.json();
+        console.log('📡 API response:', { status: response.status, result });
 
-      if (userType !== 'admin') {
-        query = query.eq('user_id', userId);
+        if (!response.ok) {
+          throw new Error(result.error || `API error: ${response.status}`);
+        }
+
+        if (!result.success && !result.property) {
+          throw new Error('Update failed - no confirmation from server');
+        }
+
+        await fetchProperties();
+        alert(`Property marked as ${newStatus}!`);
+      } else {
+        // Non-admin: Use client-side Supabase (RLS allows own properties)
+        console.log('👤 User mode: Using client-side Supabase');
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from('properties')
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq('id', propertyId)
+          .eq('user_id', userId)
+          .select();
+
+        console.log('📡 Supabase response:', { data, error });
+
+        if (error) throw error;
+        if (!data || data.length === 0) {
+          throw new Error('No rows updated - you may not own this property');
+        }
+
+        await fetchProperties();
+        alert(`Property marked as ${newStatus}!`);
       }
-
-      const { error } = await query;
-
-      if (error) throw error;
-
-      await fetchProperties();
-      alert(`Property marked as ${newStatus}!`);
     } catch (err) {
       console.error('❌ Error updating property status:', err);
-      alert('Error updating property status');
+      alert(`Error updating property status: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
