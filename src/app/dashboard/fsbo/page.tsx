@@ -72,7 +72,7 @@ export default function FSBODashboard() {
           setSubscription(prev => prev ? ({
             ...prev,
             totalProperties: userProperties.length,
-            activeListings: userProperties.filter((p: any) => p.status === 'available').length
+            activeListings: userProperties.filter((p: any) => p.status === 'active').length
           }) : null);
         }
       }
@@ -83,41 +83,6 @@ export default function FSBODashboard() {
     fetchUserData();
     getGlobalSouthCountries().then(setCountries);
   }, []);
-
-  // Property status management function for FSBO
-  const updatePropertyStatus = async (propertyId: string, newStatus: string) => {
-    try {
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('properties')
-        .update({ status: newStatus })
-        .eq('id', propertyId)
-        .eq('user_id', user?.id); // Ensure FSBO can only update their own properties
-
-      if (error) {
-        alert('Error updating property status');
-        console.error(error);
-      } else {
-        alert(`Property ${newStatus === 'sold' ? 'marked as sold! Listing complete.' : 'status updated successfully!'}`);
-        // Refresh properties list
-        const refreshData = async () => {
-          const supabase = createClient();
-          const { data: { user: authUser } } = await supabase.auth.getUser();
-          if (authUser) {
-            const { data: userProperties } = await supabase
-              .from("properties")
-              .select("*")
-              .eq("user_id", authUser.id);
-            setProperties(userProperties || []);
-          }
-        };
-        refreshData();
-      }
-    } catch (error) {
-      alert('Error updating property');
-      console.error(error);
-    }
-  };
 
   if (loading) {
     return (
@@ -290,97 +255,6 @@ export default function FSBODashboard() {
             />
           </div>
         </div>
-      </div>
-      <div className="space-y-4">
-        {properties.filter(p => !countryFilter || p.country === countryFilter).map(property => (
-          <div key={property.id} className="border border-gray-200 rounded-xl p-6 bg-white shadow hover:shadow-md transition-all duration-200">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
-                <div className="flex items-center space-x-3 mb-2">
-                  <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold ${
-                    property.status === "available" 
-                      ? "bg-green-100 text-green-800 border border-green-200" 
-                      : property.status === "pending" 
-                      ? "bg-blue-100 text-blue-800 border border-blue-200" 
-                      : property.status === "sold"
-                      ? "bg-purple-100 text-purple-800 border border-purple-200"
-                      : "bg-yellow-100 text-yellow-800 border border-yellow-200"
-                  }`}>
-                    {property.status === "available" ? "LIVE" : 
-                     property.status === "pending" ? "UNDER CONTRACT" : 
-                     property.status === "sold" ? "SOLD" : 
-                     "AWAITING APPROVAL"}
-                  </span>
-                  <span className="text-xs text-gray-500 uppercase font-medium">🏠 FOR SALE</span>
-                </div>
-                <h3 className="text-lg font-bold text-gray-800 mb-1">{property.title}</h3>
-                <div className="text-sm text-gray-500">📍 {property.country}</div>
-              </div>
-              <div className="text-right ml-4">
-                <div className="text-lg font-bold text-orange-600">{property.price} {property.currency}</div>
-              </div>
-            </div>
-            
-            {/* Property Status Management */}
-            <div className="pt-3 border-t border-gray-200">
-              <div className="flex gap-2 flex-wrap">
-                {/* Edit button - always available */}
-                <Link href={`/dashboard/fsbo/edit-property/${property.id}`}>
-                  <button className="px-3 py-1 bg-gray-600 text-white text-xs rounded hover:bg-gray-700 transition">
-                    ✏️ Edit Property
-                  </button>
-                </Link>
-                
-                {property.status === 'available' && (
-                  <>
-                    <button 
-                      onClick={() => updatePropertyStatus(property.id, 'pending')}
-                      className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition"
-                    >
-                      📝 Mark Under Contract
-                    </button>
-                    <button 
-                      onClick={() => updatePropertyStatus(property.id, 'sold')}
-                      className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition"
-                    >
-                      🏆 Mark Sold
-                    </button>
-                  </>
-                )}
-                {property.status === 'pending' && (
-                  <>
-                    <button 
-                      onClick={() => updatePropertyStatus(property.id, 'sold')}
-                      className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition"
-                    >
-                      🏆 Mark Sold
-                    </button>
-                    <button 
-                      onClick={() => updatePropertyStatus(property.id, 'available')}
-                      className="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition"
-                    >
-                      ↩️ Back to Market
-                    </button>
-                  </>
-                )}
-                {property.status === 'sold' && (
-                  <>
-                    <div className="text-xs text-purple-600 font-semibold">
-                      🎉 Property Sold - Listing Complete!
-                    </div>
-                  </>
-                )}
-                {property.status === 'off_market' && (
-                  <>
-                    <div className="text-xs text-yellow-600 font-semibold">
-                      ⏳ Awaiting admin approval to go live
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        ))}
       </div>
     </main>
   );

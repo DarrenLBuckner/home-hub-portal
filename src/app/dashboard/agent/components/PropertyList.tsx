@@ -2,15 +2,27 @@ import React, { useEffect, useState } from 'react';
 import { createClient } from '@/supabase';
 
 const statusColors: { [key: string]: string } = {
-  off_market: 'bg-gray-200 text-gray-700',
-  active: 'bg-green-100 text-green-700',
-  available: 'bg-green-100 text-green-700',
-  under_contract: 'bg-orange-100 text-orange-700',
-  sold: 'bg-red-100 text-red-700',
-  rented: 'bg-purple-100 text-purple-700',
-  pending: 'bg-yellow-100 text-yellow-700',
-  rejected: 'bg-red-200 text-red-800',
-  draft: 'bg-blue-100 text-blue-700',
+  off_market: 'bg-gray-600 text-white',
+  active: 'bg-green-600 text-white',
+  available: 'bg-green-600 text-white',
+  under_contract: 'bg-[#F97316] text-white',
+  sold: 'bg-[#DC2626] text-white',
+  rented: 'bg-[#2563EB] text-white',
+  pending: 'bg-yellow-500 text-white',
+  rejected: 'bg-red-600 text-white',
+  draft: 'bg-blue-500 text-white',
+};
+
+const statusMessages: { [key: string]: string } = {
+  sold: 'This property has been sold',
+  rented: 'This property has been rented',
+  under_contract: 'This property is under contract',
+  active: 'Live listing',
+  available: 'Live listing',
+  pending: 'Awaiting admin approval',
+  rejected: 'Property was rejected',
+  draft: 'Draft - complete and submit',
+  off_market: 'Hidden from public view',
 };
 
 const typeIcons: { [key: string]: string } = {
@@ -122,10 +134,10 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
               <img
                 src={imageUrl}
                 alt={property.title}
-                className="object-cover w-full h-full"
+                className={`object-cover w-full h-full ${['sold', 'rented', 'under_contract'].includes(property.status) ? 'opacity-70' : ''}`}
               />
               <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold ${statusClass}`}>
-                {property.status === 'available' || property.status === 'active' ? 'LIVE' : 
+                {property.status === 'active' ? 'LIVE' : 
                  property.status === 'under_contract' ? 'UNDER CONTRACT' : 
                  property.status === 'pending' ? 'PENDING APPROVAL' : 
                  property.status === 'sold' ? 'SOLD' : 
@@ -164,7 +176,7 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
               <div className="mt-auto space-y-2">
                 {/* Property Status Management */}
                 <div className="flex gap-2 flex-wrap text-xs">
-                  {(property.status === 'available' || property.status === 'active') && (
+                  {property.status === 'active' && (
                     <>
                       <button 
                         onClick={() => updatePropertyStatus(property.id, 'under_contract')}
@@ -251,8 +263,24 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
                     </>
                   )}
                   {(property.status === 'sold' || property.status === 'rented') && (
-                    <div className="text-purple-600 font-semibold">
-                      🎉 Property {property.status === 'sold' ? 'Sold' : 'Rented'} - Listing Complete!
+                    <div className="space-y-2">
+                      <div className={`font-semibold ${property.status === 'sold' ? 'text-[#DC2626]' : 'text-[#2563EB]'}`}>
+                        {statusMessages[property.status]}
+                      </div>
+                      <div className="flex gap-2 flex-wrap">
+                        <button
+                          disabled
+                          className="px-2 py-1 bg-gray-400 text-white rounded cursor-not-allowed opacity-50 text-xs"
+                        >
+                          📝 Mark Under Contract
+                        </button>
+                        <button
+                          disabled
+                          className="px-2 py-1 bg-gray-400 text-white rounded cursor-not-allowed opacity-50 text-xs"
+                        >
+                          {property.listing_type === 'rental' ? '🏠 Mark Rented' : '🏆 Mark Sold'}
+                        </button>
+                      </div>
                     </div>
                   )}
                   {property.status === 'off_market' && (

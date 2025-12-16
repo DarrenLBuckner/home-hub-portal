@@ -42,58 +42,74 @@ const statusConfig = {
   active: {
     label: 'Active',
     color: 'bg-green-100 text-green-700',
+    badgeColor: 'bg-green-600 text-white',
     badgeText: 'LIVE',
     icon: '✅',
-    description: 'Properties that are live and visible to potential buyers/renters'
+    description: 'Properties that are live and visible to potential buyers/renters',
+    statusMessage: null
   },
   pending: {
     label: 'Pending',
     color: 'bg-yellow-100 text-yellow-700',
+    badgeColor: 'bg-yellow-500 text-white',
     badgeText: 'UNDER REVIEW',
     icon: '⏳',
-    description: 'Properties waiting for admin approval'
+    description: 'Properties waiting for admin approval',
+    statusMessage: 'This property is awaiting admin approval'
   },
   under_contract: {
     label: 'Under Contract',
     color: 'bg-orange-100 text-orange-700',
+    badgeColor: 'bg-[#F97316] text-white',
     badgeText: 'UNDER CONTRACT',
     icon: '📝',
-    description: 'Properties that are under contract but not yet sold/rented'
+    description: 'Properties that are under contract but not yet sold/rented',
+    statusMessage: 'This property is under contract'
   },
   rejected: {
     label: 'Rejected',
     color: 'bg-red-200 text-red-800',
+    badgeColor: 'bg-red-600 text-white',
     badgeText: 'REJECTED',
     icon: '❌',
-    description: 'Properties that were rejected and need fixes before resubmission'
+    description: 'Properties that were rejected and need fixes before resubmission',
+    statusMessage: 'This property was rejected - see rejection reason'
   },
   draft: {
     label: 'Drafts',
     color: 'bg-blue-100 text-blue-700',
+    badgeColor: 'bg-blue-500 text-white',
     badgeText: 'DRAFT',
     icon: '📝',
-    description: 'Incomplete property listings that need to be finished'
+    description: 'Incomplete property listings that need to be finished',
+    statusMessage: 'This is a draft - complete and submit for review'
   },
   off_market: {
     label: 'Off Market',
     color: 'bg-gray-100 text-gray-700',
+    badgeColor: 'bg-gray-600 text-white',
     badgeText: 'HIDDEN',
     icon: '👁️‍🗨️',
-    description: 'Properties hidden from public view by owner choice'
+    description: 'Properties hidden from public view by owner choice',
+    statusMessage: 'This property is hidden from public view'
   },
   sold: {
     label: 'Sold',
     color: 'bg-red-100 text-red-700',
+    badgeColor: 'bg-[#DC2626] text-white',
     badgeText: 'SOLD',
     icon: '🏆',
-    description: 'Properties that have been sold'
+    description: 'Properties that have been sold',
+    statusMessage: 'This property has been sold'
   },
   rented: {
     label: 'Rented',
-    color: 'bg-purple-100 text-purple-700',
+    color: 'bg-blue-100 text-blue-700',
+    badgeColor: 'bg-[#2563EB] text-white',
     badgeText: 'RENTED',
     icon: '🏠',
-    description: 'Properties that have been rented'
+    description: 'Properties that have been rented',
+    statusMessage: 'This property has been rented'
   }
 };
 
@@ -719,12 +735,12 @@ export default function UniversalPropertyManager({
                       <img
                         src={imageUrl}
                         alt={property.title}
-                        className="object-cover w-full h-full hover:scale-105 transition-transform duration-200"
+                        className={`object-cover w-full h-full hover:scale-105 transition-transform duration-200 ${['sold', 'rented', 'under_contract'].includes(property.status) ? 'opacity-70' : ''}`}
                         onError={(e) => {
                           (e.target as HTMLImageElement).src = 'https://placehold.co/400x300?text=No+Image';
                         }}
                       />
-                      <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold ${config.color} shadow-sm`}>
+                      <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold ${config.badgeColor || config.color} shadow-sm`}>
                         {config.badgeText}
                       </span>
                       
@@ -947,32 +963,60 @@ export default function UniversalPropertyManager({
                           </div>
                         )}
 
-                        {/* Completed Properties */}
+                        {/* Completed Properties - Sold/Rented */}
                         {(property.status === 'sold' || property.status === 'rented') && (
-                          <div className="text-xs text-purple-700 bg-purple-50 p-2 rounded border border-purple-200 font-medium">
-                            🎉 Congratulations! Property successfully {property.status === 'sold' ? 'sold' : 'rented'}
+                          <div className="space-y-2">
+                            <div className={`text-xs p-2 rounded border font-medium ${
+                              property.status === 'sold'
+                                ? 'text-red-700 bg-red-50 border-red-200'
+                                : 'text-blue-700 bg-blue-50 border-blue-200'
+                            }`}>
+                              {property.status === 'sold'
+                                ? '🏆 This property has been sold'
+                                : '🏠 This property has been rented'}
+                            </div>
+                            {/* Disabled status buttons */}
+                            <div className="grid grid-cols-2 gap-2 text-xs">
+                              <button
+                                disabled
+                                className="px-2 py-1 bg-gray-300 text-gray-500 rounded cursor-not-allowed opacity-50"
+                                title="Status change not available"
+                              >
+                                📝 Under Contract
+                              </button>
+                              <button
+                                disabled
+                                className="px-2 py-1 bg-gray-300 text-gray-500 rounded cursor-not-allowed opacity-50"
+                              >
+                                {property.propertyCategory === 'rental' ? '🏠 Rented' : '🏆 Sold'}
+                              </button>
+                              <button
+                                disabled
+                                className="px-2 py-1 bg-gray-300 text-gray-500 rounded cursor-not-allowed opacity-50 col-span-2"
+                              >
+                                👁️‍🗨️ Take Off Market
+                              </button>
+                            </div>
                           </div>
                         )}
 
-                        {/* Standard Actions */}
-                        {!['sold', 'rented'].includes(property.status) && (
-                          <div className="flex gap-2 pt-2 border-t border-gray-100">
-                            <button
-                              className="flex-1 bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-700 text-xs transition"
-                              onClick={() => handleEdit(property.id)}
-                              disabled={deletingId === property.id}
-                            >
-                              ✏️ Edit
-                            </button>
-                            <button
-                              className="flex-1 bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600 text-xs transition"
-                              onClick={() => handleDelete(property.id)}
-                              disabled={deletingId === property.id}
-                            >
-                              {deletingId === property.id ? '⏳ Deleting...' : '🗑️ Delete'}
-                            </button>
-                          </div>
-                        )}
+                        {/* Standard Actions - Edit/Delete always available */}
+                        <div className="flex gap-2 pt-2 border-t border-gray-100">
+                          <button
+                            className="flex-1 bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-700 text-xs transition"
+                            onClick={() => handleEdit(property.id)}
+                            disabled={deletingId === property.id}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            className="flex-1 bg-red-500 text-white px-3 py-1.5 rounded hover:bg-red-600 text-xs transition"
+                            onClick={() => handleDelete(property.id)}
+                            disabled={deletingId === property.id}
+                          >
+                            {deletingId === property.id ? '⏳ Deleting...' : '🗑️ Delete'}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

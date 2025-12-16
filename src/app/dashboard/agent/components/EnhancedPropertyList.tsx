@@ -32,51 +32,65 @@ const statusConfig = {
   active: {
     label: 'Active',
     color: 'bg-green-100 text-green-700',
+    badgeColor: 'bg-green-600 text-white',
     badgeText: 'LIVE',
     icon: '✅',
-    description: 'Property is live and visible to potential buyers/renters'
+    description: 'Property is live and visible to potential buyers/renters',
+    statusMessage: null as string | null
   },
   pending: {
     label: 'Pending',
     color: 'bg-yellow-100 text-yellow-700',
+    badgeColor: 'bg-yellow-500 text-white',
     badgeText: 'UNDER REVIEW',
     icon: '⏳',
-    description: 'Property is waiting for admin approval'
+    description: 'Property is waiting for admin approval',
+    statusMessage: 'This property is awaiting admin approval'
   },
   under_contract: {
     label: 'Under Contract',
     color: 'bg-orange-100 text-orange-700',
+    badgeColor: 'bg-[#F97316] text-white',
     badgeText: 'UNDER CONTRACT',
     icon: '📝',
-    description: 'Property is under contract but not yet sold/rented'
+    description: 'Property is under contract but not yet sold/rented',
+    statusMessage: 'This property is under contract'
   },
   rejected: {
     label: 'Rejected',
     color: 'bg-red-200 text-red-800',
+    badgeColor: 'bg-red-600 text-white',
     badgeText: 'REJECTED',
     icon: '❌',
-    description: 'Property was rejected and needs fixes before resubmission'
+    description: 'Property was rejected and needs fixes before resubmission',
+    statusMessage: 'This property was rejected'
   },
   draft: {
     label: 'Draft',
     color: 'bg-blue-100 text-blue-700',
+    badgeColor: 'bg-blue-500 text-white',
     badgeText: 'DRAFT',
     icon: '📝',
-    description: 'Incomplete property listing that needs to be finished'
+    description: 'Incomplete property listing that needs to be finished',
+    statusMessage: 'This is a draft'
   },
   sold: {
     label: 'Sold',
     color: 'bg-red-100 text-red-700',
+    badgeColor: 'bg-[#DC2626] text-white',
     badgeText: 'SOLD',
     icon: '🏆',
-    description: 'Property has been sold'
+    description: 'Property has been sold',
+    statusMessage: 'This property has been sold'
   },
   rented: {
     label: 'Rented',
-    color: 'bg-purple-100 text-purple-700',
+    color: 'bg-blue-100 text-blue-700',
+    badgeColor: 'bg-[#2563EB] text-white',
     badgeText: 'RENTED',
     icon: '🏠',
-    description: 'Property has been rented'
+    description: 'Property has been rented',
+    statusMessage: 'This property has been rented'
   }
 };
 
@@ -281,9 +295,9 @@ export default function EnhancedPropertyList({ userId }: { userId: string }) {
                   <img
                     src={imageUrl}
                     alt={property.title}
-                    className="object-cover w-full h-full"
+                    className={`object-cover w-full h-full ${['sold', 'rented', 'under_contract'].includes(property.status) ? 'opacity-70' : ''}`}
                   />
-                  <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold ${config.color}`}>
+                  <span className={`absolute top-3 left-3 px-3 py-1 rounded-full text-xs font-semibold ${config.badgeColor || config.color}`}>
                     {config.badgeText}
                   </span>
                   
@@ -431,30 +445,45 @@ export default function EnhancedPropertyList({ userId }: { userId: string }) {
                     )}
 
                     {(property.status === 'sold' || property.status === 'rented') && (
-                      <div className="text-xs text-purple-600 bg-purple-50 p-2 rounded font-semibold">
-                        🎉 Property {property.status === 'sold' ? 'Sold' : 'Rented'} - Congratulations!
+                      <div className="space-y-2">
+                        <div className={`text-xs p-2 rounded font-semibold ${
+                          property.status === 'sold'
+                            ? 'text-red-700 bg-red-50 border border-red-200'
+                            : 'text-blue-700 bg-blue-50 border border-blue-200'
+                        }`}>
+                          {property.status === 'sold'
+                            ? '🏆 This property has been sold'
+                            : '🏠 This property has been rented'}
+                        </div>
+                        {/* Disabled status buttons */}
+                        <div className="flex gap-2 flex-wrap text-xs">
+                          <button disabled className="px-2 py-1 bg-gray-300 text-gray-500 rounded cursor-not-allowed opacity-50">
+                            📝 Under Contract
+                          </button>
+                          <button disabled className="px-2 py-1 bg-gray-300 text-gray-500 rounded cursor-not-allowed opacity-50">
+                            {property.listing_type === 'rent' ? '🏠 Rented' : '🏆 Sold'}
+                          </button>
+                        </div>
                       </div>
                     )}
 
-                    {/* Standard Edit/Delete Actions */}
-                    {!['sold', 'rented'].includes(property.status) && (
-                      <div className="flex gap-2 pt-2 border-t border-gray-100">
-                        <button
-                          className="flex-1 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm transition"
-                          onClick={() => handleEdit(property.id)}
-                          disabled={deletingId === property.id}
-                        >
-                          ✏️ Edit
-                        </button>
-                        <button
-                          className="flex-1 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm transition"
-                          onClick={() => handleDelete(property.id)}
-                          disabled={deletingId === property.id}
-                        >
-                          {deletingId === property.id ? '...' : '🗑️ Delete'}
-                        </button>
-                      </div>
-                    )}
+                    {/* Standard Edit/Delete Actions - Always available */}
+                    <div className="flex gap-2 pt-2 border-t border-gray-100">
+                      <button
+                        className="flex-1 bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 text-sm transition"
+                        onClick={() => handleEdit(property.id)}
+                        disabled={deletingId === property.id}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        className="flex-1 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 text-sm transition"
+                        onClick={() => handleDelete(property.id)}
+                        disabled={deletingId === property.id}
+                      >
+                        {deletingId === property.id ? '...' : '🗑️ Delete'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

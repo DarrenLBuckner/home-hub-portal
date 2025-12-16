@@ -147,7 +147,7 @@ export default function OwnerDashboard() {
           setSubscription(prev => prev ? ({
             ...prev,
             totalProperties: userProperties.length,
-            activeListings: userProperties.filter((p: any) => p.status === 'available').length
+            activeListings: userProperties.filter((p: any) => p.status === 'active').length
           }) : null);
         }
       }

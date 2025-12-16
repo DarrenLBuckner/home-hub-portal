@@ -426,11 +426,20 @@ export default function PropertyReviewPage() {
               const primaryImage = property.property_media?.find(media => media.is_primary);
               const statusColor = {
                 'pending': 'bg-yellow-100 text-yellow-800',
-                'available': 'bg-green-100 text-green-800', 
-                'sold': 'bg-purple-100 text-purple-800',
-                'rented': 'bg-blue-100 text-blue-800',
+                'available': 'bg-green-100 text-green-800',
+                'sold': 'bg-[#DC2626] text-white',
+                'rented': 'bg-[#2563EB] text-white',
+                'under_contract': 'bg-[#F97316] text-white',
                 'rejected': 'bg-red-100 text-red-800'
               }[property.status] || 'bg-gray-100 text-gray-800';
+
+              const statusMessages: { [key: string]: string } = {
+                sold: 'This property has been sold',
+                rented: 'This property has been rented',
+                under_contract: 'This property is under contract',
+              };
+
+              const isCompletedStatus = ['sold', 'rented', 'under_contract'].includes(property.status);
 
               return (
                 <div key={property.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
@@ -440,10 +449,10 @@ export default function PropertyReviewPage() {
                       <div className="flex-shrink-0">
                         <div className="w-32 h-32 bg-gray-200 rounded-lg overflow-hidden">
                           {primaryImage ? (
-                            <img 
-                              src={primaryImage.media_url} 
+                            <img
+                              src={primaryImage.media_url}
                               alt={property.title}
-                              className="w-full h-full object-cover"
+                              className={`w-full h-full object-cover ${isCompletedStatus ? 'opacity-70' : ''}`}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -533,21 +542,58 @@ export default function PropertyReviewPage() {
                             </>
                           )}
 
-                          {property.status === 'available' && (
+                          {property.status === 'active' && (
                             <>
+                              <button
+                                onClick={() => updatePropertyStatus(property.id, 'under_contract')}
+                                className="px-4 py-2 bg-[#F97316] text-white font-bold rounded-lg hover:bg-orange-600 transition-colors"
+                              >
+                                📝 Mark Under Contract
+                              </button>
                               <button
                                 onClick={() => updatePropertyStatus(property.id, property.listing_type === 'rental' ? 'rented' : 'sold')}
                                 className="px-4 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors"
                               >
                                 {property.listing_type === 'rental' ? '🏠 Mark Rented' : '🏆 Mark Sold'}
                               </button>
+                            </>
+                          )}
+
+                          {property.status === 'under_contract' && (
+                            <>
                               <button
-                                onClick={() => updatePropertyStatus(property.id, 'pending')}
-                                className="px-4 py-2 bg-orange-600 text-white font-bold rounded-lg hover:bg-orange-700 transition-colors"
+                                onClick={() => updatePropertyStatus(property.id, property.listing_type === 'rental' ? 'rented' : 'sold')}
+                                className="px-4 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors"
                               >
-                                📝 Under Contract
+                                {property.listing_type === 'rental' ? '🏠 Completed - Rented' : '🏆 Completed - Sold'}
+                              </button>
+                              <button
+                                onClick={() => updatePropertyStatus(property.id, 'active')}
+                                className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors"
+                              >
+                                ↩️ Back to Market
                               </button>
                             </>
+                          )}
+
+                          {(property.status === 'sold' || property.status === 'rented') && (
+                            <div className="flex items-center gap-3">
+                              <span className={`font-semibold ${property.status === 'sold' ? 'text-[#DC2626]' : 'text-[#2563EB]'}`}>
+                                {statusMessages[property.status]}
+                              </span>
+                              <button
+                                disabled
+                                className="px-4 py-2 bg-gray-400 text-white font-bold rounded-lg cursor-not-allowed opacity-50"
+                              >
+                                📝 Mark Under Contract
+                              </button>
+                              <button
+                                disabled
+                                className="px-4 py-2 bg-gray-400 text-white font-bold rounded-lg cursor-not-allowed opacity-50"
+                              >
+                                {property.listing_type === 'rental' ? '🏠 Mark Rented' : '🏆 Mark Sold'}
+                              </button>
+                            </div>
                           )}
 
                           {/* View Details - Opens property in new tab */}
