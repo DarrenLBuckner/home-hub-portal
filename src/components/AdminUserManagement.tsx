@@ -359,12 +359,13 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
     }
 
     try {
-      // Call the DELETE API endpoint that handles both Auth and Profile deletion
-      const response = await fetch(`/api/users/${selectedUser.id}`, {
-        method: 'DELETE',
+      // Call the secure admin delete endpoint with full cascade deletion
+      const response = await fetch('/api/admin/delete-user', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({ userId: selectedUser.id })
       });
 
       const result = await response.json();
@@ -384,14 +385,15 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
         `✅ User ${selectedUser.first_name} ${selectedUser.last_name} has been permanently deleted.`,
         result.wasFoundingAgent ? '\n🏆 Founding agent counter has been decremented.' : '',
         '\n📊 Deletion Details:',
-        `• Auth System: ${result.deletionDetails?.authDeleted ? 'Deleted ✅' : 'Failed to delete ⚠️'}`,
-        `• Profile Database: ${result.deletionDetails?.profileDeleted ? 'Deleted ✅' : 'Failed to delete ⚠️'}`,
-        `• Method Used: ${result.deletionDetails?.method || 'Unknown'}`,
-        result.deletionDetails?.authDeleted 
-          ? '\n✅ Email address is now available for reuse.' 
-          : '\n⚠️ WARNING: Email may still exist in Auth system - check Supabase Auth panel.'
+        `• Properties Deleted: ${result.deleted?.properties ?? 0}`,
+        `• Favorites Deleted: ${result.deleted?.favorites ?? 0}`,
+        `• Profile: ${result.deleted?.profile ? 'Deleted ✅' : 'Failed ⚠️'}`,
+        `• Auth System: ${result.deleted?.auth ? 'Deleted ✅' : 'Failed ⚠️'}`,
+        result.deleted?.auth
+          ? '\n✅ Email address is now available for reuse.'
+          : ''
       ].filter(Boolean).join('\n');
-      
+
       alert(deletionMessage);
     } catch (error) {
       console.error('Error deleting user:', error);

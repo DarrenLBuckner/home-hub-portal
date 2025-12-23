@@ -325,10 +325,32 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
         </div>
       )}
 
-      {/* Land/Lot Size - Show for all properties */}
+      {/* Lot Dimensions - For non-land residential (BEFORE Lot Size for better UX) */}
+      {!isLandProperty && !isCommercial && (
+        <LotDimensions
+          length={formData.lot_length || ''}
+          width={formData.lot_width || ''}
+          unit={(formData.lot_dimension_unit as DimensionUnit) || 'ft'}
+          onLengthChange={(length) => handleChange('lot_length', length)}
+          onWidthChange={(width) => handleChange('lot_width', width)}
+          onUnitChange={(unit) => handleChange('lot_dimension_unit', unit)}
+          onAreaCalculated={(areaSqFt) => {
+            const newValue = areaSqFt.toString();
+            if (formData.land_size_value !== newValue) {
+              handleChange('land_size_value', newValue);
+              handleChange('land_size_unit', 'sq ft');
+            }
+          }}
+        />
+      )}
+
+      {/* Land/Lot Size - Show for all properties (auto-calculated from dimensions above) */}
       <div>
         <label className="block text-base font-bold text-gray-900 mb-2">
           {isLandProperty ? 'Total Land Area' : 'Lot Size'}
+          {!isLandProperty && !isCommercial && formData.lot_length && formData.lot_width && (
+            <span className="text-green-600 text-sm font-normal ml-2">Auto-calculated from dimensions above</span>
+          )}
         </label>
         <div className="flex gap-2">
           <input
@@ -350,25 +372,6 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
           </select>
         </div>
       </div>
-
-      {/* Lot Dimensions - For non-land residential */}
-      {!isLandProperty && !isCommercial && (
-        <LotDimensions
-          length={formData.lot_length || ''}
-          width={formData.lot_width || ''}
-          unit={(formData.lot_dimension_unit as DimensionUnit) || 'ft'}
-          onLengthChange={(length) => handleChange('lot_length', length)}
-          onWidthChange={(width) => handleChange('lot_width', width)}
-          onUnitChange={(unit) => handleChange('lot_dimension_unit', unit)}
-          onAreaCalculated={(areaSqFt) => {
-            const newValue = areaSqFt.toString();
-            if (formData.land_size_value !== newValue) {
-              handleChange('land_size_value', newValue);
-              handleChange('land_size_unit', 'sq ft');
-            }
-          }}
-        />
-      )}
 
       {/* Year Built - Only for buildings, not land */}
       {!isLandProperty && (
