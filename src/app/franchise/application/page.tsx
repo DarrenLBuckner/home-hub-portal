@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -103,6 +103,11 @@ export default function FranchiseApplicationPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   const totalSteps = 6;
+
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
 
   const handleInputChange = (field: keyof FranchiseApplicationData, value: any) => {
     setFormData(prev => ({

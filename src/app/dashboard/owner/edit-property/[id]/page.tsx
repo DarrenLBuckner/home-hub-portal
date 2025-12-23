@@ -63,6 +63,11 @@ export default function EditFSBOProperty() {
   const [existingImages, setExistingImages] = useState<string[]>([]);
   const supabase = createClient();
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
+
   // Load existing property data
   useEffect(() => {
     async function loadPropertyData() {

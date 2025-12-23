@@ -54,6 +54,11 @@ function FSBORegistrationContent() {
     window.scrollTo(0, 0);
   }, []);
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
+
   const handleCountryChange = (countryCode: string) => {
     const country = countries.find(c => c.code === countryCode) || countries[0];
     setSelectedCountry(country);

@@ -86,6 +86,11 @@ function RegistrationContent() {
     // Pre-fill plan based on type - will be set once plans load
   }, [searchParams]);
 
+  // Scroll to top when step changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [currentStep]);
+
   // Set default plan when plans are loaded
   useEffect(() => {
     if (agentPlans.length > 0 && !form.selected_plan) {
