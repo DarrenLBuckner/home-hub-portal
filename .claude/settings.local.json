@@ -32,7 +32,8 @@
       "WebFetch(domain:www.guyanahomehub.com)",
       "Bash(dir:*)",
       "Bash(attrib:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(npm run)"
     ],
     "deny": [],
     "ask": []

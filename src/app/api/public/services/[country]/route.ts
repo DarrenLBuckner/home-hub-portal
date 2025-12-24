@@ -9,6 +9,45 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400', // 24 hours
 };
 
+// Business directory categories
+const DIRECTORY_CATEGORIES = [
+  { id: 'real-estate-agents', name: 'Real Estate Agents' },
+  { id: 'general-contractors', name: 'General Contractors' },
+  { id: 'renovations', name: 'Renovations & Repairs' },
+  { id: 'electrical', name: 'Electrical & Plumbing' },
+  { id: 'interior', name: 'Interior & Furniture' },
+  { id: 'landscaping', name: 'Landscaping & Garden' },
+  { id: 'building-materials', name: 'Building Materials & Hardware' },
+  { id: 'moving-storage', name: 'Moving & Storage' },
+  { id: 'cleaning', name: 'Cleaning Services' },
+  { id: 'security', name: 'Security & Safety' },
+  { id: 'legal-financial', name: 'Legal & Financial' },
+  { id: 'insurance', name: 'Insurance & Banking' },
+  { id: 'inspection', name: 'Inspection Services' },
+];
+
+// Business directory response interface
+interface DirectoryBusiness {
+  id: string;
+  name: string;
+  category: string;
+  description: string | null;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  address: string | null;
+  image: string | null;
+  adType: string;
+  featured: boolean;
+  verified: boolean;
+}
+
+interface DirectoryCategory {
+  id: string;
+  name: string;
+  count: number;
+}
+
 // Type definitions
 interface Service {
   id: string;
@@ -60,11 +99,119 @@ interface ServicePackage {
 }
 
 /**
+ * Handle business directory requests
+ * Returns businesses and category counts for the directory page
+ */
+async function handleDirectoryRequest(
+  supabase: typeof supabaseBackend,
+  countryCode: string,
+  categoryFilter: string | null
+) {
+  try {
+    // Build query for businesses
+    let query = supabase
+      .from('businesses')
+      .select('*')
+      .eq('site_id', countryCode)
+      .eq('status', 'active');
+
+    // Filter by category if provided and not 'all'
+    if (categoryFilter && categoryFilter !== 'all') {
+      query = query.eq('category', categoryFilter);
+    }
+
+    const { data: businessesData, error: businessesError } = await query;
+
+    if (businessesError) {
+      console.error('Error fetching businesses:', businessesError);
+      return NextResponse.json(
+        { error: 'Failed to fetch businesses' },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    // Get all businesses for category counts (unfiltered by category)
+    const { data: allBusinesses, error: countError } = await supabase
+      .from('businesses')
+      .select('category')
+      .eq('site_id', countryCode)
+      .eq('status', 'active');
+
+    if (countError) {
+      console.error('Error fetching category counts:', countError);
+    }
+
+    // Calculate category counts
+    const categoryCounts: Record<string, number> = {};
+    if (allBusinesses) {
+      for (const business of allBusinesses) {
+        const cat = business.category;
+        categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      }
+    }
+
+    // Build categories array with counts
+    const categories: DirectoryCategory[] = DIRECTORY_CATEGORIES.map(cat => ({
+      id: cat.id,
+      name: cat.name,
+      count: categoryCounts[cat.id] || 0,
+    }));
+
+    // Format businesses for response
+    const businesses: DirectoryBusiness[] = (businessesData || []).map((b: {
+      id: string;
+      business_name?: string;
+      name?: string;
+      category: string;
+      description: string | null;
+      phone: string | null;
+      email: string | null;
+      website: string | null;
+      address: string | null;
+      image_url?: string | null;
+      image?: string | null;
+      ad_type?: string;
+      featured?: boolean;
+      verified?: boolean;
+    }) => ({
+      id: b.id,
+      name: b.business_name || b.name || '',
+      category: b.category,
+      description: b.description,
+      phone: b.phone,
+      email: b.email,
+      website: b.website,
+      address: b.address,
+      image: b.image_url || b.image || null,
+      adType: b.ad_type || 'listing',
+      featured: b.featured || false,
+      verified: b.verified || false,
+    }));
+
+    return NextResponse.json(
+      {
+        businesses,
+        categories,
+      },
+      { headers: corsHeaders }
+    );
+
+  } catch (error) {
+    console.error('Directory request error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500, headers: corsHeaders }
+    );
+  }
+}
+
+/**
  * Public API endpoint for country-specific services
  * Used by all Home Hub frontend sites (Guyana, Jamaica, Barbados, etc.)
- * 
+ *
  * GET /api/public/services/GY - Get all services for Guyana
  * GET /api/public/services/JM - Get all services for Jamaica
+ * GET /api/public/services/GY?type=directory - Get business directory for Guyana
  * etc.
  */
 
@@ -76,13 +223,23 @@ export async function GET(
     const supabase = supabaseBackend;
     const resolvedParams = await params;
     const countryCode = resolvedParams.country.toUpperCase();
-    
+
     // Validate country code
     if (!/^[A-Z]{2}$/.test(countryCode)) {
       return NextResponse.json(
         { error: 'Invalid country code. Must be 2 letter country code (e.g., GY, JM, BB)' },
         { status: 400 }
       );
+    }
+
+    // Check for directory type query parameter
+    const url = new URL(request.url);
+    const type = url.searchParams.get('type');
+    const category = url.searchParams.get('category');
+
+    // Handle business directory requests
+    if (type === 'directory') {
+      return handleDirectoryRequest(supabase, countryCode, category);
     }
 
     // Get country services with service details
