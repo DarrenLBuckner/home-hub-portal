@@ -26,7 +26,7 @@ interface Region {
 interface GlobalSouthLocationSelectorProps {
   selectedCountry: string;
   selectedRegion: string;
-  onLocationChange: (field: 'country' | 'region', value: string) => void;
+  onLocationChange: (field: 'country' | 'region', value: string, displayName?: string) => void;
   onCurrencyChange?: (currencyCode: string, currencySymbol: string) => void;
   className?: string;
   showCurrencyInfo?: boolean;
@@ -215,7 +215,10 @@ export default function GlobalSouthLocationSelector({
           </label>
           <select
             value={selectedRegion}
-            onChange={(e) => onLocationChange('region', e.target.value)}
+            onChange={(e) => {
+              const region = regions.find(r => r.id === e.target.value);
+              onLocationChange('region', e.target.value, region?.name);
+            }}
             disabled={regionsLoading}
             className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white text-base disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-600"
           >

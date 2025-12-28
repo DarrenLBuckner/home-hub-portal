@@ -19,7 +19,7 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
     }));
   };
 
-  const handleLocationChange = (field: 'country' | 'region', value: string) => {
+  const handleLocationChange = (field: 'country' | 'region', value: string, displayName?: string) => {
     if (field === 'country') {
       setSelectedCountry(value);
       setSelectedRegion('');
@@ -35,7 +35,7 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
       setFormData((prev: any) => ({
         ...prev,
         region: value,
-        city: value // Set city to the same value as region for validation
+        city: displayName || value // Use display name for city (e.g., "Georgetown" not "GY-R4-Georgetown")
       }));
     }
   };
