@@ -12,7 +12,7 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
   const [currencyCode, setCurrencyCode] = useState<string>(formData.currency || "GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev: any) => ({
       ...prev,
       [field]: value
@@ -79,18 +79,39 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Specific Neighborhood/Street (Optional)
+          Neighborhood/Area <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
-          value={formData.neighborhood}
+          value={formData.neighborhood || ''}
           onChange={(e) => handleChange('neighborhood', e.target.value)}
-          placeholder="e.g., Sheriff Street, Main Street, Housing Scheme Block A"
+          placeholder="e.g., Lamaha Gardens, Kitty, Bel Air Park, Eccles"
+          required
+          minLength={2}
+          maxLength={100}
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <p className="text-sm text-gray-500 mt-1">
-          Optional: Add specific street, housing scheme, or neighborhood details for public display
+          Enter the neighborhood or area name that locals would recognize. This will be shown publicly on your listing.
         </p>
+      </div>
+
+      <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <input
+          type="checkbox"
+          id="show_address"
+          checked={formData.show_address || false}
+          onChange={(e) => handleChange('show_address', e.target.checked)}
+          className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+        />
+        <div>
+          <label htmlFor="show_address" className="block text-sm font-medium text-gray-700 cursor-pointer">
+            Show street address publicly on listing
+          </label>
+          <p className="text-xs text-gray-500 mt-1">
+            If unchecked, only the neighborhood will display. Buyers will see "Contact agent for exact address"
+          </p>
+        </div>
       </div>
 
       {/* Regional Information */}
@@ -113,13 +134,12 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
       )}
 
       <div className="bg-blue-50 p-4 rounded-lg">
-        <h3 className="font-medium text-blue-900 mb-2">Global South Coverage & Privacy</h3>
+        <h3 className="font-medium text-blue-900 mb-2">Location Display & Privacy</h3>
         <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Your exact address will not be shown publicly</li>
-          <li>• Only the region and general area will be displayed to buyers</li>
-          <li>• Specific location details shared only with approved inquiries</li>
-          <li>• Serving 7 Global South countries: Caribbean & Africa markets</li>
-          <li>• Automatic currency adaptation for your selected country</li>
+          <li>• <strong>Neighborhood</strong> is always shown publicly on your listing</li>
+          <li>• <strong>Street address</strong> is only shown if you enable the checkbox above</li>
+          <li>• If address is hidden, buyers see "Contact agent for exact address"</li>
+          <li>• Full address is always stored securely for verification purposes</li>
         </ul>
       </div>
     </div>

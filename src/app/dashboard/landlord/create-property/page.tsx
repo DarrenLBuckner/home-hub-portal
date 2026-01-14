@@ -32,6 +32,9 @@ type PropertyForm = {
   description: string;
   price: string;
   location: string;
+  neighborhood: string;
+  address: string;
+  show_address: boolean;
   propertyType: string;
   bedrooms: string;
   bathrooms: string;
@@ -90,6 +93,9 @@ export default function CreateLandlordProperty() {
     description: "",
     price: "",
     location: "",
+    neighborhood: "",
+    address: "",
+    show_address: false,
     propertyType: LANDLORD_PROPERTY_TYPES[0].value,
     bedrooms: "",
     bathrooms: "",
@@ -195,13 +201,20 @@ export default function CreateLandlordProperty() {
     setIsSubmitting(true);
 
     // Validate required fields (squareFootage optional, location required for verification)
-    const required: (keyof PropertyForm)[] = ["title", "description", "price", "propertyType", "bedrooms", "bathrooms", "location", "attestation", "owner_whatsapp"];
+    const required: (keyof PropertyForm)[] = ["title", "description", "price", "propertyType", "bedrooms", "bathrooms", "location", "neighborhood", "attestation", "owner_whatsapp"];
     for (const field of required) {
       if (!form[field]) {
         setError(`Missing field: ${field}`);
         setIsSubmitting(false);
         return;
       }
+    }
+
+    // Validate neighborhood minimum length
+    if (form.neighborhood.trim().length < 2) {
+      setError("Neighborhood/Area must be at least 2 characters");
+      setIsSubmitting(false);
+      return;
     }
 
     if (form.images.length < 1) {
@@ -620,30 +633,82 @@ export default function CreateLandlordProperty() {
           {/* 7. LOCATION DETAILS (Specific address info) */}
           <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-pink-500">
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              📍 Property Address
+              📍 Property Location
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Property Address *</label>
-                <input 
-                  name="location" 
-                  type="text" 
-                  placeholder="Property address or specific location" 
-                  value={form.location} 
-                  onChange={handleChange} 
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Neighborhood/Area <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="neighborhood"
+                  type="text"
+                  placeholder="e.g., Lamaha Gardens, Kitty, Bel Air Park, Eccles"
+                  value={form.neighborhood}
+                  onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500" 
+                  minLength={2}
+                  maxLength={100}
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Enter the neighborhood or area name that locals would recognize. This will be shown publicly on your listing.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Street Address (Optional)
+                </label>
+                <input
+                  name="address"
+                  type="text"
+                  placeholder="e.g., 123 Main Street"
+                  value={form.address}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500"
                 />
               </div>
-              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                <div className="flex items-start gap-2">
-                  <span className="text-blue-500">🔒</span>
-                  <div>
-                    <div className="font-medium text-blue-800 text-sm">Privacy Protected</div>
-                    <div className="text-blue-700 text-xs mt-1">
-                      Address is required for property verification only. It will never be shown to renters until you approve them.
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Property Address (For Verification) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="location"
+                  type="text"
+                  placeholder="Full property address for verification"
+                  value={form.location}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-500"
+                />
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 mt-2">
+                  <div className="flex items-start gap-2">
+                    <span className="text-blue-500">🔒</span>
+                    <div>
+                      <div className="font-medium text-blue-800 text-sm">Privacy Protected</div>
+                      <div className="text-blue-700 text-xs mt-1">
+                        Full address is required for property verification only. It will never be shown publicly.
+                      </div>
                     </div>
                   </div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <input
+                  type="checkbox"
+                  id="show_address"
+                  name="show_address"
+                  checked={form.show_address}
+                  onChange={(e) => setForm({ ...form, show_address: e.target.checked })}
+                  className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <div>
+                  <label htmlFor="show_address" className="block text-sm font-medium text-gray-700 cursor-pointer">
+                    Show street address publicly on listing
+                  </label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    If unchecked, only the neighborhood will display. Tenants will see "Contact landlord for exact address"
+                  </p>
                 </div>
               </div>
             </div>

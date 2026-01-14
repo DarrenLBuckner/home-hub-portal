@@ -48,7 +48,8 @@ export default function CreateFSBOProperty() {
     city: '',
     neighborhood: '',
     address: '',
-    
+    show_address: false,
+
     // Contact
     owner_email: '',
     owner_whatsapp: '',
@@ -128,6 +129,10 @@ export default function CreateFSBOProperty() {
           setError('City is required');
           return false;
         }
+        if (!formData.neighborhood || !formData.neighborhood.trim() || formData.neighborhood.trim().length < 2) {
+          setError('Neighborhood/Area is required (minimum 2 characters)');
+          return false;
+        }
         if (!formData.address || !formData.address.trim()) {
           setError('Property address is required for verification');
           return false;
@@ -185,8 +190,9 @@ export default function CreateFSBOProperty() {
         lot_dimension_unit: formData.lot_dimension_unit || 'ft',
         region: formData.region || '',
         city: formData.city || '',
-        neighborhood: formData.neighborhood || null,
+        neighborhood: formData.neighborhood || '',
         address: formData.address || '',
+        show_address: formData.show_address || false,
         owner_email: formData.owner_email,
         owner_whatsapp: formData.owner_whatsapp || '',
         listing_type: 'sale',
@@ -323,9 +329,11 @@ export default function CreateFSBOProperty() {
         // Location
         region: formData.region || '',
         city: formData.city || '',
-        neighborhood: formData.neighborhood || null,
+        neighborhood: formData.neighborhood || '',
+        address: formData.address || '',
+        show_address: formData.show_address || false,
         country: formData.country || 'GY',
-        
+
         // Contact info
         owner_email: formData.owner_email || '',
         owner_whatsapp: formData.owner_whatsapp || '',

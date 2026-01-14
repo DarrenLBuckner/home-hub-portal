@@ -56,8 +56,9 @@ export default function EditLandlordProperty() {
     city: '',
     neighborhood: '',
     address: '',
+    show_address: false,
     location: '',
-    
+
     // Contact
     contact_name: '',
     contact_phone: '',
@@ -132,6 +133,7 @@ export default function EditLandlordProperty() {
             city: property.city || '',
             neighborhood: property.neighborhood || '',
             address: property.address || '',
+            show_address: property.show_address || false,
             location: property.location || '',
             contact_name: property.contact_name || '',
             contact_phone: property.contact_phone || '',
@@ -224,6 +226,7 @@ export default function EditLandlordProperty() {
         city: formData.city,
         neighborhood: formData.neighborhood,
         address: formData.address,
+        show_address: formData.show_address,
         location: formData.location,
         contact_name: formData.contact_name,
         contact_phone: formData.contact_phone,

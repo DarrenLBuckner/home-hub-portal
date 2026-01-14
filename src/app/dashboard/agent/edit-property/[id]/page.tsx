@@ -34,6 +34,8 @@ interface FormData {
   region: string;
   city: string;
   neighborhood: string;
+  address: string;
+  show_address: boolean;
   lot_length: string;
   lot_width: string;
   lot_dimension_unit: string;
@@ -88,6 +90,8 @@ export default function EditAgentProperty() {
     region: "",
     city: "",
     neighborhood: "",
+    address: "",
+    show_address: false,
     lot_length: "",
     lot_width: "",
     lot_dimension_unit: "ft",
@@ -185,6 +189,8 @@ export default function EditAgentProperty() {
             region: property.region || '',
             city: property.city || '',
             neighborhood: property.neighborhood || '',
+            address: property.address || '',
+            show_address: property.show_address || false,
             lot_length: property.lot_length?.toString() || '',
             lot_width: property.lot_width?.toString() || '',
             lot_dimension_unit: property.lot_dimension_unit || 'ft',
@@ -393,6 +399,8 @@ export default function EditAgentProperty() {
         region: form.region, // Form already contains database format
         city: form.city,
         neighborhood: form.neighborhood,
+        address: form.address,
+        show_address: form.show_address,
         owner_whatsapp: form.owner_whatsapp,
         currency: currencyCode,
         country: selectedCountry, // FIX: Include country field
@@ -785,28 +793,67 @@ export default function EditAgentProperty() {
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">City/Town</label>
-                <input 
-                  name="city" 
-                  type="text" 
-                  placeholder="Georgetown" 
-                  value={form.city} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                <input
+                  name="city"
+                  type="text"
+                  placeholder="Georgetown"
+                  value={form.city}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Neighborhood/Area</label>
-                <input 
-                  name="neighborhood" 
-                  type="text" 
-                  placeholder="Bel Air Park" 
-                  value={form.neighborhood} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Neighborhood/Area <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="neighborhood"
+                  type="text"
+                  placeholder="e.g., Lamaha Gardens, Kitty, Bel Air Park, Eccles"
+                  value={form.neighborhood}
+                  onChange={handleChange}
+                  required
+                  minLength={2}
+                  maxLength={100}
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
                 />
+                <p className="text-xs text-gray-500 mt-1">This will be shown publicly on your listing</p>
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Street Address (Optional)
+              </label>
+              <input
+                name="address"
+                type="text"
+                placeholder="e.g., 123 Main Street"
+                value={form.address}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+              />
+            </div>
+
+            <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <input
+                type="checkbox"
+                id="show_address"
+                name="show_address"
+                checked={form.show_address}
+                onChange={(e) => setForm({ ...form, show_address: e.target.checked })}
+                className="mt-1 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              />
+              <div>
+                <label htmlFor="show_address" className="block text-sm font-medium text-gray-700 cursor-pointer">
+                  Show street address publicly on listing
+                </label>
+                <p className="text-xs text-gray-500 mt-1">
+                  If unchecked, only the neighborhood will display. Buyers will see "Contact agent for exact address"
+                </p>
               </div>
             </div>
           </div>
