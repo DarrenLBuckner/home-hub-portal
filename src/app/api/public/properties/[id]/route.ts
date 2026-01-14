@@ -38,7 +38,8 @@ export async function GET(
           user_type,
           profile_image,
           company,
-          is_founding_member
+          is_founding_member,
+          is_founding_advisor
         )
       `)
       .eq('id', id)
@@ -104,7 +105,8 @@ export async function GET(
       profile_image: property.profiles.profile_image,
       company: property.profiles.company,
       user_type: property.profiles.user_type,
-      is_founding_member: property.profiles.is_founding_member
+      is_founding_member: property.profiles.is_founding_member,
+      is_founding_advisor: property.profiles.is_founding_advisor
     } : null
 
     // Step 4: Create final response
