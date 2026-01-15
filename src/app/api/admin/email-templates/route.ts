@@ -158,22 +158,27 @@ export async function GET(request: NextRequest) {
     // Fetch templates from database
     const { data: dbTemplates, error: templatesError } = await serviceClient
       .from('email_templates')
-      .select('id, name, category, subject, body')
-      .order('category', { ascending: true })
+      .select('*')
       .order('name', { ascending: true });
 
-    if (templatesError) {
-      console.error('Error fetching email templates:', templatesError);
+    console.log('Email templates query result:', {
+      count: dbTemplates?.length || 0,
+      error: templatesError?.message || null
+    });
+
+    // If we have database templates, return those combined with defaults
+    // Database templates first, then defaults
+    if (dbTemplates && dbTemplates.length > 0) {
+      return NextResponse.json({
+        templates: dbTemplates,
+        source: 'database',
+      });
     }
 
-    // If we have database templates, use them; otherwise fall back to defaults
-    const templates = dbTemplates && dbTemplates.length > 0
-      ? dbTemplates
-      : DEFAULT_TEMPLATES;
-
+    // Fall back to defaults if no database templates
     return NextResponse.json({
-      templates,
-      source: dbTemplates && dbTemplates.length > 0 ? 'database' : 'default',
+      templates: DEFAULT_TEMPLATES,
+      source: 'default',
     });
 
   } catch (error) {
