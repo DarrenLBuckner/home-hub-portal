@@ -53,6 +53,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="mobile-web-app-capable" content="yes" />
 
+        {/* Facebook Domain Verification */}
+        <meta name="facebook-domain-verification" content="7shz5paoe3qgjxz6vae2smlikgftuz" />
+
         {/* Facebook Pixel - in head for immediate loading */}
         <script
           dangerouslySetInnerHTML={{
