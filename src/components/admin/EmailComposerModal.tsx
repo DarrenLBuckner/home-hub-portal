@@ -44,7 +44,6 @@ const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
   const [body, setBody] = useState('');
   const [sending, setSending] = useState(false);
   const [loadingTemplates, setLoadingTemplates] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -72,7 +71,6 @@ const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
       setSelectedTemplateId('');
       setError('');
       setSuccess(false);
-      setShowPreview(false);
     }
   }, [isOpen]);
 
@@ -230,11 +228,6 @@ const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
                   placeholder="Enter email subject..."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
-                {showPreview && subject && (
-                  <p className="mt-1 text-sm text-gray-500 italic">
-                    Preview: {getPreviewText(subject)}
-                  </p>
-                )}
               </div>
 
               {/* Body */}
@@ -253,16 +246,7 @@ const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
 
               {/* Placeholder Reference */}
               <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-medium text-gray-700">Available Placeholders</h4>
-                  <button
-                    type="button"
-                    onClick={() => setShowPreview(!showPreview)}
-                    className="text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    {showPreview ? 'Hide Preview' : 'Show Preview'}
-                  </button>
-                </div>
+                <h4 className="text-sm font-medium text-gray-700 mb-3">Available Placeholders</h4>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABLE_PLACEHOLDERS.map(({ placeholder, description }) => (
                     <button
@@ -279,14 +263,37 @@ const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
               </div>
 
               {/* Preview */}
-              {showPreview && body && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">Message Preview</h4>
-                  <div className="bg-white rounded p-3 text-sm text-gray-700 whitespace-pre-wrap">
-                    {getPreviewText(body)}
+              <div className="bg-gray-100 border border-gray-200 rounded-md p-4">
+                <h4 className="text-sm font-bold text-gray-900 mb-1">Preview</h4>
+                <p className="text-xs text-gray-500 mb-3">This is what the recipient will see:</p>
+                <hr className="border-gray-300 mb-3" />
+
+                {!subject.trim() && !body.trim() ? (
+                  <p className="text-sm text-gray-400 italic">Enter a subject and message to see preview</p>
+                ) : (
+                  <div className="space-y-3">
+                    {/* Subject Preview */}
+                    <div>
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Subject:</span>
+                      {subject.trim() ? (
+                        <p className="text-sm text-gray-800 mt-1">{getPreviewText(subject)}</p>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic mt-1">Enter a subject to see preview</p>
+                      )}
+                    </div>
+
+                    {/* Body Preview */}
+                    <div>
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Message:</span>
+                      {body.trim() ? (
+                        <div className="text-sm text-gray-800 mt-1 whitespace-pre-wrap">{getPreviewText(body)}</div>
+                      ) : (
+                        <p className="text-sm text-gray-400 italic mt-1">Enter a message to see preview</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
         </div>
