@@ -12,7 +12,7 @@ export default function PrivacyPolicyPage() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">PORTAL HOME HUB</h1>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">PRIVACY POLICY</h2>
-          <p className="text-gray-600 mb-8">Last Updated: November 6, 2025</p>
+          <p className="text-gray-600 mb-8">Last Updated: January 14, 2026</p>
 
           <div className="prose prose-lg max-w-none">
             <p className="text-gray-700 mb-6">
@@ -62,7 +62,7 @@ export default function PrivacyPolicyPage() {
               <li><strong>Location Data:</strong> IP address, approximate location based on IP address, and precise location if you grant permission through our mobile app</li>
               <li><strong>Usage Data:</strong> Pages viewed, links clicked, search queries, time spent on pages, referring websites</li>
               <li><strong>Mobile App Data:</strong> App version, crash reports, performance data, push notification tokens</li>
-              <li><strong>Cookies and Similar Technologies:</strong> Information stored through cookies, web beacons, and similar tracking technologies (see our Cookie Policy for details)</li>
+              <li><strong>Cookies and Similar Technologies:</strong> Information stored through cookies, web beacons, and similar tracking technologies. We use both first-party and third-party cookies for essential site functionality, analytics, and advertising purposes. This includes Meta (Facebook) first-party cookies that help us measure advertising effectiveness and deliver relevant ads. See our Cookie Policy for details.</li>
             </ul>
 
             <h4 className="text-lg font-semibold text-gray-800 mb-3">1.4 Information from Third Parties</h4>

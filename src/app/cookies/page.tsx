@@ -12,7 +12,7 @@ export default function CookiePolicyPage() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">PORTAL HOME HUB</h1>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">COOKIE POLICY</h2>
-          <p className="text-gray-600 mb-8">Last Updated: November 6, 2025</p>
+          <p className="text-gray-600 mb-8">Last Updated: January 14, 2026</p>
 
           <div className="prose prose-lg max-w-none">
             <p className="text-gray-700 mb-6">
@@ -99,7 +99,10 @@ export default function CookiePolicyPage() {
 
             <h4 className="text-lg font-semibold text-gray-800 mb-3">2.4 Advertising and Marketing Cookies</h4>
             <p className="text-gray-700 mb-3">
-              These cookies track your online activity to help advertisers deliver more relevant advertising or to limit how many times you see an advertisement. They are often placed by advertising networks with our permission.
+              These cookies track your online activity to help advertisers deliver more relevant advertising or to limit how many times you see an advertisement. We use both first-party cookies (set directly by Portal Home Hub) and third-party cookies (set by advertising networks with our permission) for advertising purposes.
+            </p>
+            <p className="text-gray-700 mb-3">
+              <strong>First-Party Cookies for Advertising:</strong> We have enabled Meta (Facebook) first-party cookies on our website. These cookies are set directly by Portal Home Hub (rather than Facebook's domain) and help us measure the effectiveness of our advertising campaigns, deliver relevant ads based on your interests, and improve our marketing efforts. First-party cookies generally provide more reliable tracking while respecting browser privacy settings.
             </p>
             <p className="text-gray-700 mb-3"><strong>Purpose:</strong></p>
             <ul className="list-disc list-inside text-gray-700 mb-4 space-y-1">

@@ -4,6 +4,7 @@ import AuthNavBar from '../components/AuthNavBar';
 import Link from 'next/link';
 import { CountryThemeProvider } from '@/components/CountryThemeProvider';
 import { getCountryFromHeaders } from '@/lib/country-detection-server';
+import CookieConsentBanner from '@/components/CookieConsentBanner';
 
 // Facebook Pixel ID for conversion tracking
 const FB_PIXEL_ID = '1245060350797314';
@@ -162,6 +163,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </div>
           </footer>
+          <CookieConsentBanner />
         </CountryThemeProvider>
       </body>
     </html>
