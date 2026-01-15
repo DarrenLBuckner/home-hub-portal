@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const serviceClient = createServiceClient();
     const { data: senderProfile, error: profileError } = await serviceClient
       .from('profiles')
-      .select('id, user_type, admin_level, email, first_name, last_name')
+      .select('id, user_type, admin_level, email, first_name, last_name, country_id')
       .eq('id', user.id)
       .single();
 
@@ -65,7 +65,8 @@ export async function POST(request: NextRequest) {
     // Check if user is admin (user_type === 'admin' or has admin_level)
     const isAdmin = senderProfile.user_type === 'admin' ||
                     senderProfile.admin_level === 'super' ||
-                    senderProfile.admin_level === 'owner';
+                    senderProfile.admin_level === 'owner' ||
+                    senderProfile.admin_level === 'basic';
 
     if (!isAdmin) {
       return NextResponse.json(
@@ -111,10 +112,10 @@ export async function POST(request: NextRequest) {
     const { error: logError } = await serviceClient
       .from('admin_emails')
       .insert({
-        sent_by: user.id,
+        sender_id: user.id,
         recipient_id: recipientId || null,
         recipient_email: recipientEmail,
-        recipient_name: recipientName || null,
+        country_id: senderProfile.country_id || null,
         subject: subject,
         body: emailBody,
         template_id: templateId || null,

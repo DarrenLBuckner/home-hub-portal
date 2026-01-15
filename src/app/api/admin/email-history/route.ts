@@ -58,7 +58,8 @@ export async function GET(request: NextRequest) {
     // Check if user is admin
     const isAdmin = profile.user_type === 'admin' ||
                     profile.admin_level === 'super' ||
-                    profile.admin_level === 'owner';
+                    profile.admin_level === 'owner' ||
+                    profile.admin_level === 'basic';
 
     if (!isAdmin) {
       return NextResponse.json(
@@ -103,7 +104,7 @@ export async function GET(request: NextRequest) {
 
     // Get template names and sender names for the emails
     const templateIds = [...new Set(emails.filter(e => e.template_id).map(e => e.template_id))];
-    const senderIds = [...new Set(emails.filter(e => e.sent_by).map(e => e.sent_by))];
+    const senderIds = [...new Set(emails.filter(e => e.sender_id).map(e => e.sender_id))];
 
     // Fetch template names
     let templateMap: Record<string, string> = {};
@@ -138,10 +139,10 @@ export async function GET(request: NextRequest) {
       id: email.id,
       subject: email.subject,
       body: email.body,
-      created_at: email.sent_at,
+      created_at: email.sent_at || email.created_at,
       status: email.status,
       template_name: email.template_id ? templateMap[email.template_id] || null : null,
-      sender_name: email.sent_by ? senderMap[email.sent_by] || null : null,
+      sender_name: email.sender_id ? senderMap[email.sender_id] || null : null,
     }));
 
     return NextResponse.json({ emails: transformedEmails });
