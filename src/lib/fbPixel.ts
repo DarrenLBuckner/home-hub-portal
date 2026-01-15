@@ -1,17 +1,47 @@
 /**
  * Facebook Pixel tracking utilities
  * Pixel ID: 1245060350797314
+ *
+ * IMPORTANT: Pixel only fires on Guyana and Portal domains.
+ * Jamaica domains are excluded until their campaign launches.
  */
 
 export const FB_PIXEL_ID = '1245060350797314';
 
 /**
+ * Check if pixel tracking should be enabled for the current domain
+ * Only enabled for Guyana Home Hub and Portal Home Hub
+ */
+function isPixelEnabledDomain(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const hostname = window.location.hostname.toLowerCase();
+
+  // Allowed domains
+  const isGuyanaOrPortal =
+    hostname.includes('guyanahomehub.com') ||
+    hostname.includes('portalhomehub.com') ||
+    hostname === 'localhost';
+
+  // Explicitly excluded domains
+  const isJamaica = hostname.includes('jamaicahomehub');
+
+  return isGuyanaOrPortal && !isJamaica;
+}
+
+/**
  * Track a standard Facebook Pixel event
+ * Only fires on Guyana/Portal domains
  */
 export function trackEvent(
   eventName: string,
   params?: Record<string, unknown>
 ): void {
+  if (!isPixelEnabledDomain()) {
+    console.log(`[Meta Pixel] Event "${eventName}" skipped - not a Guyana/Portal domain`);
+    return;
+  }
+
   if (typeof window !== 'undefined' && window.fbq) {
     window.fbq('track', eventName, params);
   }
