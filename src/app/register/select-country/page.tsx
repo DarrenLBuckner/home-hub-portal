@@ -5,6 +5,37 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { getCountryFromDomain } from '@/lib/country-detection';
 import { usePricingSummary } from '@/hooks/usePricing';
 
+// Hook to fetch founding agent spots for a country
+function useFoundingAgentSpots(countryCode: string) {
+  const [data, setData] = useState<{ spotsRemaining: number; isLoading: boolean }>({
+    spotsRemaining: 23, // Default fallback
+    isLoading: true
+  });
+
+  useEffect(() => {
+    const fetchSpots = async () => {
+      try {
+        const response = await fetch('/api/founding-agent/counter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userType: 'agent', countryId: countryCode })
+        });
+        const result = await response.json();
+        if (result.success) {
+          setData({ spotsRemaining: result.spotsRemaining, isLoading: false });
+        } else {
+          setData(prev => ({ ...prev, isLoading: false }));
+        }
+      } catch {
+        setData(prev => ({ ...prev, isLoading: false }));
+      }
+    };
+    fetchSpots();
+  }, [countryCode]);
+
+  return data;
+}
+
 // Available countries with their details - organized by region
 const countries = [
   // Caribbean - Available Now
@@ -123,10 +154,12 @@ const countries = [
 
 interface PricingDisplayProps {
   countryCode: string;
+  foundingAgentSpots?: number;
 }
 
-function PricingDisplay({ countryCode }: PricingDisplayProps) {
+function PricingDisplay({ countryCode, foundingAgentSpots }: PricingDisplayProps) {
   const { summary, country, loading, error } = usePricingSummary(countryCode);
+  const hasFoundingSpots = foundingAgentSpots !== undefined && foundingAgentSpots > 0;
 
   if (loading) {
     return (
@@ -165,13 +198,34 @@ function PricingDisplay({ countryCode }: PricingDisplayProps) {
 
   return (
     <div className="mb-4">
+      {/* Founding Agent Banner */}
+      {hasFoundingSpots && (
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-300 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-center gap-2 text-yellow-800 font-semibold">
+            <span>🏆</span>
+            <span>FOUNDING AGENT PROGRAM</span>
+            <span className="text-orange-600">- Only {foundingAgentSpots} spots left!</span>
+          </div>
+          <p className="text-center text-sm text-yellow-700 mt-1">
+            Get FREE access + 20% off for life
+          </p>
+        </div>
+      )}
+
       <h4 className="font-semibold text-gray-900 mb-2">Pricing in {country.currency_code}:</h4>
       <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
+        <div className="flex justify-between items-start">
           <span className="text-gray-600">Real Estate Agent:</span>
-          <span className="font-medium text-gray-900">
-            {summary.agent.starting ? `${summary.agent.starting}${summary.agent.suffix}` : 'Coming Soon'}
-          </span>
+          {hasFoundingSpots ? (
+            <div className="text-right">
+              <span className="text-green-600 font-bold">FREE* for Founding Agents</span>
+              <p className="text-xs text-gray-500">*Regular: {summary.agent.starting ? `${summary.agent.starting}${summary.agent.suffix}` : 'N/A'}</p>
+            </div>
+          ) : (
+            <span className="font-medium text-gray-900">
+              {summary.agent.starting ? `${summary.agent.starting}${summary.agent.suffix}` : 'Coming Soon'}
+            </span>
+          )}
         </div>
         <div className="flex justify-between">
           <span className="text-gray-600">Landlord Services:</span>
@@ -184,6 +238,87 @@ function PricingDisplay({ countryCode }: PricingDisplayProps) {
           <span className="font-medium text-gray-900">
             {summary.fsbo.range ? `${summary.fsbo.range}${summary.fsbo.suffix}` : 'Coming Soon'}
           </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Country Card Component - uses the founding agent hook
+interface CountryCardProps {
+  country: typeof countries[0];
+  selectedCountry: string | null;
+  onCountrySelect: (countryCode: string, type: 'agent' | 'landlord' | 'owner') => void;
+}
+
+function CountryCard({ country, selectedCountry, onCountrySelect }: CountryCardProps) {
+  const { spotsRemaining, isLoading } = useFoundingAgentSpots(country.code);
+  const hasFoundingSpots = !isLoading && spotsRemaining > 0;
+
+  return (
+    <div
+      className={`bg-white rounded-2xl shadow-lg border-2 transition-all duration-300 ${
+        selectedCountry === country.code
+          ? 'border-blue-500 ring-2 ring-blue-200'
+          : 'border-gray-200 hover:border-blue-300'
+      }`}
+    >
+      {/* Country Header */}
+      <div className="p-6 border-b border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <span className="text-4xl">{country.flag}</span>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900">{country.name}</h3>
+              <p className="text-sm text-gray-500">{country.fullName}</p>
+            </div>
+          </div>
+          <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+            Available Now
+          </div>
+        </div>
+
+        <p className="text-gray-600 mb-4">{country.description}</p>
+
+        {/* Features */}
+        <div className="flex flex-wrap gap-2">
+          {country.features.map((feature, idx) => (
+            <span
+              key={idx}
+              className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium"
+            >
+              {feature}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Pricing Preview */}
+      <div className="p-6">
+        <PricingDisplay countryCode={country.code} foundingAgentSpots={spotsRemaining} />
+
+        {/* Action Buttons */}
+        <div className="space-y-3">
+          <button
+            onClick={() => onCountrySelect(country.code, 'agent')}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200"
+          >
+            {hasFoundingSpots ? 'Start as Real Estate Agent - Claim Your Spot' : 'Start as Real Estate Agent'}
+          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => onCountrySelect(country.code, 'landlord')}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+            >
+              Landlord Services
+            </button>
+            <button
+              onClick={() => onCountrySelect(country.code, 'owner')}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+            >
+              Sell By Owner
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -296,73 +431,12 @@ function SelectCountryContent() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {countries.filter(country => country.region === 'caribbean' && country.active).map((country) => (
-              <div 
+              <CountryCard
                 key={country.code}
-                className={`bg-white rounded-2xl shadow-lg border-2 transition-all duration-300 ${
-                  selectedCountry === country.code 
-                    ? 'border-blue-500 ring-2 ring-blue-200' 
-                    : 'border-gray-200 hover:border-blue-300'
-                }`}
-              >
-                {/* Country Header */}
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                      <span className="text-4xl">{country.flag}</span>
-                      <div>
-                        <h3 className="text-2xl font-bold text-gray-900">{country.name}</h3>
-                        <p className="text-sm text-gray-500">{country.fullName}</p>
-                      </div>
-                    </div>
-                    <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                      Available Now
-                    </div>
-                  </div>
-                  
-                  <p className="text-gray-600 mb-4">{country.description}</p>
-                  
-                  {/* Features */}
-                  <div className="flex flex-wrap gap-2">
-                    {country.features.map((feature, idx) => (
-                      <span 
-                        key={idx}
-                        className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs font-medium"
-                      >
-                        {feature}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Pricing Preview */}
-                <div className="p-6">
-                  <PricingDisplay countryCode={country.code} />
-
-                  {/* Action Buttons */}
-                  <div className="space-y-3">
-                    <button
-                      onClick={() => handleCountrySelect(country.code, 'agent')}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200"
-                    >
-                      Start as Real Estate Agent
-                    </button>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        onClick={() => handleCountrySelect(country.code, 'landlord')}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
-                      >
-                        Landlord Services
-                      </button>
-                      <button
-                        onClick={() => handleCountrySelect(country.code, 'owner')}
-                        className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200"
-                      >
-                        Sell By Owner
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                country={country}
+                selectedCountry={selectedCountry}
+                onCountrySelect={handleCountrySelect}
+              />
             ))}
           </div>
         </div>
