@@ -161,24 +161,20 @@ export async function GET(request: NextRequest) {
       .select('*')
       .order('name', { ascending: true });
 
-    console.log('Email templates query result:', {
-      count: dbTemplates?.length || 0,
-      error: templatesError?.message || null
-    });
-
-    // If we have database templates, return those combined with defaults
-    // Database templates first, then defaults
-    if (dbTemplates && dbTemplates.length > 0) {
-      return NextResponse.json({
-        templates: dbTemplates,
-        source: 'database',
-      });
+    if (templatesError) {
+      console.error('Error fetching email templates:', templatesError);
     }
 
-    // Fall back to defaults if no database templates
+    // Combine database templates with defaults
+    // Database templates first, then built-in defaults
+    const allTemplates = [
+      ...(dbTemplates || []),
+      ...DEFAULT_TEMPLATES,
+    ];
+
     return NextResponse.json({
-      templates: DEFAULT_TEMPLATES,
-      source: 'default',
+      templates: allTemplates,
+      source: dbTemplates && dbTemplates.length > 0 ? 'combined' : 'default',
     });
 
   } catch (error) {
