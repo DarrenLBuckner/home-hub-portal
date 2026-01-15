@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
+import { trackAgentRegistration } from '@/lib/fbPixel';
 
 interface DashboardWelcomeProps {
   userType?: string | null;
@@ -15,24 +16,44 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
     draft: 0,
     sold: 0,
   });
+  const trackingChecked = useRef(false);
 
   useEffect(() => {
     const fetchAgentAndStats = async () => {
       const supabase = createClientComponentClient();
       const { data: userData } = await supabase.auth.getUser();
-      
+
       if (userData?.user?.id) {
-        // Fetch user profile with account code
+        // Fetch user profile with account code, approval status, and tracking flag
         const { data: profile } = await supabase
           .from('profiles')
-          .select('first_name, last_name, account_code, display_name')
+          .select('first_name, last_name, account_code, display_name, user_type, approval_status, registration_tracked, country_id')
           .eq('id', userData.user.id)
           .single();
-        
+
         if (profile) {
           const fullName = profile.display_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
           setAgentName(fullName || 'Agent');
           setAccountCode(profile.account_code || '');
+
+          // Track CompleteRegistration for newly approved agents (only once)
+          if (
+            !trackingChecked.current &&
+            profile.user_type === 'agent' &&
+            profile.approval_status === 'approved' &&
+            !profile.registration_tracked
+          ) {
+            trackingChecked.current = true;
+
+            // Fire Facebook Pixel event
+            trackAgentRegistration({ country: profile.country_id || undefined });
+
+            // Mark as tracked to prevent duplicate events
+            await supabase
+              .from('profiles')
+              .update({ registration_tracked: true })
+              .eq('id', userData.user.id);
+          }
         }
         
         // Fetch property stats

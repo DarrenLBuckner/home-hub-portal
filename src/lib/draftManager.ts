@@ -1,6 +1,8 @@
 // Draft management system for property creation
 // Handles saving, loading, and managing property drafts
 
+import { trackPropertyListing } from '@/lib/fbPixel';
+
 export interface DraftProperty {
   id?: string;
   user_id: string;
@@ -151,10 +153,13 @@ export async function deleteDraft(draftId: string): Promise<boolean> {
 /**
  * Convert draft to full property submission (using new publish endpoint)
  */
-export async function publishDraft(draftId: string, formData?: any): Promise<DraftSaveResponse> {
+export async function publishDraft(
+  draftId: string,
+  formData?: { listing_type?: string; price?: number; currency?: string }
+): Promise<DraftSaveResponse> {
   try {
     console.log('🚀 Publishing draft using new publish endpoint:', draftId);
-    
+
     const response = await fetch(`/api/properties/drafts/${draftId}/publish`, {
       method: 'POST',
       headers: {
@@ -166,6 +171,14 @@ export async function publishDraft(draftId: string, formData?: any): Promise<Dra
 
     if (response.ok && result.success) {
       console.log('✅ Draft published successfully:', result.property_id);
+
+      // Track Lead event for Facebook Pixel
+      trackPropertyListing({
+        listingType: (formData?.listing_type === 'rent' ? 'rent' : 'sale') as 'sale' | 'rent',
+        price: formData?.price,
+        currency: formData?.currency || 'GYD',
+      });
+
       return {
         success: true,
         draftId: result.property_id

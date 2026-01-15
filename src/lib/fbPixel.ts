@@ -1,0 +1,47 @@
+/**
+ * Facebook Pixel tracking utilities
+ * Pixel ID: 1245060350797314
+ */
+
+export const FB_PIXEL_ID = '1245060350797314';
+
+/**
+ * Track a standard Facebook Pixel event
+ */
+export function trackEvent(
+  eventName: string,
+  params?: Record<string, unknown>
+): void {
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('track', eventName, params);
+  }
+}
+
+/**
+ * Track CompleteRegistration event when an agent is approved and logs in
+ */
+export function trackAgentRegistration(agentData?: {
+  country?: string;
+}): void {
+  trackEvent('CompleteRegistration', {
+    content_name: 'Agent Registration',
+    status: 'approved',
+    ...(agentData?.country && { country: agentData.country }),
+  });
+}
+
+/**
+ * Track Lead event when a property listing is published
+ */
+export function trackPropertyListing(propertyData: {
+  listingType: 'sale' | 'rent';
+  price?: number;
+  currency?: string;
+}): void {
+  trackEvent('Lead', {
+    content_name: 'Property Listing',
+    content_category: propertyData.listingType,
+    ...(propertyData.price && { value: propertyData.price }),
+    currency: propertyData.currency || 'GYD',
+  });
+}

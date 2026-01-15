@@ -22,6 +22,7 @@
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.75.0",
     "autoprefixer": "^10.4.21",
+    "browser-image-compression": "^2.0.2",
     "countries-list": "^3.1.1",
     "dotenv": "^17.2.3",
     "next": "^15.4.8",
