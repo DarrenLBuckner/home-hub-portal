@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/supabase';
+import EmailComposerModal from './admin/EmailComposerModal';
 
 interface User {
   id: string;
@@ -49,7 +50,10 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
   const [suspensionReason, setSuspensionReason] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
-  
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailRecipient, setEmailRecipient] = useState<User | null>(null);
+  const [adminEmail, setAdminEmail] = useState('');
+
   const supabase = createClient();
 
   // CRITICAL SECURITY: Super Admin Protection
@@ -61,7 +65,22 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
 
   useEffect(() => {
     loadUsers();
+    fetchAdminEmail();
   }, [permissions]);
+
+  const fetchAdminEmail = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('id', user.id)
+        .single();
+      if (profile?.email) {
+        setAdminEmail(profile.email);
+      }
+    }
+  };
 
   useEffect(() => {
     filterUsers();
@@ -411,6 +430,11 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
     return types[userType] || { label: userType, icon: '❓', color: 'bg-gray-100 text-gray-800' };
   };
 
+  const handleEmailUser = (user: User) => {
+    setEmailRecipient(user);
+    setShowEmailModal(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -624,7 +648,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                     )}
                     
                     <button
-                      onClick={() => window.open(`mailto:${user.email}`, '_blank')}
+                      onClick={() => handleEmailUser(user)}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
                     >
                       📧 Email
@@ -788,6 +812,19 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Email Composer Modal */}
+      {emailRecipient && (
+        <EmailComposerModal
+          isOpen={showEmailModal}
+          onClose={() => {
+            setShowEmailModal(false);
+            setEmailRecipient(null);
+          }}
+          recipient={emailRecipient}
+          adminEmail={adminEmail}
+        />
       )}
     </div>
   );
