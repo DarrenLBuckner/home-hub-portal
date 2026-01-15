@@ -80,18 +80,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch email history for the specified user
+    // Use simple query first to avoid column name issues
     const { data: emails, error: emailsError } = await serviceClient
       .from('admin_emails')
-      .select(`
-        id,
-        subject,
-        body,
-        sent_at,
-        resend_id,
-        status,
-        template_id,
-        sent_by
-      `)
+      .select('*')
       .eq('recipient_id', userId)
       .order('sent_at', { ascending: false })
       .limit(limit);
@@ -99,14 +91,19 @@ export async function GET(request: NextRequest) {
     if (emailsError) {
       console.error('Error fetching email history:', emailsError);
       return NextResponse.json(
-        { error: 'Failed to fetch email history' },
+        { error: 'Failed to fetch email history', details: emailsError.message },
         { status: 500 }
       );
     }
 
+    // If no emails, return empty array
+    if (!emails || emails.length === 0) {
+      return NextResponse.json({ emails: [] });
+    }
+
     // Get template names and sender names for the emails
-    const templateIds = [...new Set(emails?.filter(e => e.template_id).map(e => e.template_id) || [])];
-    const senderIds = [...new Set(emails?.filter(e => e.sent_by).map(e => e.sent_by) || [])];
+    const templateIds = [...new Set(emails.filter(e => e.template_id).map(e => e.template_id))];
+    const senderIds = [...new Set(emails.filter(e => e.sent_by).map(e => e.sent_by))];
 
     // Fetch template names
     let templateMap: Record<string, string> = {};
@@ -136,8 +133,8 @@ export async function GET(request: NextRequest) {
       }, {} as Record<string, string>);
     }
 
-    // Transform response
-    const transformedEmails = (emails || []).map(email => ({
+    // Transform response - use correct column names from the table
+    const transformedEmails = emails.map(email => ({
       id: email.id,
       subject: email.subject,
       body: email.body,
