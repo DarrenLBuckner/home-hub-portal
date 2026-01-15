@@ -23,6 +23,7 @@ interface User {
   country_id?: string;
   subscription_status?: string;
   property_count?: number;
+  created_at?: string;
 }
 
 interface EmailComposerModalProps {
@@ -59,6 +60,7 @@ const EmailComposerModal: React.FC<EmailComposerModalProps> = ({
     countryId: recipient.country_id || '',
     subscriptionStatus: recipient.subscription_status || '',
     propertyCount: recipient.property_count ?? 0,
+    createdAt: recipient.created_at || '',
   };
 
   // Load templates on mount

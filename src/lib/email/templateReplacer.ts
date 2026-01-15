@@ -14,7 +14,14 @@ export interface UserContext {
   countryId?: string;
   subscriptionStatus?: string;
   propertyCount?: number;
+  createdAt?: string;
 }
+
+// Site name mapping based on country_id
+const SITE_NAME_MAP: Record<string, string> = {
+  'GY': 'Guyana HomeHub',
+  'JM': 'Jamaica HomeHub',
+};
 
 export interface TemplateData {
   subject: string;
@@ -30,6 +37,18 @@ export interface TemplateData {
 export function replacePlaceholders(template: string, context: UserContext): string {
   if (!template) return '';
 
+  // Derive site_name from country_id
+  const siteName = SITE_NAME_MAP[context.countryId || ''] || 'HomeHub';
+
+  // Format join_date from created_at
+  const joinDate = context.createdAt
+    ? new Date(context.createdAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : '';
+
   const replacements: Record<string, string> = {
     '{{first_name}}': context.firstName || '',
     '{{last_name}}': context.lastName || '',
@@ -42,6 +61,8 @@ export function replacePlaceholders(template: string, context: UserContext): str
     '{{country_id}}': context.countryId || '',
     '{{subscription_status}}': context.subscriptionStatus || '',
     '{{property_count}}': String(context.propertyCount ?? 0),
+    '{{site_name}}': siteName,
+    '{{join_date}}': joinDate,
   };
 
   let result = template;
@@ -80,4 +101,6 @@ export const AVAILABLE_PLACEHOLDERS = [
   { placeholder: '{{country_id}}', description: 'User\'s country code' },
   { placeholder: '{{subscription_status}}', description: 'Subscription status' },
   { placeholder: '{{property_count}}', description: 'Number of properties' },
+  { placeholder: '{{site_name}}', description: 'Site name (e.g., Guyana HomeHub)' },
+  { placeholder: '{{join_date}}', description: 'User\'s signup date' },
 ];
