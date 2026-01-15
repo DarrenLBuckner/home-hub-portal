@@ -7,9 +7,14 @@ import { usePricingSummary } from '@/hooks/usePricing';
 
 // Hook to fetch founding agent spots for a country
 function useFoundingAgentSpots(countryCode: string) {
-  const [data, setData] = useState<{ spotsRemaining: number; isLoading: boolean }>({
-    spotsRemaining: 23, // Default fallback
-    isLoading: true
+  const [data, setData] = useState<{
+    spotsRemaining: number;
+    isLoading: boolean;
+    isActive: boolean; // Whether the founding program is actually active
+  }>({
+    spotsRemaining: 25,
+    isLoading: true,
+    isActive: false
   });
 
   useEffect(() => {
@@ -22,12 +27,14 @@ function useFoundingAgentSpots(countryCode: string) {
         });
         const result = await response.json();
         if (result.success) {
-          setData({ spotsRemaining: result.spotsRemaining, isLoading: false });
+          // API returned valid data - program is active
+          setData({ spotsRemaining: result.spotsRemaining, isLoading: false, isActive: true });
         } else {
-          setData(prev => ({ ...prev, isLoading: false }));
+          // API failed or program not found - show as coming soon
+          setData({ spotsRemaining: 25, isLoading: false, isActive: false });
         }
       } catch {
-        setData(prev => ({ ...prev, isLoading: false }));
+        setData({ spotsRemaining: 25, isLoading: false, isActive: false });
       }
     };
     fetchSpots();
@@ -155,9 +162,10 @@ const countries = [
 interface PricingDisplayProps {
   countryCode: string;
   foundingAgentSpots?: number;
+  foundingProgramActive?: boolean; // Whether the founding program is live (vs coming soon)
 }
 
-function PricingDisplay({ countryCode, foundingAgentSpots }: PricingDisplayProps) {
+function PricingDisplay({ countryCode, foundingAgentSpots, foundingProgramActive = false }: PricingDisplayProps) {
   const { summary, country, loading, error } = usePricingSummary(countryCode);
   const hasFoundingSpots = foundingAgentSpots !== undefined && foundingAgentSpots > 0;
 
@@ -199,7 +207,7 @@ function PricingDisplay({ countryCode, foundingAgentSpots }: PricingDisplayProps
   return (
     <div className="mb-4">
       {/* Founding Agent Banner */}
-      {hasFoundingSpots && (
+      {hasFoundingSpots && foundingProgramActive && (
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-300 rounded-lg p-3 mb-4">
           <div className="flex items-center justify-center gap-2 text-yellow-800 font-semibold">
             <span>🏆</span>
@@ -212,11 +220,25 @@ function PricingDisplay({ countryCode, foundingAgentSpots }: PricingDisplayProps
         </div>
       )}
 
+      {/* Founding Agent Coming Soon Banner */}
+      {hasFoundingSpots && !foundingProgramActive && (
+        <div className="bg-gradient-to-r from-gray-50 to-blue-50 border border-gray-300 rounded-lg p-3 mb-4 opacity-75">
+          <div className="flex items-center justify-center gap-2 text-gray-700 font-semibold">
+            <span>🏆</span>
+            <span>FOUNDING AGENT PROGRAM</span>
+            <span className="text-blue-600">- Coming Soon!</span>
+          </div>
+          <p className="text-center text-sm text-gray-600 mt-1">
+            {foundingAgentSpots} spots available · FREE access + 20% off for life
+          </p>
+        </div>
+      )}
+
       <h4 className="font-semibold text-gray-900 mb-2">Pricing in {country.currency_code}:</h4>
       <div className="space-y-2 text-sm">
         <div className="flex justify-between items-start">
           <span className="text-gray-600">Real Estate Agent:</span>
-          {hasFoundingSpots ? (
+          {hasFoundingSpots && foundingProgramActive ? (
             <div className="text-right">
               <span className="text-green-600 font-bold">FREE* for Founding Agents</span>
               <p className="text-xs text-gray-500">*Regular: {summary.agent.starting ? `${summary.agent.starting}${summary.agent.suffix}` : 'N/A'}</p>
@@ -252,8 +274,8 @@ interface CountryCardProps {
 }
 
 function CountryCard({ country, selectedCountry, onCountrySelect }: CountryCardProps) {
-  const { spotsRemaining, isLoading } = useFoundingAgentSpots(country.code);
-  const hasFoundingSpots = !isLoading && spotsRemaining > 0;
+  const { spotsRemaining, isLoading, isActive } = useFoundingAgentSpots(country.code);
+  const hasActiveFoundingProgram = !isLoading && spotsRemaining > 0 && isActive;
 
   return (
     <div
@@ -295,7 +317,11 @@ function CountryCard({ country, selectedCountry, onCountrySelect }: CountryCardP
 
       {/* Pricing Preview */}
       <div className="p-6">
-        <PricingDisplay countryCode={country.code} foundingAgentSpots={spotsRemaining} />
+        <PricingDisplay
+          countryCode={country.code}
+          foundingAgentSpots={spotsRemaining}
+          foundingProgramActive={isActive}
+        />
 
         {/* Action Buttons */}
         <div className="space-y-3">
@@ -303,7 +329,7 @@ function CountryCard({ country, selectedCountry, onCountrySelect }: CountryCardP
             onClick={() => onCountrySelect(country.code, 'agent')}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200"
           >
-            {hasFoundingSpots ? 'Start as Real Estate Agent - Claim Your Spot' : 'Start as Real Estate Agent'}
+            {hasActiveFoundingProgram ? 'Start as Real Estate Agent - Claim Your Spot' : 'Start as Real Estate Agent'}
           </button>
           <div className="grid grid-cols-2 gap-3">
             <button
