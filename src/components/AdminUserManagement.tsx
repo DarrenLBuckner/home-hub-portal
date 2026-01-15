@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/supabase';
 import EmailComposerModal from './admin/EmailComposerModal';
+import LastEmailIndicator from './admin/LastEmailIndicator';
+import EmailHistoryPanel from './admin/EmailHistoryPanel';
 
 interface User {
   id: string;
@@ -53,6 +55,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailRecipient, setEmailRecipient] = useState<User | null>(null);
   const [adminEmail, setAdminEmail] = useState('');
+  const [emailHistoryUser, setEmailHistoryUser] = useState<{id: string, name: string} | null>(null);
 
   const supabase = createClient();
 
@@ -590,6 +593,13 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                         <p className="text-sm text-gray-600">
                           Joined: {new Date(user.created_at).toLocaleDateString()}
                         </p>
+                        <LastEmailIndicator userId={user.id} />
+                        <button
+                          onClick={() => setEmailHistoryUser({ id: user.id, name: `${user.first_name} ${user.last_name}` })}
+                          className="text-xs text-blue-600 hover:text-blue-800 mt-1 text-left"
+                        >
+                          View Email History
+                        </button>
                       </div>
                     </div>
 
@@ -824,6 +834,16 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
           }}
           recipient={emailRecipient}
           adminEmail={adminEmail}
+        />
+      )}
+
+      {/* Email History Panel */}
+      {emailHistoryUser && (
+        <EmailHistoryPanel
+          userId={emailHistoryUser.id}
+          userName={emailHistoryUser.name}
+          isOpen={!!emailHistoryUser}
+          onClose={() => setEmailHistoryUser(null)}
         />
       )}
     </div>
