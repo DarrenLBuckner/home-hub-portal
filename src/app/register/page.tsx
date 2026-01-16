@@ -67,13 +67,16 @@ function RegistrationContent() {
     reference2_email: "",
   });
 
+  // Get initial promo code from URL
+  const initialPromoCode = searchParams?.get('code') || undefined;
+
   // Handle URL parameters on component mount
   useEffect(() => {
     if (!searchParams) return;
-    
+
     const typeParam = searchParams.get('type');
     const countryParam = searchParams.get('country');
-    
+
     // Pre-fill country if provided
     if (countryParam) {
       const country = countries.find(c => c.code === countryParam);
@@ -82,7 +85,7 @@ function RegistrationContent() {
         setForm(prev => ({ ...prev, country: countryParam }));
       }
     }
-    
+
     // Pre-fill plan based on type - will be set once plans load
   }, [searchParams]);
 
@@ -278,6 +281,7 @@ function RegistrationContent() {
               countryId={selectedCountry.code}
               onValidCode={handleValidPromoCode}
               onClearCode={handleClearPromoCode}
+              initialCode={initialPromoCode}
             />
 
             {/* Founding Member CTA */}

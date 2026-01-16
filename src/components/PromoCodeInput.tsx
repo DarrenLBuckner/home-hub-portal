@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface PromoCodeBenefits {
   trialDays: number;
@@ -15,15 +15,17 @@ interface PromoCodeInputProps {
   countryId: string;
   onValidCode: (code: string, benefits: PromoCodeBenefits, spotNumber: number) => void;
   onClearCode: () => void;
+  initialCode?: string; // Auto-fill and auto-apply this code on mount
 }
 
 export default function PromoCodeInput({
   userType,
   countryId,
   onValidCode,
-  onClearCode
+  onClearCode,
+  initialCode
 }: PromoCodeInputProps) {
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(initialCode || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validatedData, setValidatedData] = useState<{
@@ -33,6 +35,48 @@ export default function PromoCodeInput({
     spotsRemaining: number;
     maxSpots: number;
   } | null>(null);
+  const hasAutoApplied = useRef(false);
+
+  // Auto-apply initial code on mount
+  useEffect(() => {
+    if (initialCode && !hasAutoApplied.current && !validatedData) {
+      hasAutoApplied.current = true;
+      // Auto-apply the code
+      const autoApply = async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+          const response = await fetch('/api/promo-codes/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              code: initialCode.trim(),
+              userType,
+              countryId
+            })
+          });
+          const data = await response.json();
+          if (data.valid) {
+            setValidatedData({
+              code: data.code,
+              benefits: data.benefits,
+              spotNumber: data.spotNumber,
+              spotsRemaining: data.spotsRemaining,
+              maxSpots: data.maxSpots
+            });
+            onValidCode(data.code, data.benefits, data.spotNumber);
+          } else {
+            setError(data.error || 'Invalid code');
+          }
+        } catch (err) {
+          setError('Failed to validate code. Please try again.');
+        } finally {
+          setIsLoading(false);
+        }
+      };
+      autoApply();
+    }
+  }, [initialCode, userType, countryId, onValidCode, validatedData]);
 
   const handleApplyCode = async () => {
     if (!code.trim()) {
