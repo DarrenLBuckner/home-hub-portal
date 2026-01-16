@@ -296,18 +296,21 @@ function RegistrationContent() {
               </div>
             )}
 
-            {/* Divider */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">Or choose a paid plan</span>
-              </div>
-            </div>
+            {/* Only show paid plan options if NO promo code is applied */}
+            {!validPromoCode && (
+              <>
+                {/* Divider */}
+                <div className="relative my-8">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-300"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-white text-gray-500">Or choose a paid plan</span>
+                  </div>
+                </div>
 
-            {/* Plan Cards - Enhanced with compelling benefits */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8 items-stretch">
+                {/* Plan Cards - Enhanced with compelling benefits */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8 items-stretch">
               {plansLoading ? (
                 <>
                   {[1, 2, 3].map(i => (
@@ -439,12 +442,18 @@ function RegistrationContent() {
                   );
                 })
               )}
-            </div>
+                </div>
+              </>
+            )}
 
-            {/* Free Trial Notice */}
+            {/* Bottom Banner - different message based on promo code */}
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <div className="text-sm text-green-800">
-                <strong>🎉 Launch Special:</strong> Get your first month free when you register now!
+                {validPromoCode ? (
+                  <strong>🎉 100 days FREE as a Founding Member - No payment required</strong>
+                ) : (
+                  <><strong>🎉 Launch Special:</strong> Get your first month free when you register now!</>
+                )}
               </div>
             </div>
           </div>
