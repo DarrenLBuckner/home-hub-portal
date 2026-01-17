@@ -270,7 +270,7 @@ function PricingDisplay({ countryCode, foundingAgentSpots, foundingProgramActive
 interface CountryCardProps {
   country: typeof countries[0];
   selectedCountry: string | null;
-  onCountrySelect: (countryCode: string, type: 'agent' | 'landlord' | 'owner') => void;
+  onCountrySelect: (countryCode: string, type: 'agent' | 'landlord' | 'owner', foundingProgramActive?: boolean) => void;
 }
 
 function CountryCard({ country, selectedCountry, onCountrySelect }: CountryCardProps) {
@@ -326,7 +326,7 @@ function CountryCard({ country, selectedCountry, onCountrySelect }: CountryCardP
         {/* Action Buttons */}
         <div className="space-y-3">
           <button
-            onClick={() => onCountrySelect(country.code, 'agent')}
+            onClick={() => onCountrySelect(country.code, 'agent', hasActiveFoundingProgram)}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-medium transition-colors duration-200"
           >
             {hasActiveFoundingProgram ? 'Start as Real Estate Agent - Claim Your Spot' : 'Start as Real Estate Agent'}
@@ -386,17 +386,28 @@ function SelectCountryContent() {
     }
   }, [searchParams]);
 
-  const handleCountrySelect = (countryCode: string, type: 'agent' | 'landlord' | 'owner') => {
+  // Promo codes for founding agent programs by country
+  const foundingAgentPromoCodes: Record<string, string> = {
+    'GY': 'FOUNDING-AGENT-GY',
+    'JM': 'FOUNDING-AGENT-JM',
+  };
+
+  const handleCountrySelect = (countryCode: string, type: 'agent' | 'landlord' | 'owner', foundingProgramActive?: boolean) => {
     const country = countries.find(c => c.code === countryCode);
     if (!country || !country.active) return;
 
     // Set country cookie
     document.cookie = `country-code=${countryCode}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-    
+
     // Route to appropriate registration page
     switch (type) {
       case 'agent':
-        router.push(`/register?type=agent&country=${countryCode}`);
+        // Include promo code if founding agent program is active for this country
+        const promoCode = foundingProgramActive ? foundingAgentPromoCodes[countryCode] : null;
+        const agentUrl = promoCode
+          ? `/register?type=agent&country=${countryCode}&code=${promoCode}`
+          : `/register?type=agent&country=${countryCode}`;
+        router.push(agentUrl);
         break;
       case 'landlord':
         router.push(`/register/landlord?type=landlord&country=${countryCode}`);
