@@ -20,7 +20,7 @@ const navLinks: Record<UserType, NavLink[]> = {
 	agent: [
 		{ label: "Dashboard", href: "/dashboard/agent" },
 		{ label: "Professional Services", href: "/services" },
-		{ label: "Profile/Settings", href: "/dashboard/agent" },
+		{ label: "Profile/Settings", href: "/dashboard/agent/settings" },
 		{ label: "Register", href: "/register", dropdown: true },
 		{ label: "Logout", href: "/logout", isButton: true },
 	],
