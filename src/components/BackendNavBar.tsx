@@ -19,7 +19,6 @@ const registerDropdown: NavLink[] = [
 const navLinks: Record<UserType, NavLink[]> = {
 	agent: [
 		{ label: "Dashboard", href: "/dashboard/agent" },
-		{ label: "Applications", href: "/admin-dashboard" },
 		{ label: "Professional Services", href: "/services" },
 		{ label: "Profile/Settings", href: "/dashboard/agent" },
 		{ label: "Register", href: "/register", dropdown: true },

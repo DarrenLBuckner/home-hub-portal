@@ -144,28 +144,17 @@ export default function UnifiedAdminDashboard() {
   // Authentication & authorization
   useEffect(() => {
     if (adminLoading) return;
-    
-    if (adminError) {
-      console.error('❌ Admin data error:', adminError);
-      alert('Error loading admin data. Please try again.');
-      router.push('/admin-login');
-      return;
+
+    // Only load data if user is an admin
+    if (isAdmin) {
+      loadDashboardData();
+      if (permissions?.canAccessUserManagement) {
+        loadUsers();
+      }
+      loadDrafts();
+      loadAgents();
     }
-    
-    if (!isAdmin) {
-      console.log('❌ Not authorized to view admin dashboard.');
-      alert('Access denied. Admin privileges required to view admin dashboard.');
-      router.push('/admin-login');
-      return;
-    }
-    
-    loadDashboardData();
-    if (permissions?.canAccessUserManagement) {
-      loadUsers();
-    }
-    loadDrafts();
-    loadAgents();
-  }, [adminLoading, adminError, isAdmin, router, permissions]);
+  }, [adminLoading, isAdmin, permissions]);
 
   const loadDashboardData = async () => {
     try {
@@ -852,6 +841,35 @@ export default function UnifiedAdminDashboard() {
         <div className="bg-white rounded-2xl p-8 shadow-lg text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Loading admin dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Access Denied - Show clean message instead of error popup + redirect
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-2xl p-8 shadow-lg text-center max-w-md">
+          <div className="text-6xl mb-4">🚫</div>
+          <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
+          <p className="text-gray-600 mb-6">
+            You don't have permission to view this page. Admin privileges are required to access the admin dashboard.
+          </p>
+          <div className="space-y-3">
+            <Link
+              href="/dashboard/agent"
+              className="block w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Return to Agent Dashboard
+            </Link>
+            <Link
+              href="/"
+              className="block w-full px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Go to Home Page
+            </Link>
+          </div>
         </div>
       </div>
     );
