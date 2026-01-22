@@ -33,7 +33,12 @@
       "Bash(dir:*)",
       "Bash(attrib:*)",
       "Bash(npx next:*)",
-      "Bash(npm run)"
+      "Bash(npm run)",
+      "Bash(powershell -Command \"Get-ChildItem -Path ''C:\\\\Dev'' -Directory | Select-Object Name\")",
+      "Bash(Founding Member - No payment required\"\n- Clean, simple path for Founding Agents with no pricing anxiety\n- Regular agents \\(no code\\) still see full pricing options\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npx vercel list:*)",
+      "Bash(gh api:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": []
