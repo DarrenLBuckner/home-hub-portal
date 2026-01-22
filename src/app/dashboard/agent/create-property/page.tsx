@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/supabase';
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
@@ -18,6 +18,13 @@ import Step6Review from './components/Step6Review';
 
 export default function CreateAgentProperty() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Admin-on-behalf-of creation: Read target user from URL params
+  const targetUserId = searchParams.get('for_user');
+  const targetUserName = searchParams.get('user_name');
+  const isCreatingForUser = !!targetUserId;
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false); // Bulletproof double-submit prevention
@@ -460,7 +467,10 @@ export default function CreateAgentProperty() {
         })) : [],
 
         // Status
-        status: 'pending'
+        status: 'pending',
+
+        // Admin-on-behalf-of creation: Include target user ID if admin is creating for another user
+        ...(targetUserId && { target_user_id: targetUserId })
       };
 
       // Convert images to base64 for API
@@ -544,7 +554,29 @@ export default function CreateAgentProperty() {
           <span className="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">Agent Property</span>
         </h1>
         <p className="text-gray-600 mb-8">Add a new property to your agent portfolio</p>
-        
+
+        {/* Admin-on-behalf-of creation banner */}
+        {isCreatingForUser && targetUserName && (
+          <div className="bg-purple-50 border border-purple-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-purple-100 rounded-full p-2">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-semibold text-purple-900">Creating Property on Behalf of User</p>
+                <p className="text-purple-700">
+                  This property will be assigned to: <strong>{decodeURIComponent(targetUserName)}</strong>
+                </p>
+                <p className="text-sm text-purple-600 mt-1">
+                  The property will count against their account limits and appear in their dashboard.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Performance Score at Top */}
         <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-200 mb-8">
           <CompletionProgress 

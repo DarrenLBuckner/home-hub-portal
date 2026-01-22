@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/supabase';
 import EmailComposerModal from './admin/EmailComposerModal';
 import LastEmailIndicator from './admin/LastEmailIndicator';
@@ -41,6 +42,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
   adminUserId,
   permissions
 }) => {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -438,6 +440,12 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
     setShowEmailModal(true);
   };
 
+  // Navigate to property creation form with target user pre-selected
+  const handleCreatePropertyForUser = (user: User) => {
+    const userName = user.display_name || `${user.first_name} ${user.last_name}`;
+    router.push(`/dashboard/agent/create-property?for_user=${user.id}&user_name=${encodeURIComponent(userName)}`);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -663,6 +671,18 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                     >
                       📧 Email
                     </button>
+
+                    {/* Create Property for User - Admin Managed Listing Service */}
+                    {/* Only show for users in admin's territory (or all users for Super Admin) */}
+                    {!isSuperAdmin(user.email) && (permissions.canViewAllCountries || user.country_id === permissions.countryFilter) && (
+                      <button
+                        onClick={() => handleCreatePropertyForUser(user)}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                        title="Create a property listing on behalf of this user"
+                      >
+                        ➕ Create Property
+                      </button>
+                    )}
 
                     {/* DANGER ZONE: Delete User */}
                     {!isSuperAdmin(user.email) && permissions.canManageUsers && (
