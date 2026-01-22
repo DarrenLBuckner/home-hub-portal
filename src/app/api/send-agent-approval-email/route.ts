@@ -53,10 +53,19 @@ export async function POST(request: NextRequest) {
             <li>📝 <strong>Complete your agent profile</strong> - Add your photo, bio, and specialties</li>
             <li>🏢 <strong>Set up your office details</strong> - Add your company information</li>
             <li>🎯 <strong>Start helping clients</strong> - Begin listing and managing properties</li>
-            <li>📚 <strong>Access training materials (Coming Soon)</strong> - Platform tutorials and guides</li>
+            <li>🎬 <strong>Watch the tutorial below</strong> - Learn how to post your first listing</li>
           </ol>
         </div>
-        
+
+        <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <h3 style="color: #92400e; margin-top: 0;">🎬 Getting Started</h3>
+          <p style="color: #78350f; margin-bottom: 15px;">Watch this quick tutorial to learn how to post your first property listing:</p>
+          <a href="https://youtu.be/Q_GFflHQjE0"
+             style="background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+            ▶️ Watch Tutorial Video
+          </a>
+        </div>
+
         <div style="text-align: center; margin: 30px 0;">
           <a href="https://portalhomehub.com/dashboard/agent" 
              style="background: #3b82f6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
@@ -107,9 +116,13 @@ ${isFoundingMember ? `
 ` : ''}
 NEXT STEPS:
 1. Complete your agent profile - Add your photo, bio, and specialties
-2. Set up your office details - Add your company information  
+2. Set up your office details - Add your company information
 3. Start helping clients - Begin listing and managing properties
-4. Access training materials (Coming Soon) - Platform tutorials and guides
+4. Watch the tutorial below - Learn how to post your first listing
+
+🎬 GETTING STARTED:
+Watch this quick tutorial to learn how to post your first property listing:
+https://youtu.be/Q_GFflHQjE0
 
 Access your agent dashboard at: https://portalhomehub.com/dashboard/agent
 
