@@ -93,7 +93,11 @@ export async function POST(req: NextRequest) {
     
     // Read the request body once
     const body = await req.json();
-    
+
+    // Parse optional target_user_id for admin-on-behalf-of creation
+    // This allows admins to create properties that are assigned to another user's account
+    const targetUserId: string | undefined = body.target_user_id;
+
     // Check if this is a draft save operation
     const isDraftSave = body._isDraftSave === true || body.status === 'draft';
     const isPublishDraft = body._isPublishDraft === true;
@@ -262,9 +266,80 @@ export async function POST(req: NextRequest) {
 
     // Apply bulletproof admin detection
     const adminLevel = getAdminLevel(userProfile.email);
-    const isEligibleAdmin = adminLevel === 'super' || adminLevel === 'owner';
+    // All admin levels (super, owner, basic) can create properties for users
+    // Territory restrictions are enforced separately below
+    const isEligibleAdmin = adminLevel !== null;
 
+    // ============================================================
+    // ADMIN-ON-BEHALF-OF CREATION LOGIC
+    // When admin provides target_user_id, property is assigned to that user
+    // ============================================================
+    let effectiveUserId = userId;      // Default: property goes to logged-in user
+    let createdByUserId = userId;      // Default: created by logged-in user
+    let isAdminCreatingForUser = false;
+    let targetUserProfile: any = null;
 
+    if (targetUserId && isEligibleAdmin) {
+      try {
+        console.log('🔄 Admin creating property for user:', { adminId: userId, targetUserId, adminLevel });
+
+        // Validate target user exists and get their profile
+        const { data: targetUser, error: targetError } = await supabase
+          .from('profiles')
+          .select('id, site_id, country_id, user_type, subscription_tier, email, first_name, last_name')
+          .eq('id', targetUserId)
+          .single();
+
+        if (targetError || !targetUser) {
+          console.error('❌ Target user not found:', targetError);
+          return NextResponse.json({
+            error: 'Target user not found',
+            details: 'The specified user does not exist in the system'
+          }, { status: 404 });
+        }
+
+        // Territory check: Owner/Basic admins can only create for users in their territory
+        if (adminLevel !== 'super') {
+          // Get admin's site_id for comparison
+          const { data: adminProfile } = await supabase
+            .from('profiles')
+            .select('site_id, country_id')
+            .eq('id', userId)
+            .single();
+
+          const adminSiteId = adminProfile?.site_id || getSiteIdFromCountry(adminProfile?.country_id);
+          const targetSiteId = targetUser.site_id || getSiteIdFromCountry(targetUser.country_id);
+
+          if (adminSiteId !== targetSiteId) {
+            console.error('❌ Territory violation:', { adminSiteId, targetSiteId, adminLevel });
+            return NextResponse.json({
+              error: 'Cannot create property for user outside your territory',
+              details: `You can only create properties for users in your assigned territory (${adminSiteId})`
+            }, { status: 403 });
+          }
+        }
+
+        // All checks passed - set up for admin-on-behalf-of creation
+        effectiveUserId = targetUserId;           // Property assigned to target user
+        createdByUserId = userId;                 // Audit: admin who created it
+        isAdminCreatingForUser = true;
+        targetUserProfile = targetUser;
+
+        console.log('✅ Admin-for-user validation passed:', {
+          effectiveUserId,
+          createdByUserId,
+          targetUserName: `${targetUser.first_name} ${targetUser.last_name}`,
+          targetUserType: targetUser.user_type
+        });
+
+      } catch (error) {
+        // If any error in target user validation, log and fall back to existing behavior
+        console.error('⚠️ Error in admin-for-user validation, falling back to standard creation:', error);
+        effectiveUserId = userId;
+        createdByUserId = userId;
+        isAdminCreatingForUser = false;
+      }
+    }
 
     // CRITICAL DEBUG - Add a clear marker for admin path
     if (isEligibleAdmin) {
@@ -273,40 +348,70 @@ export async function POST(req: NextRequest) {
 
     // Remove old conflicting admin detection code
 
-    if (isEligibleAdmin) {
-      
-      // For admin users, check if there's a specific property limit
-      // Default to unlimited for admin users (can be overridden by additional admin settings)
-      let propertyLimit = null; // null = unlimited by default for admins
-      
-      // Only check limits if propertyLimit is not NULL (super admin has NULL = unlimited)
-      if (propertyLimit !== null) {
-        // Count only live/pending properties for owner admin with limits
-        // Rejected properties don't count since they're not actual listings on the site
-        const { count: totalCount, error: totalCountError } = await supabase
-          .from('properties')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', userId)
-          .in('status', ['active', 'pending', 'draft']);
+    if (isEligibleAdmin && !isAdminCreatingForUser) {
+      // CASE 1: Admin creating property for THEMSELVES
+      // Default to unlimited for admin users
+      console.log('✅ Admin creating for self - no property limits applied');
 
-        if (totalCountError) {
-          console.error('Admin property count error:', totalCountError);
-          return NextResponse.json({ 
-            error: "Unable to verify admin property limits. Please contact support." 
-          }, { status: 500 });
-        }
-        
-        // Check against database property limit for owner admin
-        if ((totalCount || 0) >= propertyLimit) {
-          console.error('❌ Owner admin property limit exceeded');
-          return NextResponse.json({ 
-            error: `Property limit reached. Admin accounts allow ${propertyLimit} properties. You currently have ${totalCount || 0}.` 
-          }, { status: 403 });
-        }
-        
-      } else {
+    } else if (isEligibleAdmin && isAdminCreatingForUser && targetUserProfile) {
+      // CASE 2: Admin creating property FOR ANOTHER USER
+      // Check limits against the TARGET USER's account, not the admin's
+      console.log('🔍 Admin creating for user - checking target user limits:', {
+        targetUserId: effectiveUserId,
+        targetUserType: targetUserProfile.user_type,
+        targetTier: targetUserProfile.subscription_tier
+      });
+
+      // Get tier benefits for target user
+      const targetTierBenefits = getTierBenefits(
+        targetUserProfile.user_type,
+        targetUserProfile.subscription_tier || 'basic'
+      );
+      const targetMaxAllowed = targetTierBenefits.maxListings;
+
+      // Count target user's current properties
+      const { count: targetCurrentCount, error: targetCountError } = await supabase
+        .from('properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', effectiveUserId)
+        .in('status', ['active', 'pending', 'draft']);
+
+      if (targetCountError) {
+        console.error('Target user property count error:', targetCountError);
+        return NextResponse.json({
+          error: "Unable to verify target user's property limits. Please contact support."
+        }, { status: 500 });
       }
-      
+
+      // Check if target user's limit would be exceeded (999 = unlimited)
+      if (targetMaxAllowed !== 999 && (targetCurrentCount || 0) >= targetMaxAllowed) {
+        console.error('❌ Target user property limit exceeded:', {
+          targetUserId: effectiveUserId,
+          currentCount: targetCurrentCount,
+          maxAllowed: targetMaxAllowed
+        });
+
+        const targetUserName = `${targetUserProfile.first_name || ''} ${targetUserProfile.last_name || ''}`.trim() || 'User';
+
+        return NextResponse.json({
+          error: `Cannot create property: ${targetUserName}'s account has reached its limit`,
+          details: {
+            target_user_id: effectiveUserId,
+            target_user_name: targetUserName,
+            current_count: targetCurrentCount || 0,
+            max_allowed: targetMaxAllowed,
+            subscription_tier: targetUserProfile.subscription_tier || 'basic',
+            user_type: targetUserProfile.user_type
+          }
+        }, { status: 403 });
+      }
+
+      console.log('✅ Target user property limit check passed:', {
+        targetUserId: effectiveUserId,
+        currentCount: targetCurrentCount || 0,
+        maxAllowed: targetMaxAllowed
+      });
+
     } else {
       // For all other users (agents, landlords, FSBO) - use local property limits system
       
@@ -525,7 +630,8 @@ export async function POST(req: NextRequest) {
         commercial_garage_entrance: body.commercial_garage_entrance || false,
         
         // System fields
-        user_id: userId,
+        user_id: effectiveUserId,                    // Property owner (target user if admin-created)
+        created_by: createdByUserId,                 // Audit: who actually created this property
         status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
         site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
@@ -564,7 +670,8 @@ export async function POST(req: NextRequest) {
         video_url: body.video_url || null,
         
         // System fields
-        user_id: userId,
+        user_id: effectiveUserId,                    // Property owner (target user if admin-created)
+        created_by: createdByUserId,                 // Audit: who actually created this property
         listing_type: listingType,
         listed_by_type: listedByType,
         property_category: propertyCategory,
@@ -608,7 +715,8 @@ export async function POST(req: NextRequest) {
         video_url: body.video_url || null,
         
         // System fields (auto-populated)
-        user_id: userId,
+        user_id: effectiveUserId,                    // Property owner (target user if admin-created)
+        created_by: createdByUserId,                 // Audit: who actually created this property
         listing_type: listingType,
         listed_by_type: listedByType,
         property_category: propertyCategory,
@@ -664,22 +772,47 @@ export async function POST(req: NextRequest) {
 
     // Determine success message based on operation type and user status
     let successMessage = 'Property submitted for review';
-    
+
     if (isDraftSave) {
       successMessage = '💾 Draft saved successfully';
     } else if (isPublishDraft) {
-      successMessage = shouldAutoApprove(userType) 
-        ? '🚀 Draft published and automatically approved!' 
+      successMessage = shouldAutoApprove(userType)
+        ? '🚀 Draft published and automatically approved!'
         : '🚀 Draft submitted for review';
+    } else if (isAdminCreatingForUser && targetUserProfile) {
+      // Admin created property on behalf of user
+      const targetUserName = `${targetUserProfile.first_name || ''} ${targetUserProfile.last_name || ''}`.trim() || 'user';
+      successMessage = `✅ Property created for ${targetUserName} and submitted for review`;
+      console.log('📝 AUDIT: Admin-created property for user', {
+        propertyId: propertyResult.id,
+        adminId: createdByUserId,
+        targetUserId: effectiveUserId,
+        targetUserName,
+        timestamp: new Date().toISOString()
+      });
     } else if (shouldAutoApprove(userType)) {
       successMessage = 'Property automatically approved and published! ✅';
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    // Build response with additional metadata for admin-created properties
+    const response: any = {
+      success: true,
       propertyId: propertyResult.id,
       message: successMessage
-    });
+    };
+
+    // Include admin-for-user metadata in response
+    if (isAdminCreatingForUser && targetUserProfile) {
+      response.createdForUser = {
+        userId: effectiveUserId,
+        userName: `${targetUserProfile.first_name || ''} ${targetUserProfile.last_name || ''}`.trim(),
+        userEmail: targetUserProfile.email,
+        userType: targetUserProfile.user_type
+      };
+      response.createdByAdmin = createdByUserId;
+    }
+
+    return NextResponse.json(response);
     
   } catch (err: any) {
     console.error("💥💥💥 CRITICAL API ERROR 💥💥💥");
