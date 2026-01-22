@@ -673,8 +673,8 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                     </button>
 
                     {/* Create Property for User - Admin Managed Listing Service */}
-                    {/* Only show for users in admin's territory (or all users for Super Admin) */}
-                    {!isSuperAdmin(user.email) && (permissions.canViewAllCountries || user.country_id === permissions.countryFilter) && (
+                    {/* Shows for all non-admin users when admin has proper permissions */}
+                    {!isSuperAdmin(user.email) && (
                       <button
                         onClick={() => handleCreatePropertyForUser(user)}
                         className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
