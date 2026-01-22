@@ -179,7 +179,8 @@ export default function SuperSimplePricingManagement() {
     await updatePlan(plan.id, { is_popular: true });
   };
 
-  const formatPrice = (priceInCents: number) => {
+  const formatPrice = (priceInCents: number | null | undefined) => {
+    if (priceInCents == null) return '$0.00';
     return `$${(priceInCents / 100).toFixed(2)}`;
   };
 
@@ -222,10 +223,10 @@ export default function SuperSimplePricingManagement() {
   // (getCountryDisplay function moved above)
 
   const SuperSimpleEditForm = ({ plan }: { plan: PricingPlan }) => {
-    const [price, setPrice] = useState((plan.price / 100).toString());
+    const [price, setPrice] = useState(((plan.price ?? 0) / 100).toString());
     const [maxProperties, setMaxProperties] = useState(plan.max_properties?.toString() || 'Unlimited');
-    const [featuredListings, setFeaturedListings] = useState(plan.featured_listings_included.toString());
-    const [durationDays, setDurationDays] = useState(plan.listing_duration_days.toString());
+    const [featuredListings, setFeaturedListings] = useState((plan.featured_listings_included ?? 0).toString());
+    const [durationDays, setDurationDays] = useState((plan.listing_duration_days ?? 30).toString());
 
     const handleSave = () => {
       const updates = {
@@ -545,11 +546,11 @@ export default function SuperSimplePricingManagement() {
                   )}
                   <div className="flex items-center text-sm text-gray-600">
                     <span className="mr-2">👥</span>
-                    <span>{plan.active_subscriptions} active subscribers</span>
+                    <span>{plan.active_subscriptions ?? 0} active subscribers</span>
                   </div>
                   <div className="flex items-center text-sm text-gray-600">
                     <span className="mr-2">📊</span>
-                    <span>{plan.total_purchases} total purchases</span>
+                    <span>{plan.total_purchases ?? 0} total purchases</span>
                   </div>
                 </div>
 
