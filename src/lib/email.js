@@ -251,6 +251,113 @@ export async function sendPropertyRejectionEmail({ to, propertyTitle, rejectionR
   });
 }
 
+export async function sendLandlordWelcomeEmail(to, firstName, isFoundingMember = false, spotNumber = null) {
+  await resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: isFoundingMember
+      ? `🏠 Welcome to Portal Home Hub - Founding Landlord #${spotNumber}!`
+      : '🏠 Welcome to Portal Home Hub - Your Landlord Account is Ready!',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 30px;">
+          🏠 <h1 style="color: #2563eb; margin: 10px 0;">Welcome to Portal Home Hub, ${firstName}!</h1>
+          ${isFoundingMember ? `
+          <div style="background: linear-gradient(135deg, #16a34a, #22c55e); color: white; padding: 12px 24px; border-radius: 25px; display: inline-block; font-weight: bold;">
+            Founding Landlord #${spotNumber}
+          </div>
+          ` : ''}
+        </div>
+
+        <!-- Welcome Message -->
+        <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <p style="font-size: 16px; line-height: 1.6; color: #374151;">
+            Your landlord account is now active! You're ready to list your rental properties and connect with quality tenants
+            across the Caribbean.
+          </p>
+        </div>
+
+        ${isFoundingMember ? `
+        <!-- Founding Member Benefits -->
+        <div style="background: #dcfce7; padding: 20px; border-radius: 12px; border-left: 4px solid #16a34a; margin-bottom: 25px;">
+          <h3 style="color: #16a34a; margin: 0 0 15px 0;">🌟 Your Founding Landlord Benefits:</h3>
+          <ul style="margin: 0; padding-left: 20px; color: #374151;">
+            <li style="margin-bottom: 8px;">✅ <strong>Extended FREE trial</strong> - Full platform access at no cost</li>
+            <li style="margin-bottom: 8px;">🏠 <strong>Multiple property listings</strong> - List all your rental units</li>
+            <li style="margin-bottom: 8px;">🎯 <strong>Exclusive discount</strong> when you continue after trial</li>
+            <li style="margin-bottom: 8px;">⚡ <strong>Priority support</strong> - We're here to help!</li>
+            <li style="margin-bottom: 8px;">🏆 <strong>Founding Landlord badge</strong> on your profile</li>
+          </ul>
+        </div>
+        ` : ''}
+
+        <!-- Landlord Benefits -->
+        <div style="background: #e0f2fe; padding: 20px; border-radius: 12px; border-left: 4px solid #2563eb; margin-bottom: 25px;">
+          <h3 style="color: #0369a1; margin: 0 0 15px 0;">🏡 What You Can Do as a Landlord:</h3>
+          <ul style="margin: 0; padding-left: 20px; color: #374151;">
+            <li style="margin-bottom: 8px;">📝 <strong>List rental properties</strong> - Apartments, houses, commercial spaces</li>
+            <li style="margin-bottom: 8px;">👥 <strong>Connect with tenants</strong> - Receive inquiries directly</li>
+            <li style="margin-bottom: 8px;">📊 <strong>Track your listings</strong> - Manage all properties from one dashboard</li>
+            <li style="margin-bottom: 8px;">📱 <strong>WhatsApp integration</strong> - Get tenant messages instantly</li>
+            <li style="margin-bottom: 8px;">🔔 <strong>Email notifications</strong> - Never miss a viewing request</li>
+          </ul>
+        </div>
+
+        <!-- Next Steps -->
+        <div style="background: #fef3c7; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 25px;">
+          <h3 style="color: #d97706; margin: 0 0 15px 0;">🚀 Getting Started - Next Steps:</h3>
+          <ol style="margin: 0; padding-left: 20px; color: #374151;">
+            <li style="margin-bottom: 8px;"><strong>Complete your profile</strong> - Add your photo and contact details</li>
+            <li style="margin-bottom: 8px;"><strong>Add your first property</strong> - Include high-quality photos and detailed descriptions</li>
+            <li style="margin-bottom: 8px;"><strong>Set competitive pricing</strong> - Research similar rentals in your area</li>
+            <li style="margin-bottom: 8px;"><strong>Wait for approval</strong> - Our team will review and approve your listing</li>
+            <li style="margin-bottom: 8px;"><strong>Start receiving inquiries</strong> - Tenants will contact you directly</li>
+          </ol>
+        </div>
+
+        <!-- Tips for Success -->
+        <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h3 style="color: #374151; margin: 0 0 15px 0;">💡 Tips for Successful Rentals:</h3>
+          <ul style="margin: 0; padding-left: 20px; color: #374151;">
+            <li style="margin-bottom: 8px;">📸 <strong>Use bright, clear photos</strong> - Listings with good photos get 4x more views</li>
+            <li style="margin-bottom: 8px;">📝 <strong>Be detailed</strong> - Include amenities, utilities, and lease terms</li>
+            <li style="margin-bottom: 8px;">⏰ <strong>Respond quickly</strong> - Fast responses lead to faster rentals</li>
+            <li style="margin-bottom: 8px;">💰 <strong>Price fairly</strong> - Competitive pricing attracts quality tenants</li>
+          </ul>
+        </div>
+
+        <!-- CTA Button -->
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="https://portalhomehub.com/login"
+             style="background: #2563eb; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">
+            🔑 Login to Your Dashboard
+          </a>
+        </div>
+
+        <!-- Support -->
+        <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h4 style="margin: 0 0 10px 0; color: #374151;">Need Help Getting Started?</h4>
+          <p style="margin: 0 0 15px 0; color: #6b7280;">Our team is here to support you!</p>
+
+          <div style="margin: 15px 0;">
+            <a href="https://wa.me/5927629797"
+               style="background: #22c55e; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 5px;">
+              💬 WhatsApp Support: +592 762-9797
+            </a>
+          </div>
+
+          <p style="font-size: 14px; color: #9ca3af; margin: 15px 0 0 0;">
+            Welcome to Portal Home Hub! 🏡
+          </p>
+        </div>
+
+      </div>
+    `
+  });
+}
+
 export async function sendPropertyGuideEmail(to) {
   return resend.emails.send({
     from: 'Guyana Home Hub <info@portalhomehub.com>',

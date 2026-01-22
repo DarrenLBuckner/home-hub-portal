@@ -121,8 +121,10 @@ export async function POST(request: Request) {
 
     // Send welcome email to new landlord
     try {
-      const { sendWelcomeEmail } = await import('@/lib/email.js');
-      await sendWelcomeEmail(email);
+      const { sendLandlordWelcomeEmail } = await import('@/lib/email.js');
+      const spotNumber = promoCodeData ? promoCodeData.current_redemptions + 1 : null;
+      const isFoundingMember = !!promoCodeData;
+      await sendLandlordWelcomeEmail(email, first_name, isFoundingMember, spotNumber);
       console.log('✅ Landlord welcome email sent successfully');
     } catch (emailError) {
       console.warn('⚠️ Failed to send welcome email:', emailError);
