@@ -75,7 +75,8 @@ export default function SuperSimplePricingManagement() {
   const showAllCountriesOption = permissions?.canEditGlobalPricing;
 
   // Get country flag/identifier for display (moved up to fix hoisting)
-  function getCountryDisplay(countryId: string) {
+  function getCountryDisplay(countryId: string | null | undefined) {
+    if (!countryId) return '🏴 Unknown';
     switch (countryId) {
       case 'GY': return '🇬🇾 GY';
       case 'JM': return '🇯🇲 JM';
@@ -84,21 +85,22 @@ export default function SuperSimplePricingManagement() {
   };
 
   // Filter plans based on selected country (moved here after getCountryDisplay)
-  const filteredPlans = selectedCountryFilter === 'ALL' 
-    ? plans 
-    : plans.filter(plan => plan.country_id === selectedCountryFilter);
+  const filteredPlans = selectedCountryFilter === 'ALL'
+    ? plans
+    : plans.filter(plan => plan.country_id && plan.country_id === selectedCountryFilter);
 
-  // Get unique countries from plans for dropdown
+  // Get unique countries from plans for dropdown (filter out null/undefined)
   const uniqueCountries = Array.from(
-    new Set(plans.map(p => p.country_id))
+    new Set(plans.map(p => p.country_id).filter(Boolean))
   ).map(countryId => ({
     id: countryId,
     display: getCountryDisplay(countryId)
   }));
 
-  // Count plans per country for statistics
+  // Count plans per country for statistics (handle null country_id)
   const planCountByCountry = plans.reduce((acc, plan) => {
-    acc[plan.country_id] = (acc[plan.country_id] || 0) + 1;
+    const countryId = plan.country_id || 'unknown';
+    acc[countryId] = (acc[countryId] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 
@@ -198,16 +200,21 @@ export default function SuperSimplePricingManagement() {
 
   // Helper function to check if current admin can edit this pricing plan
   const canEditPlan = (plan: PricingPlan): boolean => {
+    // Handle null/undefined plan or country_id
+    if (!plan || !plan.country_id) {
+      return false;
+    }
+
     // Super Admin can edit all plans
     if (permissions?.canEditGlobalPricing) {
       return true;
     }
-    
+
     // Owner Admin can only edit plans for their country
     if (permissions?.canEditCountryPricing && permissions?.countryFilter) {
       return plan.country_id === permissions.countryFilter;
     }
-    
+
     // No edit permissions
     return false;
   };

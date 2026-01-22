@@ -375,16 +375,14 @@ function LandlordRegistrationContent() {
                         <div className="text-xs text-gray-500 mt-1">{plan.listing_duration_days} day listing</div>
                       </div>
 
-                      {/* Price */}
+                      {/* Price - Temporarily showing FREE during launch */}
                       <div className="text-center mb-4">
-                        <div className="text-2xl lg:text-3xl font-bold text-gray-900">
-                          {plan.price_formatted}
+                        <div className="text-2xl lg:text-3xl font-bold text-green-600">
+                          FREE
                         </div>
-                        {plan.plan_type === 'listing' && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            ≈ {pricingCountry?.currency_symbol || ''}{monthlyPrice.toLocaleString()}/mo
-                          </div>
-                        )}
+                        <div className="text-xs text-gray-500 mt-1">
+                          Limited time offer
+                        </div>
                       </div>
 
                       {/* Tier Description */}
@@ -577,7 +575,7 @@ function LandlordRegistrationContent() {
               <div className="space-y-1 text-sm text-gray-600">
                 <div><strong>Plan:</strong> {landlordPlans.find(p => p.id === formData.plan)?.plan_name || 'No plan selected'}</div>
                 <div><strong>Location:</strong> {selectedCountry.name}</div>
-                <div><strong>Price:</strong> {landlordPlans.find(p => p.id === formData.plan)?.price_formatted || 'N/A'}</div>
+                <div><strong>Price:</strong> <span className="text-green-600 font-bold">FREE</span> (Limited time offer)</div>
               </div>
             </div>
           </div>

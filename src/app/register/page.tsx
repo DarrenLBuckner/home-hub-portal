@@ -394,12 +394,12 @@ function RegistrationContent() {
                         <p className="text-xs lg:text-sm text-gray-500 mt-1">{tierBenefits.tagline}</p>
                       </div>
 
-                      {/* Price Display */}
+                      {/* Price Display - Temporarily showing FREE during launch */}
                       <div className="text-center mb-4 pb-4 border-b border-gray-200">
                         <div className="text-2xl lg:text-3xl font-bold text-green-600">
-                          {plan.price_formatted}
+                          FREE
                         </div>
-                        <div className="text-xs lg:text-sm text-gray-500">per {plan.plan_type}</div>
+                        <div className="text-xs lg:text-sm text-gray-500">Limited time offer</div>
                       </div>
 
                       {/* Benefits List */}
