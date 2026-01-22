@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
+import { normalizePhoneNumber } from '@/lib/phoneUtils';
 
 export async function POST(request: Request) {
   try {
@@ -36,14 +37,14 @@ export async function POST(request: Request) {
     // User will only be created after payment/plan confirmation is complete
     const tempRegistrationId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
       tempRegistrationId,
       registrationData: {
         first_name,
         last_name,
         email,
-        phone,
+        phone: normalizePhoneNumber(phone),
         password,
         promo_code,
         promo_benefits,

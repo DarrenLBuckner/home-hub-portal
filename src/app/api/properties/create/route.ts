@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { getTierBenefits } from '@/lib/subscription-utils';
+import { normalizePhoneNumber } from '@/lib/phoneUtils';
 
 // Map country codes to site IDs for multi-tenant support
 // site_id is the lowercase country name used in domain (e.g., 'guyana' for guyanahomehub.com)
@@ -21,21 +22,6 @@ const COUNTRY_TO_SITE: Record<string, string> = {
 function getSiteIdFromCountry(countryCode: string | undefined): string {
   if (!countryCode) return 'guyana';
   return COUNTRY_TO_SITE[countryCode.toUpperCase()] || countryCode.toLowerCase();
-}
-
-// Normalize phone/WhatsApp numbers to a consistent format
-// Keeps only digits and leading + sign, removes spaces, dashes, parentheses
-function normalizePhoneNumber(phone: string | undefined): string | null {
-  if (!phone) return null;
-
-  // Remove all non-digit characters except leading +
-  const hasPlus = phone.trim().startsWith('+');
-  const digitsOnly = phone.replace(/\D/g, '');
-
-  if (!digitsOnly) return null;
-
-  // Return with + prefix if it had one, otherwise just digits
-  return hasPlus ? `+${digitsOnly}` : digitsOnly;
 }
 
 export const runtime = 'nodejs'; // avoid Edge runtime issues

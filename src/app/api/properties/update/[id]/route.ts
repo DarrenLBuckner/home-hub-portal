@@ -6,15 +6,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
 import { getCountryAwareAdminPermissions } from '@/lib/auth/adminPermissions';
-
-// Normalize phone/WhatsApp numbers to a consistent format
-function normalizePhoneNumber(phone: string | undefined | null): string | null {
-  if (!phone) return null;
-  const hasPlus = phone.trim().startsWith('+');
-  const digitsOnly = phone.replace(/\D/g, '');
-  if (!digitsOnly) return null;
-  return hasPlus ? `+${digitsOnly}` : digitsOnly;
-}
+import { normalizePhoneNumber } from '@/lib/phoneUtils';
 
 export async function PUT(
   request: Request,

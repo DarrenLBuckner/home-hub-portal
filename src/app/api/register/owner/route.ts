@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
+import { normalizePhoneNumber } from '@/lib/phoneUtils';
 
 export async function POST(request: Request) {
   try {
@@ -8,6 +9,10 @@ export async function POST(request: Request) {
     if (!first_name || !last_name || !email || !phone || !password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
+
+    // Normalize phone number
+    const normalizedPhone = normalizePhoneNumber(phone);
+
     // Create Supabase Auth user
     const supabase = createAdminClient();
     const { data, error: authError } = await supabase.auth.admin.createUser({
@@ -16,7 +21,7 @@ export async function POST(request: Request) {
       user_metadata: {
         first_name,
         last_name,
-        phone,
+        phone: normalizedPhone,
         user_type: 'owner',
       },
       email_confirm: true,
@@ -30,7 +35,7 @@ export async function POST(request: Request) {
       first_name,
       last_name,
       email,
-      phone,
+      phone: normalizedPhone,
       plan: body.plan || null,
     });
     if (dbError) {

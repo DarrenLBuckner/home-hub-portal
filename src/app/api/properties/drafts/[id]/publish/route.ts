@@ -3,15 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-
-// Normalize phone/WhatsApp numbers to a consistent format
-function normalizePhoneNumber(phone: string | undefined | null): string | null {
-  if (!phone) return null;
-  const hasPlus = phone.trim().startsWith('+');
-  const digitsOnly = phone.replace(/\D/g, '');
-  if (!digitsOnly) return null;
-  return hasPlus ? `+${digitsOnly}` : digitsOnly;
-}
+import { normalizePhoneNumber } from '@/lib/phoneUtils';
 
 export const runtime = 'nodejs';
 

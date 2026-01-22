@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
 import { sendWelcomeEmail, sendFSBOFoundingMemberEmail } from '@/lib/email.js';
+import { normalizePhoneNumber } from '@/lib/phoneUtils';
 
 export async function POST(request: Request) {
   try {
@@ -14,7 +15,8 @@ export async function POST(request: Request) {
     }
     
     const { first_name, last_name, email, phone, password, promo_code, promo_benefits, promo_spot_number, is_founding_member } = registrationData;
-    
+    const normalizedPhone = normalizePhoneNumber(phone);
+
     // For promo/founding member registrations, verify promo code was valid
     // For paid registrations, verify payment was completed
     if (!is_founding_member && !paymentVerified) {
@@ -37,7 +39,7 @@ export async function POST(request: Request) {
       user_metadata: {
         first_name,
         last_name,
-        phone,
+        phone: normalizedPhone,
         user_type: 'owner',
       },
       email_confirm: true,
@@ -57,7 +59,7 @@ export async function POST(request: Request) {
         email: email,
         first_name: first_name,
         last_name: last_name,
-        phone: phone,
+        phone: normalizedPhone,
         user_type: 'owner',
         subscription_status: subscriptionStatus,
         is_founding_member: !!is_founding_member,

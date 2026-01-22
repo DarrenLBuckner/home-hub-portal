@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
+import { normalizePhoneNumber } from '@/lib/phoneUtils';
 
 export async function POST(request: Request) {
   try {
@@ -49,13 +50,18 @@ export async function POST(request: Request) {
     // Generate temporary application ID for tracking
     const tempApplicationId = `agent_app_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // Normalize phone numbers
+    const normalizedPhone = normalizePhoneNumber(phone);
+    const normalizedRef1 = normalizePhoneNumber(agentData.reference1_phone || agentData.reference1_contact);
+    const normalizedRef2 = normalizePhoneNumber(agentData.reference2_phone || agentData.reference2_contact);
+
     // Store agent application data WITHOUT creating user account yet
     const agentVettingData = {
       temp_application_id: tempApplicationId,
       email: email,
       first_name: first_name,
       last_name: last_name,
-      phone: phone,
+      phone: normalizedPhone,
       temp_password: password, // Store temporarily - will be used when approved
       ...agentData,
       user_type: "agent",
@@ -66,10 +72,10 @@ export async function POST(request: Request) {
       promo_spot_number: promo_spot_number,
       is_founding_member: !!promo_code,
       user_created: false, // Flag to track if user account exists yet
-      
-      // Reference fields are now required in frontend - map contact field properly
-      reference1_contact: agentData.reference1_phone || agentData.reference1_contact || agentData.reference1_name,
-      reference2_contact: agentData.reference2_phone || agentData.reference2_contact || agentData.reference2_name,
+
+      // Reference fields - normalized phone numbers
+      reference1_contact: normalizedRef1 || agentData.reference1_name,
+      reference2_contact: normalizedRef2 || agentData.reference2_name,
     };
 
     const { error: vettingError } = await supabase
