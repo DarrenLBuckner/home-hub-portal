@@ -542,8 +542,27 @@ function CreateAgentPropertyContent() {
       submittingRef.current = false;
       
     } catch (err: any) {
-      console.error('Unexpected error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      console.error('Unexpected error during submission:', err);
+      console.error('Error details:', {
+        message: err?.message,
+        name: err?.name,
+        stack: err?.stack
+      });
+
+      // Provide more specific error messages
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+
+      if (err?.message?.includes('fetch')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (err?.message?.includes('timeout')) {
+        errorMessage = 'Request timed out. Please try again with smaller images.';
+      } else if (err?.message?.includes('Unauthorized') || err?.message?.includes('401')) {
+        errorMessage = 'Session expired. Please refresh the page and log in again.';
+      } else if (err?.message) {
+        errorMessage = `Error: ${err.message}`;
+      }
+
+      setError(errorMessage);
       submittingRef.current = false; // Reset ref on error
       setIsSubmitting(false);
     }
