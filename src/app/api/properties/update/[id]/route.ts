@@ -7,6 +7,15 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
 import { getCountryAwareAdminPermissions } from '@/lib/auth/adminPermissions';
 
+// Normalize phone/WhatsApp numbers to a consistent format
+function normalizePhoneNumber(phone: string | undefined | null): string | null {
+  if (!phone) return null;
+  const hasPlus = phone.trim().startsWith('+');
+  const digitsOnly = phone.replace(/\D/g, '');
+  if (!digitsOnly) return null;
+  return hasPlus ? `+${digitsOnly}` : digitsOnly;
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -87,7 +96,7 @@ export async function PUT(
       
       // Step 5 - Contact (optional for agent properties)
       owner_email: body.owner_email || null,
-      owner_whatsapp: body.owner_whatsapp || null,
+      owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp),
     };
 
     // Handle image uploads if provided

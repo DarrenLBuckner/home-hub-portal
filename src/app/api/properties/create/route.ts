@@ -23,6 +23,21 @@ function getSiteIdFromCountry(countryCode: string | undefined): string {
   return COUNTRY_TO_SITE[countryCode.toUpperCase()] || countryCode.toLowerCase();
 }
 
+// Normalize phone/WhatsApp numbers to a consistent format
+// Keeps only digits and leading + sign, removes spaces, dashes, parentheses
+function normalizePhoneNumber(phone: string | undefined): string | null {
+  if (!phone) return null;
+
+  // Remove all non-digit characters except leading +
+  const hasPlus = phone.trim().startsWith('+');
+  const digitsOnly = phone.replace(/\D/g, '');
+
+  if (!digitsOnly) return null;
+
+  // Return with + prefix if it had one, otherwise just digits
+  return hasPlus ? `+${digitsOnly}` : digitsOnly;
+}
+
 export const runtime = 'nodejs'; // avoid Edge runtime issues
 export const maxDuration = 60; // Allow up to 60 seconds for image processing
 // Note: Vercel free tier has 4.5MB body limit, Pro has 4.5MB, Enterprise can go higher
@@ -709,7 +724,7 @@ export async function POST(req: NextRequest) {
         
         // Step 5 - Contact
         owner_email: body.owner_email,
-        owner_whatsapp: body.owner_whatsapp,
+        owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp),
         
         // Video URL (for Pro/Elite tier FSBO)
         video_url: body.video_url || null,

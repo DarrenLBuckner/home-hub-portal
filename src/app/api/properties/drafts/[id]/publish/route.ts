@@ -4,6 +4,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+// Normalize phone/WhatsApp numbers to a consistent format
+function normalizePhoneNumber(phone: string | undefined | null): string | null {
+  if (!phone) return null;
+  const hasPlus = phone.trim().startsWith('+');
+  const digitsOnly = phone.replace(/\D/g, '');
+  if (!digitsOnly) return null;
+  return hasPlus ? `+${digitsOnly}` : digitsOnly;
+}
+
 export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
@@ -151,7 +160,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       
       // Listing details
       listed_by_type: draftData.listed_by_type || 'agent',
-      owner_whatsapp: draftData.owner_whatsapp || draftData.contact_phone,
+      owner_whatsapp: normalizePhoneNumber(draftData.owner_whatsapp || draftData.contact_phone),
       owner_email: draftData.owner_email || draftData.contact_email || user.email,
       
       // Status

@@ -2,6 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import Link from 'next/link';
 import { trackAgentRegistration } from '@/lib/fbPixel';
+import FoundingAgentBadge from '@/components/FoundingAgentBadge';
+import FoundingAdvisorBadge from '@/components/FoundingAdvisorBadge';
 
 interface DashboardWelcomeProps {
   userType?: string | null;
@@ -11,6 +13,8 @@ interface DashboardWelcomeProps {
 export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWelcomeProps) {
   const [agentName, setAgentName] = useState('');
   const [accountCode, setAccountCode] = useState('');
+  const [subscriptionTier, setSubscriptionTier] = useState<string | undefined>();
+  const [isFoundingAdvisor, setIsFoundingAdvisor] = useState(false);
   const [stats, setStats] = useState({
     active: 0,
     draft: 0,
@@ -27,7 +31,7 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
         // Fetch user profile with account code, approval status, and tracking flag
         const { data: profile } = await supabase
           .from('profiles')
-          .select('first_name, last_name, account_code, display_name, user_type, approval_status, registration_tracked, country_id')
+          .select('first_name, last_name, account_code, display_name, user_type, approval_status, registration_tracked, country_id, subscription_tier, is_founding_advisor')
           .eq('id', userData.user.id)
           .single();
 
@@ -35,6 +39,8 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
           const fullName = profile.display_name || `${profile.first_name || ''} ${profile.last_name || ''}`.trim();
           setAgentName(fullName || 'Agent');
           setAccountCode(profile.account_code || '');
+          setSubscriptionTier(profile.subscription_tier);
+          setIsFoundingAdvisor(profile.is_founding_advisor || false);
 
           // Track CompleteRegistration for newly approved agents (only once)
           if (
@@ -82,7 +88,11 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
             <h1 className="text-4xl font-bold mb-2">🏢 Welcome to Portal Home Hub!</h1>
             <div className="flex items-center gap-4 mb-2">
               <div>
-                <p className="text-blue-100 text-lg">Hello, {agentName}!</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-blue-100 text-lg">Hello, {agentName}!</p>
+                  <FoundingAgentBadge subscriptionTier={subscriptionTier} />
+                  <FoundingAdvisorBadge isFoundingAdvisor={isFoundingAdvisor} />
+                </div>
                 <p className="text-blue-100 text-sm">Your Property Management Dashboard</p>
               </div>
               {accountCode && (

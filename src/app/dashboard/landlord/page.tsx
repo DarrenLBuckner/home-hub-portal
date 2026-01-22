@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/supabase";
 import { getActiveCountries } from "@/lib/countries";
 import UniversalPropertyManager from "@/components/UniversalPropertyManager";
+import FoundingAdvisorBadge from "@/components/FoundingAdvisorBadge";
 
 export default function LandlordDashboard() {
   const router = useRouter();
@@ -158,8 +159,9 @@ export default function LandlordDashboard() {
                 {/* Welcome Message with Account Code */}
                 <div className="text-center sm:text-right">
                   <div className="text-xs sm:text-sm text-green-100">Welcome back,</div>
-                  <div className="font-medium text-white text-sm truncate max-w-40 sm:max-w-none">
+                  <div className="font-medium text-white text-sm truncate max-w-40 sm:max-w-none flex items-center gap-2">
                     {user?.first_name || user?.email}
+                    <FoundingAdvisorBadge isFoundingAdvisor={user?.is_founding_advisor} />
                     {user?.account_code && (
                       <span className="ml-2 px-2 py-0.5 bg-white/20 rounded text-xs font-bold">
                         {user.account_code}
