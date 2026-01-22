@@ -113,6 +113,33 @@ If you believe this is in error, please contact us immediately.
 Best regards,
 The Portal Home Hub Team`,
   },
+  {
+    id: 'default-property-created-for-user',
+    name: 'Property Created For You',
+    category: 'Listings',
+    subject: 'Your Property Has Been Listed on {{site_name}}!',
+    body: `Hi {{first_name}},
+
+Great news! A property listing has been created on your behalf and is now live on {{site_name}}.
+
+Property Details:
+• Title: {{property_title}}
+• Location: {{city}}, {{region}}
+• Listing Type: {{listing_type}}
+
+What happens next?
+• Your property is now visible to potential buyers/renters
+• You'll receive inquiries directly via email and WhatsApp
+• You can manage and edit your listing from your dashboard
+
+View and manage your listing here:
+{{dashboard_link}}
+
+If you have any questions about your listing or need assistance, please don't hesitate to contact our support team.
+
+Best regards,
+The {{site_name}} Team`,
+  },
 ];
 
 export async function GET(request: NextRequest) {
