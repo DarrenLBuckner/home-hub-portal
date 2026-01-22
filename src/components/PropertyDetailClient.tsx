@@ -8,6 +8,24 @@ interface PropertyDetailProps {
   property: any;
 }
 
+// Map country codes to site domains for multi-tenant support
+const COUNTRY_TO_DOMAIN: Record<string, string> = {
+  'GY': 'guyanahomehub.com',
+  'JM': 'jamaicahomehub.com',
+  'TT': 'trinidadhomehub.com',
+  'BB': 'barbadoshomehub.com',
+  'BS': 'bahamashomehub.com',
+  'KE': 'kenyahomehub.com',
+  'NG': 'nigeriahomehub.com',
+  'GH': 'ghanahomehub.com',
+  'ZA': 'southafricahomehub.com',
+};
+
+function getSiteDomain(countryId: string | undefined): string {
+  if (!countryId) return 'guyanahomehub.com';
+  return COUNTRY_TO_DOMAIN[countryId.toUpperCase()] || 'guyanahomehub.com';
+}
+
 export default function PropertyDetailClient({ property }: PropertyDetailProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -19,15 +37,15 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
   // Format WhatsApp number for link
   const formatWhatsAppNumber = (phone: string) => {
     if (!phone) return null;
-    
+
     // Remove all non-digits
     let cleaned = phone.replace(/\D/g, '');
-    
+
     // Add Guyana country code (592) if not present
     if (!cleaned.startsWith('592') && cleaned.length === 7) {
       cleaned = '592' + cleaned;
     }
-    
+
     return cleaned;
   };
 
@@ -37,19 +55,43 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
     return `${symbol}${price?.toLocaleString() || 0}`;
   };
 
-  // Create WhatsApp link
+  // Get property reference ID (last 6 chars of UUID for easy reference)
+  const propertyRef = property.id?.slice(-6)?.toUpperCase() || 'N/A';
+
+  // Get dynamic domain based on property's country
+  const siteDomain = getSiteDomain(property.country_id);
+  const propertyUrl = `https://${siteDomain}/properties/${property.id}`;
+  const priceDisplay = `${formatPrice(property.price, property.currency)}${property.listing_type === 'rent' ? '/month' : ''}`;
+  const locationDisplay = property.city || property.region || 'Location not specified';
+
+  // Create WhatsApp link with property reference at start for agent tracking
   const whatsappNumber = formatWhatsAppNumber(getWhatsAppNumber());
-  const propertyUrl = `https://portal-home-hub.com/properties/${property.id}`;
   const whatsappMessage = encodeURIComponent(
-    `Hi! I'm interested in this property:\n\n` +
+    `[Ref: ${propertyRef}] Hi! I'm interested in this property:\n\n` +
     `${property.title}\n` +
-    `Price: ${formatPrice(property.price, property.currency)}${property.listing_type === 'rent' ? '/month' : ''}\n` +
-    `Location: ${property.city || property.region || 'Guyana'}\n\n` +
+    `Price: ${priceDisplay}\n` +
+    `Location: ${locationDisplay}\n\n` +
     `Property Link: ${propertyUrl}`
   );
-  const whatsappLink = whatsappNumber 
+  const whatsappLink = whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`
     : null;
+
+  // Create mailto link with property context pre-filled
+  const getEmailLink = (email: string) => {
+    const subject = encodeURIComponent(`[Ref: ${propertyRef}] Inquiry about: ${property.title}`);
+    const body = encodeURIComponent(
+      `Hi,\n\n` +
+      `I'm interested in this property:\n\n` +
+      `Property: ${property.title}\n` +
+      `Reference: ${propertyRef}\n` +
+      `Price: ${priceDisplay}\n` +
+      `Location: ${locationDisplay}\n` +
+      `Link: ${propertyUrl}\n\n` +
+      `My question is:\n\n`
+    );
+    return `mailto:${email}?subject=${subject}&body=${body}`;
+  };
 
   // Get owner display name
   const ownerName = property.owner 
@@ -322,11 +364,11 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
           {/* Contact Sidebar (Desktop) */}
           <div className="hidden lg:block">
             <div className="sticky top-4">
-              <ContactCard 
+              <ContactCard
                 ownerName={ownerName}
                 userType={property.owner?.user_type}
                 whatsappLink={whatsappLink}
-                ownerEmail={property.owner_email || property.owner?.email}
+                emailLink={property.owner_email || property.owner?.email ? getEmailLink(property.owner_email || property.owner?.email) : undefined}
                 propertyStatus={property.status}
                 listedByType={property.listed_by_type}
               />
@@ -415,18 +457,18 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
 }
 
 // Contact Card Component
-function ContactCard({ 
-  ownerName, 
-  userType, 
+function ContactCard({
+  ownerName,
+  userType,
   whatsappLink,
-  ownerEmail,
+  emailLink,
   propertyStatus,
   listedByType
-}: { 
-  ownerName: string; 
-  userType?: string; 
+}: {
+  ownerName: string;
+  userType?: string;
   whatsappLink: string | null;
-  ownerEmail?: string;
+  emailLink?: string;
   propertyStatus?: string;
   listedByType?: string;
 }) {
@@ -515,13 +557,13 @@ function ContactCard({
         }
       })()}
 
-      {ownerEmail && (
+      {emailLink && (
         <a
-          href={`mailto:${ownerEmail}`}
+          href={emailLink}
           className="flex items-center justify-center gap-3 w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg shadow transition-all duration-300"
         >
           <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 0 00-1.997 1.884z" />
             <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
           </svg>
           Send Email

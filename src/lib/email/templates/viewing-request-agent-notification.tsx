@@ -1,5 +1,23 @@
 import * as React from 'react';
 
+// Map country codes to site domains for multi-tenant support
+const COUNTRY_TO_DOMAIN: Record<string, string> = {
+  'GY': 'guyanahomehub.com',
+  'JM': 'jamaicahomehub.com',
+  'TT': 'trinidadhomehub.com',
+  'BB': 'barbadoshomehub.com',
+  'BS': 'bahamashomehub.com',
+  'KE': 'kenyahomehub.com',
+  'NG': 'nigeriahomehub.com',
+  'GH': 'ghanahomehub.com',
+  'ZA': 'southafricahomehub.com',
+};
+
+function getSiteDomain(countryId: string | undefined): string {
+  if (!countryId) return 'guyanahomehub.com';
+  return COUNTRY_TO_DOMAIN[countryId.toUpperCase()] || 'guyanahomehub.com';
+}
+
 interface AgentNotificationEmailProps {
   visitorName: string;
   visitorEmail: string;
@@ -184,9 +202,26 @@ export function AgentNotificationEmail({
                 <strong style={{ color: '#0369a1' }}>Location:</strong>
                 <span style={{ color: '#374151', marginLeft: '8px' }}>📍 {propertyLocation}</span>
               </div>
-              <div>
-                <strong style={{ color: '#0369a1' }}>Property ID:</strong>
-                <span style={{ color: '#374151', marginLeft: '8px' }}>{propertyId}</span>
+              <div style={{ marginBottom: '12px' }}>
+                <strong style={{ color: '#0369a1' }}>Reference:</strong>
+                <span style={{ color: '#374151', marginLeft: '8px' }}>{propertyId.slice(-6).toUpperCase()}</span>
+              </div>
+              <div style={{ marginTop: '15px' }}>
+                <a
+                  href={`https://${getSiteDomain(countryId)}/properties/${propertyId}`}
+                  style={{
+                    backgroundColor: '#0284c7',
+                    color: '#ffffff',
+                    padding: '10px 20px',
+                    borderRadius: '6px',
+                    textDecoration: 'none',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    display: 'inline-block'
+                  }}
+                >
+                  🔗 View Property Listing
+                </a>
               </div>
             </div>
 
