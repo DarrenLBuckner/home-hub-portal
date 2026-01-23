@@ -178,7 +178,7 @@ export async function POST(req: NextRequest) {
       if (userType === 'landlord') return 'landlord';
       return listingType === 'rent' ? 'landlord' : 'owner';
     };
-    const listedByType = getListedByType(userType, listingType);
+    let listedByType = getListedByType(userType, listingType);
 
     // Validate listing_type (skip for drafts)
     if (!isDraftSave && !['sale', 'rent', 'lease', 'short_term_rent'].includes(listingType)) {
@@ -325,6 +325,10 @@ export async function POST(req: NextRequest) {
         createdByUserId = userId;                 // Audit: admin who created it
         isAdminCreatingForUser = true;
         targetUserProfile = targetUser;
+
+        // IMPORTANT: Recalculate listed_by_type using the TARGET user's type, not the admin's
+        listedByType = getListedByType(targetUser.user_type, listingType);
+        console.log('📝 Recalculated listed_by_type for target user:', { targetUserType: targetUser.user_type, listedByType });
 
         console.log('✅ Admin-for-user validation passed:', {
           effectiveUserId,
