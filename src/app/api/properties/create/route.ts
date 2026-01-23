@@ -99,9 +99,6 @@ export async function POST(req: NextRequest) {
     // This allows admins to create properties that are assigned to another user's account
     const targetUserId: string | undefined = body.target_user_id;
 
-    console.log('🔍 DEBUG: target_user_id from body:', targetUserId);
-    console.log('🔍 DEBUG: body.target_user_id type:', typeof body.target_user_id);
-
     // Check if this is a draft save operation
     const isDraftSave = body._isDraftSave === true || body.status === 'draft';
     const isPublishDraft = body._isPublishDraft === true;
@@ -283,25 +280,19 @@ export async function POST(req: NextRequest) {
     let isAdminCreatingForUser = false;
     let targetUserProfile: any = null;
 
-    console.log('🔍 DEBUG: Checking admin-for-user conditions:', { targetUserId, isEligibleAdmin, adminLevel });
-
     if (targetUserId && isEligibleAdmin) {
       try {
         console.log('🔄 Admin creating property for user:', { adminId: userId, targetUserId, adminLevel });
 
         // Validate target user exists and get their profile
-        console.log('🔍 DEBUG: Looking up target user with ID:', targetUserId);
         const { data: targetUser, error: targetError } = await supabase
           .from('profiles')
-          .select('id, site_id, country_id, user_type, subscription_tier, email, first_name, last_name')
+          .select('id, country_id, user_type, subscription_tier, email, first_name, last_name')
           .eq('id', targetUserId)
           .single();
 
-        console.log('🔍 DEBUG: Target user lookup result:', { targetUser, targetError });
-
         if (targetError || !targetUser) {
           console.error('❌ Target user not found:', targetError);
-          console.error('❌ Target user ID that failed:', targetUserId);
           return NextResponse.json({
             error: 'Target user not found',
             details: 'The specified user does not exist in the system'
@@ -310,15 +301,15 @@ export async function POST(req: NextRequest) {
 
         // Territory check: Owner/Basic admins can only create for users in their territory
         if (adminLevel !== 'super') {
-          // Get admin's site_id for comparison
+          // Get admin's country_id for comparison
           const { data: adminProfile } = await supabase
             .from('profiles')
-            .select('site_id, country_id')
+            .select('country_id')
             .eq('id', userId)
             .single();
 
-          const adminSiteId = adminProfile?.site_id || getSiteIdFromCountry(adminProfile?.country_id);
-          const targetSiteId = targetUser.site_id || getSiteIdFromCountry(targetUser.country_id);
+          const adminSiteId = getSiteIdFromCountry(adminProfile?.country_id);
+          const targetSiteId = getSiteIdFromCountry(targetUser.country_id);
 
           if (adminSiteId !== targetSiteId) {
             console.error('❌ Territory violation:', { adminSiteId, targetSiteId, adminLevel });
