@@ -99,6 +99,9 @@ export async function POST(req: NextRequest) {
     // This allows admins to create properties that are assigned to another user's account
     const targetUserId: string | undefined = body.target_user_id;
 
+    console.log('🔍 DEBUG: target_user_id from body:', targetUserId);
+    console.log('🔍 DEBUG: body.target_user_id type:', typeof body.target_user_id);
+
     // Check if this is a draft save operation
     const isDraftSave = body._isDraftSave === true || body.status === 'draft';
     const isPublishDraft = body._isPublishDraft === true;
@@ -280,19 +283,25 @@ export async function POST(req: NextRequest) {
     let isAdminCreatingForUser = false;
     let targetUserProfile: any = null;
 
+    console.log('🔍 DEBUG: Checking admin-for-user conditions:', { targetUserId, isEligibleAdmin, adminLevel });
+
     if (targetUserId && isEligibleAdmin) {
       try {
         console.log('🔄 Admin creating property for user:', { adminId: userId, targetUserId, adminLevel });
 
         // Validate target user exists and get their profile
+        console.log('🔍 DEBUG: Looking up target user with ID:', targetUserId);
         const { data: targetUser, error: targetError } = await supabase
           .from('profiles')
           .select('id, site_id, country_id, user_type, subscription_tier, email, first_name, last_name')
           .eq('id', targetUserId)
           .single();
 
+        console.log('🔍 DEBUG: Target user lookup result:', { targetUser, targetError });
+
         if (targetError || !targetUser) {
           console.error('❌ Target user not found:', targetError);
+          console.error('❌ Target user ID that failed:', targetUserId);
           return NextResponse.json({
             error: 'Target user not found',
             details: 'The specified user does not exist in the system'
