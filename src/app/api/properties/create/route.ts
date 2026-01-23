@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { getTierBenefits } from '@/lib/subscription-utils';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
+import { createAdminClient } from '@/supabase-admin';
 
 // Map country codes to site IDs for multi-tenant support
 // site_id is the lowercase country name used in domain (e.g., 'guyana' for guyanahomehub.com)
@@ -781,7 +782,10 @@ export async function POST(req: NextRequest) {
     console.log('📸 IMAGE DEBUG - Media inserts to be created:', JSON.stringify(mediaInserts, null, 2));
 
     if (mediaInserts.length > 0) {
-      const { error: mediaError } = await supabase
+      // Use admin client to bypass RLS for media inserts
+      // This is necessary when admin creates property for another user
+      const adminSupabase = createAdminClient();
+      const { error: mediaError } = await adminSupabase
         .from("property_media")
         .insert(mediaInserts);
 
