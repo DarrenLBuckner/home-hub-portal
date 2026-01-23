@@ -1,0 +1,60 @@
+{
+  "agents": {
+    "title": "Encontrar un Agente",
+    "subtitle": "Conectese con profesionales inmobiliarios experimentados en su area",
+    "searchPlaceholder": "Buscar por nombre o ubicacion...",
+    "filterByRegion": "Filtrar por Region",
+    "allRegions": "Todas las Regiones",
+    "noResults": "No se encontraron agentes que coincidan con sus criterios"
+  },
+  "profile": {
+    "about": "Acerca de",
+    "specializations": "Especializaciones",
+    "areasServed": "Areas que Atiende",
+    "languages": "Idiomas",
+    "experience": "Experiencia",
+    "yearsExperience": "anos de experiencia",
+    "listings": "Listados Activos",
+    "soldProperties": "Propiedades Vendidas",
+    "rating": "Calificacion",
+    "reviews": "Resenas",
+    "contactAgent": "Contactar Agente",
+    "viewListings": "Ver Listados"
+  },
+  "contact": {
+    "title": "Contactar Agente",
+    "name": "Su Nombre",
+    "email": "Su Correo Electronico",
+    "phone": "Numero de Telefono",
+    "message": "Mensaje",
+    "messagePlaceholder": "Hola, estoy interesado en...",
+    "propertyInterest": "Propiedad de Interes",
+    "submit": "Enviar Mensaje",
+    "success": "Mensaje enviado exitosamente! El agente lo contactara pronto.",
+    "error": "No se pudo enviar el mensaje. Por favor intente de nuevo."
+  },
+  "registration": {
+    "title": "Convertirse en Agente",
+    "subtitle": "Unase a nuestra red de profesionales inmobiliarios de confianza",
+    "benefits": "Beneficios",
+    "benefit1": "Acceso a funciones de listado premium",
+    "benefit2": "Conectese con compradores y vendedores calificados",
+    "benefit3": "Panel profesional y analiticas",
+    "benefit4": "Herramientas de marketing y soporte",
+    "requirements": "Requisitos",
+    "requirement1": "Licencia inmobiliaria valida",
+    "requirement2": "Identificacion profesional y documentacion",
+    "requirement3": "Prueba de registro de negocio",
+    "apply": "Aplicar Ahora",
+    "alreadyAgent": "Ya esta registrado? Inicie sesion"
+  },
+  "dashboard": {
+    "overview": "Resumen",
+    "myListings": "Mis Listados",
+    "inquiries": "Consultas",
+    "viewings": "Visitas",
+    "analytics": "Analiticas",
+    "profile": "Mi Perfil",
+    "settings": "Configuracion"
+  }
+}

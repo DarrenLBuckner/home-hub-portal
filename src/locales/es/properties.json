@@ -1,0 +1,72 @@
+{
+  "properties": {
+    "title": "Propiedades",
+    "featured": "Propiedades Destacadas",
+    "recent": "Listados Recientes",
+    "forSale": "En Venta",
+    "forRent": "En Alquiler",
+    "sold": "Vendido",
+    "rented": "Alquilado",
+    "pending": "Pendiente"
+  },
+  "propertyTypes": {
+    "all": "Todos los Tipos",
+    "house": "Casa",
+    "apartment": "Apartamento",
+    "condo": "Condominio",
+    "townhouse": "Casa Adosada",
+    "land": "Terreno",
+    "commercial": "Comercial",
+    "industrial": "Industrial"
+  },
+  "details": {
+    "description": "Descripcion",
+    "features": "Caracteristicas",
+    "amenities": "Comodidades",
+    "location": "Ubicacion",
+    "price": "Precio",
+    "bedrooms": "Habitaciones",
+    "bathrooms": "Banos",
+    "area": "Area",
+    "sqft": "pies cuadrados",
+    "sqm": "metros cuadrados",
+    "yearBuilt": "Ano de Construccion",
+    "parking": "Estacionamiento",
+    "garage": "Garaje",
+    "pool": "Piscina",
+    "garden": "Jardin",
+    "security": "Seguridad",
+    "airConditioning": "Aire Acondicionado",
+    "heating": "Calefaccion",
+    "furnished": "Amueblado",
+    "petFriendly": "Acepta Mascotas"
+  },
+  "listing": {
+    "listedBy": "Publicado por",
+    "listedOn": "Publicado el",
+    "lastUpdated": "Ultima actualizacion",
+    "propertyId": "ID de Propiedad",
+    "viewCount": "Vistas",
+    "inquiryCount": "Consultas",
+    "similarProperties": "Propiedades Similares"
+  },
+  "inquiry": {
+    "title": "Consultar Sobre Esta Propiedad",
+    "name": "Su Nombre",
+    "email": "Su Correo Electronico",
+    "phone": "Numero de Telefono",
+    "message": "Mensaje",
+    "messagePlaceholder": "Estoy interesado en esta propiedad...",
+    "submit": "Enviar Consulta",
+    "success": "Su consulta ha sido enviada exitosamente!",
+    "error": "No se pudo enviar la consulta. Por favor intente de nuevo."
+  },
+  "filters": {
+    "sortBy": "Ordenar por",
+    "newest": "Mas Recientes",
+    "oldest": "Mas Antiguos",
+    "priceHighToLow": "Precio: Mayor a Menor",
+    "priceLowToHigh": "Precio: Menor a Mayor",
+    "mostViewed": "Mas Vistos"
+  }
+}

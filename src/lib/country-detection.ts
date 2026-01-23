@@ -4,7 +4,10 @@ export function getCountryFromDomain(hostname: string): CountryCode {
   if (hostname.includes('jamaica')) {
     return 'JM';
   }
-  
+  if (hostname.includes('colombia')) {
+    return 'CO';
+  }
+
   return 'GY'; // Default to Guyana
 }
 
@@ -17,7 +20,7 @@ export function getCountryFromCookies(): CountryCode {
     .find(row => row.startsWith('country-code='))
     ?.split('=')[1];
     
-  if (cookieValue === 'JM' || cookieValue === 'GY') {
+  if (cookieValue === 'JM' || cookieValue === 'GY' || cookieValue === 'CO') {
     return cookieValue as CountryCode;
   }
   

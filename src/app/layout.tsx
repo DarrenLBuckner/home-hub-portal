@@ -5,6 +5,9 @@ import Link from 'next/link';
 import { CountryThemeProvider } from '@/components/CountryThemeProvider';
 import { getCountryFromHeaders } from '@/lib/country-detection-server';
 import CookieConsentBanner from '@/components/CookieConsentBanner';
+import { NextIntlClientProvider } from 'next-intl';
+import { getMessages, getLocale } from 'next-intl/server';
+import { LanguageToggle } from '@/components/LanguageToggle';
 
 // Facebook Pixel ID for conversion tracking
 const FB_PIXEL_ID = '1245060350797314';
@@ -25,9 +28,11 @@ export const viewport = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const country = await getCountryFromHeaders();
-  
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="en">
+    <html lang={locale}>
       <head>
         {/* Next.js automatically serves favicon.ico from /public/ - no manual link needed */}
         
@@ -102,11 +107,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           />
         </noscript>
 
-        <CountryThemeProvider initialCountry={country}>
-          <AuthNavBar />
-          <main>
-            {children}
-          </main>
+        <NextIntlClientProvider messages={messages}>
+          <CountryThemeProvider initialCountry={country}>
+            <AuthNavBar />
+            <main>
+              {children}
+            </main>
           
           <footer className="bg-gray-100 border-t">
             <div className="max-w-7xl mx-auto px-4 py-8">
@@ -135,7 +141,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                   <div className="space-y-2 text-sm text-gray-600">
                     <a href="https://guyanahomehub.com" className="block hover:text-gray-800">🇬🇾 Guyana</a>
                     <a href="https://jamaicahomehub.com" className="block hover:text-gray-800">🇯🇲 Jamaica</a>
-                    <span className="block text-gray-400">More coming soon...</span>
+                    <a href="https://colombiahomehub.com" className="block hover:text-gray-800">🇨🇴 Colombia</a>
                   </div>
                 </div>
                 
@@ -164,23 +170,27 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               </div>
             </div>
             
-            {/* Admin access - subtle link at the very bottom */}
+            {/* Admin access and language toggle - subtle link at the very bottom */}
             <div className="border-t border-gray-200 pt-4">
               <div className="max-w-7xl mx-auto px-4 pb-4">
                 <div className="flex justify-between items-center text-xs text-gray-400">
-                  <span>© 2025 Portal Home Hub</span>
-                  <Link 
-                    href="/admin-login" 
-                    className="hover:text-gray-600 transition-colors"
-                  >
-                    Staff Access
-                  </Link>
+                  <span>© 2026 Portal Home Hub</span>
+                  <div className="flex items-center gap-4">
+                    <LanguageToggle variant="compact" />
+                    <Link
+                      href="/admin-login"
+                      className="hover:text-gray-600 transition-colors"
+                    >
+                      Staff Access
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
           </footer>
-          <CookieConsentBanner />
-        </CountryThemeProvider>
+            <CookieConsentBanner />
+          </CountryThemeProvider>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

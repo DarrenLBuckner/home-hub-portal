@@ -1,0 +1,75 @@
+{
+  "nav": {
+    "home": "Home",
+    "properties": "Properties",
+    "agents": "Agents",
+    "services": "Services",
+    "about": "About",
+    "contact": "Contact",
+    "login": "Log In",
+    "signup": "Sign Up",
+    "dashboard": "Dashboard",
+    "logout": "Log Out"
+  },
+  "search": {
+    "placeholder": "Search properties...",
+    "location": "Location",
+    "propertyType": "Property Type",
+    "priceRange": "Price Range",
+    "minPrice": "Min Price",
+    "maxPrice": "Max Price",
+    "bedrooms": "Bedrooms",
+    "bathrooms": "Bathrooms",
+    "search": "Search",
+    "clearFilters": "Clear Filters",
+    "noResults": "No properties found matching your criteria"
+  },
+  "footer": {
+    "copyright": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "cookies": "Cookie Policy",
+    "contact": "Contact Us",
+    "support": "Support",
+    "platform": "Platform",
+    "business": "Business",
+    "countries": "Countries",
+    "legal": "Legal",
+    "staffAccess": "Staff Access"
+  },
+  "cta": {
+    "viewDetails": "View Details",
+    "contactAgent": "Contact Agent",
+    "saveProperty": "Save Property",
+    "share": "Share",
+    "learnMore": "Learn More",
+    "getStarted": "Get Started",
+    "submitInquiry": "Submit Inquiry",
+    "scheduleViewing": "Schedule Viewing"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "tryAgain": "Try Again",
+    "cancel": "Cancel",
+    "save": "Save",
+    "submit": "Submit",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "yes": "Yes",
+    "no": "No",
+    "all": "All",
+    "none": "None",
+    "select": "Select",
+    "required": "Required"
+  },
+  "language": {
+    "toggle": "Language",
+    "english": "English",
+    "spanish": "Spanish"
+  }
+}

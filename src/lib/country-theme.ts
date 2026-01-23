@@ -1,4 +1,4 @@
-export type CountryCode = 'GY' | 'JM';
+export type CountryCode = 'GY' | 'JM' | 'CO';
 
 export interface CountryTheme {
   code: CountryCode;
@@ -52,10 +52,28 @@ export const countryThemes: Record<CountryCode, CountryTheme> = {
       favicon: '/favicons/jamaica-favicon.ico',
       hero: '/images/jamaica-hero.jpg'
     }
+  },
+  CO: {
+    code: 'CO',
+    name: 'Colombia HomeHub',
+    currency: 'COP',
+    colors: {
+      primary: '#1a365d',      // Deep blue (from spec)
+      secondary: '#2b6cb0',    // Lighter blue (from spec)
+      accent: '#FCD116',       // Colombian yellow
+      background: '#ffffff',
+      text: '#1a202c'
+    },
+    assets: {
+      logo: '/logos/colombia-logo.png',
+      favicon: '/favicons/colombia-favicon.ico',
+      hero: '/images/colombia-hero.jpg'
+    }
   }
 };
 
 export function getCountryFromDomain(hostname: string): CountryCode {
   if (hostname.includes('jamaica')) return 'JM';
+  if (hostname.includes('colombia')) return 'CO';
   return 'GY'; // Default to Guyana
 }

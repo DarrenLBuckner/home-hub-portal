@@ -1,0 +1,72 @@
+{
+  "properties": {
+    "title": "Properties",
+    "featured": "Featured Properties",
+    "recent": "Recent Listings",
+    "forSale": "For Sale",
+    "forRent": "For Rent",
+    "sold": "Sold",
+    "rented": "Rented",
+    "pending": "Pending"
+  },
+  "propertyTypes": {
+    "all": "All Types",
+    "house": "House",
+    "apartment": "Apartment",
+    "condo": "Condo",
+    "townhouse": "Townhouse",
+    "land": "Land",
+    "commercial": "Commercial",
+    "industrial": "Industrial"
+  },
+  "details": {
+    "description": "Description",
+    "features": "Features",
+    "amenities": "Amenities",
+    "location": "Location",
+    "price": "Price",
+    "bedrooms": "Bedrooms",
+    "bathrooms": "Bathrooms",
+    "area": "Area",
+    "sqft": "sq ft",
+    "sqm": "sq m",
+    "yearBuilt": "Year Built",
+    "parking": "Parking",
+    "garage": "Garage",
+    "pool": "Pool",
+    "garden": "Garden",
+    "security": "Security",
+    "airConditioning": "Air Conditioning",
+    "heating": "Heating",
+    "furnished": "Furnished",
+    "petFriendly": "Pet Friendly"
+  },
+  "listing": {
+    "listedBy": "Listed by",
+    "listedOn": "Listed on",
+    "lastUpdated": "Last updated",
+    "propertyId": "Property ID",
+    "viewCount": "Views",
+    "inquiryCount": "Inquiries",
+    "similarProperties": "Similar Properties"
+  },
+  "inquiry": {
+    "title": "Inquire About This Property",
+    "name": "Your Name",
+    "email": "Your Email",
+    "phone": "Phone Number",
+    "message": "Message",
+    "messagePlaceholder": "I'm interested in this property...",
+    "submit": "Send Inquiry",
+    "success": "Your inquiry has been sent successfully!",
+    "error": "Failed to send inquiry. Please try again."
+  },
+  "filters": {
+    "sortBy": "Sort by",
+    "newest": "Newest First",
+    "oldest": "Oldest First",
+    "priceHighToLow": "Price: High to Low",
+    "priceLowToHigh": "Price: Low to High",
+    "mostViewed": "Most Viewed"
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "nav": {
+    "home": "Inicio",
+    "properties": "Propiedades",
+    "agents": "Agentes",
+    "services": "Servicios",
+    "about": "Nosotros",
+    "contact": "Contacto",
+    "login": "Iniciar Sesion",
+    "signup": "Registrarse",
+    "dashboard": "Panel",
+    "logout": "Cerrar Sesion"
+  },
+  "search": {
+    "placeholder": "Buscar propiedades...",
+    "location": "Ubicacion",
+    "propertyType": "Tipo de Propiedad",
+    "priceRange": "Rango de Precio",
+    "minPrice": "Precio Minimo",
+    "maxPrice": "Precio Maximo",
+    "bedrooms": "Habitaciones",
+    "bathrooms": "Banos",
+    "search": "Buscar",
+    "clearFilters": "Limpiar Filtros",
+    "noResults": "No se encontraron propiedades que coincidan con sus criterios"
+  },
+  "footer": {
+    "copyright": "Todos los derechos reservados.",
+    "privacy": "Politica de Privacidad",
+    "terms": "Terminos de Servicio",
+    "cookies": "Politica de Cookies",
+    "contact": "Contactenos",
+    "support": "Soporte",
+    "platform": "Plataforma",
+    "business": "Negocios",
+    "countries": "Paises",
+    "legal": "Legal",
+    "staffAccess": "Acceso de Personal"
+  },
+  "cta": {
+    "viewDetails": "Ver Detalles",
+    "contactAgent": "Contactar Agente",
+    "saveProperty": "Guardar Propiedad",
+    "share": "Compartir",
+    "learnMore": "Mas Informacion",
+    "getStarted": "Comenzar",
+    "submitInquiry": "Enviar Consulta",
+    "scheduleViewing": "Programar Visita"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ocurrio un error",
+    "tryAgain": "Intentar de Nuevo",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "submit": "Enviar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "back": "Atras",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "yes": "Si",
+    "no": "No",
+    "all": "Todos",
+    "none": "Ninguno",
+    "select": "Seleccionar",
+    "required": "Requerido"
+  },
+  "language": {
+    "toggle": "Idioma",
+    "english": "Ingles",
+    "spanish": "Espanol"
+  }
+}

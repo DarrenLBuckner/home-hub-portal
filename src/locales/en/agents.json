@@ -1,0 +1,60 @@
+{
+  "agents": {
+    "title": "Find an Agent",
+    "subtitle": "Connect with experienced real estate professionals in your area",
+    "searchPlaceholder": "Search by name or location...",
+    "filterByRegion": "Filter by Region",
+    "allRegions": "All Regions",
+    "noResults": "No agents found matching your criteria"
+  },
+  "profile": {
+    "about": "About",
+    "specializations": "Specializations",
+    "areasServed": "Areas Served",
+    "languages": "Languages",
+    "experience": "Experience",
+    "yearsExperience": "years of experience",
+    "listings": "Active Listings",
+    "soldProperties": "Properties Sold",
+    "rating": "Rating",
+    "reviews": "Reviews",
+    "contactAgent": "Contact Agent",
+    "viewListings": "View Listings"
+  },
+  "contact": {
+    "title": "Contact Agent",
+    "name": "Your Name",
+    "email": "Your Email",
+    "phone": "Phone Number",
+    "message": "Message",
+    "messagePlaceholder": "Hello, I'm interested in...",
+    "propertyInterest": "Property of Interest",
+    "submit": "Send Message",
+    "success": "Message sent successfully! The agent will contact you soon.",
+    "error": "Failed to send message. Please try again."
+  },
+  "registration": {
+    "title": "Become an Agent",
+    "subtitle": "Join our network of trusted real estate professionals",
+    "benefits": "Benefits",
+    "benefit1": "Access to premium listing features",
+    "benefit2": "Connect with qualified buyers and sellers",
+    "benefit3": "Professional dashboard and analytics",
+    "benefit4": "Marketing tools and support",
+    "requirements": "Requirements",
+    "requirement1": "Valid real estate license",
+    "requirement2": "Professional ID and documentation",
+    "requirement3": "Proof of business registration",
+    "apply": "Apply Now",
+    "alreadyAgent": "Already registered? Sign in"
+  },
+  "dashboard": {
+    "overview": "Overview",
+    "myListings": "My Listings",
+    "inquiries": "Inquiries",
+    "viewings": "Viewings",
+    "analytics": "Analytics",
+    "profile": "My Profile",
+    "settings": "Settings"
+  }
+}

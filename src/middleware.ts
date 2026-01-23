@@ -60,6 +60,53 @@ const COUNTRY_DOMAIN_MAP: Record<string, string> = {
   'vietnam': 'VN',
 };
 
+// Territory data interface
+interface TerritoryData {
+  country_code: string;
+  display_name: string;
+  default_language: string;
+  supported_languages: string[];
+  currency: string;
+  status: 'active' | 'pending' | 'suspended' | 'terminated';
+}
+
+// In-memory cache for territory data
+interface CachedTerritory {
+  data: TerritoryData;
+  expiry: number;
+}
+
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const territoryCache = new Map<string, CachedTerritory>();
+
+// Default territory data for fallback (when database is unavailable)
+const DEFAULT_TERRITORIES: Record<string, TerritoryData> = {
+  GY: {
+    country_code: 'GY',
+    display_name: 'Guyana HomeHub',
+    default_language: 'en',
+    supported_languages: ['en'],
+    currency: 'GYD',
+    status: 'active',
+  },
+  JM: {
+    country_code: 'JM',
+    display_name: 'Jamaica HomeHub',
+    default_language: 'en',
+    supported_languages: ['en'],
+    currency: 'JMD',
+    status: 'pending',
+  },
+  CO: {
+    country_code: 'CO',
+    display_name: 'Colombia HomeHub',
+    default_language: 'es',
+    supported_languages: ['es', 'en'],
+    currency: 'COP',
+    status: 'pending',
+  },
+};
+
 /**
  * Detects country code from hostname
  * Supports all 42 HomeHub countries
@@ -89,6 +136,56 @@ function getSiteTypeFromHost(hostname: string): 'portal' | 'public' {
   return 'public'; // Default to public site
 }
 
+/**
+ * Fetches territory data from the database with caching
+ * Falls back to default data if database is unavailable
+ */
+async function getTerritoryData(
+  countryCode: string,
+  supabaseUrl: string,
+  supabaseAnonKey: string
+): Promise<TerritoryData> {
+  // Check cache first
+  const cached = territoryCache.get(countryCode);
+  if (cached && Date.now() < cached.expiry) {
+    return cached.data;
+  }
+
+  try {
+    // Fetch from database using fetch API (Edge compatible)
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/territories?country_code=eq.${countryCode}&select=country_code,display_name,default_language,supported_languages,currency,status`,
+      {
+        headers: {
+          'apikey': supabaseAnonKey,
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const territory = data[0] as TerritoryData;
+
+        // Cache the result
+        territoryCache.set(countryCode, {
+          data: territory,
+          expiry: Date.now() + CACHE_TTL,
+        });
+
+        return territory;
+      }
+    }
+  } catch (error) {
+    console.error(`Failed to fetch territory data for ${countryCode}:`, error);
+  }
+
+  // Fall back to default data
+  return DEFAULT_TERRITORIES[countryCode] || DEFAULT_TERRITORIES.GY;
+}
+
 export async function middleware(request: NextRequest) {
   // Handle OPTIONS preflight requests FIRST, before any other logic
   if (request.method === 'OPTIONS') {
@@ -108,6 +205,40 @@ export async function middleware(request: NextRequest) {
   const country = getCountryFromHost(request.nextUrl.hostname);
   const siteType = getSiteTypeFromHost(request.nextUrl.hostname);
   console.log(`🌍 MIDDLEWARE: Detected country: ${country}, site: ${siteType} from hostname: ${request.nextUrl.hostname}`);
+
+  // Fetch territory data from database (with caching)
+  const territory = await getTerritoryData(
+    country,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+  console.log(`📍 MIDDLEWARE: Territory status: ${territory.status}, language: ${territory.default_language}`);
+
+  // Handle territory status - redirect to appropriate pages
+  const pathname = request.nextUrl.pathname;
+
+  // Skip status checks for special pages and API routes
+  const skipStatusCheck = pathname.startsWith('/api') ||
+                          pathname.startsWith('/maintenance') ||
+                          pathname.startsWith('/coming-soon') ||
+                          pathname.startsWith('/_next') ||
+                          pathname.startsWith('/favicon');
+
+  if (!skipStatusCheck) {
+    if (territory.status === 'suspended' || territory.status === 'terminated') {
+      console.log(`🚨 MIDDLEWARE: Territory ${country} is ${territory.status}, redirecting to maintenance`);
+      const maintenanceUrl = new URL('/maintenance', request.url);
+      return NextResponse.rewrite(maintenanceUrl);
+    }
+
+    // Note: 'pending' territories can still be accessed for testing
+    // Uncomment the following to show coming soon page for pending territories:
+    // if (territory.status === 'pending') {
+    //   console.log(`⏳ MIDDLEWARE: Territory ${country} is pending, showing coming soon`);
+    //   const comingSoonUrl = new URL('/coming-soon', request.url);
+    //   return NextResponse.rewrite(comingSoonUrl);
+    // }
+  }
 
   let response = NextResponse.next({
     request: {
@@ -130,7 +261,29 @@ export async function middleware(request: NextRequest) {
     maxAge: 60 * 60 * 24 * 365 // 1 year
   });
 
-  console.log(`🍪 MIDDLEWARE: Set country-code cookie to: ${country}, site-type: ${siteType}`);
+  // Set territory data cookies for client-side access
+  response.cookies.set('territory-language', territory.default_language, {
+    httpOnly: false,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365 // 1 year
+  });
+
+  response.cookies.set('territory-currency', territory.currency, {
+    httpOnly: false,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 60 * 60 * 24 * 365 // 1 year
+  });
+
+  // Set headers for server-side access (downstream middleware/pages)
+  response.headers.set('x-country-code', country);
+  response.headers.set('x-country-name', territory.display_name);
+  response.headers.set('x-default-language', territory.default_language);
+  response.headers.set('x-currency', territory.currency);
+  response.headers.set('x-territory-status', territory.status);
+
+  console.log(`🍪 MIDDLEWARE: Set country-code cookie to: ${country}, site-type: ${siteType}, language: ${territory.default_language}`);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
