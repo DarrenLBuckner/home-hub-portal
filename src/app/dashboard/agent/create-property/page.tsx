@@ -611,9 +611,12 @@ function CreateAgentPropertyContent() {
 
   // Show success screen when property is submitted
   if (success) {
+    // Redirect admin to admin dashboard if they created property for another user
+    const redirectPath = isCreatingForUser ? '/admin-dashboard' : '/dashboard/agent';
+
     return (
       <PropertySuccessScreen
-        redirectPath="/dashboard/agent"
+        redirectPath={redirectPath}
         redirectDelay={3000}
         userType="agent"
       />
