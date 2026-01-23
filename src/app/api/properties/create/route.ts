@@ -495,7 +495,16 @@ export async function POST(req: NextRequest) {
 
     // Handle image URLs (new direct upload method) or base64 images (legacy)
     let imageUrls: string[] = [];
-    
+
+    // DEBUG: Log what images are being received
+    console.log('📸 IMAGE DEBUG - Input received:', {
+      hasImageUrls: !!(body.imageUrls && Array.isArray(body.imageUrls)),
+      imageUrlsCount: body.imageUrls?.length || 0,
+      hasImages: !!(body.images && Array.isArray(body.images)),
+      imagesCount: body.images?.length || 0,
+      firstImageSample: body.images?.[0] ? { name: body.images[0].name, type: body.images[0].type, hasData: !!body.images[0].data } : null
+    });
+
     if (body.imageUrls && Array.isArray(body.imageUrls)) {
       // New method: Images already uploaded to Supabase Storage
       console.log(`✅ Using pre-uploaded images: ${body.imageUrls.length} URLs`);
@@ -755,6 +764,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Insert images into property_media table
+    console.log('📸 IMAGE DEBUG - Preparing media inserts:', {
+      propertyId: propertyResult.id,
+      imageUrlsCount: imageUrls.length,
+      imageUrls: imageUrls
+    });
+
     const mediaInserts = imageUrls.map((url, index) => ({
       property_id: propertyResult.id,
       media_url: url,
@@ -763,16 +778,22 @@ export async function POST(req: NextRequest) {
       display_order: index,
     }));
 
+    console.log('📸 IMAGE DEBUG - Media inserts to be created:', JSON.stringify(mediaInserts, null, 2));
 
-    const { error: mediaError } = await supabase
-      .from("property_media")
-      .insert(mediaInserts);
-      
-    if (mediaError) {
-      console.error("💥 Media insert error:", mediaError);
-      console.error("💥 Failed media inserts:", mediaInserts);
-      // Don't fail the whole request, just log the error
+    if (mediaInserts.length > 0) {
+      const { error: mediaError } = await supabase
+        .from("property_media")
+        .insert(mediaInserts);
+
+      if (mediaError) {
+        console.error("💥 Media insert error:", mediaError);
+        console.error("💥 Failed media inserts:", mediaInserts);
+        // Don't fail the whole request, just log the error
+      } else {
+        console.log('✅ IMAGE DEBUG - Media inserts successful:', mediaInserts.length, 'images');
+      }
     } else {
+      console.warn('⚠️ IMAGE DEBUG - No images to insert! imageUrls array is empty');
     }
 
     // Determine success message based on operation type and user status
