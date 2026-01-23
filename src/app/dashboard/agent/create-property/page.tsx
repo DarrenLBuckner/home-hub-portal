@@ -109,6 +109,45 @@ function CreateAgentPropertyContent() {
   
   const [images, setImages] = useState<File[]>([]);
 
+  // State for target user profile (for admin-on-behalf-of creation)
+  const [targetUserProfile, setTargetUserProfile] = useState<{
+    email: string;
+    phone: string;
+  } | null>(null);
+
+  // Fetch target user profile when creating for another user
+  useEffect(() => {
+    const fetchTargetUserProfile = async () => {
+      if (!targetUserId) return;
+
+      try {
+        const supabase = createClient();
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('email, phone')
+          .eq('id', targetUserId)
+          .single();
+
+        if (error) {
+          console.error('Error fetching target user profile:', error);
+          return;
+        }
+
+        if (profile) {
+          setTargetUserProfile({
+            email: profile.email || '',
+            phone: profile.phone || ''
+          });
+          console.log('Fetched target user profile:', profile.email);
+        }
+      } catch (err) {
+        console.error('Failed to fetch target user profile:', err);
+      }
+    };
+
+    fetchTargetUserProfile();
+  }, [targetUserId]);
+
   // Scroll to top when step changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -683,7 +722,14 @@ function CreateAgentPropertyContent() {
           {currentStep === 2 && <Step2Details formData={formData} setFormData={setFormData} />}
           {currentStep === 3 && <Step3Location formData={formData} setFormData={setFormData} />}
           {currentStep === 4 && <Step4Photos images={images} setImages={setImages} />}
-          {currentStep === 5 && <Step5Contact formData={formData} setFormData={setFormData} />}
+          {currentStep === 5 && (
+            <Step5Contact
+              formData={formData}
+              setFormData={setFormData}
+              targetUserProfile={targetUserProfile}
+              isCreatingForUser={isCreatingForUser}
+            />
+          )}
           {currentStep === 6 && <Step6Review formData={formData} images={images} />}
         </div>
 

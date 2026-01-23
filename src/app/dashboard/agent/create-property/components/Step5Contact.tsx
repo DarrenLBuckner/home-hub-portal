@@ -3,9 +3,20 @@ import { useEffect } from 'react';
 interface Step5ContactProps {
   formData: any;
   setFormData: (data: any) => void;
+  // Target user info for admin-on-behalf-of creation
+  targetUserProfile?: {
+    email: string;
+    phone: string;
+  } | null;
+  isCreatingForUser?: boolean;
 }
 
-export default function Step5Contact({ formData, setFormData }: Step5ContactProps) {
+export default function Step5Contact({
+  formData,
+  setFormData,
+  targetUserProfile,
+  isCreatingForUser
+}: Step5ContactProps) {
   const handleChange = (field: string, value: string) => {
     setFormData((prev: any) => ({
       ...prev,
@@ -13,24 +24,37 @@ export default function Step5Contact({ formData, setFormData }: Step5ContactProp
     }));
   };
 
-  // Auto-populate with user's email on mount (optional)
+  // Auto-populate with appropriate user's email/phone on mount
+  // When admin creates for another user, use target user's info instead of admin's
   useEffect(() => {
-    const getUserEmail = async () => {
+    const populateContactInfo = async () => {
       try {
+        // If creating for another user and we have their profile, use their info
+        if (isCreatingForUser && targetUserProfile) {
+          if (targetUserProfile.email && !formData.owner_email) {
+            handleChange('owner_email', targetUserProfile.email);
+          }
+          if (targetUserProfile.phone && !formData.owner_whatsapp) {
+            handleChange('owner_whatsapp', targetUserProfile.phone);
+          }
+          return;
+        }
+
+        // Otherwise, use the logged-in user's email (normal flow)
         const { createClient } = await import('@/supabase');
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (user?.email && !formData.owner_email) {
           handleChange('owner_email', user.email);
         }
       } catch (error) {
-        console.warn('Could not auto-populate email:', error);
+        console.warn('Could not auto-populate contact info:', error);
       }
     };
-    
-    getUserEmail();
-  }, []);
+
+    populateContactInfo();
+  }, [isCreatingForUser, targetUserProfile]);
 
   return (
     <div className="space-y-6">
