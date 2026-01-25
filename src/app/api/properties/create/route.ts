@@ -610,8 +610,9 @@ export async function POST(req: NextRequest) {
         bathrooms: parseInt(body.bathrooms) || null,
         house_size_value: body.house_size_value ? parseInt(body.house_size_value) : null,
         house_size_unit: body.house_size_unit || 'sq ft',
-        land_size_value: body.land_size_value ? parseInt(body.land_size_value) : null,
+        land_size_value: body.land_size_na ? null : (body.land_size_value ? parseInt(body.land_size_value) : null),
         land_size_unit: body.land_size_unit || 'sq ft',
+        land_size_na: body.land_size_na || false,
         year_built: body.year_built ? parseInt(body.year_built) : null,
         lot_length: body.lot_length ? parseFloat(body.lot_length) : null,
         lot_width: body.lot_width ? parseFloat(body.lot_width) : null,
@@ -669,8 +670,9 @@ export async function POST(req: NextRequest) {
         lot_length: body.lot_length ? parseFloat(body.lot_length) : null,
         lot_width: body.lot_width ? parseFloat(body.lot_width) : null,
         lot_dimension_unit: body.lot_dimension_unit || 'ft',
+        land_size_na: body.land_size_na || false,
         amenities: body.features || [], // Map features to amenities
-        
+
         // Location - rental uses different structure
         location: body.location, // Specific address field
         country: body.country,
@@ -709,8 +711,9 @@ export async function POST(req: NextRequest) {
         bathrooms: parseInt(body.bathrooms),
         house_size_value: parseInt(body.house_size_value),
         house_size_unit: body.house_size_unit,
-        land_size_value: body.land_size_value ? parseInt(body.land_size_value) : null,
+        land_size_value: body.land_size_na ? null : (body.land_size_value ? parseInt(body.land_size_value) : null),
         land_size_unit: body.land_size_unit,
+        land_size_na: body.land_size_na || false,
         year_built: body.year_built ? parseInt(body.year_built) : null,
         lot_length: body.lot_length ? parseFloat(body.lot_length) : null,
         lot_width: body.lot_width ? parseFloat(body.lot_width) : null,

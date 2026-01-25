@@ -348,22 +348,32 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
       <div>
         <label className="block text-base font-bold text-gray-900 mb-2">
           {isLandProperty ? 'Total Land Area' : 'Lot Size'}
-          {!isLandProperty && !isCommercial && formData.lot_length && formData.lot_width && (
+          {!isLandProperty && !isCommercial && formData.lot_length && formData.lot_width && !formData.land_size_na && (
             <span className="text-green-600 text-sm font-normal ml-2">Auto-calculated from dimensions above</span>
           )}
         </label>
         <div className="flex gap-2">
           <input
             type="number"
-            value={formData.land_size_value}
+            value={formData.land_size_na ? '' : formData.land_size_value}
             onChange={(e) => handleChange('land_size_value', e.target.value)}
-            placeholder="8000"
-            className="flex-1 px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+            placeholder={formData.land_size_na ? 'N/A' : '8000'}
+            disabled={formData.land_size_na}
+            className={`flex-1 px-4 py-3 border-2 rounded-lg text-gray-900 ${
+              formData.land_size_na
+                ? 'border-gray-200 bg-gray-100 cursor-not-allowed text-gray-400'
+                : 'border-gray-300 focus:border-blue-500'
+            }`}
           />
           <select
             value={formData.land_size_unit}
             onChange={(e) => handleChange('land_size_unit', e.target.value)}
-            className="px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+            disabled={formData.land_size_na}
+            className={`px-4 py-3 border-2 rounded-lg text-gray-900 ${
+              formData.land_size_na
+                ? 'border-gray-200 bg-gray-100 cursor-not-allowed text-gray-400'
+                : 'border-gray-300 focus:border-blue-500'
+            }`}
           >
             <option value="sq ft">sq ft</option>
             <option value="sq m">sq m</option>
@@ -371,6 +381,28 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
             <option value="hectares">hectares</option>
           </select>
         </div>
+        {/* N/A Checkbox - for apartment/unit rentals where land size doesn't apply */}
+        {!isLandProperty && (
+          <label className="flex items-center gap-2 mt-2 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={formData.land_size_na || false}
+              onChange={(e) => {
+                handleChange('land_size_na', e.target.checked);
+                if (e.target.checked) {
+                  // Clear the values when N/A is checked
+                  handleChange('land_size_value', '');
+                  handleChange('lot_length', '');
+                  handleChange('lot_width', '');
+                }
+              }}
+              className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <span className="text-sm text-gray-600 group-hover:text-gray-800">
+              Not applicable (e.g., apartment/unit rentals)
+            </span>
+          </label>
+        )}
       </div>
 
       {/* Year Built - Only for buildings, not land */}

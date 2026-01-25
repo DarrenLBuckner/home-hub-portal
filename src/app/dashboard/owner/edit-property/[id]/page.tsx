@@ -38,6 +38,7 @@ export default function EditFSBOProperty() {
     house_size_unit: 'sq ft',
     land_size_value: '',
     land_size_unit: 'sq ft',
+    land_size_na: false,
     year_built: '',
     amenities: [],
     
@@ -149,6 +150,7 @@ export default function EditFSBOProperty() {
             house_size_unit: property.house_size_unit || 'sq ft',
             land_size_value: property.land_size_value?.toString() || '',
             land_size_unit: property.land_size_unit || 'sq ft',
+            land_size_na: property.land_size_na || false,
             year_built: property.year_built?.toString() || '',
             amenities: Array.isArray(property.amenities) ? property.amenities : [],
             lot_length: property.lot_length?.toString() || '',

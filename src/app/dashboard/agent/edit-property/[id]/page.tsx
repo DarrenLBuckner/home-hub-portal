@@ -29,6 +29,7 @@ interface FormData {
   house_size_unit: string;
   land_size_value: string;
   land_size_unit: string;
+  land_size_na: boolean;
   year_built: string;
   amenities: string[];
   region: string;
@@ -85,6 +86,7 @@ export default function EditAgentProperty() {
     house_size_unit: "sq ft",
     land_size_value: "",
     land_size_unit: "sq ft",
+    land_size_na: false,
     year_built: "",
     amenities: [],
     region: "",
@@ -211,6 +213,7 @@ export default function EditAgentProperty() {
             house_size_unit: property.house_size_unit || 'sq ft',
             land_size_value: property.land_size_value?.toString() || '',
             land_size_unit: property.land_size_unit || 'sq ft',
+            land_size_na: property.land_size_na || false,
             year_built: property.year_built?.toString() || '',
             amenities: Array.isArray(property.amenities) ? property.amenities : [],
             region: property.region || '',
@@ -416,8 +419,9 @@ export default function EditAgentProperty() {
         bathrooms: parseFloat(form.bathrooms) || null,
         house_size_value: parseFloat(form.house_size_value) || null,
         house_size_unit: form.house_size_unit,
-        land_size_value: parseFloat(form.land_size_value) || null,
+        land_size_value: form.land_size_na ? null : (parseFloat(form.land_size_value) || null),
         land_size_unit: form.land_size_unit,
+        land_size_na: form.land_size_na,
         year_built: parseInt(form.year_built) || null,
         amenities: form.amenities,
         lot_length: parseFloat(form.lot_length) || null,
@@ -741,46 +745,58 @@ export default function EditAgentProperty() {
               📐 Land & Property Information
             </h3>
             
-            <div className="mb-6">
-              <LotDimensions
-                length={form.lot_length}
-                width={form.lot_width}
-                unit={form.lot_dimension_unit as DimensionUnit}
-                onLengthChange={(length) => setForm(prev => ({ ...prev, lot_length: length }))}
-                onWidthChange={(width) => setForm(prev => ({ ...prev, lot_width: width }))}
-                onUnitChange={(unit) => setForm(prev => ({ ...prev, lot_dimension_unit: unit }))}
-                onAreaCalculated={(areaSqFt) => {
-                  setForm(prev => ({ 
-                    ...prev, 
-                    land_size_value: areaSqFt.toString(),
-                    land_size_unit: 'sq ft' 
-                  }));
-                }}
-                label="Lot Dimensions (if rectangular)"
-              />
-            </div>
-            
+            {!form.land_size_na && (
+              <div className="mb-6">
+                <LotDimensions
+                  length={form.lot_length}
+                  width={form.lot_width}
+                  unit={form.lot_dimension_unit as DimensionUnit}
+                  onLengthChange={(length) => setForm(prev => ({ ...prev, lot_length: length }))}
+                  onWidthChange={(width) => setForm(prev => ({ ...prev, lot_width: width }))}
+                  onUnitChange={(unit) => setForm(prev => ({ ...prev, lot_dimension_unit: unit }))}
+                  onAreaCalculated={(areaSqFt) => {
+                    setForm(prev => ({
+                      ...prev,
+                      land_size_value: areaSqFt.toString(),
+                      land_size_unit: 'sq ft'
+                    }));
+                  }}
+                  label="Lot Dimensions (if rectangular)"
+                />
+              </div>
+            )}
+
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 📊 Total Land Area
-                {form.lot_length && form.lot_width && (
+                {!form.land_size_na && form.lot_length && form.lot_width && (
                   <span className="text-green-600 text-xs ml-2">⚡ Auto-calculated from dimensions above</span>
                 )}
               </label>
               <div className="flex gap-2">
-                <input 
-                  name="land_size_value" 
-                  type="number" 
-                  placeholder="Total area" 
-                  value={form.land_size_value} 
-                  onChange={handleChange} 
-                  className="flex-1 px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                <input
+                  name="land_size_value"
+                  type="number"
+                  placeholder={form.land_size_na ? 'N/A' : 'Total area'}
+                  value={form.land_size_na ? '' : form.land_size_value}
+                  onChange={handleChange}
+                  disabled={form.land_size_na}
+                  className={`flex-1 px-4 py-3 border-2 rounded-lg text-gray-900 ${
+                    form.land_size_na
+                      ? 'border-gray-200 bg-gray-100 cursor-not-allowed text-gray-400'
+                      : 'border-gray-300 focus:border-blue-500'
+                  }`}
                 />
-                <select 
-                  name="land_size_unit" 
-                  value={form.land_size_unit} 
-                  onChange={handleChange} 
-                  className="px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                <select
+                  name="land_size_unit"
+                  value={form.land_size_unit}
+                  onChange={handleChange}
+                  disabled={form.land_size_na}
+                  className={`px-4 py-3 border-2 rounded-lg text-gray-900 ${
+                    form.land_size_na
+                      ? 'border-gray-200 bg-gray-100 cursor-not-allowed text-gray-400'
+                      : 'border-gray-300 focus:border-blue-500'
+                  }`}
                 >
                   <option value="sq ft">sq ft</option>
                   <option value="sq m">sq m</option>
@@ -788,9 +804,33 @@ export default function EditAgentProperty() {
                   <option value="hectares">hectares</option>
                 </select>
               </div>
-              <p className="text-xs text-gray-700 mt-1">
-                Editable for irregular lots or manual override
-              </p>
+              {/* N/A Checkbox */}
+              <label className="flex items-center gap-2 mt-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  name="land_size_na"
+                  checked={form.land_size_na}
+                  onChange={(e) => {
+                    const isChecked = e.target.checked;
+                    setForm(prev => ({
+                      ...prev,
+                      land_size_na: isChecked,
+                      land_size_value: isChecked ? '' : prev.land_size_value,
+                      lot_length: isChecked ? '' : prev.lot_length,
+                      lot_width: isChecked ? '' : prev.lot_width
+                    }));
+                  }}
+                  className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-600 group-hover:text-gray-800">
+                  Not applicable (e.g., apartment/unit rentals)
+                </span>
+              </label>
+              {!form.land_size_na && (
+                <p className="text-xs text-gray-700 mt-1">
+                  Editable for irregular lots or manual override
+                </p>
+              )}
             </div>
             
             <div className="mb-4">

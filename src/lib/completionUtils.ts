@@ -9,6 +9,8 @@ export interface PropertyFormData {
   bedrooms?: string;
   bathrooms?: string;
   house_size_value?: string;
+  land_size_value?: string;
+  land_size_na?: boolean; // When true, land size is not applicable (e.g., apartment/unit rentals)
   location?: string;
   region?: string;
   city?: string;

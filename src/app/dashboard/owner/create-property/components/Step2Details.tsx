@@ -108,22 +108,52 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
         />
       </div>
 
-      <LotDimensions
-        length={formData.lot_length || ''}
-        width={formData.lot_width || ''}
-        unit={(formData.lot_dimension_unit as DimensionUnit) || 'ft'}
-        onLengthChange={(length) => handleChange('lot_length', length)}
-        onWidthChange={(width) => handleChange('lot_width', width)}
-        onUnitChange={(unit) => handleChange('lot_dimension_unit', unit)}
-        onAreaCalculated={(areaSqFt) => {
-          // Auto-update land_size_value with calculated area (only if different)
-          const newValue = areaSqFt.toString();
-          if (formData.land_size_value !== newValue) {
-            handleChange('land_size_value', newValue);
-            handleChange('land_size_unit', 'sq ft');
-          }
-        }}
-      />
+      {/* Lot Dimensions with N/A option */}
+      <div>
+        {!formData.land_size_na && (
+          <LotDimensions
+            length={formData.lot_length || ''}
+            width={formData.lot_width || ''}
+            unit={(formData.lot_dimension_unit as DimensionUnit) || 'ft'}
+            onLengthChange={(length) => handleChange('lot_length', length)}
+            onWidthChange={(width) => handleChange('lot_width', width)}
+            onUnitChange={(unit) => handleChange('lot_dimension_unit', unit)}
+            onAreaCalculated={(areaSqFt) => {
+              // Auto-update land_size_value with calculated area (only if different)
+              const newValue = areaSqFt.toString();
+              if (formData.land_size_value !== newValue) {
+                handleChange('land_size_value', newValue);
+                handleChange('land_size_unit', 'sq ft');
+              }
+            }}
+          />
+        )}
+        {formData.land_size_na && (
+          <div className="p-4 bg-gray-100 rounded-lg border border-gray-200">
+            <p className="text-gray-500 text-sm">Lot dimensions not applicable for this property type</p>
+          </div>
+        )}
+        {/* N/A Checkbox - for apartment/unit where land size doesn't apply */}
+        <label className="flex items-center gap-2 mt-2 cursor-pointer group">
+          <input
+            type="checkbox"
+            checked={formData.land_size_na || false}
+            onChange={(e) => {
+              handleChange('land_size_na', e.target.checked);
+              if (e.target.checked) {
+                // Clear the values when N/A is checked
+                handleChange('land_size_value', '');
+                handleChange('lot_length', '');
+                handleChange('lot_width', '');
+              }
+            }}
+            className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
+          />
+          <span className="text-sm text-gray-600 group-hover:text-gray-800">
+            Not applicable (e.g., apartment/unit)
+          </span>
+        </label>
+      </div>
 
       {/* Helpful hint about amenities and AI */}
       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
