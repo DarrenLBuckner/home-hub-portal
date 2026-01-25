@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import GlobalSouthLocationSelector from '@/components/GlobalSouthLocationSelector';
 
 interface Step3LocationProps {
@@ -48,6 +48,17 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
       currency: code
     }));
   };
+
+  // Check if owner info is provided for protection checkbox logic
+  const hasOwnerInfo = !!(formData.property_owner_whatsapp?.trim() || formData.property_owner_email?.trim());
+
+  // Auto-enable protection when owner info is first entered
+  useEffect(() => {
+    if (hasOwnerInfo && formData.listing_protection === false) {
+      // Only auto-check if user hasn't explicitly unchecked it
+      handleChange('listing_protection', true);
+    }
+  }, [hasOwnerInfo]);
 
   return (
     <div className="space-y-6">
@@ -161,13 +172,29 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
             <input
               type="checkbox"
               id="listing_protection"
-              checked={formData.listing_protection ?? true}
+              disabled={!hasOwnerInfo}
+              checked={hasOwnerInfo && (formData.listing_protection ?? true)}
               onChange={(e) => handleChange('listing_protection', e.target.checked)}
-              className="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className={`mt-1 h-5 w-5 border-gray-300 rounded focus:ring-blue-500 ${
+                hasOwnerInfo
+                  ? 'text-blue-600 cursor-pointer'
+                  : 'text-gray-300 cursor-not-allowed bg-gray-100'
+              }`}
             />
-            <label htmlFor="listing_protection" className="text-sm text-gray-700">
-              <span className="font-medium">Protect this listing</span> - Block copycats automatically
-            </label>
+            <div>
+              <label
+                htmlFor="listing_protection"
+                className={`text-sm ${hasOwnerInfo ? 'text-gray-700' : 'text-gray-400'}`}
+              >
+                <span className="font-medium">Protect this listing</span> - Block copycats automatically
+              </label>
+              <p className={`text-xs mt-1 ${hasOwnerInfo ? 'text-green-600' : 'text-gray-400'}`}>
+                {hasOwnerInfo
+                  ? '✓ Your listing will be protected from copycats'
+                  : 'Enter owner contact info above to enable protection'
+                }
+              </p>
+            </div>
           </div>
         </div>
 
