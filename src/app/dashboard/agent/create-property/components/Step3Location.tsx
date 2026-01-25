@@ -114,6 +114,75 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
         </div>
       </div>
 
+      {/* Owner Information - Duplicate Protection */}
+      <div className="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-lg">
+        <div className="flex items-center gap-2 mb-4">
+          <span className="text-2xl">🛡️</span>
+          <h3 className="text-lg font-semibold text-gray-900">STOP COPYCATS</h3>
+        </div>
+
+        <p className="text-gray-700 mb-4">
+          We check every new listing to see if the property is already posted.
+          If another agent tries to list the same owner's property, we catch it
+          and protect yours.
+        </p>
+
+        <div className="space-y-4">
+          {/* Owner WhatsApp */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Owner WhatsApp <span className="text-gray-400">(optional)</span>
+            </label>
+            <input
+              type="tel"
+              value={formData.property_owner_whatsapp || ''}
+              onChange={(e) => handleChange('property_owner_whatsapp', e.target.value)}
+              placeholder="+592 XXX XXXX"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          {/* Owner Email */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Owner Email <span className="text-gray-400">(optional)</span>
+            </label>
+            <input
+              type="email"
+              value={formData.property_owner_email || ''}
+              onChange={(e) => handleChange('property_owner_email', e.target.value)}
+              placeholder="owner@email.com"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          {/* Protection Checkbox */}
+          <div className="flex items-start gap-3 mt-4">
+            <input
+              type="checkbox"
+              id="listing_protection"
+              checked={formData.listing_protection ?? true}
+              onChange={(e) => handleChange('listing_protection', e.target.checked)}
+              className="mt-1 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="listing_protection" className="text-sm text-gray-700">
+              <span className="font-medium">Protect this listing</span> - Block copycats automatically
+            </label>
+          </div>
+        </div>
+
+        {/* Privacy Notice */}
+        <div className="mt-4 flex items-start gap-2 text-sm text-gray-600">
+          <span>🔒</span>
+          <p>
+            100% Private. We only use this to match against other listings.
+            Never shared. Never public. See our{' '}
+            <a href="/terms" className="text-blue-600 hover:underline">Terms of Service</a>{' '}
+            for details.
+          </p>
+        </div>
+      </div>
+
       {/* Regional Information */}
       {selectedCountry && selectedRegion && (
         <div className="bg-green-50 p-4 rounded-lg">

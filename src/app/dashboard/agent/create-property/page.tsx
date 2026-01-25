@@ -80,9 +80,14 @@ function CreateAgentPropertyContent() {
     country: 'GY',
     currency: 'GYD',
 
-    // Contact
+    // Contact (Agent's contact info - for buyer inquiries)
     owner_email: '',
     owner_whatsapp: '',
+
+    // Owner Info (Property owner's contact - for duplicate protection)
+    property_owner_whatsapp: '',
+    property_owner_email: '',
+    listing_protection: true,
 
     // Listing fields
     listing_type: 'sale',
@@ -291,6 +296,9 @@ function CreateAgentPropertyContent() {
         show_address: formData.show_address || false,
         owner_email: formData.owner_email,
         owner_whatsapp: formData.owner_whatsapp || '',
+        property_owner_whatsapp: formData.property_owner_whatsapp || '',
+        property_owner_email: formData.property_owner_email || '',
+        listing_protection: formData.listing_protection ?? true,
         listing_type: 'sale',
         images: [] // Initialize empty, will upload images separately
       };
@@ -488,9 +496,14 @@ function CreateAgentPropertyContent() {
         show_address: formData.show_address || false,
         country: formData.country || 'GY',
 
-        // Contact info
+        // Contact info (Agent's contact)
         owner_email: formData.owner_email || '',
         owner_whatsapp: formData.owner_whatsapp || '',
+
+        // Owner info (for duplicate protection)
+        property_owner_whatsapp: formData.property_owner_whatsapp || '',
+        property_owner_email: formData.property_owner_email || '',
+        listing_protection: formData.listing_protection ?? true,
 
         // Amenities
         amenities: formData.amenities || [],

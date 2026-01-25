@@ -58,20 +58,23 @@ export default function Step5Contact({
 
   return (
     <div className="space-y-6">
-      <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-      
+      <h2 className="text-xl font-semibold mb-4">YOUR Contact Information</h2>
+
       <div className="bg-blue-50 p-4 rounded-lg mb-6">
-        <h3 className="font-medium text-blue-900 mb-2">How buyers will contact you</h3>
+        <h3 className="font-medium text-blue-900 mb-2">How Buyers Reach YOU (The Agent)</h3>
         <p className="text-sm text-blue-800">
-          Interested buyers will be able to contact you through the information provided below. 
-          Your contact details will only be shown to serious inquiries.
+          Interested buyers will contact <strong>you</strong> through the information provided below.
+          This is YOUR contact info as the listing agent, not the property owner's.
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Email Address *
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Your Email Address <span className="text-red-500">*</span>
         </label>
+        <p className="text-xs text-gray-500 mb-2">
+          Buyers will contact YOU at this email. This is YOUR email, not the property owner's.
+        </p>
         <input
           type="email"
           value={formData.owner_email}
@@ -80,15 +83,15 @@ export default function Step5Contact({
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
         />
-        <p className="text-sm text-gray-500 mt-1">
-          We'll use this email for notifications and buyer inquiries
-        </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          WhatsApp Number <span className="text-red-500">*</span>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Your WhatsApp Number <span className="text-red-500">*</span>
         </label>
+        <p className="text-xs text-gray-500 mb-2">
+          Buyers will message YOU on WhatsApp. This is YOUR number, not the property owner's.
+        </p>
         <input
           type="tel"
           value={formData.owner_whatsapp}
@@ -98,7 +101,7 @@ export default function Step5Contact({
           required
         />
         <p className="text-sm text-gray-500 mt-1">
-          <strong>Required:</strong> Include country code (+592 for Guyana). Most customers prefer WhatsApp for instant contact.
+          <strong>Required:</strong> Include country code (+592 for Guyana).
         </p>
         <div className="bg-green-50 p-3 rounded mt-2">
           <p className="text-sm text-green-800">
