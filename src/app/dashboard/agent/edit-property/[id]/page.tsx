@@ -123,7 +123,11 @@ export default function EditAgentProperty() {
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
-  
+
+  // Track admin status for navigation and permissions
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminLevel, setAdminLevel] = useState<string | null>(null);
+
   const supabase = createClient();
 
   // Load existing property data
@@ -136,31 +140,54 @@ export default function EditAgentProperty() {
           return;
         }
 
-        // Fetch property data with images AND user profile for fallback WhatsApp
-        const [propertyResponse, profileResponse] = await Promise.all([
-          supabase
-            .from('properties')
-            .select(`
-              *,
-              property_media!property_media_property_id_fkey (
-                media_url,
-                media_type,
-                display_order,
-                is_primary
-              )
-            `)
-            .eq('id', propertyId)
-            .eq('user_id', user.id)
-            .single(),
-          supabase
-            .from('profiles')
-            .select('whatsapp')
-            .eq('id', user.id)
-            .single()
-        ]);
+        // First, check if user is an admin and get their profile
+        const { data: userProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('admin_level, country_id')
+          .eq('id', user.id)
+          .single();
 
-        const { data: property, error: propertyError } = propertyResponse;
-        const { data: profile } = profileResponse;
+        if (profileError) {
+          console.error('Error loading user profile:', profileError);
+        }
+
+        const userAdminLevel = userProfile?.admin_level;
+        const isUserAdmin = userAdminLevel && ['super', 'owner'].includes(userAdminLevel);
+        setIsAdmin(!!isUserAdmin);
+        setAdminLevel(userAdminLevel || null);
+
+        // Build the property query - bypass user_id filter for admins
+        let propertyQuery = supabase
+          .from('properties')
+          .select(`
+            *,
+            property_media!property_media_property_id_fkey (
+              media_url,
+              media_type,
+              display_order,
+              is_primary
+            )
+          `)
+          .eq('id', propertyId);
+
+        // Apply access control based on user type
+        if (isUserAdmin) {
+          // Super Admin can edit any property
+          if (userAdminLevel === 'super') {
+            console.log('🔓 Super Admin: Full edit access to all properties');
+          }
+          // Owner Admin can only edit properties in their country
+          else if (userAdminLevel === 'owner' && userProfile?.country_id) {
+            console.log(`🔓 Owner Admin: Edit access limited to country ${userProfile.country_id}`);
+            propertyQuery = propertyQuery.eq('country_id', userProfile.country_id);
+          }
+        } else {
+          // Regular users (including Basic Admin until permissions defined) can only edit their own properties
+          // Regular users can only edit their own properties
+          propertyQuery = propertyQuery.eq('user_id', user.id);
+        }
+
+        const { data: property, error: propertyError } = await propertyQuery.single();
 
         if (propertyError) {
           console.error('Error loading property:', propertyError);
@@ -194,7 +221,7 @@ export default function EditAgentProperty() {
             lot_length: property.lot_length?.toString() || '',
             lot_width: property.lot_width?.toString() || '',
             lot_dimension_unit: property.lot_dimension_unit || 'ft',
-            owner_whatsapp: property.owner_whatsapp || profile?.whatsapp || '',
+            owner_whatsapp: property.owner_whatsapp || '',
             video_url: property.video_url || '',
             
             // Commercial property fields
@@ -438,9 +465,10 @@ export default function EditAgentProperty() {
       
       setSuccess(successMessage);
       
-      // Keep success feedback visible then redirect
+      // Keep success feedback visible then redirect to appropriate dashboard
       setTimeout(() => {
-        router.push('/dashboard/agent');
+        const dashboardUrl = isAdmin ? '/admin-dashboard/unified' : '/dashboard/agent';
+        router.push(dashboardUrl);
       }, 2500);
 
     } catch (error) {
@@ -463,14 +491,17 @@ export default function EditAgentProperty() {
     );
   }
 
+  // Determine the correct dashboard URL based on admin status
+  const getDashboardUrl = () => isAdmin ? '/admin-dashboard/unified' : '/dashboard/agent';
+
   if (error && !form.title) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={() => router.push('/dashboard/agent')}
+          <button
+            onClick={() => router.push(getDashboardUrl())}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
             Back to Dashboard
@@ -486,12 +517,14 @@ export default function EditAgentProperty() {
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-blue-600">Edit Property</h1>
+            <h1 className="text-3xl font-bold text-blue-600">
+              {isAdmin ? '✏️ Admin: Edit Property' : 'Edit Property'}
+            </h1>
             <button
-              onClick={() => router.push('/dashboard/agent')}
+              onClick={() => router.push(getDashboardUrl())}
               className="text-gray-600 hover:text-gray-800 font-medium"
             >
-              ← Back to Dashboard
+              ← Back to {isAdmin ? 'Admin Dashboard' : 'Dashboard'}
             </button>
           </div>
         </div>

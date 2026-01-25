@@ -62,6 +62,11 @@ export default function EditFSBOProperty() {
 
   const [images, setImages] = useState<File[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>([]);
+
+  // Track admin status for navigation and permissions
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminLevel, setAdminLevel] = useState<string | null>(null);
+
   const supabase = createClient();
 
   // Scroll to top when step changes
@@ -79,8 +84,24 @@ export default function EditFSBOProperty() {
           return;
         }
 
-        // Fetch property data with images
-        const { data: property, error: propertyError } = await supabase
+        // First, check if user is an admin
+        const { data: userProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('admin_level, country_id')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error loading user profile:', profileError);
+        }
+
+        const userAdminLevel = userProfile?.admin_level;
+        const isUserAdmin = userAdminLevel && ['super', 'owner'].includes(userAdminLevel);
+        setIsAdmin(!!isUserAdmin);
+        setAdminLevel(userAdminLevel || null);
+
+        // Build the property query - bypass user_id filter for admins
+        let propertyQuery = supabase
           .from('properties')
           .select(`
             *,
@@ -91,9 +112,23 @@ export default function EditFSBOProperty() {
               is_primary
             )
           `)
-          .eq('id', propertyId)
-          .eq('user_id', user.id)
-          .single();
+          .eq('id', propertyId);
+
+        // Apply access control based on user type
+        if (isUserAdmin) {
+          if (userAdminLevel === 'super') {
+            console.log('🔓 Super Admin: Full edit access to all properties');
+          } else if (userAdminLevel === 'owner' && userProfile?.country_id) {
+            console.log(`🔓 Owner Admin: Edit access limited to country ${userProfile.country_id}`);
+            propertyQuery = propertyQuery.eq('country_id', userProfile.country_id);
+          }
+        } else {
+          // Regular users (including Basic Admin until permissions defined) can only edit their own properties
+          // Regular users can only edit their own properties
+          propertyQuery = propertyQuery.eq('user_id', user.id);
+        }
+
+        const { data: property, error: propertyError } = await propertyQuery.single();
 
         if (propertyError) {
           console.error('Error loading property:', propertyError);
@@ -246,8 +281,9 @@ export default function EditFSBOProperty() {
         throw new Error(result.error || 'Failed to update property');
       }
 
-      // Success! Redirect back to dashboard
-      router.push('/dashboard/owner?updated=true');
+      // Success! Redirect back to appropriate dashboard
+      const dashboardUrl = isAdmin ? '/admin-dashboard/unified' : '/dashboard/owner?updated=true';
+      router.push(dashboardUrl);
 
     } catch (error) {
       console.error('Update error:', error);
@@ -269,17 +305,20 @@ export default function EditFSBOProperty() {
     );
   }
 
+  // Determine the correct dashboard URL based on admin status
+  const getDashboardUrl = () => isAdmin ? '/admin-dashboard/unified' : '/dashboard/owner';
+
   if (error && !formData.title) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">Error</h1>
           <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={() => router.push('/dashboard/owner')}
+          <button
+            onClick={() => router.push(getDashboardUrl())}
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Back to Dashboard
+            Back to {isAdmin ? 'Admin Dashboard' : 'Dashboard'}
           </button>
         </div>
       </div>
@@ -292,12 +331,14 @@ export default function EditFSBOProperty() {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Edit Property</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {isAdmin ? '✏️ Admin: Edit Owner Property' : 'Edit Property'}
+            </h1>
             <button
-              onClick={() => router.push('/dashboard/owner')}
+              onClick={() => router.push(getDashboardUrl())}
               className="text-gray-600 hover:text-gray-800"
             >
-              ← Back to Dashboard
+              ← Back to {isAdmin ? 'Admin Dashboard' : 'Dashboard'}
             </button>
           </div>
           
