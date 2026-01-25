@@ -12,7 +12,7 @@ export default function TermsOfUsePage() {
         <div className="bg-white rounded-lg shadow-lg p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">PORTAL HOME HUB</h1>
           <h2 className="text-2xl font-bold text-gray-800 mb-4">TERMS OF USE</h2>
-          <p className="text-gray-600 mb-8">Last Updated: November 28, 2025</p>
+          <p className="text-gray-600 mb-8">Last Updated: January 25, 2026</p>
 
           <div className="prose prose-lg max-w-none">
             <p className="text-gray-700 mb-6">
@@ -109,6 +109,51 @@ export default function TermsOfUsePage() {
             <h4 className="text-lg font-semibold text-gray-800 mb-3">4.4 Reporting Concerns</h4>
             <p className="text-gray-700 mb-6">
               If you identify fraudulent, misleading, or suspicious private listings, please report them to us immediately at legal@portalhomehub.com. We reserve the right to remove listings that violate our Terms of Use.
+            </p>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-4">5. OWNER INFORMATION PROVIDED BY PROPERTY PROFESSIONALS</h3>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">5.1 Agent-Uploaded Properties</h4>
+            <p className="text-gray-700 mb-4">
+              Property Professionals may upload property listings on behalf of property owners with the owner's authorization. When a Property Professional uploads a listing, they may provide owner contact information (including name, email address, and/or phone number) solely for the purpose of facilitating direct communication between interested parties and the property owner.
+            </p>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">5.2 Authorization and Accuracy</h4>
+            <p className="text-gray-700 mb-3">
+              By uploading a property listing with owner contact information, the Property Professional represents and warrants that:
+            </p>
+            <ul className="list-disc list-inside text-gray-700 mb-4 space-y-1">
+              <li>They have obtained proper authorization from the property owner to list the property</li>
+              <li>They have obtained the owner's explicit consent to share their contact information on the platform</li>
+              <li>The owner contact information provided is accurate and current</li>
+              <li>The property owner understands their information will be visible to users of the Services</li>
+            </ul>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">5.3 Use of Owner Contact Information</h4>
+            <p className="text-gray-700 mb-3">
+              Owner contact information displayed on listings is provided solely for legitimate property inquiries. Users agree not to:
+            </p>
+            <ul className="list-disc list-inside text-gray-700 mb-4 space-y-1">
+              <li>Use owner contact information for unsolicited marketing or spam</li>
+              <li>Share, sell, or distribute owner contact information to third parties</li>
+              <li>Contact property owners for purposes unrelated to the listed property</li>
+              <li>Harass, threaten, or engage in any abusive behavior toward property owners</li>
+            </ul>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">5.4 Platform Disclaimer</h4>
+            <p className="text-gray-700 mb-3">
+              Portal Home Hub does not verify owner contact information provided by Property Professionals. We are not responsible for:
+            </p>
+            <ul className="list-disc list-inside text-gray-700 mb-4 space-y-1">
+              <li>The accuracy of owner contact information</li>
+              <li>Any disputes between Property Professionals and property owners regarding authorization</li>
+              <li>Communications that occur directly between users and property owners</li>
+              <li>Any issues arising from unauthorized listing of properties</li>
+            </ul>
+
+            <h4 className="text-lg font-semibold text-gray-800 mb-3">5.5 Removal Requests</h4>
+            <p className="text-gray-700 mb-6">
+              Property owners who discover their property has been listed without authorization, or who wish to have their contact information removed, may contact us at legal@portalhomehub.com. We will investigate and take appropriate action, which may include removing the listing and suspending the responsible Property Professional's account.
             </p>
 
             {/* Contact Section - moved to end for better flow */}
