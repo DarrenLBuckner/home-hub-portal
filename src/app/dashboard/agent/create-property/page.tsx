@@ -178,10 +178,6 @@ function CreateAgentPropertyContent() {
     
     switch (currentStep) {
       case 1:
-        if (!formData.title.trim()) {
-          setError('Property title is required');
-          return false;
-        }
         if (!formData.price || isNaN(Number(formData.price)) || Number(formData.price) <= 0) {
           setError('Valid price is required');
           return false;
@@ -234,6 +230,10 @@ function CreateAgentPropertyContent() {
         }
         if (!formData.address || !formData.address.trim()) {
           setError('Property address is required for verification');
+          return false;
+        }
+        if (!formData.title || !formData.title.trim()) {
+          setError('Property title is required');
           return false;
         }
         break;
