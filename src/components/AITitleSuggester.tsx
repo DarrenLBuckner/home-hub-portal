@@ -31,6 +31,8 @@ const AITitleSuggester: React.FC<AITitleSuggesterProps> = ({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [selectedTone, setSelectedTone] = useState<'professional' | 'friendly' | 'luxury' | 'casual'>('professional');
   const [showToneOptions, setShowToneOptions] = useState(false);
+  // Local location input for title generation context
+  const [quickLocation, setQuickLocation] = useState(propertyData.neighborhood || propertyData.location || '');
 
   const toneDescriptions = {
     professional: 'Business-like, suitable for most listings',
@@ -42,6 +44,11 @@ const AITitleSuggester: React.FC<AITitleSuggesterProps> = ({
   const generateTitles = async () => {
     if (!propertyData.propertyType) {
       setError('Please select a property type first');
+      return;
+    }
+
+    if (!quickLocation.trim()) {
+      setError('Please enter an area/neighborhood for better titles');
       return;
     }
 
@@ -57,6 +64,9 @@ const AITitleSuggester: React.FC<AITitleSuggesterProps> = ({
         },
         body: JSON.stringify({
           ...propertyData,
+          // Use the quick location input for context
+          neighborhood: quickLocation.trim(),
+          location: quickLocation.trim(),
           tone: selectedTone
         }),
       });
@@ -80,7 +90,7 @@ const AITitleSuggester: React.FC<AITitleSuggesterProps> = ({
     setSuggestions([]); // Clear suggestions after selection
   };
 
-  const hasRequiredFields = !!propertyData.propertyType;
+  const hasRequiredFields = !!propertyData.propertyType && !!quickLocation.trim();
 
   return (
     <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4 mt-3">
@@ -108,6 +118,23 @@ const AITitleSuggester: React.FC<AITitleSuggesterProps> = ({
           <span className="text-amber-600 font-medium"> Select a property type first.</span>
         )}
       </p>
+
+      {/* Quick Location Input */}
+      <div className="mb-3">
+        <label className="block text-xs font-medium text-gray-700 mb-1">
+          Area/Neighborhood <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          value={quickLocation}
+          onChange={(e) => setQuickLocation(e.target.value)}
+          placeholder="e.g., Georgetown, Bel Air Park, Kitty"
+          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        />
+        <p className="text-[10px] text-gray-500 mt-1">
+          Enter the area so AI can create location-specific titles
+        </p>
+      </div>
 
       {showToneOptions && (
         <div className="mb-3 p-2 bg-white rounded-lg border">
