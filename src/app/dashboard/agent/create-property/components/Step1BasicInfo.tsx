@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import AITitleSuggester from '@/components/AITitleSuggester';
 
 interface Step1BasicInfoProps {
   formData: any;
@@ -103,6 +104,25 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
           maxLength={100}
         />
         <p className="text-sm text-gray-500 mt-1">{formData.title?.length || 0}/100 characters</p>
+
+        {/* AI Title Suggester */}
+        <AITitleSuggester
+          propertyData={{
+            propertyType: formData.property_type || '',
+            propertyCategory: formData.property_category || 'residential',
+            listingType: formData.listing_type || 'sale',
+            bedrooms: formData.bedrooms || '',
+            bathrooms: formData.bathrooms || '',
+            commercialType: formData.commercial_type || '',
+            floorSize: formData.floor_size_sqft || '',
+            price: formData.price || '',
+            location: formData.city || formData.region || '',
+            neighborhood: formData.neighborhood || '',
+            features: formData.amenities || [],
+          }}
+          onTitleSelected={(title) => handleChange('title', title)}
+          currentTitle={formData.title || ''}
+        />
       </div>
 
       {/* Property Category - Large touch-friendly buttons */}
