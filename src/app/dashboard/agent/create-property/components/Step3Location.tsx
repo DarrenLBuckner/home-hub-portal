@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import GlobalSouthLocationSelector from '@/components/GlobalSouthLocationSelector';
+import AITitleSuggester from '@/components/AITitleSuggester';
 
 interface Step3LocationProps {
   formData: any;
@@ -237,6 +238,47 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
           <li>• If address is hidden, buyers see "Contact agent for exact address"</li>
           <li>• Full address is always stored securely for verification purposes</li>
         </ul>
+      </div>
+
+      {/* Property Title - Now with full context from location */}
+      <div className="mt-8 pt-6 border-t border-gray-200">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Property Title</h3>
+        <p className="text-sm text-gray-600 mb-3">
+          Now that you've entered the location, create a compelling title for your listing.
+        </p>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Property Title <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            value={formData.title || ''}
+            onChange={(e) => handleChange('title', e.target.value)}
+            placeholder="e.g., Beautiful 3-bedroom family home in Georgetown"
+            className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 bg-white placeholder-gray-500 text-base"
+            maxLength={100}
+          />
+          <p className="text-sm text-gray-500 mt-1">{formData.title?.length || 0}/100 characters</p>
+
+          {/* AI Title Suggester - now has full context */}
+          <AITitleSuggester
+            propertyData={{
+              propertyType: formData.property_type || '',
+              propertyCategory: formData.property_category || 'residential',
+              listingType: formData.listing_type || 'sale',
+              bedrooms: formData.bedrooms || '',
+              bathrooms: formData.bathrooms || '',
+              commercialType: formData.commercial_type || '',
+              floorSize: formData.floor_size_sqft || '',
+              price: formData.price || '',
+              location: formData.city || selectedRegion || '',
+              neighborhood: formData.neighborhood || '',
+              features: formData.amenities || [],
+            }}
+            onTitleSelected={(title) => handleChange('title', title)}
+            currentTitle={formData.title || ''}
+          />
+        </div>
       </div>
     </div>
   );
