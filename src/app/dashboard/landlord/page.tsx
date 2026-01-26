@@ -7,6 +7,7 @@ import { getActiveCountries } from "@/lib/countries";
 import UniversalPropertyManager from "@/components/UniversalPropertyManager";
 import FoundingAdvisorBadge from "@/components/FoundingAdvisorBadge";
 import TrainingVideosCard from "@/components/TrainingVideosCard";
+import TrainingResourcesCard from "@/components/TrainingResourcesCard";
 
 export default function LandlordDashboard() {
   const router = useRouter();
@@ -266,6 +267,11 @@ export default function LandlordDashboard() {
         {/* Training Videos Section */}
         <div className="mb-6 sm:mb-8">
           <TrainingVideosCard userType="landlord" countryCode={user?.country_id || 'GY'} />
+        </div>
+
+        {/* Training Resources Section */}
+        <div className="mb-6 sm:mb-8">
+          <TrainingResourcesCard userType="landlord" countryCode={user?.country_id || 'GY'} />
         </div>
 
         {/* Mobile-First Properties Section */}

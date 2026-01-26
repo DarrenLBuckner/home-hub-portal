@@ -9,6 +9,7 @@ import MyPropertiesTab from './components/MyPropertiesTab';
 import AgentDashboardWelcome from './components/AgentDashboardWelcome';
 import PropertyEngagementMetrics from './components/PropertyEngagementMetrics';
 import TrainingVideosCard from '@/components/TrainingVideosCard';
+import TrainingResourcesCard from '@/components/TrainingResourcesCard';
 
 
 
@@ -170,6 +171,7 @@ export default function AgentPage() {
               <PropertyEngagementMetrics userId={userId} />
             )}
             <TrainingVideosCard userType="agent" countryCode={countryCode} />
+            <TrainingResourcesCard userType="agent" countryCode={countryCode} />
           </div>
         )}
         

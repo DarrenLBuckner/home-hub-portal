@@ -1644,6 +1644,19 @@ export default function UnifiedAdminDashboard() {
                   </Link>
                 </div>
               </div>
+
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <div className="text-center">
+                  <div className="text-3xl mb-3">📄</div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Training Resources</h3>
+                  <p className="text-gray-600 mb-4 text-sm">Manage downloadable PDFs and documents for agents, landlords, and FSBO users</p>
+                  <Link href="/admin-dashboard/training-resources">
+                    <button className="px-4 py-2 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition-colors">
+                      Manage Resources
+                    </button>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         )}
