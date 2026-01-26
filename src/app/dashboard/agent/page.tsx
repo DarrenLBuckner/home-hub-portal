@@ -8,6 +8,7 @@ import MyPropertiesTab from './components/MyPropertiesTab';
 // ...existing code...
 import AgentDashboardWelcome from './components/AgentDashboardWelcome';
 import PropertyEngagementMetrics from './components/PropertyEngagementMetrics';
+import TrainingVideosCard from '@/components/TrainingVideosCard';
 
 
 
@@ -22,6 +23,7 @@ export default function AgentPage() {
   const [userType, setUserType] = useState<string | null>(null);
   const [isAgent, setIsAgent] = useState(false);
   const [agentWhatsapp, setAgentWhatsapp] = useState<string>('');
+  const [countryCode, setCountryCode] = useState<string>('GY');
   
   useEffect(() => {
     const fetchUser = async () => {
@@ -44,9 +46,13 @@ export default function AgentPage() {
           // Basic admins should only review/approve, not create
           const { data: adminProfile } = await supabase
             .from('profiles')
-            .select('admin_level, phone')
+            .select('admin_level, phone, country_id')
             .eq('id', data.user.id)
             .single();
+
+          if (adminProfile?.country_id) {
+            setCountryCode(adminProfile.country_id);
+          }
             
           const canCreateProperties = adminProfile?.admin_level === 'owner' || 
                                     adminProfile?.admin_level === 'super';
@@ -61,17 +67,22 @@ export default function AgentPage() {
           // Check profiles table for regular users
           const { data: profile } = await supabase
             .from('profiles')
-            .select('user_type, phone')
+            .select('user_type, phone, country_id')
             .eq('id', data.user.id)
             .single();
-          
+
           if (profile) {
             setUserType(profile.user_type);
             setIsAgent(profile.user_type === 'agent');
-            
+
             // Set WhatsApp number from profile
             if (profile.phone) {
               setAgentWhatsapp(profile.phone);
+            }
+
+            // Set country code from profile
+            if (profile.country_id) {
+              setCountryCode(profile.country_id);
             }
           }
         }
@@ -158,6 +169,7 @@ export default function AgentPage() {
             {userId && (
               <PropertyEngagementMetrics userId={userId} />
             )}
+            <TrainingVideosCard userType="agent" countryCode={countryCode} />
           </div>
         )}
         

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from '@/supabase';
 import { getGlobalSouthCountries } from "../../../lib/global-south-countries";
 import UniversalPropertyManager from "@/components/UniversalPropertyManager";
+import TrainingVideosCard from "@/components/TrainingVideosCard";
 
 export default function FSBODashboard() {
   const router = useRouter();
@@ -215,6 +216,11 @@ export default function FSBODashboard() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Training Videos Section */}
+        <div className="mb-6 sm:mb-8">
+          <TrainingVideosCard userType="fsbo" countryCode={user?.country_id || 'GY'} />
         </div>
 
         {/* Mobile-First Property Management Section */}

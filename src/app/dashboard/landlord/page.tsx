@@ -6,6 +6,7 @@ import { supabase } from "@/supabase";
 import { getActiveCountries } from "@/lib/countries";
 import UniversalPropertyManager from "@/components/UniversalPropertyManager";
 import FoundingAdvisorBadge from "@/components/FoundingAdvisorBadge";
+import TrainingVideosCard from "@/components/TrainingVideosCard";
 
 export default function LandlordDashboard() {
   const router = useRouter();
@@ -260,6 +261,11 @@ export default function LandlordDashboard() {
               </Link>
             </div>
           )}
+        </div>
+
+        {/* Training Videos Section */}
+        <div className="mb-6 sm:mb-8">
+          <TrainingVideosCard userType="landlord" countryCode={user?.country_id || 'GY'} />
         </div>
 
         {/* Mobile-First Properties Section */}
