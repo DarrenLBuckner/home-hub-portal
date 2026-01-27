@@ -25,6 +25,46 @@ function getSiteIdFromCountry(countryCode: string | undefined): string {
   return COUNTRY_TO_SITE[countryCode.toUpperCase()] || countryCode.toLowerCase();
 }
 
+/**
+ * Sanitize video URL - returns null if invalid or empty
+ * Prevents "string did not match expected pattern" errors from URL constraints
+ */
+function sanitizeVideoUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+
+  const trimmed = String(url).trim();
+  if (!trimmed || trimmed.length < 10) return null;
+
+  // Must start with http:// or https://
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+    return null;
+  }
+
+  // Must contain youtube, vimeo, or be a valid video URL
+  const lowerUrl = trimmed.toLowerCase();
+  if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be') || lowerUrl.includes('vimeo.com')) {
+    return trimmed;
+  }
+
+  // Other URLs - just validate basic structure
+  try {
+    new URL(trimmed);
+    return trimmed;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sanitize email - returns null if invalid
+ */
+function sanitizeEmail(email: string | undefined | null): string | null {
+  if (!email) return null;
+  const trimmed = String(email).trim();
+  if (!trimmed || !trimmed.includes('@') || trimmed.length < 5) return null;
+  return trimmed;
+}
+
 export const runtime = 'nodejs'; // avoid Edge runtime issues
 export const maxDuration = 60; // Allow up to 60 seconds for image processing
 // Note: Vercel free tier has 4.5MB body limit, Pro has 4.5MB, Enterprise can go higher
@@ -631,9 +671,9 @@ export async function POST(req: NextRequest) {
         currency: body.currency || 'GYD',
         listed_by_type: listedByType,
         
-        // Video URL (for Pro/Elite tier agents)
-        video_url: body.video_url || null,
-        
+        // Video URL (for Pro/Elite tier agents) - sanitized to prevent pattern errors
+        video_url: sanitizeVideoUrl(body.video_url),
+
         // Commercial Property Fields
         property_category: propertyCategory,
         commercial_type: body.commercial_type || null,
@@ -645,13 +685,13 @@ export async function POST(req: NextRequest) {
         elevator_access: body.elevator_access || false,
         commercial_garage_entrance: body.commercial_garage_entrance || false,
 
-        // Contact fields (Agent's contact for buyer inquiries)
-        owner_email: body.owner_email || null,
+        // Contact fields (Agent's contact for buyer inquiries) - sanitized
+        owner_email: sanitizeEmail(body.owner_email),
         owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp),
 
-        // Owner info (Property owner's contact for duplicate protection)
+        // Owner info (Property owner's contact for duplicate protection) - sanitized
         property_owner_whatsapp: normalizePhoneNumber(body.property_owner_whatsapp),
-        property_owner_email: body.property_owner_email || null,
+        property_owner_email: sanitizeEmail(body.property_owner_email),
 
         // System fields
         user_id: effectiveUserId,                    // Property owner (target user if admin-created)
@@ -691,11 +731,11 @@ export async function POST(req: NextRequest) {
         rental_type: body.rentalType || 'monthly',
         currency: body.currency || 'GYD',
 
-        // Video URL (for Pro/Elite tier landlords)
-        video_url: body.video_url || null,
+        // Video URL (for Pro/Elite tier landlords) - sanitized to prevent pattern errors
+        video_url: sanitizeVideoUrl(body.video_url),
 
-        // Contact fields (normalize phone numbers to prevent pattern validation errors)
-        owner_email: body.owner_email || null,
+        // Contact fields (sanitized to prevent pattern validation errors)
+        owner_email: sanitizeEmail(body.owner_email),
         owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp),
 
         // System fields
@@ -737,13 +777,13 @@ export async function POST(req: NextRequest) {
         city: body.city,
         neighborhood: body.neighborhood || null,
         
-        // Step 5 - Contact
-        owner_email: body.owner_email,
+        // Step 5 - Contact - sanitized to prevent pattern errors
+        owner_email: sanitizeEmail(body.owner_email),
         owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp),
         
-        // Video URL (for Pro/Elite tier FSBO)
-        video_url: body.video_url || null,
-        
+        // Video URL (for Pro/Elite tier FSBO) - sanitized to prevent pattern errors
+        video_url: sanitizeVideoUrl(body.video_url),
+
         // System fields (auto-populated)
         user_id: effectiveUserId,                    // Property owner (target user if admin-created)
         created_by: createdByUserId,                 // Audit: who actually created this property
@@ -758,6 +798,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Log the data being inserted for debugging
+    console.log('🔍 PROPERTY DATA DEBUG - Fields being inserted:');
+    console.log('  title:', propertyData.title);
+    console.log('  property_type:', propertyData.property_type);
+    console.log('  listing_type:', propertyData.listing_type);
+    console.log('  price:', propertyData.price);
+    console.log('  region:', propertyData.region);
+    console.log('  city:', propertyData.city);
+    console.log('  country_id:', propertyData.country_id);
+    console.log('  owner_email:', propertyData.owner_email);
+    console.log('  owner_whatsapp:', propertyData.owner_whatsapp);
+    console.log('  video_url:', propertyData.video_url);
+    console.log('  property_owner_whatsapp:', propertyData.property_owner_whatsapp);
+    console.log('  property_owner_email:', propertyData.property_owner_email);
+    console.log('  Full propertyData:', JSON.stringify(propertyData, null, 2));
 
     // Insert property into properties table
     const { data: propertyResult, error: dbError } = await supabase
@@ -767,15 +821,31 @@ export async function POST(req: NextRequest) {
       .single();
       
     if (dbError) {
-      console.error('Property creation error details:', dbError);
+      console.error('💥💥💥 PROPERTY CREATION ERROR 💥💥💥');
       console.error('Error message:', dbError.message);
-      console.error('Payload:', normalizedPayload);
-      console.error("💥 Database error:", dbError);
-      console.error("💥 Failed property data:", propertyData);
-      return NextResponse.json({ 
-        error: `Database error: ${dbError.message}`,
+      console.error('Error code:', dbError.code);
+      console.error('Error details:', dbError.details);
+      console.error('Error hint:', dbError.hint);
+      console.error('💥 Full error object:', JSON.stringify(dbError, null, 2));
+      console.error('💥 Failed property data:', JSON.stringify(propertyData, null, 2));
+
+      // Try to identify which field caused the pattern error
+      let fieldHint = '';
+      if (dbError.message?.includes('pattern')) {
+        fieldHint = '\n\nPossible causes: Check phone numbers (owner_whatsapp, property_owner_whatsapp), video_url, or email fields for invalid formats.';
+        console.error('🔍 PATTERN ERROR - Checking suspicious fields:');
+        console.error('  owner_whatsapp:', propertyData.owner_whatsapp, '- type:', typeof propertyData.owner_whatsapp);
+        console.error('  property_owner_whatsapp:', propertyData.property_owner_whatsapp, '- type:', typeof propertyData.property_owner_whatsapp);
+        console.error('  video_url:', propertyData.video_url, '- type:', typeof propertyData.video_url);
+        console.error('  owner_email:', propertyData.owner_email, '- type:', typeof propertyData.owner_email);
+        console.error('  property_owner_email:', propertyData.property_owner_email, '- type:', typeof propertyData.property_owner_email);
+      }
+
+      return NextResponse.json({
+        error: `Database error: ${dbError.message}${fieldHint}`,
         details: dbError.details || 'No additional details',
-        code: dbError.code || 'Unknown error code'
+        code: dbError.code || 'Unknown error code',
+        hint: dbError.hint || null
       }, { status: 500 });
     }
 
