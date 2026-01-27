@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface Step5ContactProps {
   formData: any;
@@ -17,11 +17,58 @@ export default function Step5Contact({
   targetUserProfile,
   isCreatingForUser
 }: Step5ContactProps) {
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+
   const handleChange = (field: string, value: string) => {
     setFormData((prev: any) => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  // Validate phone number format
+  const validatePhone = (phone: string): string | null => {
+    if (!phone || phone.trim() === '') {
+      return 'WhatsApp number is required';
+    }
+    if (!phone.startsWith('+')) {
+      return 'Phone number must start with + and country code (e.g., +592)';
+    }
+    // Remove non-digits except leading +
+    const digitsOnly = phone.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+    if (digitsOnly.length < 8) {
+      return 'Phone number seems too short. Include country code + full number';
+    }
+    return null;
+  };
+
+  // Handle phone input with auto-prefix and validation
+  const handlePhoneChange = (value: string) => {
+    let processedValue = value.trim();
+
+    // Auto-add '+' if user starts typing digits (likely country code)
+    // Only auto-add if they've typed at least 3 digits and forgot the +
+    if (processedValue && !processedValue.startsWith('+')) {
+      const digitsOnly = processedValue.replace(/\D/g, '');
+      // Common country codes: 592 (Guyana), 1 (USA/Canada), etc.
+      if (digitsOnly.length >= 3 && /^[1-9]/.test(digitsOnly)) {
+        processedValue = '+' + processedValue;
+      }
+    }
+
+    handleChange('owner_whatsapp', processedValue);
+
+    // Validate on change if field was touched
+    if (phoneTouched) {
+      setPhoneError(validatePhone(processedValue));
+    }
+  };
+
+  // Validate on blur (when leaving the field)
+  const handlePhoneBlur = () => {
+    setPhoneTouched(true);
+    setPhoneError(validatePhone(formData.owner_whatsapp || ''));
   };
 
   // Auto-populate with appropriate user's email/phone on mount
@@ -95,14 +142,23 @@ export default function Step5Contact({
         <input
           type="tel"
           value={formData.owner_whatsapp}
-          onChange={(e) => handleChange('owner_whatsapp', e.target.value)}
-          placeholder="+592-XXX-XXXX"
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          onChange={(e) => handlePhoneChange(e.target.value)}
+          onBlur={handlePhoneBlur}
+          placeholder="+592 123 4567"
+          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            phoneError && phoneTouched ? 'border-red-500 bg-red-50' : 'border-gray-300'
+          }`}
           required
         />
-        <p className="text-sm text-gray-500 mt-1">
-          <strong>Required:</strong> Include country code (+592 for Guyana).
-        </p>
+        {phoneError && phoneTouched ? (
+          <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+            <span>⚠️</span> {phoneError}
+          </p>
+        ) : (
+          <p className="text-sm text-gray-500 mt-1">
+            <strong>Format:</strong> +592XXXXXXX (e.g., +5926227446)
+          </p>
+        )}
         <div className="bg-green-50 p-3 rounded mt-2">
           <p className="text-sm text-green-800">
             <strong>💬 Why WhatsApp?</strong> 90% of property inquiries in Guyana happen via WhatsApp. This ensures you get contacted quickly by serious buyers.

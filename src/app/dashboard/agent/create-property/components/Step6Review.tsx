@@ -44,7 +44,9 @@ export default function Step6Review({ formData, images }: Step6ReviewProps) {
           </div>
           <div>
             <p className="text-sm font-medium text-gray-500">Listing Type</p>
-            <p className="mt-1 text-gray-900">For Sale (FSBO)</p>
+            <p className="mt-1 text-gray-900">
+              {formData.listing_type === 'rent' ? 'For Rent (Agent)' : 'For Sale (Agent)'}
+            </p>
           </div>
         </div>
         <div className="mt-4">

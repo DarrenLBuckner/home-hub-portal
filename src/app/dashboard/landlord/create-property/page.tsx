@@ -117,6 +117,43 @@ export default function CreateLandlordProperty() {
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [phoneTouched, setPhoneTouched] = useState(false);
+
+  // Validate phone number format
+  const validatePhone = (phone: string): string | null => {
+    if (!phone || phone.trim() === '') {
+      return 'WhatsApp number is required';
+    }
+    if (!phone.startsWith('+')) {
+      return 'Phone number must start with + and country code (e.g., +592)';
+    }
+    const digitsOnly = phone.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+    if (digitsOnly.length < 8) {
+      return 'Phone number seems too short. Include country code + full number';
+    }
+    return null;
+  };
+
+  // Handle phone input with auto-prefix and validation
+  const handlePhoneChange = (value: string) => {
+    let processedValue = value.trim();
+    if (processedValue && !processedValue.startsWith('+')) {
+      const digitsOnly = processedValue.replace(/\D/g, '');
+      if (digitsOnly.length >= 3 && /^[1-9]/.test(digitsOnly)) {
+        processedValue = '+' + processedValue;
+      }
+    }
+    setForm(prev => ({ ...prev, owner_whatsapp: processedValue }));
+    if (phoneTouched) {
+      setPhoneError(validatePhone(processedValue));
+    }
+  };
+
+  const handlePhoneBlur = () => {
+    setPhoneTouched(true);
+    setPhoneError(validatePhone(form.owner_whatsapp || ''));
+  };
 
   const imageLimit = 15; // Landlords get more image uploads
 
@@ -733,14 +770,23 @@ export default function CreateLandlordProperty() {
                 type="tel"
                 name="owner_whatsapp"
                 value={form.owner_whatsapp}
-                onChange={handleChange}
-                placeholder="+592-XXX-XXXX"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                onChange={(e) => handlePhoneChange(e.target.value)}
+                onBlur={handlePhoneBlur}
+                placeholder="+592 123 4567"
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                  phoneError && phoneTouched ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
                 required
               />
-              <p className="text-sm text-gray-500 mt-1">
-                <strong>Required:</strong> Include country code (+592 for Guyana). Most tenants prefer WhatsApp for instant contact.
-              </p>
+              {phoneError && phoneTouched ? (
+                <p className="text-sm text-red-600 mt-1 flex items-center gap-1">
+                  <span>⚠️</span> {phoneError}
+                </p>
+              ) : (
+                <p className="text-sm text-gray-500 mt-1">
+                  <strong>Format:</strong> +592XXXXXXX (e.g., +5926227446)
+                </p>
+              )}
               <div className="bg-green-50 p-3 rounded mt-2">
                 <p className="text-sm text-green-800">
                   <strong>💬 Why WhatsApp?</strong> 90% of rental inquiries in Guyana happen via WhatsApp. This ensures you get contacted quickly by serious tenants.
