@@ -340,51 +340,44 @@ export default function CreateFSBOProperty() {
         
         // Amenities
         amenities: formData.amenities || [],
-        
-        // Images (prepare for API)
-        images: images.length > 0 ? images.map((file, index) => ({
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          data: null // Will be set below
-        })) : [],
-        
+
         // Status
         status: 'pending'
       };
 
-      // Convert images to base64 for API
+      // Upload images directly to Supabase Storage (bypasses API payload limits)
+      let imageUrls: string[] = [];
       if (images.length > 0) {
-        console.log('Converting images to base64...');
-        for (let i = 0; i < images.length; i++) {
-          const file = images[i];
-          try {
-            const base64 = await new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => resolve(reader.result as string);
-              reader.onerror = reject;
-              reader.readAsDataURL(file);
-            });
-            propertyData.images[i].data = base64;
-          } catch (err) {
-            console.error(`Failed to convert image ${i + 1} to base64:`, err);
-            setError('Failed to process images. Please try again.');
-            submittingRef.current = false;
-            setIsSubmitting(false);
-            return;
-          }
+        console.log('📤 Uploading images directly to Supabase Storage...');
+        try {
+          const { uploadImagesToSupabase } = await import('@/lib/supabaseImageUpload');
+          const uploadedImages = await uploadImagesToSupabase(images, user.id);
+          imageUrls = uploadedImages.map(img => img.url);
+          console.log(`✅ ${imageUrls.length} images uploaded successfully`);
+        } catch (err) {
+          console.error('Failed to upload images to storage:', err);
+          setError('Failed to upload images. Please try again.');
+          submittingRef.current = false;
+          setIsSubmitting(false);
+          return;
         }
       }
-      
+
+      // Add image URLs to property data (small strings, not base64 data)
+      const propertyDataWithImages = {
+        ...propertyData,
+        imageUrls: imageUrls
+      };
+
       console.log('Submitting to API...');
-      
-      // Submit to API instead of direct Supabase
+
+      // Submit to API - payload is now small (just URLs)
       const response = await fetch('/api/properties/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(propertyData)
+        body: JSON.stringify(propertyDataWithImages)
       });
 
       const result = await response.json();

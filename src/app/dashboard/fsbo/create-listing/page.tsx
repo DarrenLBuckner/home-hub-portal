@@ -171,29 +171,30 @@ export default function CreateFSBOListing() {
       return;
     }
 
-    // Prepare images for upload - convert File objects to base64
-    const imagesForUpload = await Promise.all(
-      form.images.map(async (file: File) => {
-        return new Promise<{name: string, type: string, data: string}>((resolve) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve({
-            name: file.name,
-            type: file.type,
-            data: reader.result as string, // Already in data: URL format
-          });
-          reader.readAsDataURL(file);
-        });
-      })
-    );
+    // Upload images directly to Supabase Storage (bypasses API payload limits)
+    let imageUrls: string[] = [];
+    try {
+      console.log('📤 Uploading images directly to Supabase Storage...');
+      const { uploadImagesToSupabase } = await import('@/lib/supabaseImageUpload');
+      const uploadedImages = await uploadImagesToSupabase(form.images, userId);
+      imageUrls = uploadedImages.map(img => img.url);
+      console.log(`✅ ${imageUrls.length} images uploaded successfully`);
+    } catch (err) {
+      console.error('Failed to upload images to storage:', err);
+      setError('Failed to upload images. Please try again.');
+      setIsSubmitting(false);
+      return;
+    }
 
-    // Store property in DB via API
+    // Store property in DB via API - only send URLs, not image data
     try {
       const res = await fetch("/api/properties/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          images: imagesForUpload,
+          images: undefined, // Don't send File objects
+          imageUrls: imageUrls, // Send URLs instead
           userId,
           status: "pending",
           country: selectedCountry,
