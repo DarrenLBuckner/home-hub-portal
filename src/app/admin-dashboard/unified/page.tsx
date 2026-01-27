@@ -590,6 +590,56 @@ export default function UnifiedAdminDashboard() {
     setProcessingAgentId(null);
   };
 
+  // Mark an agent as manually approved (for cases where profile was created directly)
+  const markAsManuallyApproved = async (agentId: string) => {
+    setProcessingAgentId(agentId);
+    setError('');
+
+    const agent = pendingAgents.find(a => a.id === agentId);
+    const agentName = agent?.first_name && agent?.last_name
+      ? `${agent.first_name} ${agent.last_name}`.trim()
+      : agent?.email || 'Agent';
+
+    if (!confirm(`Mark "${agentName}" as manually approved?\n\nUse this when the agent's profile was already created directly in the database.`)) {
+      setProcessingAgentId(null);
+      return;
+    }
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setError('Not authenticated');
+        setProcessingAgentId(null);
+        return;
+      }
+
+      const response = await fetch('/api/admin/agents/mark-approved', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ agentId })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || 'Failed to mark agent as approved');
+        return;
+      }
+
+      console.log('✅ Agent marked as manually approved:', result);
+      alert(`✅ Agent "${agentName}" has been marked as manually approved and removed from the pending queue.`);
+      await loadAgents();
+
+    } catch (error) {
+      console.error('❌ Network error:', error);
+      setError('Network error occurred. Please try again.');
+    }
+    setProcessingAgentId(null);
+  };
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -1592,6 +1642,13 @@ export default function UnifiedAdminDashboard() {
                             ❌ Reject
                           </button>
                         </div>
+                        <button
+                          onClick={() => markAsManuallyApproved(agent.id)}
+                          disabled={processingAgentId === agent.id}
+                          className="w-full px-3 py-2 border border-gray-300 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        >
+                          🔧 Mark as Manually Approved
+                        </button>
                       </div>
                     </div>
                   </div>
