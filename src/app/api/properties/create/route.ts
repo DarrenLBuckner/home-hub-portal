@@ -644,7 +644,15 @@ export async function POST(req: NextRequest) {
         loading_dock: body.loading_dock || false,
         elevator_access: body.elevator_access || false,
         commercial_garage_entrance: body.commercial_garage_entrance || false,
-        
+
+        // Contact fields (Agent's contact for buyer inquiries)
+        owner_email: body.owner_email || null,
+        owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp),
+
+        // Owner info (Property owner's contact for duplicate protection)
+        property_owner_whatsapp: normalizePhoneNumber(body.property_owner_whatsapp),
+        property_owner_email: body.property_owner_email || null,
+
         // System fields
         user_id: effectiveUserId,                    // Property owner (target user if admin-created)
         created_by: createdByUserId,                 // Audit: who actually created this property
@@ -682,10 +690,14 @@ export async function POST(req: NextRequest) {
         // Rental-specific fields
         rental_type: body.rentalType || 'monthly',
         currency: body.currency || 'GYD',
-        
+
         // Video URL (for Pro/Elite tier landlords)
         video_url: body.video_url || null,
-        
+
+        // Contact fields (normalize phone numbers to prevent pattern validation errors)
+        owner_email: body.owner_email || null,
+        owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp),
+
         // System fields
         user_id: effectiveUserId,                    // Property owner (target user if admin-created)
         created_by: createdByUserId,                 // Audit: who actually created this property
