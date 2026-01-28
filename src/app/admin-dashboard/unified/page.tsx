@@ -740,7 +740,9 @@ export default function UnifiedAdminDashboard() {
 
       if (updateError) {
         console.error('❌ Error approving owner:', updateError);
-        setError(updateError.message || 'Failed to approve application');
+        console.error('Error details:', { code: updateError.code, message: updateError.message, hint: updateError.hint });
+        setError(`Failed to approve: ${updateError.message || 'Unknown error'}`);
+        setProcessingOwnerId(null);
         return;
       }
 
@@ -2152,18 +2154,37 @@ export default function UnifiedAdminDashboard() {
                         </div>
 
                         {/* Application Info */}
-                        <div className="rounded-lg p-3 mb-4 bg-blue-50">
-                          <div className="text-xs font-medium mb-1 text-blue-800">Application Details</div>
-                          <div className="text-sm text-blue-700">
+                        <div className="rounded-lg p-3 mb-4 bg-blue-50 border border-blue-100">
+                          <div className="text-xs font-medium mb-2 text-blue-800">📋 Application Details</div>
+                          <div className="text-sm text-blue-700 space-y-1">
                             <div className="flex items-center justify-between">
                               <span>📅 Applied:</span>
-                              <span>{new Date(owner.created_at).toLocaleDateString()}</span>
+                              <span className="font-mono">{new Date(owner.created_at).toLocaleDateString()}</span>
                             </div>
                             {owner.is_founding_member && (
-                              <div className="mt-1 text-xs px-2 py-1 rounded bg-blue-200 text-blue-800">
+                              <div className="mt-2 text-xs px-2 py-1 rounded bg-blue-200 text-blue-800 text-center font-semibold">
                                 🌟 Founding Member
                               </div>
                             )}
+                          </div>
+                        </div>
+
+                        {/* Account Status */}
+                        <div className="rounded-lg p-3 mb-4 bg-green-50 border border-green-200">
+                          <div className="text-xs font-medium mb-2 text-green-800">✅ Status</div>
+                          <div className="text-sm text-green-700">
+                            <p className="font-semibold">Auto-Approved Account</p>
+                            <p className="text-xs mt-1">User has immediate dashboard access to list properties</p>
+                          </div>
+                        </div>
+
+                        {/* What This Approval Does */}
+                        <div className="rounded-lg p-3 mb-4 bg-yellow-50 border border-yellow-200">
+                          <div className="text-xs font-medium mb-2 text-yellow-800">⚠️ Before You Approve</div>
+                          <div className="text-xs text-yellow-700">
+                            <p className="mb-1"><strong>This approves:</strong> The user account status</p>
+                            <p className="mb-1"><strong>This does NOT approve:</strong> Their property listings</p>
+                            <p><strong>Next step:</strong> Check Properties tab for their pending listings</p>
                           </div>
                         </div>
 
