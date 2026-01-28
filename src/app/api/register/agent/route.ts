@@ -87,14 +87,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to save agent application: ' + vettingError.message }, { status: 500 });
     }
 
-    // Send confirmation email
-    try {
-      // Use 127.0.0.1 instead of localhost for server-to-server calls on Windows
-      // localhost can have IPv6 resolution issues causing ECONNREFUSED
-      const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL?.startsWith('http')
-        ? process.env.NEXT_PUBLIC_FRONTEND_URL
-        : 'http://127.0.0.1:3000';
+    // Send confirmation email to applicant AND notification to Owner Admin
+    // Use 127.0.0.1 instead of localhost for server-to-server calls on Windows
+    // localhost can have IPv6 resolution issues causing ECONNREFUSED
+    const baseUrl = process.env.NEXT_PUBLIC_FRONTEND_URL?.startsWith('http')
+      ? process.env.NEXT_PUBLIC_FRONTEND_URL
+      : 'http://127.0.0.1:3000';
 
+    // Send confirmation email to the applicant
+    try {
       console.log('📧 Sending confirmation email to:', email, 'via:', `${baseUrl}/api/send-agent-confirmation-email`);
 
       const emailResponse = await fetch(`${baseUrl}/api/send-agent-confirmation-email`, {
@@ -119,7 +120,48 @@ export async function POST(request: Request) {
       console.error('❌ Failed to send confirmation email:', emailError);
       // Continue registration even if email fails
     }
-    
+
+    // Send notification email to Owner Admin for the territory
+    try {
+      console.log('📧 Sending notification to Owner Admin for territory:', agentData.country || 'GY');
+
+      const notificationResponse = await fetch(`${baseUrl}/api/send-agent-application-notification`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name,
+          last_name,
+          email,
+          phone: normalizedPhone,
+          company_name: agentData.company_name,
+          years_experience: agentData.years_experience,
+          specialties: agentData.specialties,
+          target_region: agentData.target_region,
+          selected_plan: agentData.selected_plan,
+          is_founding_member: !!promo_code,
+          reference1_name: agentData.reference1_name,
+          reference1_phone: normalizedRef1,
+          reference1_email: agentData.reference1_email,
+          reference2_name: agentData.reference2_name,
+          reference2_phone: normalizedRef2,
+          reference2_email: agentData.reference2_email,
+          submitted_at: new Date().toISOString(),
+          country: agentData.country || 'GY'
+        })
+      });
+
+      const notificationResult = await notificationResponse.json();
+
+      if (notificationResponse.ok && notificationResult.success) {
+        console.log('✅ Owner Admin notification email sent successfully');
+      } else {
+        console.warn('⚠️ Owner Admin notification:', notificationResult.message || 'Not sent');
+      }
+    } catch (notificationError) {
+      console.error('❌ Failed to send Owner Admin notification:', notificationError);
+      // Continue registration even if notification fails
+    }
+
     return NextResponse.json({ 
       tempApplicationId,
       message: 'Agent application submitted successfully! Your application is under review. You will receive an email confirmation shortly.',
