@@ -1101,6 +1101,26 @@ export default function UnifiedAdminDashboard() {
                 </div>
               )}
 
+              {/* Agent Verification Management - Owner/Super Admin Only */}
+              {(adminData?.admin_level === 'super' || adminData?.admin_level === 'owner') && (
+                <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-emerald-900">✓ Agent Verification</h3>
+                    <div className="text-2xl">🛡️</div>
+                  </div>
+                  <p className="text-sm text-emerald-800 mb-4">
+                    {adminData?.admin_level === 'super'
+                      ? 'Verify agents across all territories'
+                      : 'Verify agents in your territory'}
+                  </p>
+                  <Link href="/admin-dashboard/agents">
+                    <button className="w-full px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors">
+                      Manage Agent Verification →
+                    </button>
+                  </Link>
+                </div>
+              )}
+
               {/* User & Suspension Management - Available to All Admin Levels */}
               {permissions?.canViewUsers && (
                 <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
