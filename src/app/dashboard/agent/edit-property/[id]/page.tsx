@@ -662,8 +662,8 @@ export default function EditAgentProperty() {
                     rows={4}
                     className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 resize-none" 
                   />
-                  <AIDescriptionAssistant 
-                    onDescriptionGenerated={(description) => setForm({...form, description})}
+                  <AIDescriptionAssistant
+                    onDescriptionGenerated={(description) => setForm(prev => ({...prev, description}))}
                     currentDescription={form.description}
                     propertyData={{
                       title: form.title,
