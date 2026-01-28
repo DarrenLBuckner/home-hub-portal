@@ -39,6 +39,21 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Get user profile for admin status
+    const { data: userProfile, error: profileError } = await supabase
+      .from('profiles')
+      .select('admin_level, country_id, user_type')
+      .eq('id', user.id)
+      .single();
+
+    if (profileError) {
+      console.error('Error loading user profile:', profileError);
+    }
+
+    const userAdminLevel = userProfile?.admin_level;
+    const isUserAdmin = userAdminLevel && ['super', 'owner'].includes(userAdminLevel);
+    const userCountryId = userProfile?.country_id;
+
     const propertyId = params.id;
     const body = await request.json();
     
@@ -171,12 +186,28 @@ export async function PUT(
     }
 
     // Get current property to preserve status
-    const { data: currentProperty, error: fetchError } = await supabase
+    let propertyQuery = supabase
       .from("properties")
-      .select('status')
-      .eq('id', propertyId)
-      .eq('user_id', user.id)
-      .single();
+      .select('id, status, country_id, user_id')
+      .eq('id', propertyId);
+
+    // Apply access control based on user type
+    if (isUserAdmin) {
+      // Super Admin can edit any property
+      if (userAdminLevel === 'super') {
+        console.log('🔓 Super Admin: Full edit access to all properties');
+      }
+      // Owner Admin can only edit properties in their country
+      else if (userAdminLevel === 'owner' && userCountryId) {
+        console.log(`🔓 Owner Admin: Edit access limited to country ${userCountryId}`);
+        propertyQuery = propertyQuery.eq('country_id', userCountryId);
+      }
+    } else {
+      // Regular users can only edit their own properties
+      propertyQuery = propertyQuery.eq('user_id', user.id);
+    }
+
+    const { data: currentProperty, error: fetchError } = await propertyQuery.single();
 
     if (fetchError || !currentProperty) {
       return NextResponse.json({ error: "Property not found or access denied" }, { status: 404 });
@@ -187,11 +218,21 @@ export async function PUT(
     updateData.updated_at = new Date().toISOString();
 
     // Update property in properties table
-    const { data: propertyResult, error: dbError } = await supabase
+    let updateQuery = supabase
       .from("properties")
       .update(updateData)
-      .eq('id', propertyId)
-      .eq('user_id', user.id) // Ensure user owns this property
+      .eq('id', propertyId);
+
+    // Apply access control based on user type
+    if (!isUserAdmin) {
+      // Regular users can only update their own properties
+      updateQuery = updateQuery.eq('user_id', user.id);
+    } else if (userAdminLevel === 'owner' && userCountryId) {
+      // Owner admins can only update properties in their country
+      updateQuery = updateQuery.eq('country_id', userCountryId);
+    }
+
+    const { data: propertyResult, error: dbError } = await updateQuery
       .select('id, status')
       .single();
       
