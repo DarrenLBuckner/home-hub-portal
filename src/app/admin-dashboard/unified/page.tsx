@@ -657,7 +657,7 @@ export default function UnifiedAdminDashboard() {
       const { error: updateError } = await supabase
         .from('agent_vetting')
         .update({ 
-          status: 'rejected', 
+          status: 'denied', 
           denied_at: new Date().toISOString(),
           rejection_reason: reason
         })
