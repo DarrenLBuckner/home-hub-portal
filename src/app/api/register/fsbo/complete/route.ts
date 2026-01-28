@@ -50,31 +50,48 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
-    // Create profile record with proper subscription status and pending approval
+    // Prepare profile data with proper subscription status and pending approval
     const subscriptionStatus = is_founding_member ? 'active' : 'pending_payment';
+    const profileData: Record<string, any> = {
+      email: email,
+      first_name: first_name,
+      last_name: last_name,
+      phone: normalizedPhone,
+      user_type: 'owner',
+      approval_status: 'pending',
+      country_id: registrationData.country_id || 'GY',
+      subscription_status: subscriptionStatus,
+      is_founding_member: !!is_founding_member,
+      promo_code: promo_code || null,
+      promo_spot_number: promo_spot_number || null,
+      updated_at: new Date().toISOString()
+    };
+
+    // Update existing profile first (may have been created by trigger)
     const { error: profileError } = await supabase
       .from('profiles')
-      .insert({
-        id: data.user.id,
-        email: email,
-        first_name: first_name,
-        last_name: last_name,
-        phone: normalizedPhone,
-        user_type: 'owner',
-        approval_status: 'pending',
-        country_id: registrationData.country_id || 'GY',
-        subscription_status: subscriptionStatus,
-        is_founding_member: !!is_founding_member,
-        promo_code: promo_code || null,
-        promo_spot_number: promo_spot_number || null,
-        created_at: new Date().toISOString()
-      });
+      .update(profileData)
+      .eq('id', data.user.id);
 
     if (profileError) {
-      console.error('Profile creation error:', profileError);
-      // Don't fail the registration if profile creation fails, but log it
+      console.error('Profile update error:', profileError);
+      // Try creating if update failed (profile doesn't exist)
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.user.id,
+          ...profileData,
+          created_at: new Date().toISOString()
+        });
+
+      if (insertError) {
+        console.error('Profile insert error:', insertError);
+        // Don't fail the registration, but log it
+      } else {
+        console.log(`✅ Profile created for ${is_founding_member ? 'founding member' : 'regular'} FSBO user`);
+      }
     } else {
-      console.log(`✅ Profile created for ${is_founding_member ? 'founding member' : 'regular'} FSBO user`);
+      console.log(`✅ Profile updated for ${is_founding_member ? 'founding member' : 'regular'} FSBO user`);
     }
 
     // Handle promo code redemption if provided

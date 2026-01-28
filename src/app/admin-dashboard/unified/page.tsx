@@ -449,8 +449,21 @@ export default function UnifiedAdminDashboard() {
         );
       }
 
-      setPendingOwners(filtered);
-      console.log(`✅ Loaded ${filtered.length} pending owner applications`);
+      // Validate that all applications have valid IDs
+      const validApplications = filtered.filter((app: OwnerApplication) => {
+        if (!app.id) {
+          console.warn('⚠️ Found application with null/undefined ID:', app);
+          return false;
+        }
+        return true;
+      });
+
+      if (validApplications.length !== filtered.length) {
+        console.warn(`⚠️ Filtered out ${filtered.length - validApplications.length} applications with invalid IDs`);
+      }
+
+      setPendingOwners(validApplications);
+      console.log(`✅ Loaded ${validApplications.length} pending owner applications`, validApplications);
 
     } catch (error) {
       console.warn('⚠️ Error loading owner applications (non-critical):', error);
@@ -674,11 +687,19 @@ export default function UnifiedAdminDashboard() {
   };
 
   const approveOwnerApplication = async (userId: string) => {
+    // Validate userId before proceeding
+    if (!userId) {
+      console.error('❌ approveOwnerApplication called with null/undefined userId');
+      setError('Invalid application ID. Please refresh and try again.');
+      return;
+    }
+
     setProcessingOwnerId(userId);
     setError('');
 
     try {
       const application = pendingOwners.find(a => a.id === userId);
+      console.log('📋 Approving owner application:', { userId, application });
       const ownerName = application ?
         `${application.first_name || ''} ${application.last_name || ''}`.trim() || application.email :
         'User';
@@ -735,6 +756,13 @@ export default function UnifiedAdminDashboard() {
   };
 
   const rejectOwnerApplication = async (userId: string, reason: string) => {
+    // Validate userId before proceeding
+    if (!userId) {
+      console.error('❌ rejectOwnerApplication called with null/undefined userId');
+      setError('Invalid application ID. Please refresh and try again.');
+      return;
+    }
+
     if (!reason.trim()) {
       setError('Please provide a reason for rejection');
       return;
@@ -745,6 +773,7 @@ export default function UnifiedAdminDashboard() {
 
     try {
       const application = pendingOwners.find(a => a.id === userId);
+      console.log('📋 Rejecting owner application:', { userId, application });
       const ownerName = application ?
         `${application.first_name || ''} ${application.last_name || ''}`.trim() || application.email :
         'User';
