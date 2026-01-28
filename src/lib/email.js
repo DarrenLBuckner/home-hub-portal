@@ -7,11 +7,17 @@ export async function sendWelcomeEmail(to) {
   await resend.emails.send({
     from: FROM_EMAIL,
     to,
-    subject: 'Welcome to Portal Home Hub!',
-    html: `<h2>Welcome to Portal Home Hub!</h2>
-      <p>Your account is now active. You can log in and start listing your property.</p>
-      <a href="https://portalhomehub.com/login" style="color: #2563eb; font-weight: bold;">Login to your account</a>
-      <p>Thank you for joining us!</p>`
+    subject: 'Welcome to Portal Home Hub - Application Received!',
+    html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <h2 style="color: #2563eb;">Welcome to Portal Home Hub!</h2>
+      <div style="background: #fff3cd; padding: 15px; border-radius: 8px; border-left: 4px solid #ffc107; margin: 20px 0;">
+        <strong style="color: #856404;">📋 Application Status: Under Review</strong>
+        <p style="margin: 10px 0 0 0; color: #856404;">Our team will review your application within 24-48 hours. You'll receive an email once approved.</p>
+      </div>
+      <p>Thank you for signing up! Once your application is approved, you'll be able to log in and start listing your property.</p>
+      <p>Questions? Contact us on WhatsApp: <a href="https://wa.me/5927629797" style="color: #16a34a;">+592 762-9797</a></p>
+      <p>Thank you for joining us!</p>
+    </div>`
   });
 }
 
@@ -19,10 +25,10 @@ export async function sendFSBOFoundingMemberEmail(to, firstName, spotNumber) {
   await resend.emails.send({
     from: FROM_EMAIL,
     to,
-    subject: '🏠 Welcome to Portal Home Hub - Founding Member Access Activated!',
+    subject: '🏠 Welcome to Portal Home Hub - Application Received!',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
-        
+
         <!-- Header -->
         <div style="text-align: center; margin-bottom: 30px;">
           🎉 <h1 style="color: #16a34a; margin: 10px 0;">Welcome to Portal Home Hub, ${firstName}!</h1>
@@ -31,11 +37,19 @@ export async function sendFSBOFoundingMemberEmail(to, firstName, spotNumber) {
           </div>
         </div>
 
+        <!-- Application Status -->
+        <div style="background: #fff3cd; padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107; margin-bottom: 25px;">
+          <h3 style="color: #856404; margin: 0 0 10px 0;">📋 Application Status: Under Review</h3>
+          <p style="margin: 0; color: #856404; line-height: 1.6;">
+            Our team will review your application within <strong>24-48 hours</strong>. You'll receive an email once your account is approved and ready to use.
+          </p>
+        </div>
+
         <!-- Welcome Message -->
         <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
           <p style="font-size: 16px; line-height: 1.6; color: #374151;">
-            Congratulations! You're now part of an exclusive group helping to revolutionize real estate in the Caribbean. 
-            As a founding member, you have immediate access to list your property - no approval process needed!
+            Congratulations! You're now part of an exclusive group helping to revolutionize real estate in the Caribbean.
+            As a founding member, you'll enjoy special benefits once your account is approved.
           </p>
         </div>
 
@@ -52,69 +66,63 @@ export async function sendFSBOFoundingMemberEmail(to, firstName, spotNumber) {
           </ul>
         </div>
 
+        <!-- What Happens Next -->
+        <div style="background: #e0f2fe; padding: 20px; border-radius: 12px; border-left: 4px solid #2563eb; margin-bottom: 25px;">
+          <h3 style="color: #0369a1; margin: 0 0 15px 0;">🚀 What Happens Next?</h3>
+          <ol style="margin: 0; padding-left: 20px; color: #374151;">
+            <li style="margin-bottom: 8px;">Our team reviews your application (24-48 hours)</li>
+            <li style="margin-bottom: 8px;">You receive an approval confirmation email</li>
+            <li style="margin-bottom: 8px;">You can then log in and list your property</li>
+          </ol>
+        </div>
+
         <!-- Tips for Success -->
         <div style="background: #fef3c7; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e42; margin-bottom: 25px;">
-          <h3 style="color: #d97706; margin: 0 0 15px 0;">💡 Tips to Sell Your Property Fast:</h3>
+          <h3 style="color: #d97706; margin: 0 0 15px 0;">💡 While You Wait - Prepare for Success:</h3>
           <ul style="margin: 0; padding-left: 20px; color: #374151;">
-            <li style="margin-bottom: 8px;">📱 <strong>Use high-quality photos</strong> - properties with professional photos get 3x more views</li>
-            <li style="margin-bottom: 8px;">📝 <strong>Write detailed descriptions</strong> - highlight unique features and neighborhood benefits</li>
-            <li style="margin-bottom: 8px;">💰 <strong>Price competitively</strong> - research similar properties in your area</li>
-            <li style="margin-bottom: 8px;">⏰ <strong>Respond quickly</strong> - fast responses lead to faster sales</li>
-            <li style="margin-bottom: 8px;">🎯 <strong>Keep listing updated</strong> - fresh listings get priority placement</li>
+            <li style="margin-bottom: 8px;">📱 <strong>Take high-quality photos</strong> - properties with professional photos get 3x more views</li>
+            <li style="margin-bottom: 8px;">📝 <strong>Draft your description</strong> - highlight unique features and neighborhood benefits</li>
+            <li style="margin-bottom: 8px;">💰 <strong>Research pricing</strong> - check similar properties in your area</li>
+            <li style="margin-bottom: 8px;">📋 <strong>Gather documents</strong> - property details, measurements, amenities list</li>
           </ul>
         </div>
 
-        <!-- Ready to Start -->
+        <!-- Professional Services Available -->
         <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <h3 style="color: #2563eb; margin: 0 0 15px 0;">🚀 Ready to List Your Property?</h3>
-          <p style="margin-bottom: 15px; color: #374151;">
-            Unlike agents, you can start immediately! No waiting for approval - just login and create your first listing.
+          <h3 style="color: #2563eb; margin: 0 0 15px 0;">📸 Professional Services Available:</h3>
+          <ul style="margin: 0 0 15px 0; padding-left: 20px; color: #374151;">
+            <li style="margin-bottom: 8px;">Professional photography services</li>
+            <li style="margin-bottom: 8px;">Done-for-you listing creation</li>
+            <li style="margin-bottom: 8px;">Lockbox installation services</li>
+            <li style="margin-bottom: 8px;">Digital application processing</li>
+            <li style="margin-bottom: 8px;">Marketing support and guidance</li>
+          </ul>
+          <p style="margin: 0; font-size: 14px; color: #6b7280; font-style: italic;">
+            <strong>Note:</strong> Fees apply to these services. Service availability may vary depending on your location and local partnerships.
           </p>
-
-          <div style="text-align: center; margin: 25px 0;">
-            <a href="https://portalhomehub.com/login" 
-               style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
-              Login & Create Your First Listing
-            </a>
-          </div>
-
-          <!-- Professional Services Available -->
-          <div style="background: #f0f9ff; padding: 20px; border-radius: 12px; border-left: 4px solid #2563eb; margin-top: 25px;">
-            <h4 style="color: #2563eb; margin: 0 0 15px 0;">📸 Additional Professional Services Available:</h4>
-            <ul style="margin: 0 0 15px 0; padding-left: 20px; color: #374151;">
-              <li style="margin-bottom: 8px;">Professional photography services</li>
-              <li style="margin-bottom: 8px;">Done-for-you listing creation</li>
-              <li style="margin-bottom: 8px;">Lockbox installation services</li>
-              <li style="margin-bottom: 8px;">Digital application processing</li>
-              <li style="margin-bottom: 8px;">Marketing support and guidance</li>
-            </ul>
-            <p style="margin: 0; font-size: 14px; color: #6b7280; font-style: italic;">
-              <strong>Note:</strong> Fees apply to these services. Service availability may vary depending on your location and local partnerships.
-            </p>
-          </div>
         </div>
 
         <!-- Beta Program Message -->
         <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: white; padding: 20px; border-radius: 12px; margin-bottom: 25px;">
           <h3 style="margin: 0 0 10px 0; color: white;">🌍 You're Changing Caribbean Real Estate!</h3>
           <p style="margin: 0; opacity: 0.9; line-height: 1.5;">
-            As a founding member, you're part of our mission to revolutionize how properties are bought and sold across the Caribbean. 
+            As a founding member, you're part of our mission to revolutionize how properties are bought and sold across the Caribbean.
             Your feedback and success help us build the best platform possible for everyone.
           </p>
         </div>
 
         <!-- Support -->
         <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <h4 style="margin: 0 0 10px 0; color: #374151;">Need Help Getting Started?</h4>
-          <p style="margin: 0 0 15px 0; color: #6b7280;">Our team is here to support you every step of the way!</p>
-          
+          <h4 style="margin: 0 0 10px 0; color: #374151;">Questions About Your Application?</h4>
+          <p style="margin: 0 0 15px 0; color: #6b7280;">Our team is here to help!</p>
+
           <div style="margin: 15px 0;">
-            <a href="https://wa.me/5927629797" 
+            <a href="https://wa.me/5927629797"
                style="background: #22c55e; color: white; padding: 10px 20px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; margin: 5px;">
               💬 WhatsApp Support: +592 762-9797
             </a>
           </div>
-          
+
           <p style="font-size: 14px; color: #9ca3af; margin: 15px 0 0 0;">
             Welcome to the future of Caribbean real estate! 🏡✨
           </p>
@@ -256,8 +264,8 @@ export async function sendLandlordWelcomeEmail(to, firstName, isFoundingMember =
     from: FROM_EMAIL,
     to,
     subject: isFoundingMember
-      ? `🏠 Welcome to Portal Home Hub - Founding Landlord #${spotNumber}!`
-      : '🏠 Welcome to Portal Home Hub - Your Landlord Account is Ready!',
+      ? `🏠 Welcome to Portal Home Hub - Application Received!`
+      : '🏠 Welcome to Portal Home Hub - Application Received!',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
 
@@ -271,11 +279,18 @@ export async function sendLandlordWelcomeEmail(to, firstName, isFoundingMember =
           ` : ''}
         </div>
 
+        <!-- Application Status -->
+        <div style="background: #fff3cd; padding: 20px; border-radius: 12px; border-left: 4px solid #ffc107; margin-bottom: 25px;">
+          <h3 style="color: #856404; margin: 0 0 10px 0;">📋 Application Status: Under Review</h3>
+          <p style="margin: 0; color: #856404; line-height: 1.6;">
+            Our team will review your application within <strong>24-48 hours</strong>. You'll receive an email once your account is approved and ready to use.
+          </p>
+        </div>
+
         <!-- Welcome Message -->
         <div style="background: white; padding: 25px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
           <p style="font-size: 16px; line-height: 1.6; color: #374151;">
-            Your landlord account is now active! You're ready to list your rental properties and connect with quality tenants
-            across the Caribbean.
+            Thank you for signing up as a Landlord on Portal Home Hub! Once approved, you'll be able to list your rental properties and connect with quality tenants across the Caribbean.
           </p>
         </div>
 
@@ -293,9 +308,19 @@ export async function sendLandlordWelcomeEmail(to, firstName, isFoundingMember =
         </div>
         ` : ''}
 
-        <!-- Landlord Benefits -->
+        <!-- What Happens Next -->
         <div style="background: #e0f2fe; padding: 20px; border-radius: 12px; border-left: 4px solid #2563eb; margin-bottom: 25px;">
-          <h3 style="color: #0369a1; margin: 0 0 15px 0;">🏡 What You Can Do as a Landlord:</h3>
+          <h3 style="color: #0369a1; margin: 0 0 15px 0;">🚀 What Happens Next?</h3>
+          <ol style="margin: 0; padding-left: 20px; color: #374151;">
+            <li style="margin-bottom: 8px;">Our team reviews your application (24-48 hours)</li>
+            <li style="margin-bottom: 8px;">You receive an approval confirmation email</li>
+            <li style="margin-bottom: 8px;">You can then log in and list your rental properties</li>
+          </ol>
+        </div>
+
+        <!-- Landlord Benefits -->
+        <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+          <h3 style="color: #374151; margin: 0 0 15px 0;">🏡 What You Can Do as an Approved Landlord:</h3>
           <ul style="margin: 0; padding-left: 20px; color: #374151;">
             <li style="margin-bottom: 8px;">📝 <strong>List rental properties</strong> - Apartments, houses, commercial spaces</li>
             <li style="margin-bottom: 8px;">👥 <strong>Connect with tenants</strong> - Receive inquiries directly</li>
@@ -305,41 +330,21 @@ export async function sendLandlordWelcomeEmail(to, firstName, isFoundingMember =
           </ul>
         </div>
 
-        <!-- Next Steps -->
-        <div style="background: #fef3c7; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 25px;">
-          <h3 style="color: #d97706; margin: 0 0 15px 0;">🚀 Getting Started - Next Steps:</h3>
-          <ol style="margin: 0; padding-left: 20px; color: #374151;">
-            <li style="margin-bottom: 8px;"><strong>Complete your profile</strong> - Add your photo and contact details</li>
-            <li style="margin-bottom: 8px;"><strong>Add your first property</strong> - Include high-quality photos and detailed descriptions</li>
-            <li style="margin-bottom: 8px;"><strong>Set competitive pricing</strong> - Research similar rentals in your area</li>
-            <li style="margin-bottom: 8px;"><strong>Wait for approval</strong> - Our team will review and approve your listing</li>
-            <li style="margin-bottom: 8px;"><strong>Start receiving inquiries</strong> - Tenants will contact you directly</li>
-          </ol>
-        </div>
-
         <!-- Tips for Success -->
-        <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <h3 style="color: #374151; margin: 0 0 15px 0;">💡 Tips for Successful Rentals:</h3>
+        <div style="background: #fef3c7; padding: 20px; border-radius: 12px; border-left: 4px solid #f59e0b; margin-bottom: 25px;">
+          <h3 style="color: #d97706; margin: 0 0 15px 0;">💡 While You Wait - Prepare for Success:</h3>
           <ul style="margin: 0; padding-left: 20px; color: #374151;">
-            <li style="margin-bottom: 8px;">📸 <strong>Use bright, clear photos</strong> - Listings with good photos get 4x more views</li>
-            <li style="margin-bottom: 8px;">📝 <strong>Be detailed</strong> - Include amenities, utilities, and lease terms</li>
-            <li style="margin-bottom: 8px;">⏰ <strong>Respond quickly</strong> - Fast responses lead to faster rentals</li>
-            <li style="margin-bottom: 8px;">💰 <strong>Price fairly</strong> - Competitive pricing attracts quality tenants</li>
+            <li style="margin-bottom: 8px;">📸 <strong>Take high-quality photos</strong> - Listings with good photos get 4x more views</li>
+            <li style="margin-bottom: 8px;">📝 <strong>Draft property descriptions</strong> - Include amenities, utilities, and lease terms</li>
+            <li style="margin-bottom: 8px;">💰 <strong>Research pricing</strong> - Check similar rentals in your area</li>
+            <li style="margin-bottom: 8px;">📋 <strong>Gather documents</strong> - Property details, measurements, amenities list</li>
           </ul>
-        </div>
-
-        <!-- CTA Button -->
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="https://portalhomehub.com/login"
-             style="background: #2563eb; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 16px;">
-            🔑 Login to Your Dashboard
-          </a>
         </div>
 
         <!-- Support -->
         <div style="background: white; padding: 20px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-          <h4 style="margin: 0 0 10px 0; color: #374151;">Need Help Getting Started?</h4>
-          <p style="margin: 0 0 15px 0; color: #6b7280;">Our team is here to support you!</p>
+          <h4 style="margin: 0 0 10px 0; color: #374151;">Questions About Your Application?</h4>
+          <p style="margin: 0 0 15px 0; color: #6b7280;">Our team is here to help!</p>
 
           <div style="margin: 15px 0;">
             <a href="https://wa.me/5927629797"

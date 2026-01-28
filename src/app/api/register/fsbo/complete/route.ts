@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
-    // Create profile record with proper subscription status
+    // Create profile record with proper subscription status and pending approval
     const subscriptionStatus = is_founding_member ? 'active' : 'pending_payment';
     const { error: profileError } = await supabase
       .from('profiles')
@@ -61,6 +61,8 @@ export async function POST(request: Request) {
         last_name: last_name,
         phone: normalizedPhone,
         user_type: 'owner',
+        approval_status: 'pending',
+        country_id: registrationData.country_id || 'GY',
         subscription_status: subscriptionStatus,
         is_founding_member: !!is_founding_member,
         promo_code: promo_code || null,

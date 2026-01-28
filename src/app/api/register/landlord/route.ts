@@ -36,13 +36,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
-    // Prepare profile data
+    // Prepare profile data with pending approval status
     const profileData: Record<string, any> = {
       email: email,
       first_name: first_name,
       last_name: last_name,
       phone: normalizedPhone,
       user_type: 'landlord',
+      approval_status: 'pending',
+      country_id: body.country_id || 'GY',
       updated_at: new Date().toISOString(),
     };
 
