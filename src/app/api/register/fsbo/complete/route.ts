@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: authError.message }, { status: 400 });
     }
 
-    // Prepare profile data with proper subscription status and pending approval
+    // Prepare profile data with proper subscription status and INSTANT APPROVAL for FSBO/Landlords
     const subscriptionStatus = is_founding_member ? 'active' : 'pending_payment';
     const profileData: Record<string, any> = {
       email: email,
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       last_name: last_name,
       phone: normalizedPhone,
       user_type: 'owner',
-      approval_status: 'pending',
+      approval_status: 'approved', // FSBO/Landlords get instant access - properties still need approval
       country_id: registrationData.country_id || 'GY',
       subscription_status: subscriptionStatus,
       is_founding_member: !!is_founding_member,

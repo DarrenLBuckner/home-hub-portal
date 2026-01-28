@@ -54,6 +54,9 @@ export default function CreateFSBOProperty() {
     owner_email: '',
     owner_whatsapp: '',
     
+    // Ownership Confirmation
+    confirms_ownership: false,
+    
     // Hidden fields
     listing_type: 'sale',
     status: 'pending'
@@ -145,6 +148,13 @@ export default function CreateFSBOProperty() {
         }
         if (!formData.owner_whatsapp.trim()) {
           setError('WhatsApp number is required for customer contact');
+          return false;
+        }
+        break;
+      case 6:
+        // Review & Submit - confirm ownership
+        if (!formData.confirms_ownership) {
+          setError('You must confirm that you own or have authority to list this property');
           return false;
         }
         break;
@@ -338,6 +348,9 @@ export default function CreateFSBOProperty() {
         owner_email: formData.owner_email || '',
         owner_whatsapp: formData.owner_whatsapp || '',
         
+        // Ownership Confirmation - Required for FSBO/Landlord properties
+        confirms_ownership: formData.confirms_ownership === true,
+        
         // Amenities
         amenities: formData.amenities || [],
 
@@ -487,7 +500,17 @@ export default function CreateFSBOProperty() {
           {currentStep === 3 && <Step3Location formData={formData} setFormData={setFormData} />}
           {currentStep === 4 && <Step4Photos images={images} setImages={setImages} />}
           {currentStep === 5 && <Step5Contact formData={formData} setFormData={setFormData} />}
-          {currentStep === 6 && <Step6Review formData={formData} images={images} />}
+          {currentStep === 6 && (
+            <Step6Review 
+              formData={{
+                ...formData,
+                setConfirmsOwnership: (value: boolean) => {
+                  setFormData(prev => ({ ...prev, confirms_ownership: value }));
+                }
+              }} 
+              images={images} 
+            />
+          )}
         </div>
 
         {/* Enhanced Navigation buttons */}
