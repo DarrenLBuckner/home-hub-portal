@@ -259,14 +259,20 @@ export async function POST(req: NextRequest) {
       if (body.property_category === 'commercial') {
         requiredFields.push("commercial_type");
       }
-      
-      // Always require images for full submissions
-      requiredFields.push("images");
-      
+
       // Check required fields using normalized payload
       const missingFields = requiredFields.filter(field => {
         return !normalizedPayload[field] && normalizedPayload[field] !== 0;
       });
+
+      // Check for images separately - accept either 'images' or 'imageUrls'
+      // imageUrls is the new method (direct storage upload), images is legacy (base64)
+      const hasImages = (body.images && Array.isArray(body.images) && body.images.length > 0) ||
+                        (body.imageUrls && Array.isArray(body.imageUrls) && body.imageUrls.length > 0);
+
+      if (!hasImages) {
+        missingFields.push("images");
+      }
       
       if (missingFields.length > 0) {
         return NextResponse.json({
