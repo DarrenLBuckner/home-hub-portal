@@ -73,9 +73,13 @@ export async function POST(request: Request) {
       is_founding_member: !!promo_code,
       user_created: false, // Flag to track if user account exists yet
 
-      // Reference fields - normalized phone numbers
-      reference1_contact: normalizedRef1 || agentData.reference1_name,
-      reference2_contact: normalizedRef2 || agentData.reference2_name,
+      // Reference fields - store all individual reference data for admin review
+      reference1_name: agentData.reference1_name,
+      reference1_phone: normalizedRef1,
+      reference1_email: agentData.reference1_email,
+      reference2_name: agentData.reference2_name,
+      reference2_phone: normalizedRef2,
+      reference2_email: agentData.reference2_email,
     };
 
     const { error: vettingError } = await supabase
