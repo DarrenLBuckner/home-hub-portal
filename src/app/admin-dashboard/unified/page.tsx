@@ -112,6 +112,11 @@ interface AgentVetting {
   };
 }
 
+interface PricingPlan {
+  id: string;
+  plan_name: string;
+}
+
 export default function UnifiedAdminDashboard() {
   const router = useRouter();
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
@@ -123,6 +128,7 @@ export default function UnifiedAdminDashboard() {
   const [draftProperties, setDraftProperties] = useState<any[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [pendingAgents, setPendingAgents] = useState<AgentVetting[]>([]);
+  const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
   const [processingAgentId, setProcessingAgentId] = useState<string | null>(null);
   const [agentRejectReason, setAgentRejectReason] = useState("");
   const [showAgentRejectModal, setShowAgentRejectModal] = useState<string | null>(null);
@@ -333,7 +339,16 @@ export default function UnifiedAdminDashboard() {
   const loadAgents = async () => {
     try {
       console.log('🔄 Loading all agents (pending and approved)...');
-      
+
+      // Fetch pricing plans for plan name lookup
+      const { data: plans } = await supabase
+        .from('pricing_plans')
+        .select('id, plan_name');
+
+      if (plans) {
+        setPricingPlans(plans);
+      }
+
       // Get ALL agent applications (not just pending) - this is the source of truth
       let agentsQuery = supabase
         .from('agent_vetting')
@@ -391,6 +406,24 @@ export default function UnifiedAdminDashboard() {
       console.warn('⚠️ Error loading agents (non-critical):', error);
       setPendingAgents([]);
     }
+  };
+
+  // Helper function to resolve plan display name from UUID or string
+  const getPlanDisplayName = (selectedPlan: string | null | undefined): string => {
+    if (!selectedPlan) return 'Not selected';
+
+    // Check if it's a UUID (e.g., "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (uuidRegex.test(selectedPlan)) {
+      // Look up plan name from pricing_plans
+      const plan = pricingPlans.find(p => p.id === selectedPlan);
+      return plan?.plan_name || selectedPlan; // Fallback to UUID if not found
+    }
+
+    // It's a string identifier (e.g., "founding_member") - format it nicely
+    return selectedPlan.split('_').map(word =>
+      word.charAt(0).toUpperCase() + word.slice(1)
+    ).join(' ');
   };
 
   const approveProperty = async (propertyId: string) => {
@@ -1591,7 +1624,7 @@ export default function UnifiedAdminDashboard() {
                         </div>
                         <div className="bg-orange-50 rounded-lg p-2">
                           <div className="text-xs font-medium text-orange-800">📋 Plan</div>
-                          <div className="text-sm font-bold text-orange-900">{agent.selected_plan || 'N/A'}</div>
+                          <div className="text-sm font-bold text-orange-900">{getPlanDisplayName(agent.selected_plan)}</div>
                         </div>
                       </div>
 
