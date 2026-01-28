@@ -502,8 +502,11 @@ function LandlordRegistrationContent() {
                   value={formData.phone}
                   onChange={handleChange}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 text-base"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder={selectedCountry.code === 'GY' ? '+592 123 4567' : selectedCountry.code === 'JM' ? '+1 876 123 4567' : '+1 555 123 4567'}
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  Include country code (e.g., {selectedCountry.code === 'GY' ? '+592 for Guyana' : selectedCountry.code === 'JM' ? '+1 876 for Jamaica' : `+${selectedCountry.code === 'TT' ? '1 868' : '1'} for ${selectedCountry.name}`})
+                </p>
               </div>
             </div>
 

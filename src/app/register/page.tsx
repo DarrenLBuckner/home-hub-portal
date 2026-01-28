@@ -501,8 +501,11 @@ function RegistrationContent() {
                   value={form.phone}
                   onChange={handleChange}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder={selectedCountry.code === 'GY' ? '+592 123 4567' : selectedCountry.code === 'JM' ? '+1 876 123 4567' : '+1 555 123 4567'}
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  Include country code (e.g., {selectedCountry.code === 'GY' ? '+592 for Guyana' : selectedCountry.code === 'JM' ? '+1 876 for Jamaica' : `+1 for ${selectedCountry.name}`})
+                </p>
               </div>
 
               <div>

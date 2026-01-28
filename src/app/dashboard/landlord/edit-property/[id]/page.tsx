@@ -53,17 +53,18 @@ export default function EditLandlordProperty() {
     lot_dimension_unit: 'ft',
     
     // Location
+    country: 'GY',
     region: '',
     city: '',
     neighborhood: '',
     address: '',
     show_address: false,
     location: '',
+    currency: 'GYD',
 
-    // Contact
-    contact_name: '',
-    contact_phone: '',
-    contact_email: '',
+    // Contact - using field names that match Step5Contact and API
+    owner_email: '',
+    owner_whatsapp: '',
   });
 
   const [images, setImages] = useState<File[]>([]);
@@ -166,15 +167,16 @@ export default function EditLandlordProperty() {
             lot_length: property.lot_length?.toString() || '',
             lot_width: property.lot_width?.toString() || '',
             lot_dimension_unit: property.lot_dimension_unit || 'ft',
+            country: property.country_id || property.country || 'GY',
             region: property.region || '',
             city: property.city || '',
             neighborhood: property.neighborhood || '',
             address: property.address || '',
             show_address: property.show_address || false,
             location: property.location || '',
-            contact_name: property.contact_name || '',
-            contact_phone: property.contact_phone || '',
-            contact_email: property.contact_email || '',
+            currency: property.currency || 'GYD',
+            owner_email: property.owner_email || '',
+            owner_whatsapp: property.owner_whatsapp || '',
           });
 
           // Set existing images
@@ -259,15 +261,16 @@ export default function EditLandlordProperty() {
         lot_length: parseFloat(formData.lot_length) || null,
         lot_width: parseFloat(formData.lot_width) || null,
         lot_dimension_unit: formData.lot_dimension_unit,
+        country: formData.country,
         region: formData.region,
         city: formData.city,
         neighborhood: formData.neighborhood,
         address: formData.address,
         show_address: formData.show_address,
         location: formData.location,
-        contact_name: formData.contact_name,
-        contact_phone: formData.contact_phone,
-        contact_email: formData.contact_email,
+        currency: formData.currency,
+        owner_email: formData.owner_email,
+        owner_whatsapp: formData.owner_whatsapp,
         listing_type: 'rent', // Landlord properties are always rentals
         updated_at: new Date().toISOString(),
       };

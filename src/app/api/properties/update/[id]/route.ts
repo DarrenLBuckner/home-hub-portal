@@ -94,20 +94,73 @@ export async function PUT(
       // Step 3 - Location (FIX: Include all location fields properly)
       location: body.location || body.country || 'GY',
       country: body.country || body.location || 'GY',
+      country_id: body.country || body.country_id || 'GY',
       region: body.region || '',
       city: body.city || null,
       neighborhood: body.neighborhood || null,
+      address: body.address || null,
+      show_address: body.show_address ?? false,
       site_id: body.site_id || (body.country === 'JM' ? 'jamaica' : 'guyana'),
-      
+
       // Step 4 - Currency
       currency: body.currency || 'GYD',
-      
-      // Step 5 - Contact (optional for agent properties)
-      owner_email: body.owner_email || null,
-      owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp),
+
+      // Step 5 - Contact (handle both field name conventions)
+      owner_email: body.owner_email || body.contact_email || null,
+      owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp || body.contact_phone),
+      contact_name: body.contact_name || null,
+      contact_phone: body.contact_phone ? normalizePhoneNumber(body.contact_phone) : null,
+      contact_email: body.contact_email || null,
+
+      // Rental-specific fields (for landlord properties)
+      listing_type: body.listing_type || null,
+      lease_term: body.lease_term || null,
+      deposit_amount: body.deposit_amount ? parseFloat(body.deposit_amount) : null,
+      deposit_currency: body.deposit_currency || null,
+      utilities_included: body.utilities_included || null,
+      pet_policy: body.pet_policy || null,
     };
 
-    // Handle image uploads if provided
+    // Handle pre-uploaded image URLs (from agent edit page which uploads directly to Supabase)
+    if (body.imageUrls && Array.isArray(body.imageUrls) && body.imageUrls.length > 0) {
+      console.log(`📸 Processing ${body.imageUrls.length} pre-uploaded image URLs for property update`);
+
+      try {
+        // Add new images as property_media records (don't delete existing for now)
+        const existingMediaCount = await supabase
+          .from('property_media')
+          .select('id', { count: 'exact' })
+          .eq('property_id', propertyId);
+
+        const startOrder = existingMediaCount.count || 0;
+
+        for (let i = 0; i < body.imageUrls.length; i++) {
+          const imageUrl = body.imageUrls[i];
+
+          if (imageUrl && typeof imageUrl === 'string') {
+            const { error: mediaError } = await supabase
+              .from('property_media')
+              .insert({
+                property_id: propertyId,
+                media_url: imageUrl,
+                media_type: 'image',
+                display_order: startOrder + i,
+                is_primary: startOrder === 0 && i === 0
+              });
+
+            if (mediaError) {
+              console.error('Media record error:', mediaError);
+            } else {
+              console.log(`✅ Pre-uploaded image ${i + 1} saved`);
+            }
+          }
+        }
+      } catch (imageError) {
+        console.error('Image URL processing error:', imageError);
+      }
+    }
+
+    // Handle image uploads if provided (base64 data from other edit pages)
     if (body.images && Array.isArray(body.images) && body.images.length > 0) {
       console.log(`📸 Processing ${body.images.length} new images for property update`);
       console.log('Image data format check:', body.images.map((img: any) => ({ 

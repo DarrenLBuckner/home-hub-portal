@@ -267,14 +267,21 @@ export default function CreateFSBOListing() {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">Sale Price ({currencySymbol})</label>
-            <input 
-              type="number" 
-              name="price" 
-              value={form.price} 
-              onChange={handleChange} 
-              required 
-              className="w-full border rounded-lg px-4 py-2" 
+            <input
+              type="number"
+              name="price"
+              value={form.price}
+              onChange={handleChange}
+              required
+              placeholder="25000000"
+              className="w-full border rounded-lg px-4 py-2"
             />
+            <p className="text-sm text-gray-500 mt-1">
+              {form.price && !isNaN(Number(form.price)) && Number(form.price) > 0
+                ? `Displays as: ${currencySymbol}${Number(form.price).toLocaleString()}`
+                : `Example format: 25,000,000 (enter digits only)`
+              }
+            </p>
           </div>
           <div>
             <label htmlFor="listingType" className="block text-sm font-medium text-gray-700 mb-1">Listing Type</label>

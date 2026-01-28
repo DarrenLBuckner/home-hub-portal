@@ -430,15 +430,21 @@ export default function CreateLandlordProperty() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Monthly Rent ({currencySymbol}) *</label>
-                <input 
-                  type="number" 
-                  name="price" 
-                  value={form.price} 
-                  onChange={handleChange} 
-                  required 
-                  placeholder="0"
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
+                <input
+                  type="number"
+                  name="price"
+                  value={form.price}
+                  onChange={handleChange}
+                  required
+                  placeholder="150000"
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  {form.price && !isNaN(Number(form.price)) && Number(form.price) > 0
+                    ? `Displays as: ${currencySymbol}${Number(form.price).toLocaleString()}/month`
+                    : `Example format: 150,000 (enter digits only)`
+                  }
+                </p>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Property Type *</label>
@@ -784,7 +790,7 @@ export default function CreateLandlordProperty() {
                 </p>
               ) : (
                 <p className="text-sm text-gray-500 mt-1">
-                  <strong>Format:</strong> +592XXXXXXX (e.g., +5926227446)
+                  <strong>Format:</strong> {selectedCountry === 'GY' ? '+592 123 4567 (Guyana)' : selectedCountry === 'JM' ? '+1 876 123 4567 (Jamaica)' : '+592 123 4567'}
                 </p>
               )}
               <div className="bg-green-50 p-3 rounded mt-2">

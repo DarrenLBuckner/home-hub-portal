@@ -133,8 +133,8 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
         />
         <p className="text-sm text-gray-500 mt-1">
           {formData.price && !isNaN(Number(formData.price)) && Number(formData.price) > 0
-            ? `${Number(formData.price).toLocaleString()} ${currencyCode}`
-            : `Enter the asking price for your property${formData.currency ? ` in ${currencyCode}` : ''}`
+            ? `Displays as: ${currencySymbol}${Number(formData.price).toLocaleString()}`
+            : `Example format: 25,000,000 (enter digits only, we'll format it)`
           }
         </p>
         {!formData.currency && (

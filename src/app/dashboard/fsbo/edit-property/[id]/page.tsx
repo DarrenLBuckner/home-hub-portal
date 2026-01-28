@@ -238,7 +238,10 @@ export default function EditFSBOProperty() {
         title: formData.title,
         description: formData.description,
         price: parseFloat(formData.price) || 0,
-        location: formData.location,
+        country: selectedCountry,
+        location: selectedCountry,
+        region: selectedRegion,
+        city: selectedRegion, // Set city to region for consistency
         property_type: formData.propertyType,
         bedrooms: parseInt(formData.bedrooms) || null,
         bathrooms: parseFloat(formData.bathrooms) || null,
@@ -387,15 +390,21 @@ export default function EditFSBOProperty() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Price ({currencySymbol}) *</label>
-                <input 
-                  name="price" 
-                  type="number" 
-                  placeholder="250000" 
-                  value={formData.price} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-orange-500 rounded-lg text-gray-900" 
-                  required 
+                <input
+                  name="price"
+                  type="number"
+                  placeholder="25000000"
+                  value={formData.price}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-orange-500 rounded-lg text-gray-900"
+                  required
                 />
+                <p className="text-sm text-gray-500 mt-1">
+                  {formData.price && !isNaN(Number(formData.price)) && Number(formData.price) > 0
+                    ? `Displays as: ${currencySymbol}${Number(formData.price).toLocaleString()}`
+                    : `Example format: 25,000,000 (enter digits only)`
+                  }
+                </p>
               </div>
 
               <div className="md:col-span-2">

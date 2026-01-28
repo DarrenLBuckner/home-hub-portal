@@ -55,16 +55,20 @@ export function RegistrationForm({ formData, setFormData, onSubmit, isSubmitting
         minLength={2}
         className="w-full px-4 py-2 border rounded"
       />
-      <input
-        type="tel"
-        name="phone"
-        value={formData.phone}
-        onChange={e => setFormData(f => ({ ...f, phone: e.target.value }))}
-        placeholder="Phone Number*"
-        required
-        pattern="[0-9]{7,15}"
-        className="w-full px-4 py-2 border rounded"
-      />
+      <div className="space-y-1">
+        <input
+          type="tel"
+          name="phone"
+          value={formData.phone}
+          onChange={e => setFormData(f => ({ ...f, phone: e.target.value }))}
+          placeholder="+592 123 4567"
+          required
+          className="w-full px-4 py-2 border rounded"
+        />
+        <p className="text-xs text-gray-500">
+          Include country code (e.g., +592 for Guyana)
+        </p>
+      </div>
       <input
         type="email"
         name="email"
