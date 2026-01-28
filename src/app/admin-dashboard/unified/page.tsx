@@ -131,6 +131,17 @@ interface OwnerApplication {
   created_at: string;
 }
 
+// Common rejection reasons for FSBO/Landlord applications
+const OWNER_REJECTION_REASONS = [
+  { value: 'incomplete_info', label: 'Incomplete information' },
+  { value: 'invalid_contact', label: 'Invalid contact details' },
+  { value: 'suspicious_activity', label: 'Suspicious activity' },
+  { value: 'platform_requirements', label: 'Does not meet platform requirements' },
+  { value: 'duplicate_account', label: 'Duplicate account' },
+  { value: 'invalid_documentation', label: 'Invalid property documentation' },
+  { value: 'other', label: 'Other (specify below)' },
+];
+
 export default function UnifiedAdminDashboard() {
   const router = useRouter();
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
@@ -148,6 +159,10 @@ export default function UnifiedAdminDashboard() {
   const [processingOwnerId, setProcessingOwnerId] = useState<string | null>(null);
   const [agentRejectReason, setAgentRejectReason] = useState("");
   const [ownerRejectReason, setOwnerRejectReason] = useState("");
+  const [ownerRejectType, setOwnerRejectType] = useState<'permanent' | 'needs_correction'>('needs_correction');
+  const [ownerRejectReasonDropdown, setOwnerRejectReasonDropdown] = useState("");
+  const [ownerRejectDetails, setOwnerRejectDetails] = useState("");
+  const [ownerRejectSendEmail, setOwnerRejectSendEmail] = useState(true);
   const [showAgentRejectModal, setShowAgentRejectModal] = useState<string | null>(null);
   const [showOwnerRejectModal, setShowOwnerRejectModal] = useState<string | null>(null);
   const [statistics, setStatistics] = useState<Statistics>({
@@ -730,20 +745,29 @@ export default function UnifiedAdminDashboard() {
 
       console.log(`✅ ${userTypeLabel} "${ownerName}" approved successfully`);
 
-      // TODO: Send approval email when template is ready
-      // try {
-      //   await fetch('/api/send-owner-approval-email', {
-      //     method: 'POST',
-      //     headers: { 'Content-Type': 'application/json' },
-      //     body: JSON.stringify({
-      //       email: application?.email,
-      //       name: ownerName,
-      //       userType: application?.user_type
-      //     })
-      //   });
-      // } catch (emailError) {
-      //   console.warn('⚠️ Failed to send approval email:', emailError);
-      // }
+      // Send approval email
+      try {
+        const emailResponse = await fetch('/api/send-owner-approval-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: application?.email,
+            firstName: application?.first_name || 'User',
+            userType: application?.user_type,
+            isFoundingMember: application?.is_founding_member || false,
+            countryId: application?.country_id || 'GY'
+          })
+        });
+
+        if (emailResponse.ok) {
+          console.log('✅ Approval email sent successfully');
+        } else {
+          console.warn('⚠️ Failed to send approval email:', await emailResponse.text());
+        }
+      } catch (emailError) {
+        console.warn('⚠️ Failed to send approval email:', emailError);
+        // Don't fail the approval if email fails
+      }
 
       alert(`✅ ${userTypeLabel} "${ownerName}" has been approved!\n\nThey can now log in and list properties.`);
       await loadOwnerApplications();
@@ -755,7 +779,13 @@ export default function UnifiedAdminDashboard() {
     setProcessingOwnerId(null);
   };
 
-  const rejectOwnerApplication = async (userId: string, reason: string) => {
+  const rejectOwnerApplication = async (
+    userId: string,
+    rejectionType: 'permanent' | 'needs_correction',
+    reasonDropdown: string,
+    additionalDetails: string,
+    sendEmail: boolean
+  ) => {
     // Validate userId before proceeding
     if (!userId) {
       console.error('❌ rejectOwnerApplication called with null/undefined userId');
@@ -763,8 +793,8 @@ export default function UnifiedAdminDashboard() {
       return;
     }
 
-    if (!reason.trim()) {
-      setError('Please provide a reason for rejection');
+    if (!reasonDropdown) {
+      setError('Please select a reason for rejection');
       return;
     }
 
@@ -773,17 +803,26 @@ export default function UnifiedAdminDashboard() {
 
     try {
       const application = pendingOwners.find(a => a.id === userId);
-      console.log('📋 Rejecting owner application:', { userId, application });
+      console.log('📋 Rejecting owner application:', { userId, rejectionType, reasonDropdown, additionalDetails, application });
       const ownerName = application ?
         `${application.first_name || ''} ${application.last_name || ''}`.trim() || application.email :
         'User';
       const userTypeLabel = application?.user_type === 'landlord' ? 'Landlord' : 'FSBO';
 
+      // Build full rejection reason
+      const reasonLabel = OWNER_REJECTION_REASONS.find(r => r.value === reasonDropdown)?.label || reasonDropdown;
+      const fullReason = additionalDetails.trim()
+        ? `${reasonLabel}: ${additionalDetails.trim()}`
+        : reasonLabel;
+
+      // Determine approval_status based on rejection type
+      const approvalStatus = rejectionType === 'permanent' ? 'rejected' : 'needs_correction';
+
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
-          approval_status: 'rejected',
-          rejection_reason: reason,
+          approval_status: approvalStatus,
+          rejection_reason: fullReason,
           updated_at: new Date().toISOString()
         })
         .eq('id', userId);
@@ -794,11 +833,46 @@ export default function UnifiedAdminDashboard() {
         return;
       }
 
-      // TODO: Send rejection email when template is ready
+      console.log(`✅ ${userTypeLabel} "${ownerName}" ${rejectionType === 'permanent' ? 'rejected' : 'marked as needs correction'}`);
 
-      alert(`❌ ${userTypeLabel} "${ownerName}" has been rejected.\nReason: ${reason}`);
+      // Send rejection/correction email if checkbox is checked
+      if (sendEmail && application?.email) {
+        try {
+          const emailResponse = await fetch('/api/send-owner-rejection-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: application.email,
+              firstName: application.first_name || 'User',
+              userType: application.user_type,
+              rejectionType,
+              reason: fullReason,
+              countryId: application.country_id || 'GY'
+            })
+          });
+
+          if (emailResponse.ok) {
+            console.log(`✅ ${rejectionType === 'permanent' ? 'Rejection' : 'Correction'} email sent successfully`);
+          } else {
+            console.warn('⚠️ Failed to send rejection email:', await emailResponse.text());
+          }
+        } catch (emailError) {
+          console.warn('⚠️ Failed to send rejection email:', emailError);
+          // Don't fail the rejection if email fails
+        }
+      }
+
+      const actionText = rejectionType === 'permanent' ? 'rejected' : 'marked as needing corrections';
+      alert(`${rejectionType === 'permanent' ? '❌' : '⚠️'} ${userTypeLabel} "${ownerName}" has been ${actionText}.\nReason: ${fullReason}${sendEmail ? '\n\nNotification email sent.' : ''}`);
+
+      // Reset modal state
       setShowOwnerRejectModal(null);
       setOwnerRejectReason("");
+      setOwnerRejectType('needs_correction');
+      setOwnerRejectReasonDropdown("");
+      setOwnerRejectDetails("");
+      setOwnerRejectSendEmail(true);
+
       await loadOwnerApplications();
 
     } catch (error) {
@@ -2418,41 +2492,171 @@ export default function UnifiedAdminDashboard() {
         </div>
       )}
 
-      {/* Owner Application Reject Modal */}
-      {showOwnerRejectModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
-          <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">❌ Reject Owner Application</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Please provide a reason for rejecting this FSBO/Landlord application.
-            </p>
-            <textarea
-              value={ownerRejectReason}
-              onChange={(e) => setOwnerRejectReason(e.target.value)}
-              placeholder="Enter reason for rejection..."
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 min-h-[100px] mb-4"
-            />
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => {
-                  setShowOwnerRejectModal(null);
-                  setOwnerRejectReason("");
-                }}
-                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => showOwnerRejectModal && rejectOwnerApplication(showOwnerRejectModal, ownerRejectReason)}
-                disabled={!ownerRejectReason.trim() || processingOwnerId === showOwnerRejectModal}
-                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-bold disabled:opacity-50"
-              >
-                {processingOwnerId === showOwnerRejectModal ? '⏳ Processing...' : '❌ Reject Application'}
-              </button>
+      {/* Owner Application Reject Modal - Enhanced */}
+      {showOwnerRejectModal && (() => {
+        const application = pendingOwners.find(a => a.id === showOwnerRejectModal);
+        const applicantName = application
+          ? `${application.first_name || ''} ${application.last_name || ''}`.trim() || 'Unknown'
+          : 'Unknown';
+        const userTypeLabel = application?.user_type === 'landlord' ? 'Landlord' : 'FSBO';
+
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center p-0 sm:p-4 z-50">
+            <div className="bg-white rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Reject Application</h3>
+                <button
+                  onClick={() => {
+                    setShowOwnerRejectModal(null);
+                    setOwnerRejectType('needs_correction');
+                    setOwnerRejectReasonDropdown("");
+                    setOwnerRejectDetails("");
+                    setOwnerRejectSendEmail(true);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 text-xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Applicant Info */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                <div className="text-sm text-gray-600">
+                  <p><strong>Applicant:</strong> {applicantName}</p>
+                  <p><strong>Email:</strong> {application?.email || 'N/A'}</p>
+                  <p><strong>Type:</strong> {userTypeLabel}</p>
+                </div>
+              </div>
+
+              <hr className="my-4 border-gray-200" />
+
+              {/* Rejection Type Toggle */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rejection Type:</label>
+                <div className="space-y-2">
+                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input
+                      type="radio"
+                      name="rejectionType"
+                      value="needs_correction"
+                      checked={ownerRejectType === 'needs_correction'}
+                      onChange={() => setOwnerRejectType('needs_correction')}
+                      className="w-4 h-4 text-amber-600 focus:ring-amber-500"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium text-gray-900">Needs Corrections</span>
+                      <p className="text-xs text-gray-500">User can fix issues and resubmit</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input
+                      type="radio"
+                      name="rejectionType"
+                      value="permanent"
+                      checked={ownerRejectType === 'permanent'}
+                      onChange={() => setOwnerRejectType('permanent')}
+                      className="w-4 h-4 text-red-600 focus:ring-red-500"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium text-gray-900">Permanent Rejection</span>
+                      <p className="text-xs text-gray-500">Application is permanently denied</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <hr className="my-4 border-gray-200" />
+
+              {/* Reason Dropdown */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Reason for Rejection: <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={ownerRejectReasonDropdown}
+                  onChange={(e) => setOwnerRejectReasonDropdown(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 bg-white"
+                >
+                  <option value="">Select a reason...</option>
+                  {OWNER_REJECTION_REASONS.map((reason) => (
+                    <option key={reason.value} value={reason.value}>
+                      {reason.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Additional Details */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {ownerRejectType === 'needs_correction'
+                    ? 'What needs to be corrected:'
+                    : 'Additional Details:'}
+                </label>
+                <textarea
+                  value={ownerRejectDetails}
+                  onChange={(e) => setOwnerRejectDetails(e.target.value)}
+                  placeholder={ownerRejectType === 'needs_correction'
+                    ? "Describe what the applicant needs to fix..."
+                    : "Provide additional context for this rejection..."}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 min-h-[100px]"
+                />
+              </div>
+
+              {/* Send Email Checkbox */}
+              <div className="mb-6">
+                <label className="flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={ownerRejectSendEmail}
+                    onChange={(e) => setOwnerRejectSendEmail(e.target.checked)}
+                    className="w-4 h-4 text-red-600 rounded focus:ring-red-500"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">Send email notification to applicant</span>
+                </label>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    setShowOwnerRejectModal(null);
+                    setOwnerRejectType('needs_correction');
+                    setOwnerRejectReasonDropdown("");
+                    setOwnerRejectDetails("");
+                    setOwnerRejectSendEmail(true);
+                  }}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => showOwnerRejectModal && rejectOwnerApplication(
+                    showOwnerRejectModal,
+                    ownerRejectType,
+                    ownerRejectReasonDropdown,
+                    ownerRejectDetails,
+                    ownerRejectSendEmail
+                  )}
+                  disabled={!ownerRejectReasonDropdown || processingOwnerId === showOwnerRejectModal}
+                  className={`flex-1 px-4 py-3 text-white rounded-xl transition-colors font-bold disabled:opacity-50 ${
+                    ownerRejectType === 'permanent'
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-amber-600 hover:bg-amber-700'
+                  }`}
+                >
+                  {processingOwnerId === showOwnerRejectModal
+                    ? '... Processing...'
+                    : ownerRejectType === 'permanent'
+                      ? 'Reject Application'
+                      : 'Request Corrections'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Error Display */}
       {error && (

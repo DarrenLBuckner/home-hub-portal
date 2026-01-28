@@ -363,6 +363,214 @@ export async function sendLandlordWelcomeEmail(to, firstName, isFoundingMember =
   });
 }
 
+// ============================================
+// OWNER/LANDLORD APPROVAL & REJECTION EMAILS
+// ============================================
+
+/**
+ * Send approval email when FSBO/Landlord application is approved
+ */
+export async function sendOwnerApprovalEmail({ to, firstName, userType, isFoundingMember = false, trialDays = null, propertyLimit = null, countryName = 'Guyana' }) {
+  const userTypeLabel = userType === 'landlord' ? 'Landlord' : 'Property Owner';
+  const domain = countryName === 'Jamaica' ? 'jamaicahomehub.com' : 'guyanahomehub.com';
+
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: `🎉 You're Approved! Start Listing on ${countryName} HomeHub`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0;">
+
+        <!-- Header -->
+        <div style="background: #22c55e; color: white; padding: 30px; text-align: center;">
+          <h1 style="margin: 0; font-size: 28px;">🎉 You're Approved!</h1>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 30px; background: #f9fafb;">
+          <p style="font-size: 16px; color: #374151; margin: 0 0 20px 0;">Hi ${firstName},</p>
+
+          <p style="font-size: 16px; color: #374151; margin: 0 0 20px 0;">
+            Great news! Your <strong>${userTypeLabel}</strong> account on ${countryName} HomeHub has been approved.
+          </p>
+
+          <p style="font-size: 16px; color: #374151; margin: 0 0 25px 0;">
+            You can now log in and start listing your ${userType === 'landlord' ? 'rental properties' : 'property'}!
+          </p>
+
+          <!-- Next Steps Box -->
+          <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <strong style="color: #374151; display: block; margin-bottom: 15px;">📋 Next Steps:</strong>
+            <ol style="margin: 0; padding-left: 25px; color: #374151; line-height: 1.8;">
+              <li>Log in to your account</li>
+              <li>Click "Create Listing" from your dashboard</li>
+              <li>Add your property details and photos</li>
+              <li>Publish and reach ${userType === 'landlord' ? 'tenants' : 'buyers'}!</li>
+            </ol>
+          </div>
+
+          ${isFoundingMember ? `
+          <!-- Founding Member Benefits -->
+          <div style="background: #ecfdf5; border-left: 4px solid #22c55e; padding: 20px; border-radius: 0 12px 12px 0; margin-bottom: 25px;">
+            <strong style="color: #16a34a; display: block; margin-bottom: 15px;">🎉 Your Founding Member Benefits:</strong>
+            <ul style="margin: 0; padding-left: 20px; color: #374151; line-height: 1.8;">
+              ${trialDays ? `<li>✅ <strong>${trialDays} days FREE</strong> platform access</li>` : ''}
+              ${propertyLimit ? `<li>✅ <strong>${propertyLimit} property listing${propertyLimit > 1 ? 's' : ''}</strong></li>` : ''}
+              <li>✅ <strong>Priority support</strong> - We're here to help!</li>
+              <li>✅ <strong>Founding Member badge</strong> on your profile</li>
+            </ul>
+          </div>
+          ` : ''}
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://${domain}/login"
+               style="display: inline-block; background: #1e3a5f; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              Log In Now
+            </a>
+          </div>
+
+          <p style="font-size: 14px; color: #6b7280; margin: 20px 0 0 0;">
+            Questions? Reply to this email or contact us on WhatsApp:
+            <a href="https://wa.me/5927629797" style="color: #16a34a;">+592 762-9797</a>
+          </p>
+
+          <p style="font-size: 16px; color: #374151; margin: 25px 0 0 0;">
+            Welcome to the community!<br>
+            <strong>The ${countryName} HomeHub Team</strong>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 20px; color: #6b7280; font-size: 12px; background: #f3f4f6;">
+          <p style="margin: 0;">© 2026 Portal HomeHub. All rights reserved.</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+/**
+ * Send rejection email when FSBO/Landlord application is permanently rejected
+ */
+export async function sendOwnerRejectionEmail({ to, firstName, userType, reason, countryName = 'Guyana' }) {
+  const userTypeLabel = userType === 'landlord' ? 'Landlord' : 'Property Owner';
+
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: `Application Update - ${countryName} HomeHub`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0;">
+
+        <!-- Header -->
+        <div style="background: #1e3a5f; color: white; padding: 30px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">Application Update</h1>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 30px; background: #f9fafb;">
+          <p style="font-size: 16px; color: #374151; margin: 0 0 20px 0;">Hi ${firstName},</p>
+
+          <p style="font-size: 16px; color: #374151; margin: 0 0 20px 0;">
+            Thank you for your interest in ${countryName} HomeHub. After reviewing your ${userTypeLabel} application, we are unable to approve your account at this time.
+          </p>
+
+          <!-- Reason Box -->
+          <div style="background: #fef2f2; border-left: 4px solid #ef4444; padding: 20px; border-radius: 0 12px 12px 0; margin: 25px 0;">
+            <strong style="color: #991b1b; display: block; margin-bottom: 10px;">Reason:</strong>
+            <p style="margin: 0; color: #991b1b; line-height: 1.6;">${reason || 'Your application did not meet our platform requirements.'}</p>
+          </div>
+
+          <p style="font-size: 14px; color: #6b7280; margin: 20px 0 0 0;">
+            If you believe this decision was made in error, please reply to this email with any additional information that may help us reconsider.
+          </p>
+
+          <p style="font-size: 16px; color: #374151; margin: 25px 0 0 0;">
+            Thank you for understanding.<br>
+            <strong>The ${countryName} HomeHub Team</strong>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 20px; color: #6b7280; font-size: 12px; background: #f3f4f6;">
+          <p style="margin: 0;">© 2026 Portal HomeHub. All rights reserved.</p>
+        </div>
+      </div>
+    `
+  });
+}
+
+/**
+ * Send correction needed email when FSBO/Landlord application needs fixes
+ */
+export async function sendOwnerCorrectionEmail({ to, firstName, userType, reason, countryName = 'Guyana' }) {
+  const userTypeLabel = userType === 'landlord' ? 'Landlord' : 'Property Owner';
+  const domain = countryName === 'Jamaica' ? 'jamaicahomehub.com' : 'guyanahomehub.com';
+
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: `⚠️ Action Required - Your ${countryName} HomeHub Application`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 0;">
+
+        <!-- Header -->
+        <div style="background: #f59e0b; color: white; padding: 30px; text-align: center;">
+          <h1 style="margin: 0; font-size: 24px;">⚠️ Action Required</h1>
+        </div>
+
+        <!-- Content -->
+        <div style="padding: 30px; background: #f9fafb;">
+          <p style="font-size: 16px; color: #374151; margin: 0 0 20px 0;">Hi ${firstName},</p>
+
+          <p style="font-size: 16px; color: #374151; margin: 0 0 20px 0;">
+            Thank you for applying to ${countryName} HomeHub! We've reviewed your ${userTypeLabel} application and need a few corrections before we can approve your account.
+          </p>
+
+          <!-- Correction Box -->
+          <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 20px; border-radius: 0 12px 12px 0; margin: 25px 0;">
+            <strong style="color: #92400e; display: block; margin-bottom: 10px;">What needs to be corrected:</strong>
+            <p style="margin: 0; color: #92400e; line-height: 1.6;">${reason || 'Please update the required information.'}</p>
+          </div>
+
+          <!-- How to Fix -->
+          <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <strong style="color: #374151; display: block; margin-bottom: 15px;">How to fix this:</strong>
+            <ol style="margin: 0; padding-left: 25px; color: #374151; line-height: 1.8;">
+              <li>Log in to your account</li>
+              <li>Update the required information in your profile</li>
+              <li>Your application will be automatically resubmitted for review</li>
+            </ol>
+          </div>
+
+          <!-- CTA Button -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://${domain}/login"
+               style="display: inline-block; background: #1e3a5f; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+              Log In & Update
+            </a>
+          </div>
+
+          <p style="font-size: 14px; color: #6b7280; margin: 20px 0 0 0;">
+            Need help? Reply to this email or contact us on WhatsApp:
+            <a href="https://wa.me/5927629797" style="color: #16a34a;">+592 762-9797</a>
+          </p>
+
+          <p style="font-size: 16px; color: #374151; margin: 25px 0 0 0;">
+            <strong>The ${countryName} HomeHub Team</strong>
+          </p>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 20px; color: #6b7280; font-size: 12px; background: #f3f4f6;">
+          <p style="margin: 0;">© 2026 Portal HomeHub. All rights reserved.</p>
+        </div>
+      </div>
+    `
+  });
+}
+
 export async function sendPropertyGuideEmail(to) {
   return resend.emails.send({
     from: 'Guyana Home Hub <info@portalhomehub.com>',
