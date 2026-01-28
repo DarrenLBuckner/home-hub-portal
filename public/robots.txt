@@ -1,0 +1,8 @@
+# Portal Home Hub - robots.txt
+# Allow search engines to crawl the site
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://www.portalhomehub.com/sitemap.xml
