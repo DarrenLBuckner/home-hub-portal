@@ -12,6 +12,7 @@ import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import AmenitiesSelector from "@/components/AmenitiesSelector";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
+import AITitleSuggester from "@/components/AITitleSuggester";
 import LotDimensions from "@/components/LotDimensions";
 import { DimensionUnit } from "@/lib/lotCalculations";
 
@@ -566,14 +567,35 @@ export default function EditAgentProperty() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Property Title</label>
-                <input 
-                  name="title" 
-                  type="text" 
-                  placeholder="Beautiful 3BR House in Georgetown" 
-                  value={form.title} 
-                  onChange={handleChange} 
+                <input
+                  name="title"
+                  type="text"
+                  placeholder="Beautiful 3BR House in Georgetown"
+                  value={form.title}
+                  onChange={handleChange}
                   className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
-                  required 
+                  required
+                  maxLength={100}
+                />
+                <p className="text-sm text-gray-500 mt-1">{form.title?.length || 0}/100 characters</p>
+
+                {/* AI Title Suggester */}
+                <AITitleSuggester
+                  propertyData={{
+                    propertyType: form.property_type || '',
+                    propertyCategory: form.property_category || 'residential',
+                    listingType: form.listing_type || 'sale',
+                    bedrooms: form.bedrooms || '',
+                    bathrooms: form.bathrooms || '',
+                    commercialType: form.commercial_type || '',
+                    floorSize: form.floor_size_sqft || '',
+                    price: form.price || '',
+                    location: form.city || selectedRegion || '',
+                    neighborhood: form.neighborhood || '',
+                    features: form.amenities || [],
+                  }}
+                  onTitleSelected={(title) => setForm(prev => ({...prev, title}))}
+                  currentTitle={form.title || ''}
                 />
               </div>
 
@@ -1172,11 +1194,46 @@ export default function EditAgentProperty() {
             <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
               📸 Property Photos
             </h3>
-            <EnhancedImageUpload
-              images={images}
-              setImages={setImages}
-              maxImages={25}
-            />
+
+            {/* Existing Images */}
+            {existingImages.length > 0 && (
+              <div className="mb-6">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                  Current Photos ({existingImages.length})
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {existingImages.map((url, index) => (
+                    <div key={index} className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
+                      <img
+                        src={url}
+                        alt={`Property image ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                      {index === 0 && (
+                        <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded">
+                          Primary
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  These images are already saved. Add new images below to include them.
+                </p>
+              </div>
+            )}
+
+            {/* Upload New Images */}
+            <div>
+              <h4 className="text-sm font-medium text-gray-700 mb-3">
+                {existingImages.length > 0 ? 'Add New Photos' : 'Upload Photos'}
+              </h4>
+              <EnhancedImageUpload
+                images={images}
+                setImages={setImages}
+                maxImages={25}
+              />
+            </div>
           </div>
 
           {/* SUBMIT BUTTON */}
