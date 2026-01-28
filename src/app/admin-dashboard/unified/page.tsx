@@ -1948,6 +1948,38 @@ export default function UnifiedAdminDashboard() {
                         </div>
                       )}
 
+                      {/* References */}
+                      <div className="mb-4 border-t border-gray-200 pt-4">
+                        <h4 className="text-xs font-semibold text-gray-800 mb-3">👥 References</h4>
+                        <div className="space-y-3">
+                          {/* Reference 1 */}
+                          {agent.reference1_name && (
+                            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                              <div className="text-xs font-semibold text-blue-900 mb-2">Reference 1</div>
+                              <div className="text-sm text-blue-800 space-y-1">
+                                <div><span className="font-medium">Name:</span> {agent.reference1_name}</div>
+                                {agent.reference1_phone && <div><span className="font-medium">Phone:</span> {agent.reference1_phone}</div>}
+                                {agent.reference1_email && <div><span className="font-medium">Email:</span> {agent.reference1_email}</div>}
+                              </div>
+                            </div>
+                          )}
+                          {/* Reference 2 */}
+                          {agent.reference2_name && (
+                            <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                              <div className="text-xs font-semibold text-purple-900 mb-2">Reference 2</div>
+                              <div className="text-sm text-purple-800 space-y-1">
+                                <div><span className="font-medium">Name:</span> {agent.reference2_name}</div>
+                                {agent.reference2_phone && <div><span className="font-medium">Phone:</span> {agent.reference2_phone}</div>}
+                                {agent.reference2_email && <div><span className="font-medium">Email:</span> {agent.reference2_email}</div>}
+                              </div>
+                            </div>
+                          )}
+                          {!agent.reference1_name && !agent.reference2_name && (
+                            <p className="text-xs text-gray-500 italic">No references provided</p>
+                          )}
+                        </div>
+                      </div>
+
                       {/* Application Info */}
                       <div className="bg-orange-50 rounded-lg p-3 mb-4">
                         <div className="text-xs font-medium text-orange-800 mb-1">Application Details</div>
