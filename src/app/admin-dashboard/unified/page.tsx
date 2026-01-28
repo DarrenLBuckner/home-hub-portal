@@ -165,6 +165,7 @@ export default function UnifiedAdminDashboard() {
   const [ownerRejectSendEmail, setOwnerRejectSendEmail] = useState(true);
   const [showAgentRejectModal, setShowAgentRejectModal] = useState<string | null>(null);
   const [showOwnerRejectModal, setShowOwnerRejectModal] = useState<string | null>(null);
+  const [expandedAgentReferences, setExpandedAgentReferences] = useState<Set<string>>(new Set());
   const [statistics, setStatistics] = useState<Statistics>({
     totalPending: 0,
     todaySubmissions: 0,
@@ -1950,34 +1951,62 @@ export default function UnifiedAdminDashboard() {
 
                       {/* References */}
                       <div className="mb-4 border-t border-gray-200 pt-4">
-                        <h4 className="text-xs font-semibold text-gray-800 mb-3">👥 References</h4>
-                        <div className="space-y-3">
-                          {/* Reference 1 */}
-                          {agent.reference1_name && (
-                            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                              <div className="text-xs font-semibold text-blue-900 mb-2">Reference 1</div>
-                              <div className="text-sm text-blue-800 space-y-1">
-                                <div><span className="font-medium">Name:</span> {agent.reference1_name}</div>
-                                {agent.reference1_phone && <div><span className="font-medium">Phone:</span> {agent.reference1_phone}</div>}
-                                {agent.reference1_email && <div><span className="font-medium">Email:</span> {agent.reference1_email}</div>}
+                        <button
+                          onClick={() => {
+                            setExpandedAgentReferences(prev => {
+                              const newSet = new Set(prev);
+                              if (newSet.has(agent.id)) {
+                                newSet.delete(agent.id);
+                              } else {
+                                newSet.add(agent.id);
+                              }
+                              return newSet;
+                            });
+                          }}
+                          className="w-full flex items-center justify-between p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          <h4 className="text-xs font-semibold text-gray-800">👥 References</h4>
+                          <svg
+                            className={`w-4 h-4 text-gray-600 transition-transform ${
+                              expandedAgentReferences.has(agent.id) ? 'rotate-180' : ''
+                            }`}
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                          </svg>
+                        </button>
+
+                        {expandedAgentReferences.has(agent.id) && (
+                          <div className="mt-3 space-y-3">
+                            {/* Reference 1 */}
+                            {agent.reference1_name && (
+                              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                                <div className="text-xs font-semibold text-blue-900 mb-2">Reference 1</div>
+                                <div className="text-sm text-blue-800 space-y-1">
+                                  <div><span className="font-medium">Name:</span> {agent.reference1_name}</div>
+                                  {agent.reference1_phone && <div><span className="font-medium">Phone:</span> {agent.reference1_phone}</div>}
+                                  {agent.reference1_email && <div><span className="font-medium">Email:</span> {agent.reference1_email}</div>}
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          {/* Reference 2 */}
-                          {agent.reference2_name && (
-                            <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                              <div className="text-xs font-semibold text-purple-900 mb-2">Reference 2</div>
-                              <div className="text-sm text-purple-800 space-y-1">
-                                <div><span className="font-medium">Name:</span> {agent.reference2_name}</div>
-                                {agent.reference2_phone && <div><span className="font-medium">Phone:</span> {agent.reference2_phone}</div>}
-                                {agent.reference2_email && <div><span className="font-medium">Email:</span> {agent.reference2_email}</div>}
+                            )}
+                            {/* Reference 2 */}
+                            {agent.reference2_name && (
+                              <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                                <div className="text-xs font-semibold text-purple-900 mb-2">Reference 2</div>
+                                <div className="text-sm text-purple-800 space-y-1">
+                                  <div><span className="font-medium">Name:</span> {agent.reference2_name}</div>
+                                  {agent.reference2_phone && <div><span className="font-medium">Phone:</span> {agent.reference2_phone}</div>}
+                                  {agent.reference2_email && <div><span className="font-medium">Email:</span> {agent.reference2_email}</div>}
+                                </div>
                               </div>
-                            </div>
-                          )}
-                          {!agent.reference1_name && !agent.reference2_name && (
-                            <p className="text-xs text-gray-500 italic">No references provided</p>
-                          )}
-                        </div>
+                            )}
+                            {!agent.reference1_name && !agent.reference2_name && (
+                              <p className="text-xs text-gray-500 italic">No references provided</p>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Application Info */}
