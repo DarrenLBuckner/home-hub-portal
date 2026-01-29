@@ -1,13 +1,16 @@
+import { OwnershipAttestationFull } from "@/components/OwnershipAttestation";
+
 interface Step6ReviewProps {
   formData: any;
   images: File[];
+  countryCode?: string;
 }
 
-export default function Step6Review({ formData, images }: Step6ReviewProps) {
-  const handleOwnershipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (formData.setConfirmsOwnership) {
-      formData.setConfirmsOwnership(e.target.checked);
-    }
+export default function Step6Review({ formData, images, countryCode = 'GY' }: Step6ReviewProps) {
+  const handleOwnershipChange = (checked: boolean) => {
+    formData.confirms_ownership = checked;
+    // Trigger parent component state update
+    window.dispatchEvent(new CustomEvent('ownershipToggle', { detail: checked }));
   };
   const formatPrice = (price: string) => {
     if (!price || isNaN(Number(price))) return 'Not specified';
@@ -167,29 +170,13 @@ export default function Step6Review({ formData, images }: Step6ReviewProps) {
         </div>
       </div>
 
-      {/* Ownership Confirmation */}
-      <div className="bg-orange-50 p-4 rounded-lg border-2 border-orange-200">
-        <h3 className="font-medium text-orange-900 mb-3">Ownership Confirmation</h3>
-        <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={formData.confirms_ownership || false}
-            onChange={(e) => {
-              formData.confirms_ownership = e.target.checked;
-              // Trigger parent component state update
-              window.dispatchEvent(new CustomEvent('ownershipToggle', { detail: e.target.checked }));
-            }}
-            className="w-5 h-5 mt-1 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
-          />
-          <span className="text-sm text-orange-900">
-            <strong>I confirm that I own this property or have the legal authority to list it for sale.</strong>
-            <br />
-            <span className="text-xs text-orange-800 mt-1 block">
-              This is required. False claims may result in account suspension and legal action.
-            </span>
-          </span>
-        </label>
-      </div>
+      {/* Legal Ownership Attestation */}
+      <OwnershipAttestationFull
+        checked={formData.confirms_ownership || false}
+        onChange={handleOwnershipChange}
+        countryCode={countryCode}
+        listingType="sale"
+      />
 
       {/* Final Notice */}
       <div className="bg-blue-50 p-4 rounded-lg">

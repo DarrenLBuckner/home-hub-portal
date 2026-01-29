@@ -10,6 +10,7 @@ import CompletionIncentive, { CompletionProgress } from "@/components/Completion
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
 import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
 import LotDimensions from "@/components/LotDimensions";
+import { OwnershipAttestationFull } from "@/components/OwnershipAttestation";
 import { DimensionUnit } from "@/lib/lotCalculations";
 
 const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym", "Gated", "Fruit Trees", "Farmland", "Backup Generator", "Solar", "Electric Gate"];
@@ -814,24 +815,12 @@ export default function CreateLandlordProperty() {
           </div>
 
           {/* 10. LEGAL ATTESTATION */}
-          <div className="bg-red-50 p-6 rounded-lg shadow-sm border-l-4 border-red-500">
-            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-red-800">
-              ⚖️ Legal Attestation
-            </h3>
-            <label className="flex items-start gap-3 cursor-pointer">
-              <input 
-                type="checkbox" 
-                name="attestation" 
-                checked={form.attestation} 
-                onChange={handleChange} 
-                required 
-                className="w-5 h-5 text-red-600 border-2 border-red-300 rounded focus:ring-red-500 mt-1"
-              />
-              <span className="text-sm font-medium text-red-800 leading-relaxed">
-                By submitting this listing, I confirm under penalty of perjury that I am the legal owner of this property or have the legal authority to list it for rental.
-              </span>
-            </label>
-          </div>
+          <OwnershipAttestationFull
+            checked={form.attestation}
+            onChange={(checked) => setForm({ ...form, attestation: checked })}
+            countryCode={selectedCountry}
+            listingType="rental"
+          />
 
           {/* SUCCESS & ERROR MESSAGES */}
           {success && (

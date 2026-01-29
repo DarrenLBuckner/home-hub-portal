@@ -100,7 +100,7 @@ interface AgentVetting {
   promo_spot_number?: number;
   is_founding_member?: boolean;
   user_type: string;
-  status: 'pending_review' | 'approved' | 'rejected' | 'under_review';
+  status: 'pending_review' | 'approved' | 'denied' | 'needs_more_info';
   submitted_at: string;
   reviewed_at?: string;
   created_at: string;
@@ -2064,17 +2064,6 @@ export default function UnifiedAdminDashboard() {
                 ))}
               </div>
             )}
-          </div>
-        )}
-
-        {/* FSBO Applications Section */}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         )}
 

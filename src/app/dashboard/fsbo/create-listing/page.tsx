@@ -6,6 +6,7 @@ import { createClient } from "@/supabase";
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
+import OwnershipAttestation from "@/components/OwnershipAttestation";
 import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 
 const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Townhouse", "Studio", "Room"];
@@ -426,18 +427,13 @@ export default function CreateFSBOListing() {
           maxImages={imageLimit}
         />
         
-        <label className="flex items-center gap-2 mt-4">
-          <input 
-            type="checkbox" 
-            name="attestation" 
-            checked={form.attestation} 
-            onChange={handleChange} 
-            required 
-          />
-          <span className="text-sm font-semibold text-red-700">
-            By submitting this listing, I confirm under penalty of perjury that I am the legal owner of this property or have the legal authority to list it for sale.
-          </span>
-        </label>
+        {/* Legal Ownership Attestation */}
+        <OwnershipAttestation
+          checked={form.attestation}
+          onChange={(checked) => setForm({ ...form, attestation: checked })}
+          countryCode={selectedCountry}
+          listingType="sale"
+        />
         
         {error && <div className="text-red-500 text-sm font-semibold animate-shake">{error}</div>}
         {success && <div className="text-green-600 font-bold text-lg text-center">Property submitted! Redirecting to dashboard...</div>}

@@ -124,17 +124,31 @@ export async function POST(req: NextRequest) {
     
     const userType = userProfile.user_type;
     
-    // DISABLED AUTO-APPROVAL: All properties should go through review process
-    // This ensures admin dashboard approval workflow works properly
+    // AUTO-APPROVAL LOGIC:
+    // - Agents: Auto-approve (they're verified professionals)
+    // - Superadmin: Auto-approve in production
+    // - FSBO/Owner/Landlord: Require admin review (status = 'pending')
     const shouldAutoApprove = (userType: string): boolean => {
-      // return false; // Disable auto-approval for all users including admins
-      
-      // Alternative: Only auto-approve for super admins in production
-      return userType?.toLowerCase() === 'superadmin' && process.env.NODE_ENV === 'production';
+      const normalizedType = userType?.toLowerCase();
+
+      // Agents are verified professionals - auto-approve their listings
+      if (normalizedType === 'agent') return true;
+
+      // Superadmins auto-approve in production
+      if (normalizedType === 'superadmin' && process.env.NODE_ENV === 'production') return true;
+
+      // All other user types (fsbo, owner, landlord) require review
+      return false;
     };
     
     // Read the request body once
     const body = await req.json();
+
+    // Capture attestation data for audit trail
+    const attestationIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+                          req.headers.get('x-real-ip') ||
+                          'unknown';
+    const attestationDate = new Date().toISOString();
 
     // Parse optional target_user_id for admin-on-behalf-of creation
     // This allows admins to create properties that are assigned to another user's account
@@ -706,6 +720,11 @@ export async function POST(req: NextRequest) {
         site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
         created_at: new Date().toISOString(),
+
+        // Attestation fields (agents don't require attestation but we track it if provided)
+        ownership_attested: body.attestation || body.confirms_ownership || false,
+        attestation_date: (body.attestation || body.confirms_ownership) ? attestationDate : null,
+        attestation_ip: (body.attestation || body.confirms_ownership) ? attestationIp : null,
       };
     } else if (isRental) {
       // Rental property data structure - handle both agent and landlord forms
@@ -754,6 +773,11 @@ export async function POST(req: NextRequest) {
         site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
         created_at: new Date().toISOString(),
+
+        // Attestation fields for ownership verification
+        ownership_attested: body.attestation || body.confirms_ownership || false,
+        attestation_date: (body.attestation || body.confirms_ownership) ? attestationDate : null,
+        attestation_ip: (body.attestation || body.confirms_ownership) ? attestationIp : null,
       };
     } else {
       // FSBO sale property data structure (existing)
@@ -800,6 +824,11 @@ export async function POST(req: NextRequest) {
         site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
         created_at: new Date().toISOString(),
+
+        // Attestation fields for ownership verification
+        ownership_attested: body.attestation || body.confirms_ownership || false,
+        attestation_date: (body.attestation || body.confirms_ownership) ? attestationDate : null,
+        attestation_ip: (body.attestation || body.confirms_ownership) ? attestationIp : null,
       };
     }
 
