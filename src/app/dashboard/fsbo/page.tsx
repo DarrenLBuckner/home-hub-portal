@@ -7,6 +7,7 @@ import { getGlobalSouthCountries } from "../../../lib/global-south-countries";
 import UniversalPropertyManager from "@/components/UniversalPropertyManager";
 import TrainingVideosCard from "@/components/TrainingVideosCard";
 import TrainingResourcesCard from "@/components/TrainingResourcesCard";
+import AccountStatusBanner from "@/components/AccountStatusBanner";
 
 export default function FSBODashboard() {
   const router = useRouter();
@@ -154,7 +155,15 @@ export default function FSBODashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        
+
+        {/* Account Status Banner - shows if pending/rejected/needs_correction */}
+        <AccountStatusBanner
+          status={user?.approval_status as any}
+          rejectionReason={user?.rejection_reason}
+          userType="fsbo"
+          userName={user?.first_name}
+        />
+
         {/* Mobile-First Quick Stats Cards */}
         {subscription && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">

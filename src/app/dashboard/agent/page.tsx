@@ -10,6 +10,7 @@ import AgentDashboardWelcome from './components/AgentDashboardWelcome';
 import PropertyEngagementMetrics from './components/PropertyEngagementMetrics';
 import TrainingVideosCard from '@/components/TrainingVideosCard';
 import TrainingResourcesCard from '@/components/TrainingResourcesCard';
+import AccountStatusBanner from '@/components/AccountStatusBanner';
 
 
 
@@ -25,6 +26,9 @@ export default function AgentPage() {
   const [isAgent, setIsAgent] = useState(false);
   const [agentWhatsapp, setAgentWhatsapp] = useState<string>('');
   const [countryCode, setCountryCode] = useState<string>('GY');
+  const [agentVettingStatus, setAgentVettingStatus] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string>('');
   
   useEffect(() => {
     const fetchUser = async () => {
@@ -84,6 +88,23 @@ export default function AgentPage() {
             // Set country code from profile
             if (profile.country_id) {
               setCountryCode(profile.country_id);
+            }
+
+            // Fetch agent vetting status for agents
+            if (profile.user_type === 'agent') {
+              const { data: vetting } = await supabase
+                .from('agent_vetting')
+                .select('status, rejection_reason, first_name')
+                .eq('user_id', data.user.id)
+                .single();
+
+              if (vetting) {
+                setAgentVettingStatus(vetting.status);
+                setRejectionReason(vetting.rejection_reason);
+                if (vetting.first_name) {
+                  setUserName(vetting.first_name);
+                }
+              }
             }
           }
         }
@@ -159,6 +180,14 @@ export default function AgentPage() {
 
       {/* Mobile-First Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Account Status Banner - shows if pending/rejected/needs_correction */}
+        <AccountStatusBanner
+          status={agentVettingStatus as any}
+          rejectionReason={rejectionReason}
+          userType="agent"
+          userName={userName}
+        />
+
         {activeSection === 'dashboard' && (
           <div className="space-y-6 sm:space-y-8">
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">

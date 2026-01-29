@@ -44,14 +44,19 @@ ${rejectionReason}
 
         <div style="background: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0ea5e9;">
           <h3 style="color: #0369a1; margin-top: 0;">🔐 Quick Login & Resubmit:</h3>
-          <p style="margin-top: 0;">Visit the link below to log into your account and access your application status:</p>
+          <p style="margin-top: 0;">Log in to see your application status directly on your dashboard:</p>
           <div style="text-align: center; margin: 15px 0;">
-            <a href="https://portalhomehub.com/login" 
+            <a href="https://portalhomehub.com/login"
                style="background: #0ea5e9; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
-              🔑 Log In to Portal Home Hub
+              🔑 Log In to Your Dashboard
             </a>
           </div>
-          <p style="margin-bottom: 0; font-size: 14px; text-align: center;">After logging in, navigate to "Agent Application Status" to review the feedback and resubmit</p>
+          <p style="margin-bottom: 0; font-size: 14px; text-align: center;">Your status and feedback will be displayed at the top of your dashboard after you log in</p>
+          <p style="margin-top: 10px; font-size: 13px; text-align: center;">
+            <a href="https://portalhomehub.com/dashboard/agent/application-status" style="color: #0369a1;">
+              Or go directly to your Application Status page →
+            </a>
+          </p>
         </div>
         
         <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
@@ -102,10 +107,13 @@ NEXT STEPS:
 5. Get Approved - Once complete, you'll receive agent access immediately
 
 QUICK LOGIN & RESUBMIT:
-Visit the link below to log into your account and access your application status:
+Log in to see your application status directly on your dashboard:
 https://portalhomehub.com/login
 
-After logging in, navigate to "Agent Application Status" to review the feedback and resubmit.
+Your status and feedback will be displayed at the top of your dashboard after you log in.
+
+Or go directly to your Application Status page:
+https://portalhomehub.com/dashboard/agent/application-status
 
 ---
 

@@ -538,19 +538,22 @@ export async function sendOwnerCorrectionEmail({ to, firstName, userType, reason
           <div style="background: white; padding: 20px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
             <strong style="color: #374151; display: block; margin-bottom: 15px;">How to fix this:</strong>
             <ol style="margin: 0; padding-left: 25px; color: #374151; line-height: 1.8;">
-              <li>Log in to your account</li>
-              <li>Update the required information in your profile</li>
-              <li>Your application will be automatically resubmitted for review</li>
+              <li>Log in to your account - you'll see the status details on your dashboard</li>
+              <li>Contact our support team to discuss what needs to be corrected</li>
+              <li>Once resolved, we'll update your account status</li>
             </ol>
           </div>
 
           <!-- CTA Button -->
           <div style="text-align: center; margin: 30px 0;">
-            <a href="https://${domain}/login"
+            <a href="https://portalhomehub.com/login"
                style="display: inline-block; background: #1e3a5f; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
-              Log In & Update
+              Log In to Your Dashboard
             </a>
           </div>
+          <p style="font-size: 13px; color: #6b7280; text-align: center; margin: 0;">
+            Your status and the required corrections will be displayed at the top of your dashboard
+          </p>
 
           <p style="font-size: 14px; color: #6b7280; margin: 20px 0 0 0;">
             Need help? Reply to this email or contact us on WhatsApp:
