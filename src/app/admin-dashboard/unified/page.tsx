@@ -411,7 +411,7 @@ export default function UnifiedAdminDashboard() {
 
       // Get profile data for each agent manually
       const enrichedAgents = await Promise.all(
-        agents.map(async (agent) => {
+        agents.map(async (agent: AgentVetting) => {
           const { data: profile } = await supabase
             .from('profiles')
             .select('email, first_name, last_name, user_type')
@@ -669,25 +669,27 @@ export default function UnifiedAdminDashboard() {
       }
 
       const agent = pendingAgents.find(a => a.id === agentId);
-      const agentName = agent?.profiles ? 
+      const agentName = agent?.profiles ?
         `${agent.profiles.first_name} ${agent.profiles.last_name}`.trim() || agent.profiles.email :
         'Agent';
-        
+
       // Send rejection email notification
-      try {
-        await fetch('/api/send-agent-rejection-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            agentEmail: agent.profiles?.email || agent.email,
-            agentName: agentName,
-            rejectionReason: reason,
-            country: agent.country || 'GY'
-          })
-        });
-        console.log('✅ Agent rejection email sent successfully');
-      } catch (emailError) {
-        console.warn('⚠️ Failed to send rejection email:', emailError);
+      if (agent) {
+        try {
+          await fetch('/api/send-agent-rejection-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              agentEmail: agent.profiles?.email || agent.email,
+              agentName: agentName,
+              rejectionReason: reason,
+              country: agent.country || 'GY'
+            })
+          });
+          console.log('✅ Agent rejection email sent successfully');
+        } catch (emailError) {
+          console.warn('⚠️ Failed to send rejection email:', emailError);
+        }
       }
 
       alert(`❌ Agent "${agentName}" has been rejected and notified via email.\nReason: ${reason}`);
