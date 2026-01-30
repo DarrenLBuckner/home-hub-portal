@@ -82,27 +82,33 @@ export async function POST(request: Request) {
       }
     }
 
-    // Force update the profile to landlord type with promo benefits
+    // Force upsert the profile to landlord type with promo benefits
+    // Using upsert to ensure user_type is set correctly even if trigger created profile first
     const { error: profileError } = await supabase
       .from('profiles')
-      .update(profileData)
-      .eq('id', data.user.id);
+      .upsert({
+        id: data.user.id,
+        ...profileData,
+        created_at: new Date().toISOString(),
+      }, {
+        onConflict: 'id',
+        ignoreDuplicates: false
+      });
 
     if (profileError) {
-      console.error('Profile update error:', profileError);
-      // Try creating if update failed
-      const { error: insertError } = await supabase
+      console.error('Profile upsert error:', profileError);
+      // Fallback: try direct update if upsert failed
+      const { error: updateError } = await supabase
         .from('profiles')
-        .insert({
-          id: data.user.id,
-          ...profileData,
-          created_at: new Date().toISOString(),
-        });
+        .update(profileData)
+        .eq('id', data.user.id);
 
-      if (insertError) {
-        console.error('Profile insert error:', insertError);
+      if (updateError) {
+        console.error('Profile update fallback error:', updateError);
       }
     }
+
+    console.log('✅ Profile saved with user_type: landlord');
 
     // Create promo code redemption record if promo was applied
     if (promoCodeData && data.user) {
