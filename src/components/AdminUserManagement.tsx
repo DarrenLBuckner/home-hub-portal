@@ -166,8 +166,8 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
       const search = searchTerm.toLowerCase();
       filtered = filtered.filter(user =>
         user.account_code?.toLowerCase().includes(search) ||
-        user.email.toLowerCase().includes(search) ||
-        `${user.first_name} ${user.last_name}`.toLowerCase().includes(search) ||
+        user.email?.toLowerCase().includes(search) ||
+        `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase().includes(search) ||
         user.display_name?.toLowerCase().includes(search)
       );
     }
