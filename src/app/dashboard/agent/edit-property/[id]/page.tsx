@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/supabase';
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
+import { normalizePropertyData } from "@/lib/propertyNormalization";
 
 // Reusing existing agent create-property components  
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
@@ -199,69 +200,72 @@ export default function EditAgentProperty() {
         }
 
         if (property) {
+          // Normalize property data for backward compatibility with old values
+          const normalizedProperty = normalizePropertyData(property);
+
           // Populate form data from existing property
           setForm({
-            location: property.location || '',
-            title: property.title || '',
-            description: property.description || '',
-            price: property.price?.toString() || '',
-            status: property.status || 'draft',
-            property_type: property.property_type || 'House',
-            listing_type: property.listing_type || 'sale',
-            bedrooms: property.bedrooms?.toString() || '',
-            bathrooms: property.bathrooms?.toString() || '',
-            house_size_value: property.house_size_value?.toString() || '',
-            house_size_unit: property.house_size_unit || 'sq ft',
-            land_size_value: property.land_size_value?.toString() || '',
-            land_size_unit: property.land_size_unit || 'sq ft',
-            land_size_na: property.land_size_na || false,
-            year_built: property.year_built?.toString() || '',
-            amenities: Array.isArray(property.amenities) ? property.amenities : [],
-            region: property.region || '',
-            city: property.city || '',
-            neighborhood: property.neighborhood || '',
-            address: property.address || '',
-            show_address: property.show_address || false,
-            lot_length: property.lot_length?.toString() || '',
-            lot_width: property.lot_width?.toString() || '',
-            lot_dimension_unit: property.lot_dimension_unit || 'ft',
-            owner_whatsapp: property.owner_whatsapp || '',
-            video_url: property.video_url || '',
-            
+            location: normalizedProperty.location || '',
+            title: normalizedProperty.title || '',
+            description: normalizedProperty.description || '',
+            price: normalizedProperty.price?.toString() || '',
+            status: normalizedProperty.status || 'draft',
+            property_type: normalizedProperty.property_type || 'House',
+            listing_type: normalizedProperty.listing_type || 'sale',
+            bedrooms: normalizedProperty.bedrooms?.toString() || '',
+            bathrooms: normalizedProperty.bathrooms?.toString() || '',
+            house_size_value: normalizedProperty.house_size_value?.toString() || '',
+            house_size_unit: normalizedProperty.house_size_unit || 'sq ft',
+            land_size_value: normalizedProperty.land_size_value?.toString() || '',
+            land_size_unit: normalizedProperty.land_size_unit || 'sq ft',
+            land_size_na: normalizedProperty.land_size_na || false,
+            year_built: normalizedProperty.year_built?.toString() || '',
+            amenities: Array.isArray(normalizedProperty.amenities) ? normalizedProperty.amenities : [],
+            region: normalizedProperty.region || '',
+            city: normalizedProperty.city || '',
+            neighborhood: normalizedProperty.neighborhood || '',
+            address: normalizedProperty.address || '',
+            show_address: normalizedProperty.show_address || false,
+            lot_length: normalizedProperty.lot_length?.toString() || '',
+            lot_width: normalizedProperty.lot_width?.toString() || '',
+            lot_dimension_unit: normalizedProperty.lot_dimension_unit || 'ft',
+            owner_whatsapp: normalizedProperty.owner_whatsapp || '',
+            video_url: normalizedProperty.video_url || '',
+
             // Commercial property fields
-            property_category: property.property_category || 'residential',
-            commercial_type: property.commercial_type || '',
-            floor_size_sqft: property.floor_size_sqft?.toString() || '',
-            building_floor: property.building_floor || '',
-            number_of_floors: property.number_of_floors?.toString() || '',
-            parking_spaces: property.parking_spaces?.toString() || '',
-            loading_dock: property.loading_dock || false,
-            elevator_access: property.elevator_access || false,
-            commercial_garage_entrance: property.commercial_garage_entrance || false,
-            climate_controlled: property.climate_controlled || false,
-            
+            property_category: normalizedProperty.property_category || 'residential',
+            commercial_type: normalizedProperty.commercial_type || '',
+            floor_size_sqft: normalizedProperty.floor_size_sqft?.toString() || '',
+            building_floor: normalizedProperty.building_floor || '',
+            number_of_floors: normalizedProperty.number_of_floors?.toString() || '',
+            parking_spaces: normalizedProperty.parking_spaces?.toString() || '',
+            loading_dock: normalizedProperty.loading_dock || false,
+            elevator_access: normalizedProperty.elevator_access || false,
+            commercial_garage_entrance: normalizedProperty.commercial_garage_entrance || false,
+            climate_controlled: normalizedProperty.climate_controlled || false,
+
             // Lease and financing fields
-            lease_term_years: property.lease_term_years || '',
-            lease_type: property.lease_type || '',
-            financing_available: property.financing_available || false,
-            financing_details: property.financing_details || '',
+            lease_term_years: normalizedProperty.lease_term_years || '',
+            lease_type: normalizedProperty.lease_type || '',
+            financing_available: normalizedProperty.financing_available || false,
+            financing_details: normalizedProperty.financing_details || '',
           });
 
           // Set location and currency info - FIX: Use country field, not location
           // Handle legacy data where country might be null but location contains country code
-          let countryCode = property.country || 'GY';
-          if (!property.country && property.location) {
+          let countryCode = normalizedProperty.country || 'GY';
+          if (!normalizedProperty.country && normalizedProperty.location) {
             // Extract country from location field (GY-R4 -> GY)
-            if (property.location.startsWith('GY')) countryCode = 'GY';
-            else if (property.location.startsWith('JM')) countryCode = 'JM';
+            if (normalizedProperty.location.startsWith('GY')) countryCode = 'GY';
+            else if (normalizedProperty.location.startsWith('JM')) countryCode = 'JM';
           }
           setSelectedCountry(countryCode);
-          
+
           // Map stored region code to component expected format
-          let mappedRegion = property.region || '';
+          let mappedRegion = normalizedProperty.region || '';
           if (mappedRegion && countryCode === 'GY') {
             // Map GY-R4 (Region 4 - Demerara-Mahaica) to city format
-            const city = property.city || '';
+            const city = normalizedProperty.city || '';
             if (mappedRegion === 'GY-R4') {
               // Region 4 includes Georgetown, Diamond, East Coast Demerara, etc.
               if (city.includes('Georgetown')) {
@@ -275,12 +279,12 @@ export default function EditAgentProperty() {
             } else if (mappedRegion === 'GY-R6' && city.includes('New Amsterdam')) {
               mappedRegion = 'GY-R6-NewAmsterdam';
             }
-            console.log(`🗺️ Region mapping: ${property.region} + "${city}" -> ${mappedRegion} (country: ${countryCode})`);
+            console.log(`🗺️ Region mapping: ${normalizedProperty.region} + "${city}" -> ${mappedRegion} (country: ${countryCode})`);
           }
           setSelectedRegion(mappedRegion);
-          
-          setCurrencyCode(property.currency || 'GYD');
-          setCurrencySymbol(getCurrencySymbol(property.currency || 'GYD'));
+
+          setCurrencyCode(normalizedProperty.currency || 'GYD');
+          setCurrencySymbol(getCurrencySymbol(normalizedProperty.currency || 'GYD'));
           
           // Also update the form location field
           setForm(prev => ({
@@ -288,7 +292,7 @@ export default function EditAgentProperty() {
             location: countryCode
           }));
 
-          // Set existing images
+          // Set existing images (property_media is not normalized, use original)
           const propertyImages = property.property_media
             ?.filter((media: any) => media.media_type === 'image')
             ?.sort((a: any, b: any) => {
@@ -297,7 +301,7 @@ export default function EditAgentProperty() {
               return a.display_order - b.display_order;
             })
             ?.map((media: any) => media.media_url) || [];
-          
+
           setExistingImages(propertyImages);
         }
 

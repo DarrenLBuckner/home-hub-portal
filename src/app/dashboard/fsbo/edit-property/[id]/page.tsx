@@ -8,6 +8,7 @@ import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelecto
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
 import { getCurrencySymbol } from "@/lib/currency";
+import { normalizePropertyData } from "@/lib/propertyNormalization";
 
 // Simplified property types matching CREATE form
 const PROPERTY_TYPES = [
@@ -154,27 +155,30 @@ export default function EditFSBOProperty() {
           return;
         }
 
+        // Normalize property data for backward compatibility with old values
+        const normalizedProperty = normalizePropertyData(property);
+
         // Populate form data
         setFormData({
-          title: property.title || '',
-          description: property.description || '',
-          price: property.price?.toString() || '',
-          location: property.location || '',
-          propertyType: property.property_type || 'House',
-          bedrooms: property.bedrooms?.toString() || '',
-          bathrooms: property.bathrooms?.toString() || '',
-          squareFootage: property.house_size_value?.toString() || '',
-          features: Array.isArray(property.amenities) ? property.amenities : [],
-          status: property.status || 'pending',
-          listingType: property.listing_type || 'sale',
+          title: normalizedProperty.title || '',
+          description: normalizedProperty.description || '',
+          price: normalizedProperty.price?.toString() || '',
+          location: normalizedProperty.location || '',
+          propertyType: normalizedProperty.property_type || 'House',
+          bedrooms: normalizedProperty.bedrooms?.toString() || '',
+          bathrooms: normalizedProperty.bathrooms?.toString() || '',
+          squareFootage: normalizedProperty.house_size_value?.toString() || '',
+          features: Array.isArray(normalizedProperty.amenities) ? normalizedProperty.amenities : [],
+          status: normalizedProperty.status || 'pending',
+          listingType: normalizedProperty.listing_type || 'sale',
         });
 
         // Set location info
-        const countryCode = property.country || property.country_id || 'GY';
+        const countryCode = normalizedProperty.country || normalizedProperty.country_id || 'GY';
         setSelectedCountry(countryCode);
-        setSelectedRegion(property.region || '');
-        setCurrencyCode(property.currency || 'GYD');
-        setCurrencySymbol(getCurrencySymbol(property.currency || 'GYD'));
+        setSelectedRegion(normalizedProperty.region || '');
+        setCurrencyCode(normalizedProperty.currency || 'GYD');
+        setCurrencySymbol(getCurrencySymbol(normalizedProperty.currency || 'GYD'));
 
         // Set existing images
         const propertyImages = property.property_media

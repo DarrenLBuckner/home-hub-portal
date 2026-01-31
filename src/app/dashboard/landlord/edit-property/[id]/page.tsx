@@ -11,6 +11,7 @@ import Step3Location from '../../../owner/create-property/components/Step3Locati
 import Step4Photos from '../../../owner/create-property/components/Step4Photos';
 import Step5Contact from '../../../owner/create-property/components/Step5Contact';
 import Step6Review from '../../../owner/create-property/components/Step6Review';
+import { normalizePropertyData } from '@/lib/propertyNormalization';
 
 export default function EditLandlordProperty() {
   const router = useRouter();
@@ -144,39 +145,42 @@ export default function EditLandlordProperty() {
         }
 
         if (property) {
+          // Normalize property data for backward compatibility with old values
+          const normalizedProperty = normalizePropertyData(property);
+
           // Populate form data from existing property
           setFormData({
-            title: property.title || '',
-            description: property.description || '',
-            price: property.price?.toString() || '',
-            property_type: property.property_type || 'Apartment',
-            lease_term: property.lease_term || '',
-            deposit_amount: property.deposit_amount?.toString() || '',
-            deposit_currency: property.deposit_currency || 'GYD',
-            utilities_included: Array.isArray(property.utilities_included) ? property.utilities_included : [],
-            pet_policy: property.pet_policy || '',
-            bedrooms: property.bedrooms?.toString() || '',
-            bathrooms: property.bathrooms?.toString() || '',
-            house_size_value: property.house_size_value?.toString() || '',
-            house_size_unit: property.house_size_unit || 'sq ft',
-            land_size_value: property.land_size_value?.toString() || '',
-            land_size_unit: property.land_size_unit || 'sq ft',
-            land_size_na: property.land_size_na || false,
-            year_built: property.year_built?.toString() || '',
-            amenities: Array.isArray(property.amenities) ? property.amenities : [],
-            lot_length: property.lot_length?.toString() || '',
-            lot_width: property.lot_width?.toString() || '',
-            lot_dimension_unit: property.lot_dimension_unit || 'ft',
-            country: property.country_id || property.country || 'GY',
-            region: property.region || '',
-            city: property.city || '',
-            neighborhood: property.neighborhood || '',
-            address: property.address || '',
-            show_address: property.show_address || false,
-            location: property.location || '',
-            currency: property.currency || 'GYD',
-            owner_email: property.owner_email || '',
-            owner_whatsapp: property.owner_whatsapp || '',
+            title: normalizedProperty.title || '',
+            description: normalizedProperty.description || '',
+            price: normalizedProperty.price?.toString() || '',
+            property_type: normalizedProperty.property_type || 'Apartment',
+            lease_term: normalizedProperty.lease_term || '',
+            deposit_amount: normalizedProperty.deposit_amount?.toString() || '',
+            deposit_currency: normalizedProperty.deposit_currency || 'GYD',
+            utilities_included: Array.isArray(normalizedProperty.utilities_included) ? normalizedProperty.utilities_included : [],
+            pet_policy: normalizedProperty.pet_policy || '',
+            bedrooms: normalizedProperty.bedrooms?.toString() || '',
+            bathrooms: normalizedProperty.bathrooms?.toString() || '',
+            house_size_value: normalizedProperty.house_size_value?.toString() || '',
+            house_size_unit: normalizedProperty.house_size_unit || 'sq ft',
+            land_size_value: normalizedProperty.land_size_value?.toString() || '',
+            land_size_unit: normalizedProperty.land_size_unit || 'sq ft',
+            land_size_na: normalizedProperty.land_size_na || false,
+            year_built: normalizedProperty.year_built?.toString() || '',
+            amenities: Array.isArray(normalizedProperty.amenities) ? normalizedProperty.amenities : [],
+            lot_length: normalizedProperty.lot_length?.toString() || '',
+            lot_width: normalizedProperty.lot_width?.toString() || '',
+            lot_dimension_unit: normalizedProperty.lot_dimension_unit || 'ft',
+            country: normalizedProperty.country_id || normalizedProperty.country || 'GY',
+            region: normalizedProperty.region || '',
+            city: normalizedProperty.city || '',
+            neighborhood: normalizedProperty.neighborhood || '',
+            address: normalizedProperty.address || '',
+            show_address: normalizedProperty.show_address || false,
+            location: normalizedProperty.location || '',
+            currency: normalizedProperty.currency || 'GYD',
+            owner_email: normalizedProperty.owner_email || '',
+            owner_whatsapp: normalizedProperty.owner_whatsapp || '',
           });
 
           // Set existing images
