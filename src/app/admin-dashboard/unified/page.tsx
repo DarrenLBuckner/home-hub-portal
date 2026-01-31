@@ -131,6 +131,21 @@ interface OwnerApplication {
   created_at: string;
 }
 
+// User with property counts for FSBO/Landlord tabs
+interface UserWithPropertyCounts {
+  id: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  user_type: 'owner' | 'landlord';
+  is_founding_member: boolean;
+  country_id: string | null;
+  created_at: string;
+  activeListings: number;
+  pendingListings: number;
+}
+
 // Common rejection reasons for FSBO/Landlord applications
 const OWNER_REJECTION_REASONS = [
   { value: 'incomplete_info', label: 'Incomplete information' },
@@ -155,6 +170,10 @@ export default function UnifiedAdminDashboard() {
   const [pendingAgents, setPendingAgents] = useState<AgentVetting[]>([]);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
   const [pendingOwners, setPendingOwners] = useState<OwnerApplication[]>([]);
+  const [fsboUsers, setFsboUsers] = useState<UserWithPropertyCounts[]>([]);
+  const [landlordUsers, setLandlordUsers] = useState<UserWithPropertyCounts[]>([]);
+  const [fsboLoading, setFsboLoading] = useState(false);
+  const [landlordLoading, setLandlordLoading] = useState(false);
   const [processingAgentId, setProcessingAgentId] = useState<string | null>(null);
   const [processingOwnerId, setProcessingOwnerId] = useState<string | null>(null);
   const [agentRejectReason, setAgentRejectReason] = useState("");
@@ -194,6 +213,8 @@ export default function UnifiedAdminDashboard() {
       loadDrafts();
       loadAgents();
       loadOwnerApplications();
+      loadFSBOUsers();
+      loadLandlordUsers();
     }
   }, [adminLoading, isAdmin, permissions]);
 
@@ -484,6 +505,124 @@ export default function UnifiedAdminDashboard() {
     } catch (error) {
       console.warn('⚠️ Error loading owner applications (non-critical):', error);
       setPendingOwners([]);
+    }
+  };
+
+  // Load all FSBO users with their property counts
+  const loadFSBOUsers = async () => {
+    setFsboLoading(true);
+    try {
+      console.log('🔄 Loading FSBO users...');
+
+      // Get all FSBO users (user_type = 'owner' or 'fsbo')
+      const { data: users, error: usersError } = await supabase
+        .from('profiles')
+        .select('id, email, first_name, last_name, phone, user_type, is_founding_member, country_id, created_at')
+        .in('user_type', ['owner', 'fsbo'])
+        .order('created_at', { ascending: false });
+
+      if (usersError) {
+        console.error('Error loading FSBO users:', usersError);
+        setFsboUsers([]);
+        return;
+      }
+
+      // Get property counts for each user
+      const usersWithCounts = await Promise.all((users || []).map(async (user) => {
+        const { count: activeCount } = await supabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'active');
+
+        const { count: pendingCount } = await supabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'pending');
+
+        return {
+          ...user,
+          user_type: 'owner' as const,
+          activeListings: activeCount || 0,
+          pendingListings: pendingCount || 0,
+        };
+      }));
+
+      // Apply country filter for non-super admins
+      let filtered = usersWithCounts;
+      if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
+        filtered = usersWithCounts.filter((user) =>
+          user.country_id === permissions.countryFilter || !user.country_id
+        );
+      }
+
+      setFsboUsers(filtered);
+      console.log(`✅ Loaded ${filtered.length} FSBO users`);
+    } catch (error) {
+      console.error('Error loading FSBO users:', error);
+      setFsboUsers([]);
+    } finally {
+      setFsboLoading(false);
+    }
+  };
+
+  // Load all Landlord users with their property counts
+  const loadLandlordUsers = async () => {
+    setLandlordLoading(true);
+    try {
+      console.log('🔄 Loading Landlord users...');
+
+      // Get all landlord users
+      const { data: users, error: usersError } = await supabase
+        .from('profiles')
+        .select('id, email, first_name, last_name, phone, user_type, is_founding_member, country_id, created_at')
+        .eq('user_type', 'landlord')
+        .order('created_at', { ascending: false });
+
+      if (usersError) {
+        console.error('Error loading landlord users:', usersError);
+        setLandlordUsers([]);
+        return;
+      }
+
+      // Get property counts for each user
+      const usersWithCounts = await Promise.all((users || []).map(async (user) => {
+        const { count: activeCount } = await supabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'active');
+
+        const { count: pendingCount } = await supabase
+          .from('properties')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('status', 'pending');
+
+        return {
+          ...user,
+          user_type: 'landlord' as const,
+          activeListings: activeCount || 0,
+          pendingListings: pendingCount || 0,
+        };
+      }));
+
+      // Apply country filter for non-super admins
+      let filtered = usersWithCounts;
+      if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
+        filtered = usersWithCounts.filter((user) =>
+          user.country_id === permissions.countryFilter || !user.country_id
+        );
+      }
+
+      setLandlordUsers(filtered);
+      console.log(`✅ Loaded ${filtered.length} landlord users`);
+    } catch (error) {
+      console.error('Error loading landlord users:', error);
+      setLandlordUsers([]);
+    } finally {
+      setLandlordLoading(false);
     }
   };
 
@@ -1150,7 +1289,7 @@ export default function UnifiedAdminDashboard() {
             )}
           </button>
 
-          {/* PRIORITY 3.6: FSBO Applications */}
+          {/* PRIORITY 3.6: FSBO Users */}
           <button
             onClick={() => setActiveSection('fsbo')}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors relative ${
@@ -1160,14 +1299,14 @@ export default function UnifiedAdminDashboard() {
             }`}
           >
             🏠 FSBO
-            {pendingOwners.filter(o => o.user_type === 'owner').length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                {pendingOwners.filter(o => o.user_type === 'owner').length}
+            {fsboUsers.reduce((sum, u) => sum + u.pendingListings, 0) > 0 && (
+              <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {fsboUsers.reduce((sum, u) => sum + u.pendingListings, 0)}
               </span>
             )}
           </button>
 
-          {/* PRIORITY 3.7: Landlord Applications */}
+          {/* PRIORITY 3.7: Landlord Users */}
           <button
             onClick={() => setActiveSection('landlords')}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors relative ${
@@ -1177,9 +1316,9 @@ export default function UnifiedAdminDashboard() {
             }`}
           >
             🏢 Landlords
-            {pendingOwners.filter(o => o.user_type === 'landlord').length > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-                {pendingOwners.filter(o => o.user_type === 'landlord').length}
+            {landlordUsers.reduce((sum, u) => sum + u.pendingListings, 0) > 0 && (
+              <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                {landlordUsers.reduce((sum, u) => sum + u.pendingListings, 0)}
               </span>
             )}
           </button>
@@ -2069,238 +2208,236 @@ export default function UnifiedAdminDashboard() {
           </div>
         )}
 
-        {/* FSBO Applications Section */}
+        {/* FSBO Users Section */}
         {activeSection === 'fsbo' && (
           <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-6">🏠 FSBO Applications</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">🏠 FSBO Users</h2>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Pending FSBO Applications</h3>
-                  <p className="text-sm text-gray-600">For Sale By Owner applications awaiting approval</p>
+                  <h3 className="text-lg font-bold text-gray-900">For Sale By Owner Users</h3>
+                  <p className="text-sm text-gray-600">All registered FSBO users and their property listings</p>
                 </div>
                 <button
-                  onClick={loadOwnerApplications}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={loadFSBOUsers}
+                  disabled={fsboLoading}
+                  className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
-                  🔄 Refresh
+                  {fsboLoading ? '⏳ Loading...' : '🔄 Refresh'}
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                  <div className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">Pending FSBO</div>
-                  <div className="text-2xl font-black text-blue-900">{pendingOwners.filter(o => o.user_type === 'owner').length}</div>
-                  <div className="text-xs text-blue-700">Awaiting Review</div>
+                  <div className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">Total FSBO</div>
+                  <div className="text-2xl font-black text-blue-900">{fsboUsers.length}</div>
+                  <div className="text-xs text-blue-700">Registered Users</div>
                 </div>
                 <div className="bg-green-50 rounded-xl p-4 border border-green-200">
-                  <div className="text-xs font-bold text-green-800 uppercase tracking-wide mb-1">Your Authority</div>
+                  <div className="text-xs font-bold text-green-800 uppercase tracking-wide mb-1">Active Listings</div>
                   <div className="text-2xl font-black text-green-900">
-                    {permissions?.canViewAllCountries ? 'ALL' : (permissions?.countryFilter || 'Limited')}
+                    {fsboUsers.reduce((sum, u) => sum + u.activeListings, 0)}
                   </div>
-                  <div className="text-xs text-green-700">Review Access</div>
+                  <div className="text-xs text-green-700">Properties Live</div>
+                </div>
+                <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                  <div className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-1">Pending Review</div>
+                  <div className="text-2xl font-black text-amber-900">
+                    {fsboUsers.reduce((sum, u) => sum + u.pendingListings, 0)}
+                  </div>
+                  <div className="text-xs text-amber-700">Properties Awaiting</div>
                 </div>
               </div>
 
-              {/* FSBO Applications Grid */}
-              {pendingOwners.filter(o => o.user_type === 'owner').length === 0 ? (
+              {/* FSBO Users Table */}
+              {fsboLoading ? (
+                <div className="bg-gray-50 rounded-xl p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                  <p className="text-gray-600 text-sm">Loading FSBO users...</p>
+                </div>
+              ) : fsboUsers.length === 0 ? (
                 <div className="bg-gray-50 rounded-xl p-8 text-center">
                   <div className="text-4xl mb-3">🏠</div>
-                  <h4 className="text-lg font-bold text-gray-900 mb-1">No Pending FSBO Applications</h4>
-                  <p className="text-gray-600 text-sm">All FSBO applications have been processed.</p>
+                  <h4 className="text-lg font-bold text-gray-900 mb-1">No FSBO Users</h4>
+                  <p className="text-gray-600 text-sm">No For Sale By Owner users have registered yet.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {pendingOwners.filter(o => o.user_type === 'owner').map((owner) => (
-                    <div key={owner.id} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow">
-                      {/* Owner Header */}
-                      <div className="p-4 border-b bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="px-3 py-1 text-white text-xs font-bold rounded-full bg-blue-500">
-                            🏠 FSBO APPLICATION
-                          </span>
-                          <span className="text-xs text-blue-700">
-                            {owner.country_id || 'GY'}
-                          </span>
-                        </div>
-                        <h3 className="font-bold text-lg text-gray-900">
-                          {`${owner.first_name || ''} ${owner.last_name || ''}`.trim() || 'Unknown Applicant'}
-                        </h3>
-                        <p className="text-sm text-gray-600">{owner.email || 'No email'}</p>
-                      </div>
-
-                      {/* Owner Details */}
-                      <div className="p-4">
-                        <div className="grid grid-cols-2 gap-3 text-center mb-4">
-                          <div className="rounded-lg p-2 bg-blue-50">
-                            <div className="text-xs font-medium text-blue-800">📞 Phone</div>
-                            <div className="text-sm font-bold text-blue-900">{owner.phone || 'N/A'}</div>
-                          </div>
-                          <div className="rounded-lg p-2 bg-blue-50">
-                            <div className="text-xs font-medium text-blue-800">📋 Plan</div>
-                            <div className="text-sm font-bold text-blue-900">
-                              {owner.plan ? owner.plan.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Standard'}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide">Name</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide">Email</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide hidden md:table-cell">Phone</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide hidden lg:table-cell">Signed Up</th>
+                        <th className="text-center py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide">Listings</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fsboUsers.map((user) => (
+                        <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900">
+                                {`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown'}
+                              </span>
+                              {user.is_founding_member && (
+                                <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">🌟 Founder</span>
+                              )}
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Application Info */}
-                        <div className="rounded-lg p-3 mb-4 bg-blue-50 border border-blue-100">
-                          <div className="text-xs font-medium mb-2 text-blue-800">📋 Application Details</div>
-                          <div className="text-sm text-blue-700 space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span>📅 Applied:</span>
-                              <span className="font-mono">{new Date(owner.created_at).toLocaleDateString()}</span>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-600">{user.email || 'N/A'}</td>
+                          <td className="py-3 px-4 text-sm text-gray-600 hidden md:table-cell">{user.phone || 'N/A'}</td>
+                          <td className="py-3 px-4 text-sm text-gray-600 hidden lg:table-cell">
+                            {new Date(user.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium">
+                                {user.activeListings} active
+                              </span>
+                              {user.pendingListings > 0 && (
+                                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded font-medium">
+                                  {user.pendingListings} pending
+                                </span>
+                              )}
                             </div>
-                            {owner.is_founding_member && (
-                              <div className="mt-2 text-xs px-2 py-1 rounded bg-blue-200 text-blue-800 text-center font-semibold">
-                                🌟 Founding Member
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Account Status */}
-                        <div className="rounded-lg p-3 mb-4 bg-green-50 border border-green-200">
-                          <div className="text-xs font-medium mb-2 text-green-800">✅ Status</div>
-                          <div className="text-sm text-green-700">
-                            <p className="font-semibold">Auto-Approved Account</p>
-                            <p className="text-xs mt-1">User has immediate dashboard access to list properties</p>
-                          </div>
-                        </div>
-
-                        {/* What This Approval Does */}
-                        <div className="rounded-lg p-3 mb-4 bg-yellow-50 border border-yellow-200">
-                          <div className="text-xs font-medium mb-2 text-yellow-800">⚠️ Before You Approve</div>
-                          <div className="text-xs text-yellow-700">
-                            <p className="mb-1"><strong>This approves:</strong> The user account status</p>
-                            <p className="mb-1"><strong>This does NOT approve:</strong> Their property listings</p>
-                            <p><strong>Next step:</strong> Check Properties tab for their pending listings</p>
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => approveOwnerApplication(owner.id)}
-                            disabled={processingOwnerId === owner.id}
-                            className="w-full px-4 py-3 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
-                          >
-                            {processingOwnerId === owner.id ? '⏳' : '✅'} Approve
-                          </button>
-                          <button
-                            onClick={() => setShowOwnerRejectModal(owner.id)}
-                            disabled={processingOwnerId === owner.id}
-                            className="w-full px-4 py-3 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
-                          >
-                            ❌ Reject
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => {
+                                setActiveSection('properties');
+                                // Note: A more advanced implementation would filter properties by user_id
+                              }}
+                              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                            >
+                              View Properties →
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Landlords Applications Section */}
+        {/* Landlords Users Section */}
         {activeSection === 'landlords' && (
           <div>
-            <h2 className="text-xl font-bold text-gray-900 mb-6">🏢 Landlord Applications</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-6">🏢 Landlord Users</h2>
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-gray-900">Pending Landlord Applications</h3>
-                  <p className="text-sm text-gray-600">Landlord applications awaiting approval</p>
+                  <h3 className="text-lg font-bold text-gray-900">Registered Landlords</h3>
+                  <p className="text-sm text-gray-600">All registered landlord users and their rental listings</p>
                 </div>
                 <button
-                  onClick={loadOwnerApplications}
-                  className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors"
+                  onClick={loadLandlordUsers}
+                  disabled={landlordLoading}
+                  className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
                 >
-                  🔄 Refresh
+                  {landlordLoading ? '⏳ Loading...' : '🔄 Refresh'}
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
                 <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
-                  <div className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-1">Pending Landlords</div>
-                  <div className="text-2xl font-black text-purple-900">{pendingOwners.filter(o => o.user_type === 'landlord').length}</div>
-                  <div className="text-xs text-purple-700">Awaiting Review</div>
+                  <div className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-1">Total Landlords</div>
+                  <div className="text-2xl font-black text-purple-900">{landlordUsers.length}</div>
+                  <div className="text-xs text-purple-700">Registered Users</div>
                 </div>
                 <div className="bg-green-50 rounded-xl p-4 border border-green-200">
-                  <div className="text-xs font-bold text-green-800 uppercase tracking-wide mb-1">Your Authority</div>
+                  <div className="text-xs font-bold text-green-800 uppercase tracking-wide mb-1">Active Rentals</div>
                   <div className="text-2xl font-black text-green-900">
-                    {permissions?.canViewAllCountries ? 'ALL' : (permissions?.countryFilter || 'Limited')}
+                    {landlordUsers.reduce((sum, u) => sum + u.activeListings, 0)}
                   </div>
-                  <div className="text-xs text-green-700">Review Access</div>
+                  <div className="text-xs text-green-700">Properties Live</div>
+                </div>
+                <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+                  <div className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-1">Pending Review</div>
+                  <div className="text-2xl font-black text-amber-900">
+                    {landlordUsers.reduce((sum, u) => sum + u.pendingListings, 0)}
+                  </div>
+                  <div className="text-xs text-amber-700">Properties Awaiting</div>
                 </div>
               </div>
 
-              {/* Landlord Applications Grid */}
-              {pendingOwners.filter(o => o.user_type === 'landlord').length === 0 ? (
+              {/* Landlord Users Table */}
+              {landlordLoading ? (
+                <div className="bg-gray-50 rounded-xl p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-3"></div>
+                  <p className="text-gray-600 text-sm">Loading landlord users...</p>
+                </div>
+              ) : landlordUsers.length === 0 ? (
                 <div className="bg-gray-50 rounded-xl p-8 text-center">
                   <div className="text-4xl mb-3">🏢</div>
-                  <h4 className="text-lg font-bold text-gray-900 mb-1">No Pending Landlord Applications</h4>
-                  <p className="text-gray-600 text-sm">All landlord applications have been processed.</p>
+                  <h4 className="text-lg font-bold text-gray-900 mb-1">No Landlord Users</h4>
+                  <p className="text-gray-600 text-sm">No landlord users have registered yet.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {pendingOwners.filter(o => o.user_type === 'landlord').map((owner) => (
-                    <div key={owner.id} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-shadow">
-                      {/* Owner Header */}
-                      <div className="p-4 border-b bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-100">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="px-3 py-1 text-white text-xs font-bold rounded-full bg-purple-500">
-                            🏢 LANDLORD APPLICATION
-                          </span>
-                          <span className="text-xs text-purple-700">
-                            {owner.country_id || 'GY'}
-                          </span>
-                        </div>
-                        <h3 className="font-bold text-lg text-gray-900">
-                          {`${owner.first_name || ''} ${owner.last_name || ''}`.trim() || 'Unknown Applicant'}
-                        </h3>
-                        <p className="text-sm text-gray-600">{owner.email || 'No email'}</p>
-                      </div>
-
-                      {/* Owner Details */}
-                      <div className="p-4">
-                        <div className="grid grid-cols-2 gap-3 text-center mb-4">
-                          <div className="rounded-lg p-2 bg-purple-50">
-                            <div className="text-xs font-medium text-purple-800">📞 Phone</div>
-                            <div className="text-sm font-bold text-purple-900">{owner.phone || 'N/A'}</div>
-                          </div>
-                          <div className="rounded-lg p-2 bg-purple-50">
-                            <div className="text-xs font-medium text-purple-800">📋 Plan</div>
-                            <div className="text-sm font-bold text-purple-900">
-                              {owner.plan ? owner.plan.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Standard'}
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide">Name</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide">Email</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide hidden md:table-cell">Phone</th>
+                        <th className="text-left py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide hidden lg:table-cell">Signed Up</th>
+                        <th className="text-center py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide">Rentals</th>
+                        <th className="text-right py-3 px-4 text-xs font-bold text-gray-600 uppercase tracking-wide">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {landlordUsers.map((user) => (
+                        <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-gray-900">
+                                {`${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown'}
+                              </span>
+                              {user.is_founding_member && (
+                                <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">🌟 Founder</span>
+                              )}
                             </div>
-                          </div>
-                        </div>
-
-                        {/* Application Info */}
-                        <div className="rounded-lg p-3 bg-green-50 border border-green-200">
-                          <div className="text-xs font-medium mb-1 text-green-800">✅ Auto-Approved</div>
-                          <div className="text-sm text-green-700">
-                            <div className="flex items-center justify-between">
-                              <span>📅 Registered:</span>
-                              <span>{new Date(owner.created_at).toLocaleDateString()}</span>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-600">{user.email || 'N/A'}</td>
+                          <td className="py-3 px-4 text-sm text-gray-600 hidden md:table-cell">{user.phone || 'N/A'}</td>
+                          <td className="py-3 px-4 text-sm text-gray-600 hidden lg:table-cell">
+                            {new Date(user.created_at).toLocaleDateString()}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-medium">
+                                {user.activeListings} active
+                              </span>
+                              {user.pendingListings > 0 && (
+                                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-1 rounded font-medium">
+                                  {user.pendingListings} pending
+                                </span>
+                              )}
                             </div>
-                            <div className="mt-1 text-xs text-green-600">
-                              Landlords receive instant dashboard access to manage properties
-                            </div>
-                            {owner.is_founding_member && (
-                              <div className="mt-1 text-xs px-2 py-1 rounded bg-green-200 text-green-800">
-                                🌟 Founding Member
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <button
+                              onClick={() => {
+                                setActiveSection('properties');
+                                // Note: A more advanced implementation would filter properties by user_id
+                              }}
+                              className="text-sm text-purple-600 hover:text-purple-800 font-medium"
+                            >
+                              View Properties →
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>
