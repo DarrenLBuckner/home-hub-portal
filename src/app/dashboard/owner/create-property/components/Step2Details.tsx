@@ -16,20 +16,31 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
     }));
   };
 
-  const handleAmenityChange = (amenity: string) => {
+  const handleAmenityChange = (value: string) => {
     const currentAmenities = formData.amenities || [];
-    if (currentAmenities.includes(amenity)) {
-      handleChange('amenities', currentAmenities.filter((a: string) => a !== amenity));
+    if (currentAmenities.includes(value)) {
+      handleChange('amenities', currentAmenities.filter((a: string) => a !== value));
     } else {
-      handleChange('amenities', [...currentAmenities, amenity]);
+      handleChange('amenities', [...currentAmenities, value]);
     }
   };
 
+  // Value/label pairs for consistent data storage and display
   const commonAmenities = [
-    'Air Conditioning', 'Parking', 'Swimming Pool', 'Garden', 'Security System',
-    'Furnished', 'Balcony', 'Walk-in Closet', 'Laundry Room', 'Fireplace',
-    'Solar Panels', 'Generator', 'Water Tank', 'Internet/WiFi Ready', 'Gated',
-    'Fruit Trees', 'Farmland', 'Backup Generator', 'Solar', 'Electric Gate'
+    { value: 'AC', label: 'Air Conditioning' },
+    { value: 'Parking', label: 'Parking' },
+    { value: 'Pool', label: 'Swimming Pool' },
+    { value: 'Garden', label: 'Garden/Yard' },
+    { value: 'Security', label: 'Security System' },
+    { value: 'Furnished', label: 'Fully Furnished' },
+    { value: 'Balcony', label: 'Balcony/Patio' },
+    { value: 'Laundry', label: 'Laundry Room' },
+    { value: 'Generator', label: 'Backup Generator' },
+    { value: 'Water Tank', label: 'Water Tank' },
+    { value: 'Internet', label: 'Internet Ready' },
+    { value: 'Gated', label: 'Gated/Fenced' },
+    { value: 'Solar', label: 'Solar Panels' },
+    { value: 'Garage', label: 'Garage' },
   ];
 
   return (
@@ -174,18 +185,30 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
           Amenities & Features
         </label>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {commonAmenities.map((amenity) => (
-            <label key={amenity} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+          {commonAmenities.map(({ value, label }) => (
+            <label
+              key={value}
+              className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                formData.amenities?.includes(value)
+                  ? 'border-blue-500 bg-blue-50'
+                  : 'border-gray-200 hover:border-gray-300'
+              }`}
+            >
               <input
                 type="checkbox"
-                checked={formData.amenities?.includes(amenity) || false}
-                onChange={() => handleAmenityChange(amenity)}
-                className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
+                checked={formData.amenities?.includes(value) || false}
+                onChange={() => handleAmenityChange(value)}
+                className="sr-only"
               />
-              <span className="text-sm text-gray-700 font-medium">{amenity}</span>
+              <span className="text-sm text-gray-700 font-medium">{label}</span>
             </label>
           ))}
         </div>
+        {formData.amenities?.length > 0 && (
+          <p className="text-sm text-green-600 mt-2">
+            {formData.amenities.length} amenities selected
+          </p>
+        )}
       </div>
 
       {/* Property Description - Moved from Step 1 */}

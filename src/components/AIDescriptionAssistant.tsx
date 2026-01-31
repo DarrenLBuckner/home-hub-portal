@@ -97,10 +97,24 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
   // Smart validation for required fields based on property category
   const isCommercial = propertyData.propertyCategory === 'commercial';
   const hasRequiredFields = propertyData.propertyType && (
-    isCommercial 
+    isCommercial
       ? (propertyData.commercialType && propertyData.floorSize)
       : (propertyData.bedrooms && propertyData.bathrooms)
   );
+
+  // Calculate readiness level for indicator
+  const featuresCount = propertyData.features?.length || 0;
+  const hasLocation = !!propertyData.location;
+  const hasPrice = !!propertyData.price;
+
+  const getReadinessLevel = () => {
+    if (!hasRequiredFields) return { level: 0, text: 'Missing required fields', color: 'text-gray-400', bg: 'bg-gray-100' };
+    if (featuresCount === 0) return { level: 1, text: 'Ready - add amenities for better results', color: 'text-amber-600', bg: 'bg-amber-50' };
+    if (featuresCount < 3) return { level: 2, text: `Good - ${featuresCount} amenities selected`, color: 'text-blue-600', bg: 'bg-blue-50' };
+    return { level: 3, text: `Excellent - ${featuresCount} amenities for best results`, color: 'text-green-600', bg: 'bg-green-50' };
+  };
+
+  const readiness = getReadinessLevel();
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -112,9 +126,8 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-gray-800">AI Description Assistant</h3>
-          <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full font-medium">NEW</span>
         </div>
-        
+
         <button
           onClick={() => setShowToneOptions(!showToneOptions)}
           className="text-sm text-blue-600 hover:text-blue-800 font-medium"
@@ -123,11 +136,30 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
         </button>
       </div>
 
+      {/* AI Readiness Indicator */}
+      <div className={`flex items-center gap-2 px-3 py-2 rounded-lg mb-3 ${readiness.bg}`}>
+        <div className="flex gap-1">
+          {[1, 2, 3].map((level) => (
+            <div
+              key={level}
+              className={`w-2 h-2 rounded-full ${
+                level <= readiness.level
+                  ? level === 1 ? 'bg-amber-400' : level === 2 ? 'bg-blue-400' : 'bg-green-500'
+                  : 'bg-gray-300'
+              }`}
+            />
+          ))}
+        </div>
+        <span className={`text-sm font-medium ${readiness.color}`}>
+          {readiness.text}
+        </span>
+      </div>
+
       <p className="text-gray-600 text-sm mb-4">
-        Let AI create a compelling property description based on your details. 
+        Let AI create a compelling property description based on your details.
         {!hasRequiredFields && (
           <span className="text-amber-600 font-medium">
-            {isCommercial 
+            {isCommercial
               ? ' Fill in property type, commercial type, and floor size first.'
               : ' Fill in property type, bedrooms, and bathrooms first.'
             }

@@ -7,31 +7,25 @@ interface Step1BasicInfoProps {
   setFormData: (data: any) => void;
 }
 
-// Property type options
+// Property type options - Simplified (20 → 12 types)
+// Merged: Villa/Bungalow/Cottage → House, Townhouse/Condo → Townhouse, Duplex/Multi-family → Multi-family
 const RESIDENTIAL_TYPES = [
-  { value: 'Single Family Home', label: 'House', icon: '🏠' },
-  { value: 'Duplex', label: 'Duplex', icon: '🏘️' },
+  { value: 'House', label: 'House', icon: '🏠' },
   { value: 'Apartment', label: 'Apartment', icon: '🏢' },
-  { value: 'Townhouse', label: 'Townhouse', icon: '🏠' },
-  { value: 'Condo', label: 'Condo', icon: '🏠' },
-  { value: 'Villa', label: 'Villa', icon: '🏡' },
-  { value: 'Bungalow', label: 'Bungalow', icon: '🏡' },
-  { value: 'Cottage', label: 'Cottage', icon: '🏡' },
+  { value: 'Townhouse', label: 'Townhouse/Condo', icon: '🏠' },
   { value: 'Multi-family', label: 'Multi-family', icon: '🏘️' },
-  { value: 'Residential Land', label: 'Land', icon: '🌿' },
-  { value: 'Residential Farmland', label: 'Farmland', icon: '🌾' },
+  { value: 'Land', label: 'Land', icon: '🌿' },
+  { value: 'Farmland', label: 'Farmland', icon: '🌾' },
 ];
 
+// Merged: Warehouse/Industrial → Warehouse, removed Medical (rare)
 const COMMERCIAL_TYPES = [
   { value: 'Office', label: 'Office', icon: '🏢' },
   { value: 'Retail', label: 'Retail', icon: '🏪' },
-  { value: 'Warehouse', label: 'Warehouse', icon: '📦' },
-  { value: 'Industrial', label: 'Industrial', icon: '🏭' },
+  { value: 'Warehouse', label: 'Warehouse/Industrial', icon: '📦' },
   { value: 'Mixed Use', label: 'Mixed Use', icon: '🔄' },
   { value: 'Restaurant', label: 'Restaurant', icon: '🍽️' },
-  { value: 'Medical', label: 'Medical', icon: '🏥' },
-  { value: 'Commercial Land', label: 'Land', icon: '🌿' },
-  { value: 'Agricultural Land', label: 'Agricultural', icon: '🚜' },
+  { value: 'Commercial Land', label: 'Commercial Land', icon: '🌿' },
 ];
 
 export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfoProps) {

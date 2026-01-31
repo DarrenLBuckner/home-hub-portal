@@ -1,17 +1,15 @@
 'use client';
 
-// Property types with enabled/disabled status for FSBO owners
+// Simplified property types for FSBO owners (7 → 4 enabled)
+// Merged: Villa/Bungalow/Condo into House and Townhouse
 const FSBO_PROPERTY_TYPES = [
-  { value: 'Single Family Home', label: 'House', icon: '🏠', enabled: true },
-  { value: 'Duplex', label: 'Duplex', icon: '🏘️', enabled: true },
+  { value: 'House', label: 'House', icon: '🏠', enabled: true },
   { value: 'Apartment', label: 'Apartment', icon: '🏢', enabled: true },
-  { value: 'Townhouse', label: 'Townhouse', icon: '🏠', enabled: true },
-  { value: 'Condo', label: 'Condo', icon: '🏠', enabled: true },
-  { value: 'Villa', label: 'Villa', icon: '🏡', enabled: true },
-  { value: 'Bungalow', label: 'Bungalow', icon: '🏡', enabled: true },
+  { value: 'Townhouse', label: 'Townhouse/Condo', icon: '🏠', enabled: true },
+  { value: 'Multi-family', label: 'Multi-family', icon: '🏘️', enabled: true },
   // Disabled - Agent Only
-  { value: 'Residential Land', label: 'Land', icon: '🌿', enabled: false },
-  { value: 'Residential Farmland', label: 'Farmland', icon: '🌾', enabled: false },
+  { value: 'Land', label: 'Land', icon: '🌿', enabled: false },
+  { value: 'Farmland', label: 'Farmland', icon: '🌾', enabled: false },
   { value: 'Commercial', label: 'Commercial', icon: '🏢', enabled: false },
 ];
 

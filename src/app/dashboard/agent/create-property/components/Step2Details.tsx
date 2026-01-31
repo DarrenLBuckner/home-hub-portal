@@ -10,19 +10,37 @@ interface Step2DetailsProps {
   setFormData: (data: any) => void;
 }
 
+// Value/label pairs for consistent data storage and display
 const RESIDENTIAL_AMENITIES = [
-  'Air Conditioning', 'Swimming Pool', 'Garden', 'Garage', 'Security System',
-  'Balcony', 'Fireplace', 'Laundry Room', 'Storage', 'Gym',
-  'Solar Panels', 'Generator', 'Water Tank', 'Fence/Gated',
-  'Furnished', 'Walk-in Closet', 'Internet/WiFi Ready', 'Electric Gate',
-  'Fruit Trees', 'Parking'
+  { value: 'AC', label: 'Air Conditioning' },
+  { value: 'Pool', label: 'Swimming Pool' },
+  { value: 'Garden', label: 'Garden/Yard' },
+  { value: 'Garage', label: 'Garage' },
+  { value: 'Security', label: 'Security System' },
+  { value: 'Balcony', label: 'Balcony/Patio' },
+  { value: 'Laundry', label: 'Laundry Room' },
+  { value: 'Generator', label: 'Backup Generator' },
+  { value: 'Water Tank', label: 'Water Tank' },
+  { value: 'Gated', label: 'Gated/Fenced' },
+  { value: 'Furnished', label: 'Fully Furnished' },
+  { value: 'Internet', label: 'Internet Ready' },
+  { value: 'Parking', label: 'Parking' },
+  { value: 'Solar', label: 'Solar Panels' },
 ];
 
 const COMMERCIAL_AMENITIES = [
-  'Air Conditioning', 'Security System', 'Generator', 'Water Tank',
-  'Conference Room', 'Kitchen/Break Room', 'Reception Area', 'Storage',
-  'Fiber Internet', 'Backup Power', 'CCTV', 'Fire Suppression',
-  'Handicap Accessible', 'Server Room', 'Warehouse Space'
+  { value: 'AC', label: 'Air Conditioning' },
+  { value: 'Security', label: 'Security System' },
+  { value: 'Generator', label: 'Backup Generator' },
+  { value: 'Water Tank', label: 'Water Tank' },
+  { value: 'Conference', label: 'Conference Room' },
+  { value: 'Kitchen', label: 'Kitchen/Break Room' },
+  { value: 'Reception', label: 'Reception Area' },
+  { value: 'Storage', label: 'Storage' },
+  { value: 'Fiber Internet', label: 'Fiber Internet' },
+  { value: 'CCTV', label: 'CCTV' },
+  { value: 'Handicap', label: 'Handicap Accessible' },
+  { value: 'Elevator', label: 'Elevator Access' },
 ];
 
 export default function Step2Details({ formData, setFormData }: Step2DetailsProps) {
@@ -33,12 +51,12 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
     }));
   };
 
-  const handleAmenityChange = (amenity: string) => {
+  const handleAmenityChange = (value: string) => {
     const currentAmenities = formData.amenities || [];
-    if (currentAmenities.includes(amenity)) {
-      handleChange('amenities', currentAmenities.filter((a: string) => a !== amenity));
+    if (currentAmenities.includes(value)) {
+      handleChange('amenities', currentAmenities.filter((a: string) => a !== value));
     } else {
-      handleChange('amenities', [...currentAmenities, amenity]);
+      handleChange('amenities', [...currentAmenities, value]);
     }
   };
 
@@ -443,22 +461,22 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
           {isCommercial ? 'Building Amenities' : 'Property Amenities'}
         </label>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {amenitiesList.map((amenity) => (
+          {amenitiesList.map(({ value, label }) => (
             <label
-              key={amenity}
+              key={value}
               className={`flex items-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                formData.amenities?.includes(amenity)
+                formData.amenities?.includes(value)
                   ? 'border-blue-500 bg-blue-50'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
               <input
                 type="checkbox"
-                checked={formData.amenities?.includes(amenity) || false}
-                onChange={() => handleAmenityChange(amenity)}
+                checked={formData.amenities?.includes(value) || false}
+                onChange={() => handleAmenityChange(value)}
                 className="sr-only"
               />
-              <span className="text-sm font-medium">{amenity}</span>
+              <span className="text-sm font-medium">{label}</span>
             </label>
           ))}
         </div>
