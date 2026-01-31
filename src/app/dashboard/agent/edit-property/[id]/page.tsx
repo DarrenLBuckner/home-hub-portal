@@ -925,7 +925,7 @@ export default function EditAgentProperty() {
 
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Street Address (Optional)
+                Street Address
               </label>
               <input
                 name="address"
@@ -935,6 +935,10 @@ export default function EditAgentProperty() {
                 onChange={handleChange}
                 className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
               />
+              <div className="text-xs bg-gray-100 p-2 rounded mt-2">
+                <span className="font-semibold text-gray-800">🔒 NEVER shown publicly.</span>
+                <span className="text-gray-600"> For verification only (fraud prevention, legal compliance).</span>
+              </div>
             </div>
 
             <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">

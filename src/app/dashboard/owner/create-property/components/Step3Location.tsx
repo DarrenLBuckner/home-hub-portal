@@ -72,8 +72,9 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
           required
           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-        <div className="text-xs text-gray-600 bg-blue-50 p-2 rounded border-l-4 border-blue-400 mt-2">
-          <span className="font-medium text-blue-800">🔒 Privacy Protected:</span> Address is required for property verification only. It will never be shown to buyers until you approve them.
+        <div className="text-xs bg-gray-100 p-2 rounded mt-2">
+          <span className="font-semibold text-gray-800">🔒 NEVER shown publicly.</span>
+          <span className="text-gray-600"> For verification only (fraud prevention, legal compliance).</span>
         </div>
       </div>
 
@@ -133,14 +134,8 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
         </div>
       )}
 
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <h3 className="font-medium text-blue-900 mb-2">Location Display & Privacy</h3>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• <strong>Neighborhood</strong> is always shown publicly on your listing</li>
-          <li>• <strong>Street address</strong> is only shown if you enable the checkbox above</li>
-          <li>• If address is hidden, buyers see "Contact agent for exact address"</li>
-          <li>• Full address is always stored securely for verification purposes</li>
-        </ul>
+      <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-700">
+        <strong>What buyers see:</strong> Neighborhood only (unless you check "show address" above)
       </div>
     </div>
   );
