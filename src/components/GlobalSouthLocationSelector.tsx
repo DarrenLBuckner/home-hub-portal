@@ -154,22 +154,20 @@ export default function GlobalSouthLocationSelector({
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       {/* Country Selection */}
       <div>
-        <label className="block text-base font-bold text-gray-900 mb-3">
-          🌍 Country *
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Country *
         </label>
         <select
           value={selectedCountry}
           onChange={(e) => handleCountryChange(e.target.value)}
-          className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white text-base"
+          className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 bg-white"
         >
-          <option value="">Select a country</option>
-          
-          {/* Caribbean Section */}
+          <option value="">Select country</option>
           {caribbeanCountries.length > 0 && (
-            <optgroup label="🏝️ Caribbean">
+            <optgroup label="Caribbean">
               {caribbeanCountries.map((country) => (
                 <option key={country.code} value={country.code}>
                   {country.flag_emoji} {country.name}
@@ -177,10 +175,8 @@ export default function GlobalSouthLocationSelector({
               ))}
             </optgroup>
           )}
-          
-          {/* Africa Section */}
           {africanCountries.length > 0 && (
-            <optgroup label="🌍 Africa">
+            <optgroup label="Africa">
               {africanCountries.map((country) => (
                 <option key={country.code} value={country.code}>
                   {country.flag_emoji} {country.name}
@@ -189,29 +185,18 @@ export default function GlobalSouthLocationSelector({
             </optgroup>
           )}
         </select>
-        
-        {/* Country Info */}
-        {selectedCountryData && (
-          <div className="mt-2 flex items-center space-x-4 text-sm text-gray-600">
-            <span className="flex items-center">
-              <span className="mr-1">🌍</span>
-              {selectedCountryData.region}
-            </span>
-            {showCurrencyInfo && (
-              <span className="flex items-center">
-                <span className="mr-1">💰</span>
-                {selectedCountryData.currency_symbol} {selectedCountryData.currency_code}
-              </span>
-            )}
-          </div>
+        {showCurrencyInfo && selectedCountryData && (
+          <p className="text-xs text-gray-500 mt-1">
+            Currency: {selectedCountryData.currency_symbol} {selectedCountryData.currency_code}
+          </p>
         )}
       </div>
 
-      {/* Region/City Selection */}
+      {/* City/Region Selection */}
       {selectedCountry && (
         <div>
-          <label className="block text-base font-bold text-gray-900 mb-3">
-            🏢 City/Region *
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            City/Region *
           </label>
           <select
             value={selectedRegion}
@@ -220,86 +205,24 @@ export default function GlobalSouthLocationSelector({
               onLocationChange('region', e.target.value, region?.name);
             }}
             disabled={regionsLoading}
-            className="w-full px-4 py-3 border-2 border-gray-400 focus:border-blue-500 rounded-lg text-gray-900 bg-white text-base disabled:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-600"
+            className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 bg-white disabled:bg-gray-100"
           >
             <option value="">
-              {regionsLoading ? 'Loading cities...' : 'Select city or region'}
+              {regionsLoading ? 'Loading...' : 'Select city/region'}
             </option>
             {regions.map((region) => (
               <option key={region.id} value={region.id}>
-                {region.is_capital && '👑 '}
-                {region.is_major_city && !region.is_capital && '🏙️ '}
                 {region.name}
-                {region.population && ` (${region.population.toLocaleString()})`}
               </option>
             ))}
           </select>
-          
-          {/* Region Info */}
-          {selectedRegionData && (
-            <div className="mt-2 text-sm text-gray-600">
-              {selectedRegionData.is_capital && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 mr-2">
-                  👑 Capital City
-                </span>
-              )}
-              {selectedRegionData.is_major_city && !selectedRegionData.is_capital && (
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mr-2">
-                  🏙️ Major City
-                </span>
-              )}
-              {selectedRegionData.population && (
-                <span className="text-gray-600">
-                  Population: {selectedRegionData.population.toLocaleString()}
-                </span>
-              )}
-            </div>
-          )}
-          
           {regions.length === 0 && !regionsLoading && selectedCountry && (
-            <p className="text-sm text-amber-600 mt-1">
-              🚧 Cities for this country are being added. Please enter manually in the address field.
+            <p className="text-xs text-amber-600 mt-1">
+              Enter location in the neighborhood field below
             </p>
           )}
         </div>
       )}
-
-      {/* Global South Focus Info */}
-      {selectedCountryData && (
-        <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-lg border border-green-200">
-          <div className="flex items-start">
-            <div className="text-2xl mr-3">
-              {selectedCountryData.region === 'Caribbean' ? '🏝️' : '🌍'}
-            </div>
-            <div>
-              <h3 className="font-medium text-gray-900 mb-1">
-                {selectedCountryData.region} Market Focus
-              </h3>
-              <p className="text-sm text-gray-700">
-                {selectedCountryData.region === 'Caribbean' 
-                  ? 'Part of our Caribbean expansion serving the diaspora and local markets with culturally relevant real estate solutions.'
-                  : 'Expanding to African markets with mobile-first, locally adapted property listing and discovery tools.'
-                }
-              </p>
-              {regions.length > 0 && (
-                <p className="text-xs text-gray-600 mt-1">
-                  📍 {regions.length} cities and regions available
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Privacy Notice */}
-      <div className="bg-gray-50 p-3 rounded-lg">
-        <h4 className="font-medium text-gray-900 text-sm mb-1">🔒 Location Privacy</h4>
-        <ul className="text-xs text-gray-600 space-y-1">
-          <li>• Exact addresses remain private until contact</li>
-          <li>• Only general area shown in public listings</li>
-          <li>• Optimized for Global South mobile users</li>
-        </ul>
-      </div>
     </div>
   );
 }
