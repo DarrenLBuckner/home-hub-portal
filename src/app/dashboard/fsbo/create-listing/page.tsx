@@ -7,10 +7,28 @@ import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelecto
 import EnhancedImageUpload from "@/components/EnhancedImageUpload";
 import AIDescriptionAssistant from "@/components/AIDescriptionAssistant";
 import OwnershipAttestation from "@/components/OwnershipAttestation";
-import { formatCurrency, getCurrencySymbol } from "@/lib/currency";
 
-const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Townhouse", "Studio", "Room"];
-const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly", "Laundry", "Gym", "Gated", "Fruit Trees", "Farmland", "Backup Generator", "Solar", "Electric Gate"];
+// Simplified property types for FSBO (UI only - database still supports all types)
+const PROPERTY_TYPES = [
+  { value: "House", label: "House" },
+  { value: "Land", label: "Land" },
+  { value: "Commercial", label: "Commercial Building" },
+];
+
+// Simplified amenities for FSBO - showing 10 with user-friendly labels
+// Value is what's stored in DB, label is what user sees
+const VISIBLE_FEATURES = [
+  { value: "AC", label: "Air Conditioning" },
+  { value: "Pool", label: "Swimming Pool" },
+  { value: "Garage", label: "Garage" },
+  { value: "Garden", label: "Garden" },
+  { value: "Gated", label: "Gated Community" },
+  { value: "Backup Generator", label: "Generator" },
+  { value: "Internet", label: "Internet Ready" },
+  { value: "Laundry", label: "Laundry Room" },
+  { value: "Balcony", label: "Balcony/Patio" },
+  { value: "Parking", label: "Parking" },
+];
 
 type PropertyForm = {
   title: string;
@@ -20,7 +38,7 @@ type PropertyForm = {
   propertyType: string;
   bedrooms: string;
   bathrooms: string;
-  squareFootage: string;
+  squareFootage: string; // Keep in form state for DB compatibility
   features: string[];
   status: string;
   images: File[];
@@ -35,7 +53,7 @@ export default function CreateFSBOListing() {
   useEffect(() => {
     async function checkAuth() {
       const supabase = createClient();
-      
+
       // Get current user
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
@@ -60,8 +78,8 @@ export default function CreateFSBOListing() {
         'mrdarrenbuckner@gmail.com': { level: 'super' },
         'qumar@guyanahomehub.com': { level: 'owner' }
       };
-      
-      const adminInfo = adminConfig[authUser.email];
+
+      const adminInfo = adminConfig[authUser.email || ''];
       const isEligibleAdmin = profile.user_type === 'admin' && adminInfo && ['super', 'owner'].includes(adminInfo.level);
 
       // Allow if: eligible admin (super/owner) OR regular FSBO user
@@ -83,10 +101,10 @@ export default function CreateFSBOListing() {
     description: "",
     price: "",
     location: "",
-    propertyType: PROPERTY_TYPES[0],
+    propertyType: "House", // Default to House
     bedrooms: "",
     bathrooms: "",
-    squareFootage: "",
+    squareFootage: "", // Hidden but kept for DB compatibility
     features: [],
     status: "pending",
     images: [],
@@ -96,12 +114,16 @@ export default function CreateFSBOListing() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+  // Default to Guyana (GY) as specified
   const [selectedCountry, setSelectedCountry] = useState<string>("GY");
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
   const [currencySymbol, setCurrencySymbol] = useState<string>("GY$");
 
   const imageLimit = 8; // FSBO gets limited image uploads
+
+  // Check if property type requires bedrooms/bathrooms
+  const requiresBedsBaths = form.propertyType === "House";
 
   // Handle location and currency changes
   const handleLocationChange = (field: 'country' | 'region', value: string) => {
@@ -131,6 +153,17 @@ export default function CreateFSBOListing() {
     }
   }
 
+  // Handle property type change - clear beds/baths when switching to Land or Commercial
+  const handlePropertyTypeChange = (value: string) => {
+    setForm(prev => ({
+      ...prev,
+      propertyType: value,
+      // Clear beds/baths when switching away from House
+      bedrooms: value === "House" ? prev.bedrooms : "",
+      bathrooms: value === "House" ? prev.bathrooms : "",
+    }));
+  };
+
   // Handle images through the enhanced component
   const handleImagesChange = (images: File[]) => {
     setForm({ ...form, images });
@@ -142,11 +175,27 @@ export default function CreateFSBOListing() {
     setSuccess(false);
     setIsSubmitting(true);
 
-    // Validate required fields
-    const required: (keyof PropertyForm)[] = ["title", "description", "price", "location", "propertyType", "bedrooms", "bathrooms", "squareFootage", "attestation"];
-    for (const field of required) {
+    // Validate required fields - conditional based on property type
+    // Removed squareFootage from required fields
+    const baseRequired: (keyof PropertyForm)[] = ["title", "description", "price", "location", "propertyType", "attestation"];
+
+    for (const field of baseRequired) {
       if (!form[field]) {
         setError(`Missing field: ${field}`);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    // Only validate beds/baths for House type
+    if (form.propertyType === "House") {
+      if (!form.bedrooms) {
+        setError("Number of bedrooms is required for houses");
+        setIsSubmitting(false);
+        return;
+      }
+      if (!form.bathrooms) {
+        setError("Number of bathrooms is required for houses");
         setIsSubmitting(false);
         return;
       }
@@ -239,7 +288,7 @@ export default function CreateFSBOListing() {
       </div>
 
       <h1 className="text-3xl font-bold text-orange-700 mb-6">Create Property Listing (FSBO)</h1>
-      
+
       <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
         <h2 className="font-semibold text-orange-800 mb-2">For Sale By Owner</h2>
         <p className="text-orange-700 text-sm">
@@ -248,34 +297,63 @@ export default function CreateFSBOListing() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6 bg-white p-8 rounded-xl shadow">
-        <input 
-          name="title" 
-          type="text" 
-          placeholder="Property Title (e.g., 'Beautiful 3BR House in Georgetown')*" 
-          value={form.title} 
-          onChange={handleChange} 
-          className="w-full border rounded-lg px-4 py-2" 
-          required 
-        />
-        
-        <GlobalSouthLocationSelector
-          selectedCountry={selectedCountry}
-          selectedRegion={selectedRegion}
-          onLocationChange={handleLocationChange}
-          onCurrencyChange={handleCurrencyChange}
-        />
 
-        <div className="grid grid-cols-2 gap-4">
+        {/* 1. PHOTOS FIRST - Hook users immediately */}
+        <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-4 rounded-lg border border-orange-200 mb-2">
+          <h3 className="font-semibold text-orange-900 mb-2 flex items-center gap-2">
+            📸 Step 1: Add Photos
+          </h3>
+          <p className="text-sm text-orange-800 mb-4">
+            Great photos sell properties faster! Upload at least 1 photo (up to 8 max).
+          </p>
+          <EnhancedImageUpload
+            images={form.images}
+            setImages={handleImagesChange}
+            maxImages={imageLimit}
+          />
+        </div>
+
+        {/* 2. PROPERTY TYPE - 3 options only */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Property Type *
+          </label>
+          <div className="grid grid-cols-3 gap-3">
+            {PROPERTY_TYPES.map((type) => (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => handlePropertyTypeChange(type.value)}
+                className={`p-4 rounded-lg border-2 text-center transition-all ${
+                  form.propertyType === type.value
+                    ? 'border-orange-500 bg-orange-50 ring-2 ring-orange-200'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="text-2xl mb-1">
+                  {type.value === 'House' ? '🏠' : type.value === 'Land' ? '🌿' : '🏢'}
+                </div>
+                <div className="text-sm font-medium text-gray-700">{type.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. PRICE + CURRENCY */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">Sale Price ({currencySymbol})</label>
+            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+              {form.listingType === 'rent' ? 'Monthly Rent' : 'Sale Price'} ({currencySymbol}) *
+            </label>
             <input
               type="number"
+              inputMode="numeric"
               name="price"
               value={form.price}
               onChange={handleChange}
               required
               placeholder="25000000"
-              className="w-full border rounded-lg px-4 py-2"
+              className="w-full border rounded-lg px-4 py-3 text-base"
             />
             <p className="text-sm text-gray-500 mt-1">
               {form.price && !isNaN(Number(form.price)) && Number(form.price) > 0
@@ -286,119 +364,146 @@ export default function CreateFSBOListing() {
           </div>
           <div>
             <label htmlFor="listingType" className="block text-sm font-medium text-gray-700 mb-1">Listing Type</label>
-            <select 
-              name="listingType" 
-              value={form.listingType} 
-              onChange={handleChange} 
-              className="w-full border rounded-lg px-4 py-2"
+            <select
+              name="listingType"
+              value={form.listingType}
+              onChange={handleChange}
+              className="w-full border rounded-lg px-4 py-3 text-base"
             >
               <option value="sale">For Sale</option>
               <option value="rent">For Rent</option>
             </select>
           </div>
         </div>
-        
-        <input 
-          name="location" 
-          type="text" 
-          placeholder="Specific address or area*" 
-          value={form.location} 
-          onChange={handleChange} 
-          className="w-full border rounded-lg px-4 py-2" 
-          required 
-        />
-        
-        <select 
-          name="propertyType" 
-          value={form.propertyType} 
-          onChange={handleChange} 
-          className="w-full border rounded-lg px-4 py-2"
-        >
-          {PROPERTY_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
-        </select>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <input 
-            name="bedrooms" 
-            type="number" 
-            placeholder="Bedrooms*" 
-            value={form.bedrooms} 
-            onChange={handleChange} 
-            className="border rounded-lg px-4 py-2" 
-            required 
-          />
-          <input 
-            name="bathrooms" 
-            type="number" 
-            placeholder="Bathrooms*" 
-            value={form.bathrooms} 
-            onChange={handleChange} 
-            className="border rounded-lg px-4 py-2" 
-            required 
-          />
-        </div>
-        
-        <input 
-          name="squareFootage" 
-          type="number" 
-          placeholder="Square Footage*" 
-          value={form.squareFootage} 
-          onChange={handleChange} 
-          className="w-full border rounded-lg px-4 py-2" 
-          required 
+
+        {/* 4. COUNTRY (defaulted to GY) + REGION */}
+        <GlobalSouthLocationSelector
+          selectedCountry={selectedCountry}
+          selectedRegion={selectedRegion}
+          onLocationChange={handleLocationChange}
+          onCurrencyChange={handleCurrencyChange}
         />
 
-        {/* Features/Amenities Section - Moved to before description */}
-        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
-          <div className="flex items-start gap-3">
-            <div className="text-blue-500 text-lg">💡</div>
+        {/* 5. ADDRESS/LOCATION */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Property Address/Location *
+          </label>
+          <input
+            name="location"
+            type="text"
+            placeholder="e.g., Lot 5 Lamaha Gardens, Georgetown"
+            value={form.location}
+            onChange={handleChange}
+            className="w-full border rounded-lg px-4 py-3 text-base"
+            required
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Enter the specific address or area where your property is located
+          </p>
+        </div>
+
+        {/* 6 & 7. BEDROOMS & BATHROOMS - Only for House type */}
+        {requiresBedsBaths && (
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <h4 className="font-medium text-blue-900 mb-1">Pro Tip: Select features first!</h4>
-              <p className="text-sm text-blue-800">
-                The more features you select here, the better our AI will generate your property description. 
-                Each feature gives the AI more context to create compelling, detailed descriptions for buyers.
-              </p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Bedrooms *
+              </label>
+              <input
+                name="bedrooms"
+                type="number"
+                inputMode="numeric"
+                placeholder="3"
+                value={form.bedrooms}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-3 text-base"
+                required
+                min="0"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Bathrooms *
+              </label>
+              <input
+                name="bathrooms"
+                type="number"
+                inputMode="numeric"
+                placeholder="2"
+                value={form.bathrooms}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-3 text-base"
+                required
+                min="0"
+              />
             </div>
           </div>
-        </div>
-        
-        <div className="mb-2 font-semibold">Features/Amenities:</div>
-        <div className="grid grid-cols-2 gap-2 mb-6">
-          {FEATURES.map(feature => (
-            <label key={feature} className="flex items-center gap-2 text-gray-900 font-medium cursor-pointer hover:bg-gray-50 p-2 rounded">
-              <input 
-                type="checkbox" 
-                name="features" 
-                value={feature} 
-                checked={form.features.includes(feature)} 
-                onChange={handleChange} 
-                className="w-4 h-4 text-blue-600 border-2 border-gray-300 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm">{feature}</span>
-            </label>
-          ))}
+        )}
+
+        {/* Square Footage - HIDDEN from UI but kept in form state for DB compatibility */}
+        {/* This field is no longer shown to users but data can still be submitted if needed */}
+
+        {/* 8. AMENITIES - 10 checkboxes only */}
+        <div>
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-4">
+            <div className="flex items-start gap-3">
+              <div className="text-blue-500 text-lg">💡</div>
+              <div>
+                <h4 className="font-medium text-blue-900 mb-1">Pro Tip: Select features first!</h4>
+                <p className="text-sm text-blue-800">
+                  The more features you select, the better our AI will generate your property description.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-2 font-semibold text-gray-700">Features/Amenities:</div>
+          <div className="grid grid-cols-2 gap-2">
+            {VISIBLE_FEATURES.map(({ value, label }) => (
+              <label
+                key={value}
+                className="flex items-center gap-3 text-gray-900 font-medium cursor-pointer hover:bg-gray-50 p-3 rounded-lg border border-transparent hover:border-gray-200 active:bg-gray-100"
+              >
+                <input
+                  type="checkbox"
+                  name="features"
+                  value={value}
+                  checked={form.features.includes(value)}
+                  onChange={handleChange}
+                  className="w-5 h-5 text-orange-600 border-2 border-gray-300 rounded focus:ring-orange-500"
+                />
+                <span className="text-sm">{label}</span>
+              </label>
+            ))}
+          </div>
+          {form.features.length > 0 && (
+            <p className="text-sm text-green-600 mt-2">
+              {form.features.length} features selected
+            </p>
+          )}
         </div>
 
-        {/* Property Description - Moved to after features */}
-        <div className="mb-4">
+        {/* 9. DESCRIPTION + AI Assistant */}
+        <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Property Description *</label>
-          <textarea 
-            name="description" 
-            placeholder="Write at least 30-50 words about your property... OR use the AI assistant below for professional descriptions! The more details you provide, the better the AI can help. Describe what makes this property special for buyers." 
-            value={form.description} 
-            onChange={handleChange} 
-            className="w-full border rounded-lg px-4 py-2 placeholder-gray-400" 
-            required 
-            rows={6} 
+          <textarea
+            name="description"
+            placeholder="Write at least 30-50 words about your property... OR use the AI assistant below for professional descriptions! Describe what makes this property special for buyers."
+            value={form.description}
+            onChange={handleChange}
+            className="w-full border rounded-lg px-4 py-3 text-base placeholder-gray-400"
+            required
+            rows={6}
           />
           <div className="mt-2 text-xs text-gray-500 flex justify-between">
             <span>💡 Tip: {form.description.trim().split(/\s+/).filter(word => word.length > 0).length < 30 ? `Add ${30 - form.description.trim().split(/\s+/).filter(word => word.length > 0).length} more words for better AI results` : 'Great! AI can now generate excellent descriptions'}</span>
             <span className={form.description.trim().split(/\s+/).filter(word => word.length > 0).length >= 30 ? 'text-green-600' : 'text-amber-600'}>{form.description.trim().split(/\s+/).filter(word => word.length > 0).length} words</span>
           </div>
         </div>
-        
-        {/* AI Description Assistant */}
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200 mb-6">
+
+        {/* AI Description Assistant - Unchanged as requested */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
           <div className="mb-3 text-sm text-blue-800">
             <span className="font-medium">🤖 AI Power Boost:</span> You've selected {form.features.length} features above - this gives the AI more context to create amazing descriptions!
           </div>
@@ -412,35 +517,49 @@ export default function CreateFSBOListing() {
               location: form.location,
               squareFootage: form.squareFootage,
               features: form.features,
-              rentalType: "sale"
+              rentalType: form.listingType === 'rent' ? 'rent' : 'sale'
             }}
             currentDescription={form.description}
             onDescriptionGenerated={(description) => setForm(prev => ({ ...prev, description }))}
           />
         </div>
-        
 
-        
-        <EnhancedImageUpload
-          images={form.images}
-          setImages={handleImagesChange}
-          maxImages={imageLimit}
-        />
-        
-        {/* Legal Ownership Attestation */}
+        {/* 10. TITLE */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Property Title *
+          </label>
+          <input
+            name="title"
+            type="text"
+            placeholder="e.g., 'Beautiful 3BR House in Georgetown'"
+            value={form.title}
+            onChange={handleChange}
+            className="w-full border rounded-lg px-4 py-3 text-base"
+            required
+            maxLength={100}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            {form.title.length}/100 characters - Make it descriptive and appealing!
+          </p>
+        </div>
+
+        {/* 11. OWNERSHIP ATTESTATION - Unchanged as requested */}
         <OwnershipAttestation
           checked={form.attestation}
           onChange={(checked) => setForm({ ...form, attestation: checked })}
           countryCode={selectedCountry}
-          listingType="sale"
+          listingType={form.listingType === 'rent' ? 'rental' : 'sale'}
         />
-        
+
+        {/* Error/Success Messages */}
         {error && <div className="text-red-500 text-sm font-semibold animate-shake">{error}</div>}
         {success && <div className="text-green-600 font-bold text-lg text-center">Property submitted! Redirecting to dashboard...</div>}
-        
-        <button 
-          type="submit" 
-          disabled={isSubmitting} 
+
+        {/* 12. SUBMIT BUTTON */}
+        <button
+          type="submit"
+          disabled={isSubmitting}
           className="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-lg shadow-lg hover:scale-105 transition-all duration-200"
         >
           {isSubmitting ? "Submitting..." : "Submit Property Listing"}
