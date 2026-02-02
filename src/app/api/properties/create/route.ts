@@ -884,7 +884,8 @@ export async function POST(req: NextRequest) {
       }, { status: 500 });
     }
 
-    // Insert images into property_media table
+    // Insert images into property_media table with TRANSACTIONAL CONSISTENCY
+    // If media insertion fails, we MUST rollback the property creation
     console.log('📸 IMAGE DEBUG - Preparing media inserts:', {
       propertyId: propertyResult.id,
       imageUrlsCount: imageUrls.length,
@@ -901,6 +902,14 @@ export async function POST(req: NextRequest) {
 
     console.log('📸 IMAGE DEBUG - Media inserts to be created:', JSON.stringify(mediaInserts, null, 2));
 
+    // Track media insertion result for response
+    let mediaInsertResult = {
+      attempted: mediaInserts.length,
+      successful: 0,
+      failed: false,
+      error: null as string | null
+    };
+
     if (mediaInserts.length > 0) {
       // Use admin client to bypass RLS for media inserts
       // This is necessary when admin creates property for another user
@@ -912,9 +921,37 @@ export async function POST(req: NextRequest) {
       if (mediaError) {
         console.error("💥 Media insert error:", mediaError);
         console.error("💥 Failed media inserts:", mediaInserts);
-        // Don't fail the whole request, just log the error
+
+        // CRITICAL FIX: Rollback property creation if media insertion fails
+        // This ensures transactional consistency - no orphaned properties without images
+        console.log('🔄 Rolling back property creation due to media insert failure...');
+
+        const { error: deleteError } = await adminSupabase
+          .from("properties")
+          .delete()
+          .eq('id', propertyResult.id);
+
+        if (deleteError) {
+          console.error('💥 Failed to rollback property:', deleteError);
+          // Even if rollback fails, we must return an error to the user
+        } else {
+          console.log('✅ Property rollback successful');
+        }
+
+        // Return error to client - DO NOT silently succeed
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to save property images. Please try again.',
+          details: {
+            mediaError: mediaError.message,
+            code: mediaError.code,
+            hint: 'Your images were uploaded to storage but could not be linked to the property. The property was not created. Please try submitting again.',
+            rollbackStatus: deleteError ? 'failed' : 'success'
+          }
+        }, { status: 500 });
       } else {
         console.log('✅ IMAGE DEBUG - Media inserts successful:', mediaInserts.length, 'images');
+        mediaInsertResult.successful = mediaInserts.length;
       }
     } else {
       console.warn('⚠️ IMAGE DEBUG - No images to insert! imageUrls array is empty');
@@ -948,7 +985,13 @@ export async function POST(req: NextRequest) {
     const response: any = {
       success: true,
       propertyId: propertyResult.id,
-      message: successMessage
+      message: successMessage,
+      // Include image upload status for transparency
+      imageStatus: {
+        uploaded: mediaInsertResult.attempted,
+        linked: mediaInsertResult.successful,
+        allImagesLinked: mediaInsertResult.attempted === mediaInsertResult.successful
+      }
     };
 
     // Include admin-for-user metadata in response

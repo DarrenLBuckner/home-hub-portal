@@ -144,12 +144,18 @@ export default function CreateFSBOListing() {
     const { name, value, type } = e.target;
     if (type === "checkbox" && name === "features") {
       const checked = (e.target as HTMLInputElement).checked;
-      setForm({ ...form, features: checked ? [...form.features, value] : form.features.filter(f => f !== value) });
+      // Use functional update to avoid stale closure issues
+      setForm(prev => ({
+        ...prev,
+        features: checked ? [...prev.features, value] : prev.features.filter(f => f !== value)
+      }));
     } else if (type === "checkbox" && name === "attestation") {
       const checked = (e.target as HTMLInputElement).checked;
-      setForm({ ...form, attestation: checked });
+      setForm(prev => ({ ...prev, attestation: checked }));
     } else {
-      setForm({ ...form, [name]: value });
+      // Use functional update to ensure we always have the latest state
+      // This fixes the issue where AI-generated descriptions couldn't be edited
+      setForm(prev => ({ ...prev, [name]: value }));
     }
   }
 
@@ -256,10 +262,20 @@ export default function CreateFSBOListing() {
       });
 
       const result = await res.json();
-      if (!res.ok) {
-        setError(result.error || "Failed to submit property. Please try again.");
+      if (!res.ok || !result.success) {
+        // Provide more specific error message based on the error type
+        let errorMessage = result.error || "Failed to submit property. Please try again.";
+        if (result.details?.hint) {
+          errorMessage = `${result.error} ${result.details.hint}`;
+        }
+        setError(errorMessage);
         setIsSubmitting(false);
         return;
+      }
+
+      // Log image status for debugging
+      if (result.imageStatus) {
+        console.log(`📸 Image status: ${result.imageStatus.linked}/${result.imageStatus.uploaded} images linked`);
       }
 
       setSuccess(true);

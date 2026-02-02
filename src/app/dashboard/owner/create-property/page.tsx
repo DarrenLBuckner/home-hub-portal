@@ -394,16 +394,30 @@ export default function CreateFSBOProperty() {
       });
 
       const result = await response.json();
-      
+
       if (!response.ok || !result.success) {
         console.error('API submission failed:', result);
-        setError(result.error || 'Submission failed. Please try again.');
+
+        // Provide more specific error message based on the error type
+        let errorMessage = result.error || 'Submission failed. Please try again.';
+        if (result.details?.hint) {
+          errorMessage = `${result.error} ${result.details.hint}`;
+        }
+
+        setError(errorMessage);
         submittingRef.current = false;
         setIsSubmitting(false);
         return;
       }
-      
+
+      // Log success with image status details
       console.log('Success! Property created via API:', result);
+      if (result.imageStatus) {
+        console.log(`📸 Image status: ${result.imageStatus.linked}/${result.imageStatus.uploaded} images linked`);
+        if (!result.imageStatus.allImagesLinked) {
+          console.warn('⚠️ Warning: Not all images were linked to the property');
+        }
+      }
       
       // Success - redirect to dashboard with message from API
       console.log('Property submission complete, redirecting...');

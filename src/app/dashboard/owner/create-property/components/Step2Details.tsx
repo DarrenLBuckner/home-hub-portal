@@ -221,13 +221,13 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
           onChange={(e) => handleChange('description', e.target.value)}
           placeholder="Write at least 30-50 words about your property... OR use the AI assistant below for professional descriptions! The more details you provide, the better the AI can help. Describe what makes this property special."
           rows={6}
-          maxLength={1000}
+          maxLength={2000}
           className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-400"
           required
         />
         <div className="mt-2 text-xs text-gray-500 flex justify-between">
-          <span>💡 Tip: {(formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length < 30 ? `Add ${30 - (formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length} more words for better AI results` : 'Great! AI can now generate excellent descriptions'}</span>
-          <span className={(formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length >= 30 ? 'text-green-600' : 'text-amber-600'}>{(formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length} words • {(formData.description || '').length}/1000 characters</span>
+          <span>💡 Tip: {(formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length < 30 ? `Add ${30 - (formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length} more words for better AI results` : 'You can edit the AI description above to make corrections'}</span>
+          <span className={(formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length >= 30 ? 'text-green-600' : 'text-amber-600'}>{(formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length} words • {(formData.description || '').length}/2000 characters</span>
         </div>
       </div>
 

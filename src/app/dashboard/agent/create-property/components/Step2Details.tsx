@@ -500,7 +500,7 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
             : "Write at least 30-50 words about your property... OR use the AI assistant below for professional descriptions!"
           }
           rows={6}
-          maxLength={1000}
+          maxLength={2000}
           className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900 placeholder-gray-400"
           required
         />
@@ -508,10 +508,10 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
           <span>
             {(formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length < 30
               ? `Add ${30 - (formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length} more words for better AI results`
-              : 'Great! AI can now generate excellent descriptions'}
+              : 'Great! You can edit the AI description above to make corrections'}
           </span>
           <span className={(formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length >= 30 ? 'text-green-600' : 'text-amber-600'}>
-            {(formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length} words • {(formData.description || '').length}/1000 characters
+            {(formData.description || '').trim().split(/\s+/).filter((word: string) => word.length > 0).length} words • {(formData.description || '').length}/2000 characters
           </span>
         </div>
       </div>
