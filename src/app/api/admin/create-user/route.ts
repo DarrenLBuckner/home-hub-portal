@@ -22,7 +22,7 @@ interface AdminProfile {
 export async function POST(request: NextRequest) {
   try {
     // Get the current user session to verify they're an admin
-    const cookieStore = await cookies();
+    const cookieStore = cookies();
     const supabaseAuth = createRouteHandlerClient({ cookies: () => cookieStore });
 
     const { data: { user: currentUser } } = await supabaseAuth.auth.getUser();

@@ -259,3 +259,36 @@ If agents report issues:
 ---
 
 Generated: February 3, 2026
+---
+
+## 🗂️ Database Table Validation
+
+### Draft Listings Table
+
+- ✅ **Table exists:** `property_drafts`
+- **Purpose:** Stores draft/incomplete property listings before submission or approval
+- **Validation:** Confirmed in Supabase schema
+
+#### Example SQL Queries (for agent: d0dd6520-5395-449e-8f51-42be72cb3dc1)
+
+1. **List all draft properties for Sheriann:**
+```sql
+SELECT * FROM property_drafts WHERE owner_id = 'd0dd6520-5395-449e-8f51-42be72cb3dc1';
+```
+
+2. **Count all draft properties by status:**
+```sql
+SELECT status, COUNT(*) FROM property_drafts WHERE owner_id = 'd0dd6520-5395-449e-8f51-42be72cb3dc1' GROUP BY status;
+```
+
+3. **Find all drafts created in the last 30 days for Sheriann:**
+```sql
+SELECT * FROM property_drafts WHERE owner_id = 'd0dd6520-5395-449e-8f51-42be72cb3dc1' AND created_at >= NOW() - INTERVAL '30 days';
+```
+
+4. **Show all Sheriann's drafts missing required fields (example: missing address or price):**
+```sql
+SELECT * FROM property_drafts WHERE owner_id = 'd0dd6520-5395-449e-8f51-42be72cb3dc1' AND (address IS NULL OR price IS NULL);
+```
+
+---
