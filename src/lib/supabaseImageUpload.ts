@@ -17,12 +17,13 @@ export interface UploadResult {
 }
 
 /**
- * Upload a single image with retry logic
+ * Upload a single image with retry logic and timeout
  * @param supabase - Supabase client
  * @param file - File to upload
  * @param userId - User ID for organizing uploads
  * @param index - Image index
  * @param maxRetries - Maximum retry attempts (default 3)
+ * @param timeoutMs - Timeout per upload attempt in milliseconds (default 30000 = 30s)
  * @returns Uploaded image info or throws error after all retries fail
  */
 async function uploadSingleImageWithRetry(
@@ -30,11 +31,17 @@ async function uploadSingleImageWithRetry(
   file: File,
   userId: string,
   index: number,
-  maxRetries: number = 3
+  maxRetries: number = 3,
+  timeoutMs: number = 30000 // 30 second timeout per image
 ): Promise<UploadedImage> {
   let lastError: Error | null = null;
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, timeoutMs);
+
     try {
       // Generate unique filename
       const timestamp = Date.now();
@@ -48,13 +55,20 @@ async function uploadSingleImageWithRetry(
         console.log(`⬆️ Uploading ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
       }
 
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('property-images')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false,
-        });
+      // Upload to Supabase Storage with timeout protection
+      const { data, error } = await Promise.race([
+        supabase.storage
+          .from('property-images')
+          .upload(fileName, file, {
+            cacheControl: '3600',
+            upsert: false,
+          }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Upload timeout: exceeded ${timeoutMs}ms`)), timeoutMs)
+        ) as Promise<any>
+      ]);
+
+      clearTimeout(timeoutId);
 
       if (error) {
         throw new Error(`Storage error: ${error.message}`);
@@ -73,8 +87,14 @@ async function uploadSingleImageWithRetry(
         name: file.name,
       };
     } catch (error) {
+      clearTimeout(timeoutId);
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(`❌ Attempt ${attempt}/${maxRetries} failed for ${file.name}:`, lastError.message);
+
+      // Distinguish timeout errors from other errors
+      const isTimeout = lastError.message.includes('timeout') || lastError.name === 'AbortError';
+      const errorType = isTimeout ? '⏱️ TIMEOUT' : '❌';
+
+      console.error(`${errorType} Attempt ${attempt}/${maxRetries} failed for ${file.name}:`, lastError.message);
 
       // Wait before retry (exponential backoff: 1s, 2s, 4s)
       if (attempt < maxRetries) {
@@ -85,7 +105,13 @@ async function uploadSingleImageWithRetry(
     }
   }
 
-  throw new Error(`Failed to upload ${file.name} after ${maxRetries} attempts: ${lastError?.message}`);
+  // Provide specific error message for timeouts
+  const isTimeout = lastError?.message.includes('timeout') || lastError?.name === 'AbortError';
+  const errorMessage = isTimeout
+    ? `Upload timeout: ${file.name} took longer than 30 seconds. This usually indicates a poor internet connection. Please check your connection and try again.`
+    : `Failed to upload ${file.name} after ${maxRetries} attempts: ${lastError?.message}`;
+
+  throw new Error(errorMessage);
 }
 
 /**
