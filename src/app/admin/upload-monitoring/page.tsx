@@ -1,5 +1,6 @@
 import React from 'react'
 import { createAdminClient } from '@/supabase-admin'
+import OrphanScanner from './OrphanScanner'
 
 export default async function UploadMonitoringPage() {
   const supabase = createAdminClient()
@@ -90,6 +91,8 @@ export default async function UploadMonitoringPage() {
           </ul>
         </div>
       </section>
+
+      <OrphanScanner />
 
       <p className="mt-6 text-sm text-gray-500">Note: For a deeper orphaned-files scan, run a recursive listing of all buckets and compare to `property_media.url` entries. Use the admin API if required.</p>
     </div>
