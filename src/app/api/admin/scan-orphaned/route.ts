@@ -25,15 +25,15 @@ export async function POST(req: Request) {
     // Gather referenced paths from property_media
     const { data: referenced, error: refErr } = await supabase
       .from('property_media')
-      .select('url')
+      .select('media_url')
       .limit(50000)
 
     if (refErr) return NextResponse.json({ error: refErr.message }, { status: 500 })
 
     const referencedUrls = new Set<string>()
     ;(referenced || []).forEach((r: any) => {
-      if (!r || !r.url) return
-      const url: string = r.url
+      if (!r || !r.media_url) return
+      const url: string = r.media_url
       // If URL contains bucket path, extract after bucket
       const idx = url.indexOf('/property-images/')
       if (idx !== -1) {

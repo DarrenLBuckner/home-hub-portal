@@ -10,7 +10,7 @@ export default async function UploadMonitoringPage() {
   // Recent uploads (last 24h)
   const { data: recentMedia, error: mediaError } = await supabase
     .from('property_media')
-    .select('id, property_id, url, mime_type, file_size, created_at')
+    .select('id, property_id, media_url, media_type, created_at')
     .gte('created_at', since)
     .order('created_at', { ascending: false })
     .limit(200)
@@ -52,8 +52,7 @@ export default async function UploadMonitoringPage() {
                 <th className="p-3 text-xs text-gray-600">Time</th>
                 <th className="p-3 text-xs text-gray-600">Property ID</th>
                 <th className="p-3 text-xs text-gray-600">Path / URL</th>
-                <th className="p-3 text-xs text-gray-600">Size</th>
-                <th className="p-3 text-xs text-gray-600">MIME</th>
+                <th className="p-3 text-xs text-gray-600">Type</th>
               </tr>
             </thead>
             <tbody>
@@ -62,14 +61,13 @@ export default async function UploadMonitoringPage() {
                   <tr key={m.id} className="border-t">
                     <td className="p-3 text-sm text-gray-700">{new Date(m.created_at).toLocaleString()}</td>
                     <td className="p-3 text-sm text-gray-700">{m.property_id || '—'}</td>
-                    <td className="p-3 text-sm text-gray-700 truncate max-w-[420px]">{m.url}</td>
-                    <td className="p-3 text-sm text-gray-700">{m.file_size ? `${Math.round(m.file_size/1024)} KB` : '—'}</td>
-                    <td className="p-3 text-sm text-gray-700">{m.mime_type || '—'}</td>
+                    <td className="p-3 text-sm text-gray-700 truncate max-w-[420px]">{m.media_url}</td>
+                    <td className="p-3 text-sm text-gray-700">{m.media_type || '—'}</td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="p-4 text-sm text-gray-500">No uploads in the last 24 hours.</td>
+                  <td colSpan={4} className="p-4 text-sm text-gray-500">No uploads in the last 24 hours.</td>
                 </tr>
               )}
             </tbody>
@@ -94,7 +92,7 @@ export default async function UploadMonitoringPage() {
 
       <OrphanScanner />
 
-      <p className="mt-6 text-sm text-gray-500">Note: For a deeper orphaned-files scan, run a recursive listing of all buckets and compare to `property_media.url` entries. Use the admin API if required.</p>
+      <p className="mt-6 text-sm text-gray-500">Note: For a deeper orphaned-files scan, run a recursive listing of all buckets and compare to `property_media.media_url` entries. Use the admin API if required.</p>
     </div>
   )
 }
