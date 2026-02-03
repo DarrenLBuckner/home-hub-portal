@@ -141,16 +141,18 @@ export async function GET(request: NextRequest) {
     
     // Transform the data to include images properly
     const transformedProperties = properties?.map((property: any) => {
-      const images = property.property_media
-        ?.filter((media: any) => media.media_type === 'image')
-        ?.sort((a: any, b: any) => {
-          // Primary images first, then by display_order
-          if (a.is_primary && !b.is_primary) return -1
-          if (!a.is_primary && b.is_primary) return 1
-          return a.display_order - b.display_order
-        })
-        ?.map((media: any) => media.media_url) || []
-      
+      // Prefer images from the property.images column if present
+      const images =
+        Array.isArray(property.images) && property.images.length > 0
+          ? property.images
+          : (property.property_media
+              ?.filter((media: any) => media.media_type === 'image')
+              ?.sort((a: any, b: any) => {
+                if (a.is_primary && !b.is_primary) return -1
+                if (!a.is_primary && b.is_primary) return 1
+                return a.display_order - b.display_order
+              })
+              ?.map((media: any) => media.media_url) || []);
       return {
         ...property,
         images,
