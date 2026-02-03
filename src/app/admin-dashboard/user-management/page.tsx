@@ -28,13 +28,32 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [error, setError] = useState("");
-  const [showAddAdmin, setShowAddAdmin] = useState(false);
-  const [newAdminEmail, setNewAdminEmail] = useState("");
-  const [newAdminFirstName, setNewAdminFirstName] = useState("");
-  const [newAdminLastName, setNewAdminLastName] = useState("");
+  
+  // User type filter (all, admin, agent, landlord, fsbo)
+  const [userTypeFilter, setUserTypeFilter] = useState<'all' | 'admin' | 'agent' | 'landlord' | 'fsbo'>('all');
+  
+  // Modal and creation state
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [userTypeMode, setUserTypeMode] = useState<'admin' | 'regular'>('regular'); // Which type to create
+  
+  // Common fields
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserFirstName, setNewUserFirstName] = useState("");
+  const [newUserLastName, setNewUserLastName] = useState("");
+  const [newUserPhone, setNewUserPhone] = useState("");
+  
+  // Admin-specific fields
   const [newAdminLevel, setNewAdminLevel] = useState("basic");
   const [newAdminPassword, setNewAdminPassword] = useState("");
-  const [addingAdmin, setAddingAdmin] = useState(false);
+  
+  // Regular user-specific fields
+  const [newUserType, setNewUserType] = useState<'agent' | 'landlord' | 'fsbo'>('agent');
+  const [newUserTerritory, setNewUserTerritory] = useState("");
+  
+  // Form submission state
+  const [creatingUser, setCreatingUser] = useState(false);
+  
+  // Other modals
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuspendModal, setShowSuspendModal] = useState(false);
   const [suspendReason, setSuspendReason] = useState("");
@@ -106,12 +125,13 @@ export default function UserManagement() {
 
   async function loadUsers() {
     try {
-      console.log('Loading admin accounts only...');
+      console.log('Loading all users (admins and regular users)...');
       
+      // Load all users - both admins and regular users
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_type', 'admin')  // Only load admin accounts
+        .in('user_type', ['admin', 'agent', 'landlord', 'fsbo'])  // Load all relevant user types
         .order('created_at', { ascending: false });
 
       if (usersError) {
@@ -199,84 +219,152 @@ export default function UserManagement() {
     router.push('/admin-login');
   };
 
-  const addNewAdmin = async () => {
-    // Validate all required fields including password
-    if (!newAdminEmail.trim() || !newAdminFirstName.trim() || !newAdminLastName.trim() || !newAdminPassword) {
-      alert('Please fill in all fields including password');
+  const createNewUser = async () => {
+    // Validate common fields
+    if (!newUserEmail.trim() || !newUserFirstName.trim() || !newUserLastName.trim()) {
+      alert('Please fill in email, first name, and last name');
       return;
     }
 
-    // Validate password length
-    if (newAdminPassword.length < 8) {
-      alert('Password must be at least 8 characters');
-      return;
-    }
-
-    // Validate admin level permissions (client-side check - API will verify again)
-    if (newAdminLevel === 'super' && user?.admin_level !== 'super') {
-      alert('🔒 ACCESS DENIED: Only Super Admins can create Super Admin accounts!');
-      return;
-    }
-
-    if (newAdminLevel === 'owner' && user?.admin_level !== 'super' && user?.admin_level !== 'owner') {
-      alert('🔒 ACCESS DENIED: Only Super Admins and Owner Admins can create Owner Admin accounts!');
-      return;
-    }
-
-    setAddingAdmin(true);
+    setCreatingUser(true);
     try {
-      // Call the API to create admin with real auth user
-      const response = await fetch('/api/admin/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: newAdminEmail.trim(),
-          firstName: newAdminFirstName.trim(),
-          lastName: newAdminLastName.trim(),
-          password: newAdminPassword,
-          adminLevel: newAdminLevel,
-          countryId: adminData?.country_id || null
-        })
-      });
+      if (userTypeMode === 'admin') {
+        // Create admin user
+        if (!newAdminPassword) {
+          alert('Please provide a temporary password');
+          return;
+        }
 
-      const result = await response.json();
+        if (newAdminPassword.length < 8) {
+          alert('Password must be at least 8 characters');
+          return;
+        }
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create admin');
+        // Validate admin level permissions
+        if (newAdminLevel === 'super' && user?.admin_level !== 'super') {
+          alert('🔒 ACCESS DENIED: Only Super Admins can create Super Admin accounts!');
+          return;
+        }
+
+        if (newAdminLevel === 'owner' && user?.admin_level !== 'super' && user?.admin_level !== 'owner') {
+          alert('🔒 ACCESS DENIED: Only Super Admins and Owner Admins can create Owner Admin accounts!');
+          return;
+        }
+
+        const response = await fetch('/api/admin/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: newUserEmail.trim(),
+            firstName: newUserFirstName.trim(),
+            lastName: newUserLastName.trim(),
+            password: newAdminPassword,
+            adminLevel: newAdminLevel,
+            countryId: adminData?.country_id || null
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to create admin');
+        }
+
+        const levelNames: {[key: string]: string} = {
+          'super': 'Super Admin',
+          'owner': 'Owner Admin',
+          'basic': 'Basic Admin'
+        };
+
+        alert(
+          `✅ ${levelNames[newAdminLevel]} created successfully!\n\n` +
+          `📧 Email: ${newUserEmail.trim()}\n` +
+          `🔑 Password: ${newAdminPassword}\n` +
+          `🏴 Country: ${result.admin?.countryId || 'Global'}\n\n` +
+          `⚠️ Share these credentials with the new admin securely.\n` +
+          `They can change their password after logging in.`
+        );
+      } else {
+        // Create regular user (agent, landlord, FSBO)
+        if (!newUserType) {
+          alert('Please select a user type');
+          return;
+        }
+
+        let territory = newUserTerritory;
+        
+        // Owner Admin can only assign to their own territory
+        if (user?.admin_level === 'owner') {
+          territory = adminData?.country_id;
+          if (!territory) {
+            alert('Cannot determine your country assignment. Please contact Super Admin.');
+            return;
+          }
+        } else if (user?.admin_level === 'super') {
+          // Super Admin must specify territory
+          if (!territory) {
+            alert('Please select a territory for this user');
+            return;
+          }
+        } else {
+          alert('Only Super Admin and Owner Admin can create regular users.');
+          return;
+        }
+
+        const response = await fetch('/api/admin/create-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: newUserEmail.trim(),
+            firstName: newUserFirstName.trim(),
+            lastName: newUserLastName.trim(),
+            phone: newUserPhone || null,
+            userType: newUserType,
+            territory: territory
+          })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to create user');
+        }
+
+        const typeNames: {[key: string]: string} = {
+          'agent': 'Agent',
+          'landlord': 'Landlord',
+          'fsbo': 'FSBO'
+        };
+
+        alert(
+          `✅ ${typeNames[newUserType]} created successfully!\n\n` +
+          `📧 Email: ${newUserEmail.trim()}\n` +
+          `🔑 Temporary Password: ${result.user.tempPassword}\n` +
+          `🏴 Territory: ${territory}\n\n` +
+          `⚠️ Share these credentials with the new user securely.\n` +
+          `They can change their password after logging in.`
+        );
       }
 
-      const levelNames: {[key: string]: string} = {
-        'super': 'Super Admin',
-        'owner': 'Owner Admin',
-        'basic': 'Basic Admin'
-      };
-
-      // Success - show credentials
-      alert(
-        `✅ ${levelNames[newAdminLevel]} created successfully!\n\n` +
-        `📧 Email: ${newAdminEmail.trim()}\n` +
-        `🔑 Password: ${newAdminPassword}\n` +
-        `🏴 Country: ${result.admin?.countryId || 'Global'}\n\n` +
-        `⚠️ Share these credentials with the new admin securely.\n` +
-        `They can change their password after logging in.`
-      );
-
       // Clear form
-      setNewAdminEmail('');
-      setNewAdminFirstName('');
-      setNewAdminLastName('');
-      setNewAdminPassword('');
+      setNewUserEmail('');
+      setNewUserFirstName('');
+      setNewUserLastName('');
+      setNewUserPhone('');
       setNewAdminLevel('basic');
-      setShowAddAdmin(false);
+      setNewAdminPassword('');
+      setNewUserType('agent');
+      setNewUserTerritory('');
+      setShowAddUser(false);
 
       // Reload users list
       await loadUsers();
 
     } catch (err: any) {
-      console.error('Error creating admin:', err);
-      alert(`Failed to create admin: ${err?.message || 'Unknown error'}`);
+      console.error('Error creating user:', err);
+      alert(`Failed to create user: ${err?.message || 'Unknown error'}`);
     } finally {
-      setAddingAdmin(false);
+      setCreatingUser(false);
     }
   };
 
@@ -444,9 +532,9 @@ export default function UserManagement() {
     <main className="min-h-screen bg-gray-50">
       {/* Standardized Header with Back Button */}
       <DashboardHeader
-        title="Admin Management"
-        description="Create and manage admin accounts (Super, Owner, Basic admins only)"
-        icon="🛡️"
+        title="User Management"
+        description="Create and manage user accounts (Admins, Agents, Landlords, FSBO)"
+        icon="👥"
         actions={
           <button
             onClick={handleLogout}
@@ -460,46 +548,103 @@ export default function UserManagement() {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Security & Business Warning Notice */}
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-800 text-sm mb-2">
-            ⚠️ <strong>Security & Business Protection:</strong> Role changes affect system security and revenue.
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-blue-800 text-sm mb-2">
+            ℹ️ <strong>User Creation Permissions:</strong>
           </p>
-          <ul className="text-red-700 text-xs space-y-1">
+          <ul className="text-blue-700 text-xs space-y-1">
+            <li>🛡️ <strong>Super Admin:</strong> Can create all user types (Admins, Agents, Landlords, FSBO) for any territory</li>
+            <li>👑 <strong>Owner Admin:</strong> Can create Agents, Landlords, FSBO for their territory only</li>
+            <li>⚙️ <strong>Basic Admin:</strong> Cannot create users (property review only)</li>
             <li>🔒 <strong>Super Admin accounts are PROTECTED</strong> - Cannot be modified by anyone</li>
-            <li>👑 Only Super Admins can create Owner Admin or Super Admin accounts</li>
-            <li>💰 <strong>PAID ROLES PROTECTED</strong> - Agent/Landlord/FSBO require Super Admin (prevents revenue bypass)</li>
-            <li>⚡ Owner Admins can create Basic Admin and manage User accounts only</li>
-            <li>🛡️ All role changes are logged for security and business auditing</li>
+            <li>💰 <strong>PAID ROLES PROTECTED</strong> - Agent/Landlord/FSBO accounts are created in pending approval status</li>
           </ul>
         </div>
 
-        {/* Search Bar */}
+        {/* Search Bar and Filters */}
         <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-col gap-4">
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search admin accounts by name or email..."
+                placeholder="Search users by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            <button 
-              onClick={loadUsers}
-              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded-lg"
-            >
-              🔄 Refresh
-            </button>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => setUserTypeFilter('all')}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+                  userTypeFilter === 'all'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                All Users ({users.length})
+              </button>
+              <button
+                onClick={() => setUserTypeFilter('admin')}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+                  userTypeFilter === 'admin'
+                    ? 'bg-red-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Admins ({users.filter(u => u.user_type === 'admin').length})
+              </button>
+              <button
+                onClick={() => setUserTypeFilter('agent')}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+                  userTypeFilter === 'agent'
+                    ? 'bg-purple-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Agents ({users.filter(u => u.user_type === 'agent').length})
+              </button>
+              <button
+                onClick={() => setUserTypeFilter('landlord')}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+                  userTypeFilter === 'landlord'
+                    ? 'bg-green-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Landlords ({users.filter(u => u.user_type === 'landlord').length})
+              </button>
+              <button
+                onClick={() => setUserTypeFilter('fsbo')}
+                className={`px-4 py-2 text-sm rounded-lg font-medium transition-colors ${
+                  userTypeFilter === 'fsbo'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                FSBO ({users.filter(u => u.user_type === 'fsbo').length})
+              </button>
+              <button 
+                onClick={loadUsers}
+                className="ml-auto px-4 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors border border-gray-300 rounded-lg"
+              >
+                🔄 Refresh
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Admin Table */}
+        {/* User Table */}
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-gray-900">
-                Admin Accounts ({users.filter(user => {
+                {userTypeFilter === 'all' ? 'All Users' : 
+                 userTypeFilter === 'admin' ? 'Admin Accounts' :
+                 userTypeFilter === 'agent' ? 'Agents' :
+                 userTypeFilter === 'landlord' ? 'Landlords' :
+                 'FSBO Users'} ({users.filter(user => {
+                  if (userTypeFilter !== 'all' && user.user_type !== userTypeFilter) return false;
                   if (!searchTerm) return true;
                   const search = searchTerm.toLowerCase();
                   return user.email.toLowerCase().includes(search) ||
@@ -508,20 +653,28 @@ export default function UserManagement() {
               </h2>
               <div className="flex items-center space-x-3">
                 <button 
-                  onClick={() => setShowAddAdmin(true)}
-                  className="px-4 py-2 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                  onClick={() => setShowAddUser(true)}
+                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium"
                 >
-                  + Add Admin
+                  + Add User
                 </button>
               </div>
             </div>
           </div>
 
-          {users.length === 0 ? (
+          {users.filter(user => {
+            if (userTypeFilter !== 'all' && user.user_type !== userTypeFilter) return false;
+            if (!searchTerm) return true;
+            const search = searchTerm.toLowerCase();
+            return user.email.toLowerCase().includes(search) ||
+                   `${user.first_name} ${user.last_name}`.toLowerCase().includes(search);
+          }).length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">👥</div>
-              <h3 className="text-xl font-medium text-gray-600 mb-2">No admin accounts found</h3>
-              <p className="text-gray-500">Admin accounts will appear here when they are created.</p>
+              <h3 className="text-xl font-medium text-gray-600 mb-2">
+                {userTypeFilter === 'all' ? 'No users found' : `No ${userTypeFilter === 'admin' ? 'admin' : userTypeFilter} users found`}
+              </h3>
+              <p className="text-gray-500">Users will appear here when they are created.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -535,7 +688,10 @@ export default function UserManagement() {
                       Email
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Current Role
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Role
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Joined
@@ -547,6 +703,7 @@ export default function UserManagement() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {users.filter(user => {
+                    if (userTypeFilter !== 'all' && user.user_type !== userTypeFilter) return false;
                     if (!searchTerm) return true;
                     const search = searchTerm.toLowerCase();
                     return user.email.toLowerCase().includes(search) ||
@@ -570,24 +727,45 @@ export default function UserManagement() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          userData.user_type === 'admin'
+                            ? 'bg-red-100 text-red-800'
+                            : userData.user_type === 'agent'
+                            ? 'bg-purple-100 text-purple-800'
+                            : userData.user_type === 'landlord'
+                            ? 'bg-green-100 text-green-800'
+                            : userData.user_type === 'fsbo'
+                            ? 'bg-orange-100 text-orange-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {userData.user_type === 'admin' ? 'Admin' :
+                           userData.user_type === 'agent' ? 'Agent' :
+                           userData.user_type === 'landlord' ? 'Landlord' :
+                           userData.user_type === 'fsbo' ? 'FSBO' :
+                           'User'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex flex-col space-y-1">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            userData.admin_level === 'super' 
-                              ? 'bg-red-100 text-red-800'
-                              : userData.admin_level === 'owner'
-                              ? 'bg-purple-100 text-purple-800'
-                              : userData.admin_level === 'basic'
-                              ? 'bg-blue-100 text-blue-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {userData.admin_level === 'super' 
-                              ? 'Super Admin'
-                              : userData.admin_level === 'owner'
-                              ? 'Owner Admin'
-                              : userData.admin_level === 'basic' 
-                              ? 'Basic Admin'
-                              : 'Admin'}
-                          </span>
+                          {userData.user_type === 'admin' && (
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              userData.admin_level === 'super' 
+                                ? 'bg-red-100 text-red-800'
+                                : userData.admin_level === 'owner'
+                                ? 'bg-purple-100 text-purple-800'
+                                : userData.admin_level === 'basic'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {userData.admin_level === 'super' 
+                                ? 'Super Admin'
+                                : userData.admin_level === 'owner'
+                                ? 'Owner Admin'
+                                : userData.admin_level === 'basic' 
+                                ? 'Basic Admin'
+                                : 'Admin'}
+                            </span>
+                          )}
                           {userData.is_suspended && (
                             <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                               SUSPENDED
@@ -702,109 +880,198 @@ export default function UserManagement() {
         </div>
       </div>
 
-      {/* Add Admin Modal */}
-      {showAddAdmin && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-bold mb-4">Add New Admin</h3>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={newAdminEmail}
-                  onChange={(e) => setNewAdminEmail(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  placeholder="admin@example.com"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name
-                </label>
-                <input
-                  type="text"
-                  value={newAdminFirstName}
-                  onChange={(e) => setNewAdminFirstName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  placeholder="John"
-                  required
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name
-                </label>
-                <input
-                  type="text"
-                  value={newAdminLastName}
-                  onChange={(e) => setNewAdminLastName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  placeholder="Doe"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Admin Level
-                </label>
-                <select
-                  value={newAdminLevel}
-                  onChange={(e) => setNewAdminLevel(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+      {/* Add User Modal */}
+      {showAddUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header with Tabs */}
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-6">
+              <h3 className="text-lg font-bold mb-4">Add New User</h3>
+              <div className="flex gap-2 border-b border-gray-200">
+                <button
+                  onClick={() => setUserTypeMode('regular')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    userTypeMode === 'regular'
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
                 >
-                  <option value="basic">Basic Admin - Property review & basic admin tasks</option>
-                  {(user?.admin_level === 'super' || user?.admin_level === 'owner') && (
-                    <option value="owner">Owner Admin - Full country management</option>
-                  )}
-                  {user?.admin_level === 'super' && (
-                    <option value="super">Super Admin - Global system access</option>
-                  )}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Temporary Password *
-                </label>
-                <input
-                  type="password"
-                  value={newAdminPassword}
-                  onChange={(e) => setNewAdminPassword(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                  placeholder="Min 8 characters"
-                  minLength={8}
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Share this password with the new admin. They can change it after first login.
-                </p>
+                  Regular User (Agent/Landlord/FSBO)
+                </button>
+                <button
+                  onClick={() => setUserTypeMode('admin')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                    userTypeMode === 'admin'
+                      ? 'border-blue-600 text-blue-600'
+                      : 'border-transparent text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Admin User
+                </button>
               </div>
             </div>
 
-            <div className="mt-6 flex space-x-3">
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              {/* Common Fields */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address *
+                </label>
+                <input
+                  type="email"
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  placeholder="user@example.com"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    First Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newUserFirstName}
+                    onChange={(e) => setNewUserFirstName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    placeholder="John"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Last Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newUserLastName}
+                    onChange={(e) => setNewUserLastName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    placeholder="Doe"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number (optional)
+                </label>
+                <input
+                  type="tel"
+                  value={newUserPhone}
+                  onChange={(e) => setNewUserPhone(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                  placeholder="+1 (555) 000-0000"
+                />
+              </div>
+
+              {/* Admin-Specific Fields */}
+              {userTypeMode === 'admin' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Admin Level *
+                    </label>
+                    <select
+                      value={newAdminLevel}
+                      onChange={(e) => setNewAdminLevel(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="basic">Basic Admin - Property review & basic admin tasks</option>
+                      {(user?.admin_level === 'super' || user?.admin_level === 'owner') && (
+                        <option value="owner">Owner Admin - Full country management</option>
+                      )}
+                      {user?.admin_level === 'super' && (
+                        <option value="super">Super Admin - Global system access</option>
+                      )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Temporary Password *
+                    </label>
+                    <input
+                      type="password"
+                      value={newAdminPassword}
+                      onChange={(e) => setNewAdminPassword(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      placeholder="Min 8 characters"
+                      minLength={8}
+                      required
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Share this password with the new admin. They can change it after first login.
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {/* Regular User-Specific Fields */}
+              {userTypeMode === 'regular' && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      User Type *
+                    </label>
+                    <select
+                      value={newUserType}
+                      onChange={(e) => setNewUserType(e.target.value as 'agent' | 'landlord' | 'fsbo')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="agent">Agent - Property listing professional</option>
+                      <option value="landlord">Landlord - Property owner for rental</option>
+                      <option value="fsbo">FSBO - For Sale By Owner</option>
+                    </select>
+                  </div>
+
+                  {user?.admin_level === 'super' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Territory/Country *
+                      </label>
+                      <select
+                        value={newUserTerritory}
+                        onChange={(e) => setNewUserTerritory(e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Select a territory...</option>
+                        <option value="GY">Guyana (GY)</option>
+                        <option value="JM">Jamaica (JM)</option>
+                        <option value="CO">Colombia (CO)</option>
+                        <option value="US">United States (US)</option>
+                      </select>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 p-6 flex gap-3">
               <button
-                onClick={addNewAdmin}
-                disabled={addingAdmin}
-                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md font-medium transition-colors"
+                onClick={createNewUser}
+                disabled={creatingUser}
+                className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md font-medium transition-colors"
               >
-                {addingAdmin ? 'Creating...' : `Create ${newAdminLevel === 'super' ? 'Super' : newAdminLevel === 'owner' ? 'Owner' : 'Basic'} Admin`}
+                {creatingUser ? 'Creating...' : `Create ${userTypeMode === 'admin' ? `${newAdminLevel} Admin` : `${newUserType}`}`}
               </button>
               <button
                 onClick={() => {
-                  setShowAddAdmin(false);
-                  setNewAdminEmail('');
-                  setNewAdminFirstName('');
-                  setNewAdminLastName('');
-                  setNewAdminPassword('');
+                  setShowAddUser(false);
+                  setNewUserEmail('');
+                  setNewUserFirstName('');
+                  setNewUserLastName('');
+                  setNewUserPhone('');
                   setNewAdminLevel('basic');
+                  setNewAdminPassword('');
+                  setNewUserType('agent');
+                  setNewUserTerritory('');
                 }}
                 className="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md font-medium transition-colors"
               >
@@ -812,13 +1079,18 @@ export default function UserManagement() {
               </button>
             </div>
 
-            <div className="mt-4 p-3 bg-blue-50 rounded-md">
+            {/* Info Box */}
+            <div className="bg-blue-50 border-t border-blue-200 p-4">
               <p className="text-sm text-blue-800">
-                <strong>🏴 Country Assignment:</strong> New admins will be assigned to your country ({adminData?.country_id || 'N/A'}) and can only work within that country.<br/>
-                <strong>📋 Admin Levels:</strong><br/>
-                • <strong>Basic:</strong> Property review & basic admin tasks<br/>
-                • <strong>Owner:</strong> Full country management & user creation<br/>
-                • <strong>Super:</strong> Global system access (Super Admin only)
+                <strong>ℹ️ About User Creation:</strong><br/>
+                {userTypeMode === 'admin' ? (
+                  <>• Admins are assigned to your country and can manage properties, users, and system settings<br/>
+                  • A temporary password will be generated and must be shared securely</>
+                ) : (
+                  <>• Regular users are created in pending approval status<br/>
+                  • A temporary password will be auto-generated and displayed after creation<br/>
+                  • {user?.admin_level === 'owner' ? `Users will be assigned to your country (${adminData?.country_id})` : 'You can select any territory'}</>
+                )}
               </p>
             </div>
           </div>
