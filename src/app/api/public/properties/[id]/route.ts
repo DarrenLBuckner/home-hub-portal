@@ -86,15 +86,18 @@ export async function GET(
     }
 
     // Step 3: Transform and combine data
-    const images = media
-      ?.filter((m: any) => m.media_type === 'image')
-      ?.sort((a: any, b: any) => {
-        // Primary images first, then by display_order
-        if (a.is_primary && !b.is_primary) return -1
-        if (!a.is_primary && b.is_primary) return 1
-        return a.display_order - b.display_order
-      })
-      ?.map((m: any) => m.media_url) || []
+    // Prefer images from the property.images column if present
+    const images =
+      Array.isArray(property.images) && property.images.length > 0
+        ? property.images
+        : (media
+            ?.filter((m: any) => m.media_type === 'image')
+            ?.sort((a: any, b: any) => {
+              if (a.is_primary && !b.is_primary) return -1
+              if (!a.is_primary && b.is_primary) return 1
+              return a.display_order - b.display_order
+            })
+            ?.map((m: any) => m.media_url) || []);
 
     // Extract agent profile data if user is an agent OR admin
     const canShowProfile = property.profiles?.user_type === 'agent' || property.profiles?.user_type === 'admin'
@@ -116,7 +119,7 @@ export async function GET(
       ...property,
       property_media: media || [],
       images,
-      image_count: media?.length || 0,
+      image_count: images.length,
       agent_profile: agentProfile,
       profiles: undefined, // Remove nested profiles object
     }
