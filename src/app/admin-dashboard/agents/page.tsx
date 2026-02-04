@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { supabase } from '@/supabase';
 import { useAdminData, getAdminDisplayName } from '@/hooks/useAdminData';
 import DashboardHeader from '@/components/admin/DashboardHeader';
+import { PremiumToggle } from '@/components/PremiumToggle';
 
 interface Agent {
   id: string;
@@ -17,6 +18,7 @@ interface Agent {
   subscription_status: string | null;
   subscription_tier: string | null;
   is_verified_agent: boolean;
+  is_premium_agent: boolean;
   verified_at: string | null;
   created_at: string;
   property_count?: number;
@@ -40,6 +42,7 @@ export default function AgentManagementPage() {
     total: 0,
     verified: 0,
     unverified: 0,
+    premium: 0,
   });
 
   useEffect(() => {
@@ -100,10 +103,12 @@ export default function AgentManagementPage() {
 
       // Calculate stats
       const verified = agentsWithCounts.filter(a => a.is_verified_agent).length;
+      const premium = agentsWithCounts.filter(a => a.is_premium_agent).length;
       setStats({
         total: agentsWithCounts.length,
         verified,
         unverified: agentsWithCounts.length - verified,
+        premium,
       });
 
     } catch (err: unknown) {
@@ -190,7 +195,7 @@ export default function AgentManagementPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-6">
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -223,6 +228,18 @@ export default function AgentManagementPage() {
               </div>
               <div className="w-12 h-12 bg-gray-100 rounded-xl flex items-center justify-center">
                 <span className="text-2xl text-gray-400">○</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl border border-amber-200 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-amber-600">Premium</p>
+                <p className="text-2xl font-bold text-amber-700">{stats.premium}</p>
+              </div>
+              <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center">
+                <span className="text-2xl">⭐</span>
               </div>
             </div>
           </div>
@@ -339,6 +356,9 @@ export default function AgentManagementPage() {
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Premium
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Properties
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -389,6 +409,24 @@ export default function AgentManagementPage() {
                             ○ Not Verified
                           </span>
                         )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <PremiumToggle
+                          agentId={agent.id}
+                          initialValue={agent.is_premium_agent || false}
+                          agentName={`${agent.first_name} ${agent.last_name}`}
+                          onToggle={(newValue: boolean) => {
+                            // Update local state
+                            setAgents(prev => prev.map(a =>
+                              a.id === agent.id ? { ...a, is_premium_agent: newValue } : a
+                            ));
+                            // Update stats
+                            setStats(prev => ({
+                              ...prev,
+                              premium: newValue ? prev.premium + 1 : prev.premium - 1
+                            }));
+                          }}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center text-sm text-gray-600">
