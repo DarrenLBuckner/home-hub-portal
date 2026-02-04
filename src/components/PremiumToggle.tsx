@@ -21,9 +21,15 @@ export function PremiumToggle({ agentId, initialValue, agentName, onToggle }: Pr
     try {
       // Get the current session to retrieve the access token
 
+
       const supabase = createClient();
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session || !session.access_token) {
+      console.log('DEBUG: Supabase session', session);
+      if (sessionError) {
+        console.error('DEBUG: Supabase session error', sessionError);
+      }
+      if (!session || !session.access_token) {
+        console.error('DEBUG: No valid session or access token', session);
         throw new Error('Authorization required');
       }
 
