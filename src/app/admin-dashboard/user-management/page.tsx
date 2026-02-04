@@ -311,9 +311,19 @@ export default function UserManagement() {
           return;
         }
 
+
+        // Get the current session to retrieve the access token
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (!session || !session.access_token) {
+          throw new Error('Authorization required');
+        }
+
         const response = await fetch('/api/admin/create-user', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
           body: JSON.stringify({
             email: newUserEmail.trim(),
             firstName: newUserFirstName.trim(),
