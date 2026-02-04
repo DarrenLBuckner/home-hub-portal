@@ -114,15 +114,64 @@ export async function GET(
       is_verified_agent: property.profiles.is_verified_agent
     } : null
 
-    // Step 4: Create final response
+    // Step 4: Detect private listing (FSBO/Landlord)
+    const isPrivateListing = (
+      property.listing_source === 'fsbo' ||
+      property.listing_source === 'landlord' ||
+      property.listed_by_type === 'owner' ||
+      property.listed_by_type === 'fsbo' ||
+      property.profiles?.user_type === 'fsbo' ||
+      property.profiles?.user_type === 'landlord'
+    );
+
+    // Weekly rotation agent selection
+    async function getPromotedAgent(supabase, propertyId, siteId) {
+      const weekNumber = Math.floor(Date.now() / (7 * 24 * 60 * 60 * 1000));
+      const seed = hashCode(propertyId + String(weekNumber));
+      const { data: premiumAgents } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, company, phone, profile_image, is_verified_agent')
+        .eq('country_id', property.country_id || 'GY')
+        .eq('is_premium_agent', true)
+        .eq('user_type', 'agent');
+      if (!premiumAgents || premiumAgents.length === 0) return null;
+      const index = Math.abs(seed) % premiumAgents.length;
+      return premiumAgents[index];
+    }
+
+    function hashCode(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return hash;
+    }
+
+    // Owner contact extraction
+    const ownerContact = isPrivateListing ? {
+      name: property.owner_name || property.contact_name || 'Property Owner',
+      phone: property.owner_whatsapp || property.owner_phone || null
+    } : null;
+
+    // Promoted agent selection
+    let promotedAgent = null;
+    if (isPrivateListing) {
+      promotedAgent = await getPromotedAgent(supabase, property.id, property.site_id);
+    }
+
+    // Step 5: Create final response
     const result = {
       ...property,
       property_media: media || [],
       images,
       image_count: images.length,
       agent_profile: agentProfile,
+      promoted_agent: isPrivateListing ? promotedAgent : null,
+      owner_contact: ownerContact,
+      is_private_listing: isPrivateListing,
       profiles: undefined, // Remove nested profiles object
-    }
+    };
 
     return NextResponse.json(result, {
       headers: {
@@ -131,7 +180,7 @@ export async function GET(
         'Access-Control-Allow-Headers': 'Content-Type',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
       }
-    })
+    });
   } catch (error) {
     console.error('Error in property API:', error)
     return NextResponse.json(
