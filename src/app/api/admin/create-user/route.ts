@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/supabase-admin';
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+import { supabase } from '@/supabase';
 
 // Type for the admin profile we're fetching
 interface AdminProfile {
@@ -21,20 +19,15 @@ interface AdminProfile {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Get the current user session to verify they're an admin
-    const cookieStore = cookies();
-    const supabaseAuth = createRouteHandlerClient({ cookies: () => cookieStore });
 
-    const { data: { user: currentUser } } = await supabaseAuth.auth.getUser();
+    // Get the current user session to verify they're an admin
+    const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
     if (!currentUser) {
       return NextResponse.json({ error: 'Unauthorized - not logged in' }, { status: 401 });
     }
 
-    // Use admin client for privileged operations
-    const supabaseAdmin = createAdminClient();
-
     // Get current admin's profile to check permissions
-    const { data: currentAdminData, error: adminError } = await supabaseAdmin
+    const { data: currentAdminData, error: adminError } = await supabase
       .from('profiles')
       .select('id, user_type, admin_level, country_id')
       .eq('id', currentUser.id)
@@ -99,7 +92,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists in profiles
-    const { data: existingProfile } = await supabaseAdmin
+
+    const { data: existingProfile } = await supabase
       .from('profiles')
       .select('id')
       .eq('email', email.trim().toLowerCase())
@@ -112,8 +106,9 @@ export async function POST(request: NextRequest) {
     // Generate a temporary password (minimum 12 characters for security)
     const tempPassword = generateSecurePassword();
 
-    // Step 1: Create auth user with service role client
-    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+
+    // Step 1: Create auth user (using supabase singleton)
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: email.trim().toLowerCase(),
       password: tempPassword,
       email_confirm: true, // Auto-confirm email so they can log in immediately
@@ -164,14 +159,15 @@ export async function POST(request: NextRequest) {
       subscription_plan: 'trial'
     };
 
-    const { error: profileError } = await supabaseAdmin
+
+    const { error: profileError } = await supabase
       .from('profiles')
       .upsert([profileData], { onConflict: 'id' });
 
     if (profileError) {
       console.error('Profile creation error:', profileError);
       // Try to clean up the auth user if profile creation fails
-      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
+      await supabase.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json({
         error: `Failed to create user profile: ${profileError.message}`
       }, { status: 500 });
