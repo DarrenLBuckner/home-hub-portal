@@ -64,10 +64,38 @@ export async function PATCH(
     }
 
     // Update the agent's premium status
-    const { error: updateError } = await supabase
+    let { error: updateError } = await supabase
       .from('profiles')
       .update({ is_premium_agent })
       .eq('id', id);
+
+    // If column doesn't exist, create it and retry
+    if (updateError && updateError.message.includes('is_premium_agent')) {
+      console.log('Creating is_premium_agent column...');
+
+      // Add the column using raw SQL via RPC or direct query
+      const { error: alterError } = await supabase.rpc('exec_sql', {
+        sql: 'ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_premium_agent BOOLEAN DEFAULT false'
+      });
+
+      // If RPC doesn't exist, try a different approach - just retry the update
+      // The column might have been added by another request
+      if (alterError) {
+        console.log('RPC not available, column may need manual creation:', alterError.message);
+        return NextResponse.json({
+          error: 'Database setup required. Please add is_premium_agent column to profiles table.',
+          setup_sql: 'ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_premium_agent BOOLEAN DEFAULT false;'
+        }, { status: 500 });
+      }
+
+      // Retry the update
+      const retryResult = await supabase
+        .from('profiles')
+        .update({ is_premium_agent })
+        .eq('id', id);
+
+      updateError = retryResult.error;
+    }
 
     if (updateError) {
       console.error('Premium update error:', updateError);

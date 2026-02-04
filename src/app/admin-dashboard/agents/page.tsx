@@ -36,6 +36,8 @@ export default function AgentManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
   const [error, setError] = useState<string | null>(null);
+  const [premiumColumnMissing, setPremiumColumnMissing] = useState(false);
+  const [setupSql, setSetupSql] = useState<string | null>(null);
 
   // Statistics
   const [stats, setStats] = useState({
@@ -100,6 +102,18 @@ export default function AgentManagementPage() {
       );
 
       setAgents(agentsWithCounts);
+
+      // Check if is_premium_agent column exists (will be undefined if missing)
+      const hasPremiumColumn = agentsWithCounts.length === 0 ||
+        agentsWithCounts.some(a => a.is_premium_agent !== undefined);
+
+      if (!hasPremiumColumn) {
+        setPremiumColumnMissing(true);
+        setSetupSql('ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_premium_agent BOOLEAN DEFAULT false;');
+      } else {
+        setPremiumColumnMissing(false);
+        setSetupSql(null);
+      }
 
       // Calculate stats
       const verified = agentsWithCounts.filter(a => a.is_verified_agent).length;
@@ -244,6 +258,35 @@ export default function AgentManagementPage() {
             </div>
           </div>
         </div>
+
+        {/* Premium Column Setup Notice */}
+        {premiumColumnMissing && setupSql && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-300 rounded-xl">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">⚠️</span>
+              <div className="flex-1">
+                <p className="font-semibold text-amber-800 mb-2">Database Setup Required</p>
+                <p className="text-amber-700 text-sm mb-3">
+                  The Premium Agent feature requires a database column that doesn&apos;t exist yet.
+                  Run this SQL in your Supabase SQL Editor:
+                </p>
+                <div className="bg-gray-900 text-green-400 p-3 rounded-lg font-mono text-sm mb-3 overflow-x-auto">
+                  {setupSql}
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(setupSql);
+                    alert('SQL copied to clipboard!');
+                  }}
+                  className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Copy SQL
+                </button>
+                <span className="text-amber-600 text-sm ml-3">Then refresh this page.</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Territory Notice for non-super admins */}
         {permissions && !permissions.canViewAllCountries && (
