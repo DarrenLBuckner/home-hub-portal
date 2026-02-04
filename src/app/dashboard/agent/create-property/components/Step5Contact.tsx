@@ -27,36 +27,36 @@ export default function Step5Contact({
     }));
   };
 
-  // Validate phone number format
+  // Validate phone number format - accepts both local and international
   const validatePhone = (phone: string): string | null => {
     if (!phone || phone.trim() === '') {
       return 'WhatsApp number is required';
     }
-    if (!phone.startsWith('+')) {
-      return 'Phone number must start with + and country code (e.g., +592)';
-    }
     // Remove non-digits except leading +
-    const digitsOnly = phone.replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
-    if (digitsOnly.length < 8) {
-      return 'Phone number seems too short. Include country code + full number';
+    const digitsOnly = phone.replace(/[^\d]/g, '');
+
+    // Local Guyana number (7 digits)
+    if (digitsOnly.length === 7) {
+      return null; // Valid local format
     }
-    return null;
+
+    // International format with country code (10+ digits)
+    if (digitsOnly.length >= 10) {
+      return null; // Valid international format
+    }
+
+    // Too short
+    if (digitsOnly.length < 7) {
+      return 'Phone number seems too short';
+    }
+
+    // Between 7 and 10 - ambiguous
+    return 'Enter local format (6221234) or international (+5926221234)';
   };
 
-  // Handle phone input with auto-prefix and validation
+  // Handle phone input with validation - accepts local or international
   const handlePhoneChange = (value: string) => {
-    let processedValue = value.trim();
-
-    // Auto-add '+' if user starts typing digits (likely country code)
-    // Only auto-add if they've typed at least 3 digits and forgot the +
-    if (processedValue && !processedValue.startsWith('+')) {
-      const digitsOnly = processedValue.replace(/\D/g, '');
-      // Common country codes: 592 (Guyana), 1 (USA/Canada), etc.
-      if (digitsOnly.length >= 3 && /^[1-9]/.test(digitsOnly)) {
-        processedValue = '+' + processedValue;
-      }
-    }
-
+    const processedValue = value.trim();
     handleChange('owner_whatsapp', processedValue);
 
     // Validate on change if field was touched
@@ -144,7 +144,7 @@ export default function Step5Contact({
           value={formData.owner_whatsapp}
           onChange={(e) => handlePhoneChange(e.target.value)}
           onBlur={handlePhoneBlur}
-          placeholder="+592 123 4567"
+          placeholder="e.g., 6221234 or +5926221234"
           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
             phoneError && phoneTouched ? 'border-red-500 bg-red-50' : 'border-gray-300'
           }`}
@@ -156,7 +156,7 @@ export default function Step5Contact({
           </p>
         ) : (
           <p className="text-sm text-gray-500 mt-1">
-            <strong>Format:</strong> +592XXXXXXX (e.g., +5926227446)
+            Enter local format (6221234) or international (+5926221234)
           </p>
         )}
         <div className="bg-green-50 p-3 rounded mt-2">
