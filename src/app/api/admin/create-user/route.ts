@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 // Type for the admin profile we're fetching
 interface AdminProfile {
@@ -19,15 +19,38 @@ interface AdminProfile {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Create clients
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
-    // Get the current user session to verify they're an admin
-    const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
-    if (!currentUser) {
-      return NextResponse.json({ error: 'Unauthorized - not logged in' }, { status: 401 });
+    // Get token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader) {
+      return NextResponse.json({ error: 'Authorization required' }, { status: 401 });
+    }
+
+    // Get user session from auth header
+    const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser(
+      authHeader.replace('Bearer ', '')
+    );
+    if (userError || !currentUser) {
+      return NextResponse.json({ error: 'Invalid authentication' }, { status: 401 });
     }
 
     // Get current admin's profile to check permissions
-    const { data: currentAdminData, error: adminError } = await supabase
+    const { data: currentAdminData, error: adminError } = await supabaseAdmin
       .from('profiles')
       .select('id, user_type, admin_level, country_id')
       .eq('id', currentUser.id)
