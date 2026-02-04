@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { createClient } from '../lib/supabaseClient';
 
 interface PremiumToggleProps {
   agentId: string;
@@ -20,6 +20,8 @@ export function PremiumToggle({ agentId, initialValue, agentName, onToggle }: Pr
     setMessage(null);
     try {
       // Get the current session to retrieve the access token
+
+      const supabase = createClient();
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       if (sessionError || !session || !session.access_token) {
         throw new Error('Authorization required');
