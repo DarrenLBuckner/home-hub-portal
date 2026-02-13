@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
 
     // Check if email already exists in profiles
 
-    const { data: existingProfile } = await supabase
+    const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
       .select('id')
       .eq('email', email.trim().toLowerCase())
@@ -130,8 +130,8 @@ export async function POST(request: NextRequest) {
     const tempPassword = generateSecurePassword();
 
 
-    // Step 1: Create auth user (using supabase singleton)
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // Step 1: Create auth user (using service_role client)
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: email.trim().toLowerCase(),
       password: tempPassword,
       email_confirm: true, // Auto-confirm email so they can log in immediately
@@ -183,14 +183,14 @@ export async function POST(request: NextRequest) {
     };
 
 
-    const { error: profileError } = await supabase
+    const { error: profileError } = await supabaseAdmin
       .from('profiles')
       .upsert([profileData], { onConflict: 'id' });
 
     if (profileError) {
       console.error('Profile creation error:', profileError);
       // Try to clean up the auth user if profile creation fails
-      await supabase.auth.admin.deleteUser(authData.user.id);
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id);
       return NextResponse.json({
         error: `Failed to create user profile: ${profileError.message}`
       }, { status: 500 });
