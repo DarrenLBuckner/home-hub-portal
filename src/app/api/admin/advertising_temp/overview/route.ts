@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseBackend } from '@/lib/supabase-backend';
+import { createServiceRoleClient } from '@/lib/supabase/server';
+
+const supabaseBackend = createServiceRoleClient();
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 

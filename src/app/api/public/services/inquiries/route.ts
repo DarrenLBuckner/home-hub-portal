@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseBackend } from '@/lib/supabase-backend';
+import { createServiceRoleClient } from '@/lib/supabase/server';
+
+const supabaseBackend = createServiceRoleClient();
 
 /**
  * Public API endpoint for service inquiries
