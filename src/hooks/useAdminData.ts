@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createClient } from '@/supabase';
 import { AdminPermissions, getAdminPermissions } from '@/lib/auth/adminPermissions';
 
@@ -31,84 +31,64 @@ interface UseAdminDataReturn {
   refreshAdminData: () => Promise<void>;
 }
 
-export function useAdminData(): UseAdminDataReturn {
-  const [adminData, setAdminData] = useState<AdminData | null>(null);
-  const [permissions, setPermissions] = useState<ExtendedAdminPermissions | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+interface AdminState {
+  adminData: AdminData | null;
+  permissions: ExtendedAdminPermissions | null;
+  isLoading: boolean;
+  error: string | null;
+}
 
-  const calculatePermissions = (data: AdminData): ExtendedAdminPermissions => {
-    // DEBUG: Log what we're passing to getAdminPermissions
-    console.log('🔍 calculatePermissions - Input data:', {
-      user_type: data.user_type,
-      email: data.email, 
-      admin_level: data.admin_level,
-      country_id: data.country_id
-    });
+const initialState: AdminState = {
+  adminData: null,
+  permissions: null,
+  isLoading: true,
+  error: null,
+};
 
-    // Get base permissions from main adminPermissions.ts
-    const basePermissions = getAdminPermissions(
-      data.user_type, 
-      data.email, 
-      data.admin_level,
-      data.country_id, // Keep as string - don't convert to Number
-      null // country name - we'll handle this later
-    );
+function calculatePermissions(data: AdminData): ExtendedAdminPermissions {
+  const basePermissions = getAdminPermissions(
+    data.user_type,
+    data.email,
+    data.admin_level,
+    data.country_id,
+    null
+  );
 
-    // DEBUG: Log what permissions we got back
-    console.log('🔍 calculatePermissions - Result permissions:', {
-      canAccessDiagnostics: basePermissions.canAccessDiagnostics,
-      canAccessSystemSettings: basePermissions.canAccessSystemSettings,
-      canAccessPricingManagement: basePermissions.canAccessPricingManagement
-    });
-
-    // Add display role for UI
-    let displayRole = 'No Admin Access';
-    if (data.user_type === 'admin') {
-      const isSuper = data.admin_level === 'super';
-      const isOwner = data.admin_level === 'owner';
-      const isBasic = data.admin_level === 'basic';
-
-      if (isSuper) {
-        displayRole = 'Super Admin Access';
-      } else if (isOwner && data.country_id) {
-        displayRole = `Full ${data.country_id} Access`;  
-      } else if (isBasic && data.country_id) {
-        displayRole = `Basic ${data.country_id} Access`;
-      } else {
-        displayRole = 'Admin Access';
-      }
+  let displayRole = 'No Admin Access';
+  if (data.user_type === 'admin') {
+    if (data.admin_level === 'super') {
+      displayRole = 'Super Admin Access';
+    } else if (data.admin_level === 'owner' && data.country_id) {
+      displayRole = `Full ${data.country_id} Access`;
+    } else if (data.admin_level === 'basic' && data.country_id) {
+      displayRole = `Basic ${data.country_id} Access`;
+    } else {
+      displayRole = 'Admin Access';
     }
+  }
 
-    return {
-      ...basePermissions,
-      displayRole
-    };
-  };
+  return { ...basePermissions, displayRole };
+}
 
-  const fetchAdminData = async () => {
+export function useAdminData(): UseAdminDataReturn {
+  const [state, setState] = useState<AdminState>(initialState);
+
+  const fetchAdminData = useCallback(async () => {
+    setState(prev => prev.isLoading ? prev : { ...prev, isLoading: true, error: null });
+
     try {
-      setIsLoading(true);
-      setError(null);
-
-      console.log('🔄 useAdminData: Fetching admin data from server API...');
-
-      // Call our secure server API instead of direct Supabase calls
-      const response = await fetch('/api/admin/dashboard', { 
+      const response = await fetch('/api/admin/dashboard', {
         cache: 'no-store',
-        credentials: 'include' // Include cookies for session
+        credentials: 'include'
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          console.log('❌ useAdminData: Unauthorized - user not logged in');
-          setAdminData(null);
-          setPermissions(null);
+          setState({ adminData: null, permissions: null, isLoading: false, error: null });
           return;
         }
-        
+
         if (response.status === 403) {
-          console.log('❌ useAdminData: Forbidden - user not admin');
           throw new Error('Admin access required');
         }
 
@@ -116,12 +96,9 @@ export function useAdminData(): UseAdminDataReturn {
       }
 
       const data = await response.json();
-      console.log('✅ useAdminData: Server API response received');
 
       if (!data.profile) {
-        console.log('❌ useAdminData: No profile data in response');
-        setAdminData(null);
-        setPermissions(null);
+        setState({ adminData: null, permissions: null, isLoading: false, error: null });
         return;
       }
 
@@ -139,50 +116,34 @@ export function useAdminData(): UseAdminDataReturn {
         account_code: data.profile.account_code
       };
 
-      // DEBUG: Check what server is returning
-      console.log('🔍 Server response - data.permissions:', data.permissions);
-      
-      // FORCE client-side calculation for now to bypass server issue
       const permissions = calculatePermissions(adminData);
-      
-      console.log('🔍 Final permissions after calculation:', permissions);
 
-      console.log('✅ useAdminData: Admin data processed successfully', {
-        email: adminData.email,
-        adminLevel: adminData.admin_level,
-        displayRole: permissions.displayRole
-      });
-
-      setAdminData(adminData);
-      setPermissions(permissions);
+      // Single state update — one render
+      setState({ adminData, permissions, isLoading: false, error: null });
 
     } catch (err) {
-      console.error('❌ useAdminData: Error fetching admin data:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load admin data');
-      setAdminData(null);
-      setPermissions(null);
-    } finally {
-      setIsLoading(false);
+      setState({
+        adminData: null,
+        permissions: null,
+        isLoading: false,
+        error: err instanceof Error ? err.message : 'Failed to load admin data',
+      });
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAdminData();
-  }, []);
+  }, [fetchAdminData]);
 
-  const refreshAdminData = async () => {
-    await fetchAdminData();
-  };
-
-  const isAdmin = adminData?.user_type === 'admin';
+  const isAdmin = state.adminData?.user_type === 'admin';
 
   return {
-    adminData,
-    permissions,
+    adminData: state.adminData,
+    permissions: state.permissions,
     isAdmin,
-    isLoading,
-    error,
-    refreshAdminData
+    isLoading: state.isLoading,
+    error: state.error,
+    refreshAdminData: fetchAdminData,
   };
 }
 

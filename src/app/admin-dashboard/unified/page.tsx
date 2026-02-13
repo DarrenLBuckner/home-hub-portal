@@ -412,6 +412,15 @@ export default function UnifiedAdminDashboard() {
       // Get profile data for each agent manually
       const enrichedAgents = await Promise.all(
         agents.map(async (agent: AgentVetting) => {
+          // Pre-registration agents have no user_id yet — skip profile lookup
+          if (!agent.user_id) {
+            return {
+              ...agent,
+              profiles: null,
+              effective_user_type: 'agent'
+            };
+          }
+
           const { data: profile } = await supabase
             .from('profiles')
             .select('email, first_name, last_name, user_type')
