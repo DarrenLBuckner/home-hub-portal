@@ -108,15 +108,11 @@ export async function PUT(
       // Step 5 - Contact (handle both field name conventions)
       owner_email: body.owner_email || body.contact_email || null,
       owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp || body.contact_phone),
-      contact_name: body.contact_name || null,
-      contact_phone: body.contact_phone ? normalizePhoneNumber(body.contact_phone) : null,
-      contact_email: body.contact_email || null,
 
       // Rental-specific fields (for landlord properties)
       listing_type: body.listing_type || null,
-      lease_term: body.lease_term || null,
+      lease_term_years: body.lease_term_years || body.lease_term || null,
       deposit_amount: body.deposit_amount ? parseFloat(body.deposit_amount) : null,
-      deposit_currency: body.deposit_currency || null,
       utilities_included: body.utilities_included || null,
       pet_policy: body.pet_policy || null,
     };

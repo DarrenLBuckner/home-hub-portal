@@ -150,8 +150,8 @@ export async function GET(
 
     // Owner contact extraction
     const ownerContact = isPrivateListing ? {
-      name: property.owner_name || property.contact_name || 'Property Owner',
-      phone: property.owner_whatsapp || property.owner_phone || null
+      name: property.profiles?.first_name ? `${property.profiles.first_name} ${property.profiles.last_name || ''}`.trim() : 'Property Owner',
+      phone: property.owner_whatsapp || null
     } : null;
 
     // Promoted agent selection

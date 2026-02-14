@@ -31,9 +31,8 @@ export default function EditLandlordProperty() {
     property_type: 'Apartment',
     
     // Rental-specific
-    lease_term: '',
+    lease_term_years: '',
     deposit_amount: '',
-    deposit_currency: 'GYD',
     utilities_included: [],
     pet_policy: '',
     
@@ -154,9 +153,8 @@ export default function EditLandlordProperty() {
             description: normalizedProperty.description || '',
             price: normalizedProperty.price?.toString() || '',
             property_type: normalizedProperty.property_type || 'Apartment',
-            lease_term: normalizedProperty.lease_term || '',
+            lease_term_years: normalizedProperty.lease_term_years || '',
             deposit_amount: normalizedProperty.deposit_amount?.toString() || '',
-            deposit_currency: normalizedProperty.deposit_currency || 'GYD',
             utilities_included: Array.isArray(normalizedProperty.utilities_included) ? normalizedProperty.utilities_included : [],
             pet_policy: normalizedProperty.pet_policy || '',
             bedrooms: normalizedProperty.bedrooms?.toString() || '',
@@ -249,9 +247,8 @@ export default function EditLandlordProperty() {
         description: formData.description,
         price: parseFloat(formData.price) || 0,
         property_type: formData.property_type,
-        lease_term: formData.lease_term,
+        lease_term_years: formData.lease_term_years,
         deposit_amount: parseFloat(formData.deposit_amount) || null,
-        deposit_currency: formData.deposit_currency,
         utilities_included: formData.utilities_included,
         pet_policy: formData.pet_policy,
         bedrooms: parseInt(formData.bedrooms) || null,
