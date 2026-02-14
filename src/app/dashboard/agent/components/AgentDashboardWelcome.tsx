@@ -66,7 +66,7 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
         const { data: properties } = await supabase
           .from('properties')
           .select('status')
-          .eq('agent_id', userData.user.id);
+          .eq('user_id', userData.user.id);
         if (properties) {
           setStats({
             active: properties.filter((p: any) => p.status === 'active').length,
