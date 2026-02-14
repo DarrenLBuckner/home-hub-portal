@@ -87,13 +87,26 @@ export default function Step5Contact({
           return;
         }
 
-        // Otherwise, use the logged-in user's email (normal flow)
+        // Otherwise, use the logged-in user's email and phone (normal flow)
         const { createClient } = await import('@/supabase');
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user?.email && !formData.owner_email) {
           handleChange('owner_email', user.email);
+        }
+
+        // Auto-populate WhatsApp from profile phone
+        if (user?.id && !formData.owner_whatsapp) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('phone')
+            .eq('id', user.id)
+            .single();
+
+          if (profile?.phone) {
+            handleChange('owner_whatsapp', profile.phone);
+          }
         }
       } catch (error) {
         console.warn('Could not auto-populate contact info:', error);

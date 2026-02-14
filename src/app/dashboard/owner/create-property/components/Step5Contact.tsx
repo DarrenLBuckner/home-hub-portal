@@ -60,23 +60,36 @@ export default function Step5Contact({ formData, setFormData }: Step5ContactProp
     setPhoneError(validatePhone(formData.owner_whatsapp || ''));
   };
 
-  // Auto-populate with user's email on mount (optional)
+  // Auto-populate with user's email and WhatsApp on mount
   useEffect(() => {
-    const getUserEmail = async () => {
+    const populateContactInfo = async () => {
       try {
         const { createClient } = await import('@/supabase');
         const supabase = createClient();
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (user?.email && !formData.owner_email) {
           handleChange('owner_email', user.email);
         }
+
+        // Auto-populate WhatsApp from profile phone
+        if (user?.id && !formData.owner_whatsapp) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('phone')
+            .eq('id', user.id)
+            .single();
+
+          if (profile?.phone) {
+            handleChange('owner_whatsapp', profile.phone);
+          }
+        }
       } catch (error) {
-        console.warn('Could not auto-populate email:', error);
+        console.warn('Could not auto-populate contact info:', error);
       }
     };
-    
-    getUserEmail();
+
+    populateContactInfo();
   }, []);
 
   return (
