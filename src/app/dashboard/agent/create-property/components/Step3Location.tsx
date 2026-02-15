@@ -131,13 +131,20 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
       <div className="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-lg">
         <div className="flex items-center gap-2 mb-4">
           <span className="text-2xl">🛡️</span>
-          <h3 className="text-lg font-semibold text-gray-900">STOP COPYCATS</h3>
+          <h3 className="text-lg font-semibold text-gray-900">PROTECT YOUR LISTING</h3>
         </div>
 
-        <p className="text-gray-700 mb-4">
-          We check every new listing to see if the property is already posted.
-          If another agent tries to list the same owner's property, we catch it
-          and protect yours.
+        <p className="text-gray-700 mb-2">
+          Portal HomeHub is a US-based technology company. We are not licensed
+          to practice real estate in Guyana and do not buy, sell, or broker
+          property. If another agent tries to list the same owner's property,
+          we catch it and protect yours.
+        </p>
+        <p className="text-gray-600 text-sm mb-1">
+          Owner info is encrypted — only our system sees it.
+        </p>
+        <p className="text-gray-800 font-medium mb-4">
+          Your client. Your listing. We just protect it.
         </p>
 
         <div className="space-y-4">
