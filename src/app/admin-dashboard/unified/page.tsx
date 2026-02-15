@@ -180,10 +180,29 @@ export default function UnifiedAdminDashboard() {
   const [error, setError] = useState("");
   const [rejectReason, setRejectReason] = useState("");
   const [showRejectModal, setShowRejectModal] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [refreshSuccess, setRefreshSuccess] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
 
-  // Authentication & authorization
+  // Wait for Supabase auth to fully initialize before allowing data fetches.
+  // During session restoration, onAuthStateChange can fire SIGNED_IN → SIGNED_OUT → SIGNED_IN.
+  // We only flip authReady once the initial session check has settled.
   useEffect(() => {
-    if (adminLoading) return;
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
+        setAuthReady(true);
+      }
+    });
+    // Fallback: if session already exists (e.g. restored from cookie before listener attached)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setAuthReady(true);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Authentication & authorization — only load data once auth is ready
+  useEffect(() => {
+    if (!authReady || adminLoading) return;
 
     // Only load data if user is an admin
     if (isAdmin) {
@@ -195,9 +214,10 @@ export default function UnifiedAdminDashboard() {
       loadAgents();
       loadOwnerApplications();
     }
-  }, [adminLoading, isAdmin, permissions]);
+  }, [authReady, adminLoading, isAdmin, permissions]);
 
   const loadDashboardData = async () => {
+    if (!authReady) return;
     try {
       console.log('🔄 Loading dashboard data...');
       
@@ -318,6 +338,7 @@ export default function UnifiedAdminDashboard() {
   };
 
   const loadUsers = async () => {
+    if (!authReady) return;
     if (!permissions?.canAccessUserManagement) return;
 
     try {
@@ -344,9 +365,10 @@ export default function UnifiedAdminDashboard() {
   };
 
   const loadDrafts = async () => {
+    if (!authReady) return;
     try {
       console.log('🔄 Loading draft properties...');
-      
+
       // Build URL with country filter if needed
       let apiUrl = '/api/admin/drafts';
       if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
@@ -372,6 +394,7 @@ export default function UnifiedAdminDashboard() {
   };
 
   const loadAgents = async () => {
+    if (!authReady) return;
     try {
       console.log('🔄 Loading all agents (pending and approved)...');
 
@@ -453,6 +476,7 @@ export default function UnifiedAdminDashboard() {
   };
 
   const loadOwnerApplications = async () => {
+    if (!authReady) return;
     try {
       console.log('🔄 Loading pending FSBO/Landlord applications...');
 
@@ -946,6 +970,25 @@ export default function UnifiedAdminDashboard() {
     setProcessingAgentId(null);
   };
 
+  const handleRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    setRefreshSuccess(false);
+    try {
+      await Promise.all([
+        loadDashboardData(),
+        loadDrafts(),
+        loadAgents(),
+        loadOwnerApplications(),
+        ...(permissions?.canAccessUserManagement ? [loadUsers()] : []),
+      ]);
+      setRefreshSuccess(true);
+      setTimeout(() => setRefreshSuccess(false), 2000);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await supabase.auth.signOut();
@@ -1106,49 +1149,49 @@ export default function UnifiedAdminDashboard() {
     <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center space-x-1 overflow-x-auto py-2">
-          {/* PRIORITY 1: Dashboard - Quick Overview */}
+          {/* Dashboard (Blue) */}
           <button
             onClick={() => setActiveSection('dashboard')}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               activeSection === 'dashboard'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                ? 'bg-blue-600 text-white shadow-sm'
+                : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
             }`}
           >
             📊 Dashboard
           </button>
-          
-          {/* PRIORITY 2: Properties - Core Daily Work */}
+
+          {/* Properties (Green) */}
           <button
             onClick={() => setActiveSection('properties')}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               activeSection === 'properties'
-                ? 'bg-green-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                ? 'bg-green-600 text-white shadow-sm'
+                : 'bg-green-50 text-green-600 hover:bg-green-100'
             }`}
           >
             🏠 Properties
           </button>
 
-          {/* PRIORITY 3: Draft Management - Property Drafts */}
+          {/* Drafts (Orange) */}
           <button
             onClick={() => setActiveSection('drafts')}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               activeSection === 'drafts'
-                ? 'bg-purple-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                ? 'bg-orange-600 text-white shadow-sm'
+                : 'bg-orange-50 text-orange-600 hover:bg-orange-100'
             }`}
           >
             📝 Drafts
           </button>
 
-          {/* PRIORITY 3.5: Agent Vetting - Agent Applications */}
+          {/* Agents (Purple) */}
           <button
             onClick={() => setActiveSection('agents')}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors relative ${
               activeSection === 'agents'
-                ? 'bg-orange-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                ? 'bg-violet-600 text-white shadow-sm'
+                : 'bg-violet-50 text-violet-600 hover:bg-violet-100'
             }`}
           >
             👤 Agents
@@ -1159,13 +1202,13 @@ export default function UnifiedAdminDashboard() {
             )}
           </button>
 
-          {/* PRIORITY 3.6: FSBO Applications */}
+          {/* FSBO (Rose) */}
           <button
             onClick={() => setActiveSection('fsbo')}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors relative ${
               activeSection === 'fsbo'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                ? 'bg-rose-600 text-white shadow-sm'
+                : 'bg-rose-50 text-rose-600 hover:bg-rose-100'
             }`}
           >
             🏠 FSBO
@@ -1176,13 +1219,13 @@ export default function UnifiedAdminDashboard() {
             )}
           </button>
 
-          {/* PRIORITY 3.7: Landlord Applications */}
+          {/* Landlords (Teal) */}
           <button
             onClick={() => setActiveSection('landlords')}
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors relative ${
               activeSection === 'landlords'
-                ? 'bg-purple-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                ? 'bg-teal-600 text-white shadow-sm'
+                : 'bg-teal-50 text-teal-600 hover:bg-teal-100'
             }`}
           >
             🏢 Landlords
@@ -1248,10 +1291,10 @@ export default function UnifiedAdminDashboard() {
           </p>
           <div className="space-y-3">
             <Link
-              href="/dashboard/agent"
+              href="/admin-login"
               className="block w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Return to Agent Dashboard
+              Return to Login
             </Link>
             <Link
               href="/"
@@ -1279,10 +1322,23 @@ export default function UnifiedAdminDashboard() {
             </div>
             <div className="flex items-center space-x-3">
               <button
-                onClick={loadDashboardData}
-                className="px-3 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                onClick={handleRefresh}
+                disabled={isRefreshing}
+                className={`px-3 py-2 border text-sm font-medium rounded-lg transition-colors ${
+                  isRefreshing
+                    ? 'border-gray-200 text-gray-400 cursor-not-allowed bg-gray-50'
+                    : refreshSuccess
+                    ? 'border-green-300 text-green-700 bg-green-50'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
               >
-                🔄 Refresh
+                {isRefreshing ? (
+                  <><span className="inline-block animate-spin">🔄</span> Refreshing...</>
+                ) : refreshSuccess ? (
+                  '✓ Updated'
+                ) : (
+                  '🔄 Refresh'
+                )}
               </button>
               <button
                 onClick={handleLogout}
@@ -1356,10 +1412,10 @@ export default function UnifiedAdminDashboard() {
               {/* Property Review & Approvals - Professional Workflow */}
               <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-yellow-900">🎯 Property Approvals</h3>
+                  <h3 className="text-lg font-bold text-yellow-900">🎯 Property Review & Management</h3>
                   <div className="text-2xl font-black text-yellow-600">{statistics.totalPending}</div>
                 </div>
-                <p className="text-sm text-yellow-800 mb-4">Professional property review and approval workflow</p>
+                <p className="text-sm text-yellow-800 mb-4">Review, edit, price, and manage the status of all listed properties</p>
                 
                 {pendingProperties.length === 0 ? (
                   <div className="text-center py-4 text-yellow-700">
@@ -1390,7 +1446,7 @@ export default function UnifiedAdminDashboard() {
                 
                 <Link href="/admin-dashboard/property-review">
                   <button className="w-full px-4 py-2 bg-yellow-600 text-white font-semibold rounded-lg hover:bg-yellow-700 transition-colors">
-                    Review Properties →
+                    Manage Properties →
                   </button>
                 </Link>
               </div>
@@ -1540,11 +1596,12 @@ export default function UnifiedAdminDashboard() {
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-6">🏠 Complete Property Management</h2>
             {adminData && (
-              <UniversalPropertyManager 
-                userId={adminData.id} 
+              <UniversalPropertyManager
+                userId={adminData.id}
                 userType="admin"
                 editPropertyPath="/admin-dashboard/property"
                 createPropertyPath="/properties/create"
+                authReady={authReady}
               />
             )}
           </div>
@@ -1554,7 +1611,7 @@ export default function UnifiedAdminDashboard() {
         {activeSection === 'drafts' && (
           <div>
             <h2 className="text-xl font-bold text-gray-900 mb-6">📝 Draft Properties Management</h2>
-            
+
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
                 <div className="flex items-center">
@@ -1578,14 +1635,14 @@ export default function UnifiedAdminDashboard() {
                   🔄 Refresh Drafts
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="bg-purple-50 rounded-xl p-4 border border-purple-200">
                   <div className="text-xs font-bold text-purple-800 uppercase tracking-wide mb-1">Total Drafts</div>
                   <div className="text-2xl font-black text-purple-900">{draftProperties.length}</div>
                   <div className="text-xs text-purple-700">Incomplete Properties</div>
                 </div>
-                
+
                 <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
                   <div className="text-xs font-bold text-blue-800 uppercase tracking-wide mb-1">Recent Activity</div>
                   <div className="text-2xl font-black text-blue-900">
@@ -1599,7 +1656,7 @@ export default function UnifiedAdminDashboard() {
                   </div>
                   <div className="text-xs text-blue-700">Updated This Week</div>
                 </div>
-                
+
                 <div className="bg-green-50 rounded-xl p-4 border border-green-200">
                   <div className="text-xs font-bold text-green-800 uppercase tracking-wide mb-1">User Types</div>
                   <div className="text-2xl font-black text-green-900">
@@ -1676,7 +1733,7 @@ export default function UnifiedAdminDashboard() {
                             </span>
                           </div>
                           <div className="mt-1 text-xs text-purple-600">
-                            {draft.owner ? 
+                            {draft.owner ?
                               `${draft.owner.first_name || ''} ${draft.owner.last_name || ''}`.trim() || 'Unknown User'
                               : 'Unknown User'
                             } • {draft.owner?.user_type || 'Unknown'}
@@ -1725,13 +1782,13 @@ export default function UnifiedAdminDashboard() {
                         >
                           Delete Draft
                         </button>
-                        
+
                         <button
                           onClick={() => {
                             // Always use agent create-property page for draft editing
                             // It's the only page that has draft loading functionality
                             const editRoute = '/dashboard/agent/create-property';
-                            
+
                             // Navigate with draft ID so form can load the draft
                             window.location.href = `${editRoute}?draft=${draft.id}`;
                           }}
@@ -1739,12 +1796,12 @@ export default function UnifiedAdminDashboard() {
                         >
                           Continue Editing
                         </button>
-                        
+
                         <button
                           onClick={async () => {
                             // Check if draft is complete enough for publishing
                             const draftData = draft.draft_data;
-                            
+
                             // DEBUG: Log draft data to see what's actually there
                             console.log('🔍 Draft validation - checking data:', {
                               draftId: draft.id,
@@ -1754,21 +1811,21 @@ export default function UnifiedAdminDashboard() {
                               titleLength: draftData.title?.length,
                               keys: Object.keys(draftData)
                             });
-                            
+
                             // Comprehensive validation with proper field names and user-friendly messages
                             // Location validation: check for location field OR city/region (different forms use different patterns)
                             const hasLocation = () => {
                               return (draftData.location && draftData.location.trim().length > 0) ||
-                                     (draftData.city && draftData.city.trim().length > 0) || 
+                                     (draftData.city && draftData.city.trim().length > 0) ||
                                      (draftData.region && draftData.region.trim().length > 0);
                             };
-                            
+
                             // Title validation: check draft_data.title OR fall back to draft.title if available
                             const hasTitle = () => {
                               return (draftData.title && draftData.title.trim().length > 0) ||
                                      (draft.title && draft.title.trim().length > 0 && !draft.title.includes('Untitled'));
                             };
-                            
+
                             // Only validate ACTUAL required fields (match the form's required fields)
                             const validationChecks = [
                               { field: 'title', message: 'property title', check: hasTitle },
@@ -1779,16 +1836,16 @@ export default function UnifiedAdminDashboard() {
                               { field: 'owner_whatsapp', message: 'WhatsApp contact', check: () => draftData.owner_whatsapp && draftData.owner_whatsapp.trim().length > 0 }
                             ];
                             // Note: Removed bedrooms, bathrooms, location - they are NOT required in the form
-                            
+
                             const missingFields = validationChecks
                               .filter(check => !check.check())
                               .map(check => check.message);
-                            
+
                             if (missingFields.length > 0) {
                               alert(`❌ Cannot publish incomplete draft!\n\nMissing required information:\n• ${missingFields.join('\n• ')}\n\nThe user needs to complete their draft first.`);
                               return;
                             }
-                            
+
                             if (confirm('Submit this draft for approval on behalf of the user? This will move it to the property approval queue.')) {
                               try {
                                 const response = await fetch(`/api/properties/drafts/${draft.id}/publish`, {
@@ -1818,7 +1875,7 @@ export default function UnifiedAdminDashboard() {
                           }}
                           className="w-full px-4 py-2 bg-green-600 text-white text-sm font-bold rounded-lg hover:bg-green-700 transition-colors"
                         >
-                          � Publish Draft
+                          ✅ Publish Draft
                         </button>
 
 

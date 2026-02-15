@@ -131,14 +131,16 @@ interface UniversalPropertyManagerProps {
   createPropertyPath?: string;
   editPropertyPath?: string;
   defaultTab?: string;
+  authReady?: boolean;
 }
 
-export default function UniversalPropertyManager({ 
-  userId, 
+export default function UniversalPropertyManager({
+  userId,
   userType,
   createPropertyPath = '/properties/create',
   editPropertyPath = '/dashboard/agent/edit-property',
-  defaultTab = 'active'
+  defaultTab = 'active',
+  authReady = true
 }: UniversalPropertyManagerProps) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,18 +152,19 @@ export default function UniversalPropertyManager({
   const [adminPermissions, setAdminPermissions] = useState<any>(null);
 
   useEffect(() => {
+    if (!authReady) return;
     if (userType === 'admin') {
       loadAdminPermissions();
     } else {
       fetchProperties();
     }
-  }, [userId, userType]);
+  }, [userId, userType, authReady]);
 
   const loadAdminPermissions = async () => {
     try {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      
+
       if (!user) {
         setError('No authenticated user found');
         setLoading(false);

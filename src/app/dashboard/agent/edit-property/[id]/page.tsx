@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { createClient } from '@/supabase';
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
-import { normalizePropertyData } from "@/lib/propertyNormalization";
+import { normalizePropertyData, getPropertyTypeLabel, getAmenityLabels } from "@/lib/propertyNormalization";
 
 // Reusing existing agent create-property components  
 import GlobalSouthLocationSelector from "@/components/GlobalSouthLocationSelector";
@@ -65,8 +65,10 @@ interface FormData {
 export default function EditAgentProperty() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const propertyId = params?.id as string;
-  
+  const isViewMode = searchParams?.get('mode') === 'view';
+
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
@@ -131,6 +133,13 @@ export default function EditAgentProperty() {
   // Track admin status for navigation and permissions
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminLevel, setAdminLevel] = useState<string | null>(null);
+
+  // View mode: realtime update toast
+  const [realtimeToast, setRealtimeToast] = useState<string | null>(null);
+  // Store the property owner name for display in view mode
+  const [ownerName, setOwnerName] = useState<string>('');
+  const [propertyCreatedAt, setPropertyCreatedAt] = useState<string>('');
+  const [propertyUpdatedAt, setPropertyUpdatedAt] = useState<string>('');
 
   const supabase = createClient();
 
@@ -303,6 +312,23 @@ export default function EditAgentProperty() {
             ?.map((media: any) => media.media_url) || [];
 
           setExistingImages(propertyImages);
+
+          // Capture metadata for view mode
+          setPropertyCreatedAt(property.created_at || '');
+          setPropertyUpdatedAt(property.updated_at || '');
+
+          // Fetch owner name for view mode display
+          if (property.user_id) {
+            const { data: ownerProfile } = await supabase
+              .from('profiles')
+              .select('first_name, last_name, email')
+              .eq('id', property.user_id)
+              .single();
+            if (ownerProfile) {
+              const name = [ownerProfile.first_name, ownerProfile.last_name].filter(Boolean).join(' ');
+              setOwnerName(name || ownerProfile.email || 'Unknown');
+            }
+          }
         }
 
       } catch (error) {
@@ -317,6 +343,93 @@ export default function EditAgentProperty() {
       loadPropertyData();
     }
   }, [propertyId, router, supabase]);
+
+  // Supabase Realtime: subscribe to property changes in view mode
+  useEffect(() => {
+    if (!isViewMode || !propertyId) return;
+
+    const channel = supabase
+      .channel(`property-view-${propertyId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'properties',
+          filter: `id=eq.${propertyId}`,
+        },
+        async (payload) => {
+          const updated = payload.new as any;
+          const normalized = normalizePropertyData(updated);
+
+          // Update form state with new data
+          setForm({
+            location: normalized.location || '',
+            title: normalized.title || '',
+            description: normalized.description || '',
+            price: normalized.price?.toString() || '',
+            status: normalized.status || 'draft',
+            property_type: normalized.property_type || 'House',
+            listing_type: normalized.listing_type || 'sale',
+            bedrooms: normalized.bedrooms?.toString() || '',
+            bathrooms: normalized.bathrooms?.toString() || '',
+            house_size_value: normalized.house_size_value?.toString() || '',
+            house_size_unit: normalized.house_size_unit || 'sq ft',
+            land_size_value: normalized.land_size_value?.toString() || '',
+            land_size_unit: normalized.land_size_unit || 'sq ft',
+            land_size_na: normalized.land_size_na || false,
+            year_built: normalized.year_built?.toString() || '',
+            amenities: Array.isArray(normalized.amenities) ? normalized.amenities : [],
+            region: normalized.region || '',
+            city: normalized.city || '',
+            neighborhood: normalized.neighborhood || '',
+            address: normalized.address || '',
+            show_address: normalized.show_address || false,
+            lot_length: normalized.lot_length?.toString() || '',
+            lot_width: normalized.lot_width?.toString() || '',
+            lot_dimension_unit: normalized.lot_dimension_unit || 'ft',
+            owner_whatsapp: normalized.owner_whatsapp || '',
+            video_url: normalized.video_url || '',
+            property_category: normalized.property_category || 'residential',
+            commercial_type: normalized.commercial_type || '',
+            floor_size_sqft: normalized.floor_size_sqft?.toString() || '',
+            building_floor: normalized.building_floor || '',
+            number_of_floors: normalized.number_of_floors?.toString() || '',
+            parking_spaces: normalized.parking_spaces?.toString() || '',
+            loading_dock: normalized.loading_dock || false,
+            elevator_access: normalized.elevator_access || false,
+            commercial_garage_entrance: normalized.commercial_garage_entrance || false,
+            climate_controlled: normalized.climate_controlled || false,
+            lease_term_years: normalized.lease_term_years || '',
+            lease_type: normalized.lease_type || '',
+            financing_available: normalized.financing_available || false,
+            financing_details: normalized.financing_details || '',
+          });
+          setPropertyUpdatedAt(updated.updated_at || '');
+
+          // Resolve the updater's name
+          let updaterName = 'someone';
+          if (updated.user_id) {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('id', updated.user_id)
+              .single();
+            if (profile) {
+              updaterName = [profile.first_name, profile.last_name].filter(Boolean).join(' ') || 'someone';
+            }
+          }
+
+          setRealtimeToast(`Property updated by ${updaterName} just now`);
+          setTimeout(() => setRealtimeToast(null), 5000);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isViewMode, propertyId, supabase]);
 
   // Calculate completion score in real-time
   const completionAnalysis = calculateCompletionScore({
@@ -519,6 +632,274 @@ export default function EditAgentProperty() {
       </div>
     );
   }
+
+  // Helper to render a labeled field in view mode
+  const ViewField = ({ label, value, className = '' }: { label: string; value: string | number | undefined; className?: string }) => {
+    if (!value && value !== 0) return null;
+    return (
+      <div className={className}>
+        <dt className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{label}</dt>
+        <dd className="mt-1 text-sm text-gray-900">{value}</dd>
+      </div>
+    );
+  };
+
+  const statusColors: Record<string, string> = {
+    active: 'bg-green-100 text-green-800',
+    pending: 'bg-yellow-100 text-yellow-800',
+    draft: 'bg-gray-100 text-gray-800',
+    rejected: 'bg-red-100 text-red-800',
+    under_contract: 'bg-blue-100 text-blue-800',
+    sold: 'bg-purple-100 text-purple-800',
+    rented: 'bg-indigo-100 text-indigo-800',
+    off_market: 'bg-orange-100 text-orange-800',
+  };
+
+  // ─── VIEW MODE ────────────────────────────────────────────────────────────────
+  if (isViewMode) {
+    const switchToEditUrl = `/dashboard/agent/edit-property/${propertyId}`;
+    const formattedPrice = form.price ? formatCurrency(parseFloat(form.price), currencyCode) : 'N/A';
+    const amenityLabels = form.amenities.length > 0 ? getAmenityLabels(form.amenities) : [];
+
+    return (
+      <>
+        {/* Print-only styles */}
+        <style jsx global>{`
+          @media print {
+            /* Hide non-content elements */
+            .no-print, nav, header, footer, .sticky { display: none !important; }
+            /* Clean layout */
+            body { background: white !important; color: black !important; font-size: 12pt; }
+            .print-container { max-width: 100% !important; padding: 0 !important; margin: 0 !important; box-shadow: none !important; }
+            .print-container * { box-shadow: none !important; }
+            /* Images */
+            .print-images img { break-inside: avoid; max-height: 200px; }
+            .print-images { grid-template-columns: repeat(3, 1fr) !important; }
+            /* Page header/footer */
+            .print-header { display: block !important; }
+            .print-footer { display: block !important; position: fixed; bottom: 0; left: 0; right: 0; text-align: center; font-size: 10pt; color: #666; border-top: 1px solid #ccc; padding-top: 8px; }
+            /* Section borders */
+            .view-section { border: 1px solid #e5e7eb !important; break-inside: avoid; }
+          }
+        `}</style>
+
+        <div className="min-h-screen bg-gray-50">
+          {/* Realtime update toast */}
+          {realtimeToast && (
+            <div className="fixed top-4 right-4 z-50 bg-blue-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 animate-pulse no-print">
+              <span>🔄</span>
+              <span className="text-sm font-medium">{realtimeToast}</span>
+            </div>
+          )}
+
+          {/* Print-only header (hidden on screen) */}
+          <div className="print-header hidden">
+            <div style={{ textAlign: 'center', marginBottom: '20px', paddingBottom: '10px', borderBottom: '2px solid #2563eb' }}>
+              <h1 style={{ fontSize: '20pt', fontWeight: 'bold', color: '#2563eb', margin: 0 }}>Portal Home Hub</h1>
+              <p style={{ fontSize: '11pt', color: '#666', margin: '4px 0 0 0' }}>Property Report</p>
+            </div>
+          </div>
+
+          {/* Header bar */}
+          <div className="bg-white shadow-sm sticky top-0 z-10 no-print">
+            <div className="max-w-4xl mx-auto px-6 py-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-gray-900">Property Details</h1>
+                  <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded-full border border-gray-200">View Only</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => window.print()}
+                    className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                  >
+                    🖨️ Print Property Report
+                  </button>
+                  <a
+                    href={switchToEditUrl}
+                    className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    ✏️ Switch to Edit Mode
+                  </a>
+                  <button
+                    onClick={() => router.push(getDashboardUrl())}
+                    className="text-gray-600 hover:text-gray-800 font-medium text-sm ml-2"
+                  >
+                    ← Back
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main content */}
+          <div className="max-w-4xl mx-auto px-6 py-8 print-container">
+            {/* Title & Status header */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 view-section">
+              <div className="flex items-start justify-between flex-wrap gap-4">
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">{form.title || 'Untitled Property'}</h2>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${statusColors[form.status] || 'bg-gray-100 text-gray-700'}`}>
+                      {form.status.replace(/_/g, ' ').toUpperCase()}
+                    </span>
+                    <span>{getPropertyTypeLabel(form.property_type)}</span>
+                    <span>•</span>
+                    <span className="capitalize">{form.property_category}</span>
+                    <span>•</span>
+                    <span>For {form.listing_type === 'lease' ? 'Lease' : form.listing_type === 'rent' ? 'Rent' : 'Sale'}</span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl font-black text-green-700">{formattedPrice}</div>
+                  {form.listing_type === 'rent' || form.listing_type === 'lease' ? (
+                    <div className="text-xs text-gray-500">per month</div>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            {/* Property Images */}
+            {existingImages.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 view-section">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📸 Photos ({existingImages.length})</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 print-images">
+                  {existingImages.map((url, i) => (
+                    <div key={i} className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
+                      <img src={url} alt={`Property photo ${i + 1}`} className="w-full h-full object-cover" />
+                      {i === 0 && (
+                        <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded">Primary</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Specifications */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 view-section">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📐 Specifications</h3>
+              <dl className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-4">
+                <ViewField label="Bedrooms" value={form.bedrooms || undefined} />
+                <ViewField label="Bathrooms" value={form.bathrooms || undefined} />
+                {form.house_size_value && (
+                  <ViewField label="House Size" value={`${form.house_size_value} ${form.house_size_unit}`} />
+                )}
+                {!form.land_size_na && form.land_size_value && (
+                  <ViewField label="Land Size" value={`${form.land_size_value} ${form.land_size_unit}`} />
+                )}
+                {form.land_size_na && (
+                  <ViewField label="Land Size" value="N/A" />
+                )}
+                {(form.lot_length && form.lot_width) && (
+                  <ViewField label="Lot Dimensions" value={`${form.lot_length} x ${form.lot_width} ${form.lot_dimension_unit}`} />
+                )}
+                <ViewField label="Year Built" value={form.year_built || undefined} />
+              </dl>
+            </div>
+
+            {/* Location */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 view-section">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📍 Location</h3>
+              <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                <ViewField label="Country" value={selectedCountry} />
+                <ViewField label="Region" value={form.region || undefined} />
+                <ViewField label="City" value={form.city || undefined} />
+                <ViewField label="Neighborhood" value={form.neighborhood || undefined} />
+                {form.show_address && form.address && (
+                  <ViewField label="Address" value={form.address} className="col-span-2" />
+                )}
+              </dl>
+            </div>
+
+            {/* Description */}
+            {form.description && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 view-section">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">📝 Description</h3>
+                <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{form.description}</p>
+              </div>
+            )}
+
+            {/* Amenities */}
+            {amenityLabels.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 view-section">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">✨ Amenities & Features</h3>
+                <div className="flex flex-wrap gap-2">
+                  {amenityLabels.map((label, i) => (
+                    <span key={i} className="px-3 py-1 bg-blue-50 text-blue-700 text-sm rounded-full border border-blue-200">{label}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Commercial Details (conditional) */}
+            {form.property_category === 'commercial' && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 view-section">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">🏢 Commercial Details</h3>
+                <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                  <ViewField label="Commercial Type" value={form.commercial_type || undefined} />
+                  <ViewField label="Floor Size" value={form.floor_size_sqft ? `${form.floor_size_sqft} sq ft` : undefined} />
+                  <ViewField label="Building Floor" value={form.building_floor || undefined} />
+                  <ViewField label="Number of Floors" value={form.number_of_floors || undefined} />
+                  <ViewField label="Parking Spaces" value={form.parking_spaces || undefined} />
+                  {form.loading_dock && <ViewField label="Loading Dock" value="Yes" />}
+                  {form.elevator_access && <ViewField label="Elevator Access" value="Yes" />}
+                  {form.climate_controlled && <ViewField label="Climate Controlled" value="Yes" />}
+                  {form.commercial_garage_entrance && <ViewField label="Garage Entrance" value="Yes" />}
+                </dl>
+                {(form.listing_type === 'lease') && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Lease Terms</h4>
+                    <dl className="grid grid-cols-2 gap-x-6 gap-y-4">
+                      <ViewField label="Lease Term" value={form.lease_term_years ? `${form.lease_term_years} years` : undefined} />
+                      <ViewField label="Lease Type" value={form.lease_type || undefined} />
+                    </dl>
+                  </div>
+                )}
+                {form.financing_available && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Financing</h4>
+                    <ViewField label="Financing Available" value="Yes" />
+                    {form.financing_details && <ViewField label="Details" value={form.financing_details} className="mt-2" />}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Contact & Owner Info */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 view-section">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">👤 Owner & Contact</h3>
+              <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                <ViewField label="Owner" value={ownerName || undefined} />
+                <ViewField label="WhatsApp" value={form.owner_whatsapp || undefined} />
+                {form.video_url && <ViewField label="Video URL" value={form.video_url} className="col-span-2" />}
+              </dl>
+            </div>
+
+            {/* Listing History */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 view-section">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📋 Listing History</h3>
+              <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                <ViewField label="Property ID" value={propertyId} />
+                {propertyCreatedAt && (
+                  <ViewField label="Created" value={new Date(propertyCreatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })} />
+                )}
+                {propertyUpdatedAt && (
+                  <ViewField label="Last Updated" value={new Date(propertyUpdatedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })} />
+                )}
+              </dl>
+            </div>
+          </div>
+
+          {/* Print-only footer (hidden on screen) */}
+          <div className="print-footer hidden">
+            <p>Generated from Portal Home Hub • portalhomehub.com • {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+        </div>
+      </>
+    );
+  }
+  // ─── END VIEW MODE ──────────────────────────────────────────────────────────
 
   return (
     <div className="min-h-screen bg-gray-50">
