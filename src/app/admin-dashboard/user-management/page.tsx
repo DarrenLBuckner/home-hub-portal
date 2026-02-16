@@ -711,22 +711,19 @@ export default function UserManagement() {
               <table className="w-full divide-y divide-gray-200 table-fixed">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="w-[18%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[22%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       User
                     </th>
-                    <th className="w-[22%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[28%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[10%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Type
                     </th>
                     <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Joined
                     </th>
-                    <th className="w-[32%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[28%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -761,47 +758,26 @@ export default function UserManagement() {
                         </div>
                       </td>
                       <td className="px-3 py-3">
-                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
-                          userData.user_type === 'admin'
-                            ? 'bg-red-100 text-red-800'
-                            : userData.user_type === 'agent'
-                            ? 'bg-purple-100 text-purple-800'
-                            : userData.user_type === 'landlord'
-                            ? 'bg-green-100 text-green-800'
-                            : userData.user_type === 'fsbo'
-                            ? 'bg-orange-100 text-orange-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {userData.user_type === 'admin' ? 'Admin' :
-                           userData.user_type === 'agent' ? 'Agent' :
-                           userData.user_type === 'landlord' ? 'Landlord' :
-                           userData.user_type === 'fsbo' ? 'FSBO' :
-                           'User'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3">
                         <div className="flex flex-col gap-1">
-                          {userData.user_type === 'admin' && (
-                            <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full w-fit ${
-                              userData.admin_level === 'super'
-                                ? 'bg-red-100 text-red-800'
-                                : userData.admin_level === 'owner'
-                                ? 'bg-purple-100 text-purple-800'
-                                : userData.admin_level === 'basic'
-                                ? 'bg-blue-100 text-blue-800'
-                                : 'bg-gray-100 text-gray-800'
-                            }`}>
-                              {userData.admin_level === 'super'
-                                ? 'Super'
-                                : userData.admin_level === 'owner'
-                                ? 'Owner'
-                                : userData.admin_level === 'basic'
-                                ? 'Basic'
-                                : 'Admin'}
-                            </span>
-                          )}
+                          <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full w-fit ${
+                            userData.user_type === 'admin'
+                              ? 'bg-red-100 text-red-800'
+                              : userData.user_type === 'agent'
+                              ? 'bg-purple-100 text-purple-800'
+                              : userData.user_type === 'landlord'
+                              ? 'bg-green-100 text-green-800'
+                              : userData.user_type === 'fsbo'
+                              ? 'bg-orange-100 text-orange-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {userData.user_type === 'admin' ? 'Admin' :
+                             userData.user_type === 'agent' ? 'Agent' :
+                             userData.user_type === 'landlord' ? 'Landlord' :
+                             userData.user_type === 'fsbo' ? 'FSBO' :
+                             'User'}
+                          </span>
                           {userData.is_suspended && (
-                            <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800 w-fit">
+                            <span className="inline-flex px-2 py-0.5 text-[10px] font-semibold rounded-full bg-red-100 text-red-800 w-fit">
                               SUSPENDED
                             </span>
                           )}
@@ -835,22 +811,6 @@ export default function UserManagement() {
                                     ⏸️ Suspend
                                   </button>
                                 )}
-                                <select
-                                  value={userData.admin_level === 'owner' ? 'owner' :
-                                         userData.admin_level === 'basic' ? 'basic_admin' :
-                                         'basic_admin'}
-                                  onChange={(e) => updateUserRole(userData.id, e.target.value)}
-                                  className="text-xs border border-gray-300 rounded px-1.5 py-1"
-                                  disabled={userData.is_suspended}
-                                >
-                                  <option value="basic_admin">Basic</option>
-                                  {(user?.admin_level === 'super' || user?.admin_level === 'owner') && (
-                                    <option value="owner">Owner</option>
-                                  )}
-                                  {user?.admin_level === 'super' && (
-                                    <option value="super">Super</option>
-                                  )}
-                                </select>
 
                                 {/* DELETE BUTTON - With permission hierarchy */}
                                 {(user?.admin_level === 'super' ||
