@@ -20,6 +20,14 @@ export interface PropertyFormData {
   images?: File[];
   owner_email?: string;
   owner_whatsapp?: string;
+  zoning_type?: string;
+  lot_length?: string;
+  lot_width?: string;
+}
+
+/** Returns true if the property_type is a land type */
+function isLandPropertyType(propertyType?: string): boolean {
+  return ['land', 'residential land', 'commercial land'].includes(propertyType?.toLowerCase() || '');
 }
 
 export interface CompletionAnalysis {
@@ -35,14 +43,14 @@ export interface CompletionAnalysis {
 
 // Field weights - designed so filling everything = 100%
 // Base: 75 points, Bonus: 25 points for completeness
-const FIELD_WEIGHTS = {
+const BUILDING_FIELD_WEIGHTS: Record<string, number> = {
   // Core fields (must-haves)
   title: 8,
   description: 8,
   price: 8,
   images: 12,
 
-  // Property specs
+  // Property specs (building-specific)
   bedrooms: 5,
   bathrooms: 5,
   house_size_value: 5,
@@ -56,8 +64,30 @@ const FIELD_WEIGHTS = {
   amenities: 9,
 };
 
+// Land properties use different weights — no bed/bath/house/year
+const LAND_FIELD_WEIGHTS: Record<string, number> = {
+  // Core fields
+  title: 8,
+  description: 8,
+  price: 8,
+  images: 12,
+
+  // Land-specific specs
+  land_size_value: 8,
+  lot_length: 5,
+  lot_width: 5,
+  zoning_type: 5,
+
+  // Location
+  region: 5,
+  neighborhood: 6,
+
+  // Features
+  amenities: 5,
+};
+
 // Recommendations based on missing fields
-const FIELD_RECOMMENDATIONS: Record<string, { impact: string; suggestion: string }> = {
+const BUILDING_FIELD_RECOMMENDATIONS: Record<string, { impact: string; suggestion: string }> = {
   images: {
     impact: "+12%",
     suggestion: "Add 5+ photos - listings with photos get 10x more views"
@@ -92,11 +122,50 @@ const FIELD_RECOMMENDATIONS: Record<string, { impact: string; suggestion: string
   }
 };
 
+const LAND_FIELD_RECOMMENDATIONS: Record<string, { impact: string; suggestion: string }> = {
+  images: {
+    impact: "+12%",
+    suggestion: "Add 5+ photos - land listings with photos get 10x more views"
+  },
+  land_size_value: {
+    impact: "+8%",
+    suggestion: "Add total land area - essential for land buyers"
+  },
+  description: {
+    impact: "+8%",
+    suggestion: "Add a description - use AI to generate one quickly"
+  },
+  neighborhood: {
+    impact: "+6%",
+    suggestion: "Add neighborhood - helps buyers understand the area"
+  },
+  lot_length: {
+    impact: "+5%",
+    suggestion: "Add lot length - buyers need lot dimensions"
+  },
+  lot_width: {
+    impact: "+5%",
+    suggestion: "Add lot width - buyers need lot dimensions"
+  },
+  zoning_type: {
+    impact: "+5%",
+    suggestion: "Add zoning type - critical for land purchase decisions"
+  },
+  amenities: {
+    impact: "+5%",
+    suggestion: "Select features like fencing, road access, utilities"
+  }
+};
+
 export function calculateCompletionScore(formData: PropertyFormData): CompletionAnalysis {
   const completedFields: string[] = [];
   const missingFields: string[] = [];
   let totalWeight = 0;
   let completedWeight = 0;
+
+  const isLand = isLandPropertyType(formData.property_type);
+  const FIELD_WEIGHTS = isLand ? LAND_FIELD_WEIGHTS : BUILDING_FIELD_WEIGHTS;
+  const FIELD_RECOMMENDATIONS = isLand ? LAND_FIELD_RECOMMENDATIONS : BUILDING_FIELD_RECOMMENDATIONS;
 
   // Calculate base score from each field
   Object.entries(FIELD_WEIGHTS).forEach(([field, weight]) => {

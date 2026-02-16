@@ -335,16 +335,33 @@ export default function EnhancedPropertyList({ userId }: { userId: string }) {
                   </div>
                   
                   <div className="flex items-center gap-4 mb-3">
-                    <span className="flex items-center gap-1 text-gray-700">
-                      <span role="img" aria-label="bed">🛏️</span> {property.bedrooms}
-                    </span>
-                    <span className="flex items-center gap-1 text-gray-700">
-                      <span role="img" aria-label="bath">🛁</span> {property.bathrooms}
-                    </span>
-                    {property.square_footage && (
-                      <span className="flex items-center gap-1 text-gray-700">
-                        <span role="img" aria-label="sqft">📏</span> {property.square_footage} sqft
-                      </span>
+                    {['land', 'residential land', 'commercial land'].includes(property.property_type?.toLowerCase()) ? (
+                      <>
+                        {(property as any).land_size_value && (
+                          <span className="flex items-center gap-1 text-gray-700">
+                            <span role="img" aria-label="lot">📐</span> {Number((property as any).land_size_value).toLocaleString()} {(property as any).land_size_unit || 'sq ft'}
+                          </span>
+                        )}
+                        {(property as any).lot_length && (property as any).lot_width && (
+                          <span className="flex items-center gap-1 text-gray-700">
+                            <span role="img" aria-label="dims">📏</span> {(property as any).lot_length}×{(property as any).lot_width} {(property as any).lot_dimension_unit || 'ft'}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex items-center gap-1 text-gray-700">
+                          <span role="img" aria-label="bed">🛏️</span> {property.bedrooms}
+                        </span>
+                        <span className="flex items-center gap-1 text-gray-700">
+                          <span role="img" aria-label="bath">🛁</span> {property.bathrooms}
+                        </span>
+                        {property.square_footage > 0 && (
+                          <span className="flex items-center gap-1 text-gray-700">
+                            <span role="img" aria-label="sqft">📏</span> {property.square_footage} sqft
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
 

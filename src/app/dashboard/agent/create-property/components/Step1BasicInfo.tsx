@@ -12,19 +12,16 @@ interface Step1BasicInfoProps {
 const RESIDENTIAL_TYPES = [
   { value: 'House', label: 'House', icon: '🏠' },
   { value: 'Apartment', label: 'Apartment', icon: '🏢' },
-  { value: 'Townhouse', label: 'Townhouse/Condo', icon: '🏠' },
   { value: 'Multi-family', label: 'Multi-family', icon: '🏘️' },
   { value: 'Land', label: 'Land', icon: '🌿' },
-  { value: 'Farmland', label: 'Farmland', icon: '🌾' },
+  { value: 'Residential Land', label: 'Residential Land', icon: '🌿' },
 ];
 
-// Merged: Warehouse/Industrial → Warehouse, removed Medical (rare)
 const COMMERCIAL_TYPES = [
   { value: 'Office', label: 'Office', icon: '🏢' },
   { value: 'Retail', label: 'Retail', icon: '🏪' },
   { value: 'Warehouse', label: 'Warehouse/Industrial', icon: '📦' },
   { value: 'Mixed Use', label: 'Mixed Use', icon: '🔄' },
-  { value: 'Restaurant', label: 'Restaurant', icon: '🍽️' },
   { value: 'Commercial Land', label: 'Commercial Land', icon: '🌿' },
 ];
 

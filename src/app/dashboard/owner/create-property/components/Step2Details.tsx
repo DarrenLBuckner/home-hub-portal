@@ -9,6 +9,8 @@ interface Step2DetailsProps {
 }
 
 export default function Step2Details({ formData, setFormData }: Step2DetailsProps) {
+  const isLandProperty = ['land', 'residential land', 'commercial land'].includes(formData.property_type?.toLowerCase());
+
   const handleChange = (field: string, value: string | string[]) => {
     setFormData((prev: any) => ({
       ...prev,
@@ -47,80 +49,113 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
     <div className="space-y-6">
       <h2 className="text-xl font-semibold mb-4">Property Details</h2>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Bedrooms *
-          </label>
-          <input
-            type="number"
-            value={formData.bedrooms}
-            onChange={(e) => handleChange('bedrooms', e.target.value)}
-            min="0"
-            max="20"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Bathrooms *
-          </label>
-          <input
-            type="number"
-            value={formData.bathrooms}
-            onChange={(e) => handleChange('bathrooms', e.target.value)}
-            min="0"
-            max="20"
-            step="0.5"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            House Size
-          </label>
-          <div className="flex gap-2">
+      {/* Bedrooms & Bathrooms - hidden for land types */}
+      {!isLandProperty && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Bedrooms *
+            </label>
             <input
               type="number"
-              value={formData.house_size_value}
-              onChange={(e) => handleChange('house_size_value', e.target.value)}
-              placeholder="2000"
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              value={formData.bedrooms}
+              onChange={(e) => handleChange('bedrooms', e.target.value)}
               min="0"
+              max="20"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <select
-              value={formData.house_size_unit}
-              onChange={(e) => handleChange('house_size_unit', e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="sq ft">sq ft</option>
-              <option value="sq m">sq m</option>
-            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Bathrooms *
+            </label>
+            <input
+              type="number"
+              value={formData.bathrooms}
+              onChange={(e) => handleChange('bathrooms', e.target.value)}
+              min="0"
+              max="20"
+              step="0.5"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
         </div>
-      </div>
+      )}
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Year Built
-        </label>
-        <input
-          type="number"
-          value={formData.year_built}
-          onChange={(e) => handleChange('year_built', e.target.value)}
-          min="1800"
-          max={new Date().getFullYear()}
-          placeholder="e.g., 2010"
-          className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-      </div>
+      {/* House Size - hidden for land types */}
+      {!isLandProperty && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              House Size
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="number"
+                value={formData.house_size_value}
+                onChange={(e) => handleChange('house_size_value', e.target.value)}
+                placeholder="2000"
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                min="0"
+              />
+              <select
+                value={formData.house_size_unit}
+                onChange={(e) => handleChange('house_size_unit', e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="sq ft">sq ft</option>
+                <option value="sq m">sq m</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Lot Dimensions with N/A option */}
-      <div>
+      {/* Year Built - hidden for land types */}
+      {!isLandProperty && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Year Built
+          </label>
+          <input
+            type="number"
+            value={formData.year_built}
+            onChange={(e) => handleChange('year_built', e.target.value)}
+            min="1800"
+            max={new Date().getFullYear()}
+            placeholder="e.g., 2010"
+            className="w-full md:w-1/2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      )}
+
+      {/* Land-specific fields */}
+      {isLandProperty && (
+        <div className="space-y-4 p-4 bg-green-50 rounded-xl border border-green-200">
+          <h3 className="font-semibold text-green-800 flex items-center gap-2">
+            🌿 Land Details
+          </h3>
+          <LotDimensions
+            length={formData.lot_length || ''}
+            width={formData.lot_width || ''}
+            unit={(formData.lot_dimension_unit as DimensionUnit) || 'ft'}
+            onLengthChange={(length) => handleChange('lot_length', length)}
+            onWidthChange={(width) => handleChange('lot_width', width)}
+            onUnitChange={(unit) => handleChange('lot_dimension_unit', unit)}
+            onAreaCalculated={(areaSqFt) => {
+              const newValue = areaSqFt.toString();
+              if (formData.land_size_value !== newValue) {
+                handleChange('land_size_value', newValue);
+                handleChange('land_size_unit', 'sq ft');
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* Lot Dimensions with N/A option - for non-land properties */}
+      {!isLandProperty && <div>
         {!formData.land_size_na && (
           <LotDimensions
             length={formData.lot_length || ''}
@@ -164,7 +199,7 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
             Not applicable (e.g., apartment/unit)
           </span>
         </label>
-      </div>
+      </div>}
 
       {/* Helpful hint about amenities and AI */}
       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">

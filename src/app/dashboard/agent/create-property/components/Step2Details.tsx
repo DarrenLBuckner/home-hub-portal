@@ -60,8 +60,7 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
     }
   };
 
-  const isLandProperty = formData.property_type?.toLowerCase().includes('land') ||
-                         formData.property_type?.toLowerCase().includes('farmland');
+  const isLandProperty = ['land', 'residential land', 'commercial land'].includes(formData.property_type?.toLowerCase());
   const isCommercial = formData.property_category === 'commercial';
 
   const amenitiesList = isCommercial ? COMMERCIAL_AMENITIES : RESIDENTIAL_AMENITIES;

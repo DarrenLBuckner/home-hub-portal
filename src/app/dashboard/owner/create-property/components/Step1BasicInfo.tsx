@@ -1,16 +1,16 @@
 'use client';
 
-// Simplified property types for FSBO owners (7 → 4 enabled)
-// Merged: Villa/Bungalow/Condo into House and Townhouse
+import { useState } from 'react';
+
+// Simplified property types for FSBO owners
 const FSBO_PROPERTY_TYPES = [
   { value: 'House', label: 'House', icon: '🏠', enabled: true },
   { value: 'Apartment', label: 'Apartment', icon: '🏢', enabled: true },
-  { value: 'Townhouse', label: 'Townhouse/Condo', icon: '🏠', enabled: true },
   { value: 'Multi-family', label: 'Multi-family', icon: '🏘️', enabled: true },
-  // Disabled - Agent Only
+  // Disabled - Agent Only (land types)
   { value: 'Land', label: 'Land', icon: '🌿', enabled: false },
-  { value: 'Farmland', label: 'Farmland', icon: '🌾', enabled: false },
-  { value: 'Commercial', label: 'Commercial', icon: '🏢', enabled: false },
+  { value: 'Residential Land', label: 'Residential Land', icon: '🌿', enabled: false },
+  { value: 'Commercial Land', label: 'Commercial Land', icon: '🌿', enabled: false },
 ];
 
 interface Step1BasicInfoProps {
@@ -19,6 +19,8 @@ interface Step1BasicInfoProps {
 }
 
 export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfoProps) {
+  const [showLandMessage, setShowLandMessage] = useState(false);
+
   const handleChange = (field: string, value: string) => {
     setFormData((prev: any) => ({
       ...prev,
@@ -71,8 +73,14 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
             <button
               key={type.value}
               type="button"
-              onClick={() => type.enabled && handleChange('property_type', type.value)}
-              disabled={!type.enabled}
+              onClick={() => {
+                if (type.enabled) {
+                  handleChange('property_type', type.value);
+                  setShowLandMessage(false);
+                } else {
+                  setShowLandMessage(true);
+                }
+              }}
               className={`p-3 rounded-lg border-2 text-center transition-all relative ${
                 !type.enabled
                   ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
@@ -96,21 +104,21 @@ export default function Step1BasicInfo({ formData, setFormData }: Step1BasicInfo
           ))}
         </div>
 
-        {/* Agent CTA */}
-        <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <p className="text-sm text-amber-800">
-            <span className="font-medium">🔒 Selling land, farmland, or commercial property?</span>
-            <br />
-            These property types require a licensed real estate agent.
-          </p>
-          <a
-            href="/contact"
-            className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-blue-600 hover:text-blue-800"
-          >
-            📞 Contact us for agent referral
-            <span>→</span>
-          </a>
-        </div>
+        {/* Land lockout message — shown when user clicks a disabled land option */}
+        {showLandMessage && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-300 rounded-lg">
+            <p className="text-sm text-red-800 font-medium">
+              Land sales require a licensed agent. Contact an agent to list your land.
+            </p>
+            <a
+              href="/contact"
+              className="inline-flex items-center gap-1 mt-2 text-sm font-medium text-blue-600 hover:text-blue-800"
+            >
+              📞 Contact us for agent referral
+              <span>→</span>
+            </a>
+          </div>
+        )}
       </div>
 
       <div>

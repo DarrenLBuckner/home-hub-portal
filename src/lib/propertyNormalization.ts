@@ -15,13 +15,16 @@ const PROPERTY_TYPE_MAP: Record<string, string> = {
   'Bungalow': 'House',
   'Cottage': 'House',
   'Duplex': 'Multi-family',
-  'Condo': 'Townhouse',
-  'Residential Land': 'Land',
-  'Residential Farmland': 'Farmland',
+  'Condo': 'Apartment',
+  'Townhouse': 'House',
+
+  // Land types - normalize legacy values
+  'Residential Farmland': 'Residential Land',
+  'Farmland': 'Land',
+  'Agricultural Land': 'Land',
 
   // Commercial merges
   'Industrial': 'Warehouse',
-  'Agricultural Land': 'Commercial Land',
   'Medical': 'Office', // Rare, map to closest
 };
 
@@ -94,16 +97,15 @@ export function getPropertyTypeLabel(propertyType: string): string {
   const labels: Record<string, string> = {
     'House': 'House',
     'Apartment': 'Apartment',
-    'Townhouse': 'Townhouse/Condo',
     'Multi-family': 'Multi-family',
     'Land': 'Land',
-    'Farmland': 'Farmland',
+    'Residential Land': 'Residential Land',
+    'Commercial Land': 'Commercial Land',
     'Office': 'Office',
     'Retail': 'Retail',
     'Warehouse': 'Warehouse/Industrial',
     'Mixed Use': 'Mixed Use',
     'Restaurant': 'Restaurant',
-    'Commercial Land': 'Commercial Land',
   };
 
   return labels[normalized] || normalized;

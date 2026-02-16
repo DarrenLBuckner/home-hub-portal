@@ -190,8 +190,10 @@ export async function POST(req: NextRequest) {
       property_type: body.property_type || body.propertyType || null,
       // Normalize listing_type/listingType
       listing_type: body.listing_type || body.listingType || null,
-      // Normalize house_size_value with default
-      house_size_value: body.house_size_value || body.houseSizeValue || 0, // Default if missing
+      // Normalize house_size_value - null for land types, 0 default for buildings
+      house_size_value: ['land', 'residential land', 'commercial land'].includes((body.property_type || body.propertyType || '').toLowerCase())
+        ? null
+        : (body.house_size_value || body.houseSizeValue || 0),
       // Normalize region/location
       region: body.region || (body.location ? body.location.region : null),
       city: body.city || (body.location ? body.location.city : null),
@@ -254,7 +256,7 @@ export async function POST(req: NextRequest) {
       ];
       
       // Bedrooms/bathrooms only required for residential non-land properties
-      const isLand = body.property_type === 'Land' || body.property_type === 'Commercial Land';
+      const isLand = ['land', 'residential land', 'commercial land'].includes(body.property_type?.toLowerCase());
       const isResidential = body.property_category === 'residential';
       
       if (isResidential && !isLand) {
@@ -655,6 +657,9 @@ export async function POST(req: NextRequest) {
     // Prepare property data for database - different structure for rental vs sale vs agent
     let propertyData: any;
     
+    // Land type detection for INSERT logic
+    const isLandType = ['land', 'residential land', 'commercial land'].includes((body.property_type || '').toLowerCase());
+
     if (isAgent) {
       // Agent property data structure - handles both sale and rental
       propertyData = {
@@ -664,16 +669,16 @@ export async function POST(req: NextRequest) {
         price: parseInt(body.price),
         property_type: body.property_type,
         listing_type: listingType, // 'sale', 'rent', 'lease', or 'short_term_rent'
-        
-        // Property Details
-        bedrooms: parseInt(body.bedrooms) || null,
-        bathrooms: parseInt(body.bathrooms) || null,
-        house_size_value: body.house_size_value ? parseInt(body.house_size_value) : null,
-        house_size_unit: body.house_size_unit || 'sq ft',
+
+        // Property Details — land types get null for house-specific fields
+        bedrooms: isLandType ? null : (parseInt(body.bedrooms) || null),
+        bathrooms: isLandType ? null : (parseInt(body.bathrooms) || null),
+        house_size_value: isLandType ? null : (body.house_size_value ? parseInt(body.house_size_value) : null),
+        house_size_unit: isLandType ? null : (body.house_size_unit || 'sq ft'),
         land_size_value: body.land_size_na ? null : (body.land_size_value ? parseInt(body.land_size_value) : null),
         land_size_unit: body.land_size_unit || 'sq ft',
         land_size_na: body.land_size_na || false,
-        year_built: body.year_built ? parseInt(body.year_built) : null,
+        year_built: isLandType ? null : (body.year_built ? parseInt(body.year_built) : null),
         lot_length: body.lot_length ? parseFloat(body.lot_length) : null,
         lot_width: body.lot_width ? parseFloat(body.lot_width) : null,
         lot_dimension_unit: body.lot_dimension_unit || 'ft',
@@ -787,16 +792,16 @@ export async function POST(req: NextRequest) {
         description: body.description,
         price: parseInt(body.price),
         property_type: body.property_type,
-        
-        // Step 2 - Property Details
-        bedrooms: parseInt(body.bedrooms),
-        bathrooms: parseInt(body.bathrooms),
-        house_size_value: parseInt(body.house_size_value),
-        house_size_unit: body.house_size_unit,
+
+        // Step 2 - Property Details — land types get null for house-specific fields
+        bedrooms: isLandType ? null : (parseInt(body.bedrooms) || null),
+        bathrooms: isLandType ? null : (parseInt(body.bathrooms) || null),
+        house_size_value: isLandType ? null : (body.house_size_value ? parseInt(body.house_size_value) : null),
+        house_size_unit: isLandType ? null : body.house_size_unit,
         land_size_value: body.land_size_na ? null : (body.land_size_value ? parseInt(body.land_size_value) : null),
         land_size_unit: body.land_size_unit,
         land_size_na: body.land_size_na || false,
-        year_built: body.year_built ? parseInt(body.year_built) : null,
+        year_built: isLandType ? null : (body.year_built ? parseInt(body.year_built) : null),
         lot_length: body.lot_length ? parseFloat(body.lot_length) : null,
         lot_width: body.lot_width ? parseFloat(body.lot_width) : null,
         lot_dimension_unit: body.lot_dimension_unit || 'ft',

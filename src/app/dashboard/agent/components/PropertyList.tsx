@@ -164,9 +164,24 @@ const PropertyList: React.FC<{ userId: string }> = ({ userId }) => {
               </div>
               <div className="text-sm text-gray-600 mb-2">{property.location}</div>
               <div className="flex items-center gap-4 mb-2">
-                <span className="flex items-center gap-1 text-gray-700"><span role="img" aria-label="bed">🛏️</span> {property.bedrooms}</span>
-                <span className="flex items-center gap-1 text-gray-700"><span role="img" aria-label="bath">🛁</span> {property.bathrooms}</span>
-                <span className="flex items-center gap-1 text-gray-700"><span role="img" aria-label="sqft">📏</span> {property.square_footage} sqft</span>
+                {['land', 'residential land', 'commercial land'].includes(property.property_type?.toLowerCase()) ? (
+                  <>
+                    {property.land_size_value && (
+                      <span className="flex items-center gap-1 text-gray-700"><span role="img" aria-label="lot">📐</span> {Number(property.land_size_value).toLocaleString()} {property.land_size_unit || 'sq ft'}</span>
+                    )}
+                    {property.lot_length && property.lot_width && (
+                      <span className="flex items-center gap-1 text-gray-700"><span role="img" aria-label="dims">📏</span> {property.lot_length}×{property.lot_width} {property.lot_dimension_unit || 'ft'}</span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span className="flex items-center gap-1 text-gray-700"><span role="img" aria-label="bed">🛏️</span> {property.bedrooms}</span>
+                    <span className="flex items-center gap-1 text-gray-700"><span role="img" aria-label="bath">🛁</span> {property.bathrooms}</span>
+                    {property.square_footage > 0 && (
+                      <span className="flex items-center gap-1 text-gray-700"><span role="img" aria-label="sqft">📏</span> {property.square_footage} sqft</span>
+                    )}
+                  </>
+                )}
               </div>
               <div className="flex flex-wrap gap-2 mb-2">
                 {property.features?.map((feature: string) => (
