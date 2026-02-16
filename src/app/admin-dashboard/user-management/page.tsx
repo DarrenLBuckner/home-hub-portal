@@ -138,7 +138,7 @@ export default function UserManagement() {
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_type', ['admin', 'agent', 'landlord', 'fsbo'])
+        .in('user_type', ['admin', 'agent', 'landlord', 'fsbo', 'owner'])
         .order('created_at', { ascending: false });
 
       if (usersError) {
@@ -590,7 +590,7 @@ export default function UserManagement() {
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                FSBO ({users.filter(u => u.user_type === 'fsbo').length})
+                FSBO ({users.filter(u => u.user_type === 'fsbo' || u.user_type === 'owner').length})
               </button>
               <button 
                 onClick={loadUsers}
@@ -612,7 +612,11 @@ export default function UserManagement() {
                  userTypeFilter === 'agent' ? 'Agents' :
                  userTypeFilter === 'landlord' ? 'Landlords' :
                  'FSBO Users'} ({users.filter(user => {
-                  if (userTypeFilter !== 'all' && user.user_type !== userTypeFilter) return false;
+                  if (userTypeFilter !== 'all') {
+                    if (userTypeFilter === 'fsbo') {
+                      if (user.user_type !== 'fsbo' && user.user_type !== 'owner') return false;
+                    } else if (user.user_type !== userTypeFilter) return false;
+                  }
                   if (!searchTerm) return true;
                   const search = searchTerm.toLowerCase();
                   return user.email.toLowerCase().includes(search) ||
@@ -668,7 +672,11 @@ export default function UserManagement() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {users.filter(user => {
-                    if (userTypeFilter !== 'all' && user.user_type !== userTypeFilter) return false;
+                    if (userTypeFilter !== 'all') {
+                    if (userTypeFilter === 'fsbo') {
+                      if (user.user_type !== 'fsbo' && user.user_type !== 'owner') return false;
+                    } else if (user.user_type !== userTypeFilter) return false;
+                  }
                     if (!searchTerm) return true;
                     const search = searchTerm.toLowerCase();
                     return user.email.toLowerCase().includes(search) ||
@@ -704,14 +712,14 @@ export default function UserManagement() {
                               ? 'bg-purple-100 text-purple-800'
                               : userData.user_type === 'landlord'
                               ? 'bg-green-100 text-green-800'
-                              : userData.user_type === 'fsbo'
+                              : (userData.user_type === 'fsbo' || userData.user_type === 'owner')
                               ? 'bg-orange-100 text-orange-800'
                               : 'bg-gray-100 text-gray-800'
                           }`}>
                             {userData.user_type === 'admin' ? 'Admin' :
                              userData.user_type === 'agent' ? 'Agent' :
                              userData.user_type === 'landlord' ? 'Landlord' :
-                             userData.user_type === 'fsbo' ? 'FSBO' :
+                             (userData.user_type === 'fsbo' || userData.user_type === 'owner') ? 'FSBO' :
                              'User'}
                           </span>
                           {userData.is_suspended && (
