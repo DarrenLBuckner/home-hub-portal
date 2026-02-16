@@ -1415,7 +1415,12 @@ export default function UnifiedAdminDashboard() {
                   <h3 className="text-lg font-bold text-yellow-900">🎯 Property Review & Management</h3>
                   <div className="text-2xl font-black text-yellow-600">{statistics.totalPending}</div>
                 </div>
-                <p className="text-sm text-yellow-800 mb-4">Review, edit, price, and manage the status of all listed properties</p>
+                <ul className="text-xs text-yellow-800 mb-4 space-y-0.5 leading-tight">
+                  <li>• Review &amp; approve new listings</li>
+                  <li>• Edit property details &amp; pricing</li>
+                  <li>• Mark sold / under contract</li>
+                  <li>• View property reports</li>
+                </ul>
                 
                 {pendingProperties.length === 0 ? (
                   <div className="text-center py-4 text-yellow-700">
@@ -1602,6 +1607,7 @@ export default function UnifiedAdminDashboard() {
                 editPropertyPath="/admin-dashboard/property"
                 createPropertyPath="/properties/create"
                 authReady={authReady}
+                activeSection={activeSection}
               />
             )}
           </div>

@@ -29,6 +29,7 @@ interface Property {
   propertyCategory: string;
   listed_by_type: string;
   country_id?: string;
+  owner_whatsapp?: string;
   owner?: {
     id: string;
     email: string;
@@ -132,6 +133,7 @@ interface UniversalPropertyManagerProps {
   editPropertyPath?: string;
   defaultTab?: string;
   authReady?: boolean;
+  activeSection?: string;
 }
 
 export default function UniversalPropertyManager({
@@ -140,7 +142,8 @@ export default function UniversalPropertyManager({
   createPropertyPath = '/properties/create',
   editPropertyPath = '/dashboard/agent/edit-property',
   defaultTab = 'active',
-  authReady = true
+  authReady = true,
+  activeSection
 }: UniversalPropertyManagerProps) {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
@@ -150,6 +153,16 @@ export default function UniversalPropertyManager({
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [adminPermissions, setAdminPermissions] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<'all' | 'agent' | 'fsbo' | 'landlord'>('all');
+
+  // Reset filters when parent switches away from properties tab
+  useEffect(() => {
+    if (activeSection && activeSection !== 'properties') {
+      setSearchQuery('');
+      setCategoryFilter('all');
+    }
+  }, [activeSection]);
 
   useEffect(() => {
     if (!authReady) return;
@@ -419,37 +432,33 @@ export default function UniversalPropertyManager({
     }
   };
 
+  const getEditUrl = (property: Property): string => {
+    const id = property.id;
+    if (property.listed_by_type === 'agent') {
+      return `/dashboard/agent/edit-property/${id}`;
+    } else if (property.listed_by_type === 'landlord') {
+      return `/dashboard/landlord/edit-property/${id}`;
+    } else if (property.listed_by_type === 'fsbo') {
+      return `/dashboard/fsbo/edit-property/${id}`;
+    } else if (property.listed_by_type === 'owner') {
+      return `/dashboard/owner/edit-property/${id}`;
+    } else {
+      return `/dashboard/owner/edit-property/${id}`;
+    }
+  };
+
   const handleEdit = (id: string) => {
-    // Find the property to get its listed_by_type
     const property = properties.find(p => p.id === id);
     if (!property) {
       console.error('Property not found for editing:', id);
       return;
     }
 
-    // For admin users, allow editing but with admin awareness
     if (userType === 'admin') {
-      // Admins can edit any property - route to the appropriate user edit form
-      // but add admin context awareness for better UX
       console.log(`Admin editing property ${id} from user type: ${property.listed_by_type}`);
     }
 
-    // Route to user-specific edit form based on property's listed_by_type
-    let editUrl: string;
-    if (property.listed_by_type === 'agent') {
-      editUrl = `/dashboard/agent/edit-property/${id}`;
-    } else if (property.listed_by_type === 'landlord') {
-      editUrl = `/dashboard/landlord/edit-property/${id}`;
-    } else if (property.listed_by_type === 'fsbo') {
-      editUrl = `/dashboard/fsbo/edit-property/${id}`;
-    } else if (property.listed_by_type === 'owner') {
-      editUrl = `/dashboard/owner/edit-property/${id}`;
-    } else {
-      // Fallback to owner for unknown types
-      editUrl = `/dashboard/owner/edit-property/${id}`;
-    }
-    
-    window.location.href = editUrl;
+    window.location.href = getEditUrl(property);
   };
 
   const updatePropertyStatus = async (propertyId: string, newStatus: string) => {
@@ -522,8 +531,52 @@ export default function UniversalPropertyManager({
     setShowRejectionModal(true);
   };
 
+  // Apply category + search filters before status tab filtering
+  const getBaseFilteredProperties = () => {
+    let filtered = properties;
+
+    // Category filter
+    if (categoryFilter !== 'all') {
+      if (categoryFilter === 'fsbo') {
+        filtered = filtered.filter(p => p.listed_by_type === 'fsbo' || p.listed_by_type === 'owner');
+      } else {
+        filtered = filtered.filter(p => p.listed_by_type === categoryFilter);
+      }
+    }
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(p => {
+        const title = (p.title || '').toLowerCase();
+        const ownerName = p.owner
+          ? `${p.owner.first_name || ''} ${p.owner.last_name || ''}`.toLowerCase()
+          : '';
+        const email = (p.owner?.email || '').toLowerCase();
+        const phone = (p.owner_whatsapp || '').toLowerCase();
+        return title.includes(q) || ownerName.includes(q) || email.includes(q) || phone.includes(q);
+      });
+    }
+
+    return filtered;
+  };
+
+  const matchesSearch = (p: Property, query: string): boolean => {
+    const q = query.toLowerCase().trim();
+    if (!q) return true;
+    const title = (p.title || '').toLowerCase();
+    const ownerName = p.owner
+      ? `${p.owner.first_name || ''} ${p.owner.last_name || ''}`.toLowerCase()
+      : '';
+    const email = (p.owner?.email || '').toLowerCase();
+    const phone = (p.owner_whatsapp || '').toLowerCase();
+    return title.includes(q) || ownerName.includes(q) || email.includes(q) || phone.includes(q);
+  };
+
+  const baseFiltered = getBaseFilteredProperties();
+
   const getFilteredProperties = (status: string) => {
-    return properties.filter(p => p.status === status);
+    return baseFiltered.filter(p => p.status === status);
   };
 
   const getStatusCount = (status: string) => {
@@ -532,7 +585,7 @@ export default function UniversalPropertyManager({
 
   // Show available tabs based on what properties exist
   const availableTabs = Object.keys(statusConfig).filter(status => getStatusCount(status) > 0);
-  
+
   // If no properties exist in active tab, switch to first available or stay on active
   useEffect(() => {
     if (availableTabs.length > 0 && !availableTabs.includes(activeTab)) {
@@ -554,7 +607,7 @@ export default function UniversalPropertyManager({
   );
 
   const filteredProperties = getFilteredProperties(activeTab);
-  const totalProperties = properties.length;
+  const totalProperties = baseFiltered.length;
 
   return (
     <div className="w-full">
@@ -565,9 +618,13 @@ export default function UniversalPropertyManager({
             {userType === 'admin' ? 'All Properties' : 'My Properties'}
           </h2>
           <p className="text-gray-600">
-            {totalProperties} total propert{totalProperties !== 1 ? 'ies' : 'y'} • 
-            {userType === 'admin' 
-              ? 'Manage all properties in your region' 
+            {totalProperties === properties.length
+              ? `${totalProperties} total propert${totalProperties !== 1 ? 'ies' : 'y'}`
+              : `${totalProperties} of ${properties.length} propert${properties.length !== 1 ? 'ies' : 'y'}`
+            }
+            {' '}&bull;{' '}
+            {userType === 'admin'
+              ? 'Manage all properties in your region'
               : 'Manage your listings, track status, and update details'
             }
           </p>
@@ -581,7 +638,86 @@ export default function UniversalPropertyManager({
         </a>
       </div>
 
-      {totalProperties === 0 ? (
+      {/* Search Bar — admin only */}
+      {userType === 'admin' && properties.length > 0 && (
+        <div className="mb-4">
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name, email, phone, or property title..."
+              className="w-full pl-9 pr-9 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Category Filter — admin only */}
+      {userType === 'admin' && properties.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {([
+            { key: 'all', label: 'All', icon: '📋' },
+            { key: 'agent', label: 'Agent Listings', icon: '🏢' },
+            { key: 'fsbo', label: 'FSBO', icon: '🏡' },
+            { key: 'landlord', label: 'Landlord Rentals', icon: '🔑' },
+          ] as const).map(cat => {
+            const isActive = categoryFilter === cat.key;
+            const count = cat.key === 'all'
+              ? properties.filter(p => !searchQuery.trim() || matchesSearch(p, searchQuery)).length
+              : properties.filter(p => {
+                  const matchesCat = cat.key === 'fsbo'
+                    ? (p.listed_by_type === 'fsbo' || p.listed_by_type === 'owner')
+                    : p.listed_by_type === cat.key;
+                  return matchesCat && (!searchQuery.trim() || matchesSearch(p, searchQuery));
+                }).length;
+            return (
+              <button
+                key={cat.key}
+                onClick={() => setCategoryFilter(cat.key)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {cat.icon} {cat.label} ({count})
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {totalProperties === 0 && properties.length > 0 ? (
+        <div className="text-center py-12">
+          <div className="text-5xl mb-4">🔍</div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">No matching properties</h3>
+          <p className="text-gray-600 mb-4">
+            Try adjusting your search or category filter.
+          </p>
+          <button
+            onClick={() => { setSearchQuery(''); setCategoryFilter('all'); }}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+          >
+            Clear all filters
+          </button>
+        </div>
+      ) : totalProperties === 0 ? (
         <div className="text-center py-16 bg-gray-50 rounded-lg">
           <div className="text-6xl mb-4">🏠</div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -1003,8 +1139,14 @@ export default function UniversalPropertyManager({
                           </div>
                         )}
 
-                        {/* Standard Actions - Edit/Delete always available */}
+                        {/* Standard Actions - View/Edit/Delete always available */}
                         <div className="flex gap-2 pt-2 border-t border-gray-100">
+                          <button
+                            className="flex-1 bg-blue-500 text-white px-3 py-1.5 rounded hover:bg-blue-600 text-xs transition"
+                            onClick={() => window.open(getEditUrl(property) + '?mode=view', '_blank')}
+                          >
+                            👁 View
+                          </button>
                           <button
                             className="flex-1 bg-gray-600 text-white px-3 py-1.5 rounded hover:bg-gray-700 text-xs transition"
                             onClick={() => handleEdit(property.id)}

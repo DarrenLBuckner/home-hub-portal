@@ -136,6 +136,8 @@ export default function EditAgentProperty() {
 
   // View mode: realtime update toast
   const [realtimeToast, setRealtimeToast] = useState<string | null>(null);
+  // View mode: access denied for non-owners
+  const [viewAccessDenied, setViewAccessDenied] = useState(false);
   // Store the property owner name for display in view mode
   const [ownerName, setOwnerName] = useState<string>('');
   const [propertyCreatedAt, setPropertyCreatedAt] = useState<string>('');
@@ -195,8 +197,7 @@ export default function EditAgentProperty() {
             propertyQuery = propertyQuery.eq('country_id', userProfile.country_id);
           }
         } else {
-          // Regular users (including Basic Admin until permissions defined) can only edit their own properties
-          // Regular users can only edit their own properties
+          // Regular users can only access their own properties
           propertyQuery = propertyQuery.eq('user_id', user.id);
         }
 
@@ -204,6 +205,12 @@ export default function EditAgentProperty() {
 
         if (propertyError) {
           console.error('Error loading property:', propertyError);
+          // In view mode, show a specific access denied message for non-admins
+          if (isViewMode && !isUserAdmin) {
+            setViewAccessDenied(true);
+            setLoading(false);
+            return;
+          }
           setError('Property not found or access denied');
           return;
         }
@@ -657,6 +664,27 @@ export default function EditAgentProperty() {
 
   // ─── VIEW MODE ────────────────────────────────────────────────────────────────
   if (isViewMode) {
+    // Security: block non-owners from viewing other agents' properties
+    if (viewAccessDenied) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="text-5xl mb-4">🔒</div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
+            <p className="text-gray-600 mb-6">
+              You can only view your own properties. This property belongs to another user.
+            </p>
+            <button
+              onClick={() => router.back()}
+              className="inline-block bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     const switchToEditUrl = `/dashboard/agent/edit-property/${propertyId}`;
     const formattedPrice = form.price ? formatCurrency(parseFloat(form.price), currencyCode) : 'N/A';
     const amenityLabels = form.amenities.length > 0 ? getAmenityLabels(form.amenities) : [];
