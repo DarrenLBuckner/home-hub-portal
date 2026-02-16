@@ -22,6 +22,8 @@ interface User {
   country_id?: string;
 }
 
+const SUPER_ADMIN_EMAIL = 'mrdarrenbuckner@gmail.com';
+
 export default function UserManagement() {
   const router = useRouter();
   const { adminData, permissions, isAdmin, isLoading: adminLoading, error: adminError } = useAdminData();
@@ -167,70 +169,6 @@ export default function UserManagement() {
       console.error('Failed to load users data:', err);
       setError(`Failed to load users data: ${err?.message || 'Unknown error'}`);
       setUsers([]);
-    }
-  }
-
-  async function updateUserRole(userId: string, newRole: string) {
-    try {
-      // CRITICAL SECURITY: Check if trying to modify a Super Admin
-      const { data: targetUser } = await supabase
-        .from('profiles')
-        .select('admin_level, email')
-        .eq('id', userId)
-        .single();
-
-      // SECURITY: NEVER allow anyone to modify Super Admin accounts
-      if (targetUser?.admin_level === 'super') {
-        alert('🔒 SECURITY VIOLATION: Super Admin accounts cannot be modified by other users!');
-        console.error('SECURITY VIOLATION: Attempt to modify Super Admin account blocked');
-        return;
-      }
-
-      // SECURITY: Only Super Admins can create other Super Admins or Owner Admins
-      if ((newRole === 'super' || newRole === 'owner') && user?.admin_level !== 'super') {
-        alert('🔒 ACCESS DENIED: Only Super Admins can create Super Admin or Owner Admin accounts!');
-        console.error('SECURITY VIOLATION: Non-super admin attempting to create high-level admin');
-        return;
-      }
-
-      // BUSINESS SECURITY: Only Super Admins can assign PAID user types (prevents revenue bypass)
-      if ((newRole === 'agent' || newRole === 'landlord' || newRole === 'fsbo') && user?.admin_level !== 'super') {
-        alert('💰 BUSINESS VIOLATION: Only Super Admins can assign paid user types! These require valid subscriptions.');
-        console.error('BUSINESS VIOLATION: Non-super admin attempting to bypass payment system');
-        return;
-      }
-
-      let updateData: any = {
-        updated_at: new Date().toISOString()
-      };
-
-      // Handle admin levels vs regular user types
-      if (newRole === 'super' || newRole === 'owner' || newRole === 'basic_admin') {
-        updateData.user_type = 'admin';
-        updateData.admin_level = newRole === 'basic_admin' ? 'basic' : newRole;
-      } else {
-        updateData.user_type = newRole;
-        updateData.admin_level = null; // Clear admin level for non-admin users
-      }
-
-      const { error } = await supabase
-        .from('profiles')
-        .update(updateData)
-        .eq('id', userId);
-
-      if (error) {
-        console.error('Error updating user role:', error);
-        alert(`Failed to update user role: ${error.message}`);
-        return;
-      }
-
-      // Reload users to reflect changes
-      await loadUsers();
-      console.log(`User ${userId} role updated to ${newRole}`);
-      
-    } catch (err: any) {
-      console.error('Failed to update user role:', err);
-      alert(`Failed to update user role: ${err?.message || 'Unknown error'}`);
     }
   }
 

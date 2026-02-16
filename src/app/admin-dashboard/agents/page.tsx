@@ -7,6 +7,7 @@ import { supabase } from '@/supabase';
 import { useAdminData, getAdminDisplayName } from '@/hooks/useAdminData';
 import DashboardHeader from '@/components/admin/DashboardHeader';
 import { PremiumToggle } from '@/components/PremiumToggle';
+import { VerificationToggle } from '@/components/VerificationToggle';
 
 interface Agent {
   id: string;
@@ -392,11 +393,13 @@ export default function AgentManagementPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Agent
                     </th>
+                    {adminData?.admin_level === 'super' && (
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Territory
+                      </th>
+                    )}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Territory
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      Verified
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Premium
@@ -437,21 +440,29 @@ export default function AgentManagementPage() {
                           </div>
                         </div>
                       </td>
+                      {adminData?.admin_level === 'super' && (
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center text-sm text-gray-600">
+                            📍 {getCountryName(agent.country_id)}
+                          </div>
+                        </td>
+                      )}
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-600">
-                          📍 {getCountryName(agent.country_id)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {agent.is_verified_agent ? (
-                          <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full flex items-center w-fit">
-                            ✓ Verified
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full flex items-center w-fit">
-                            ○ Not Verified
-                          </span>
-                        )}
+                        <VerificationToggle
+                          agentId={agent.id}
+                          initialValue={agent.is_verified_agent || false}
+                          agentName={`${agent.first_name} ${agent.last_name}`}
+                          onToggle={(newValue: boolean) => {
+                            setAgents(prev => prev.map(a =>
+                              a.id === agent.id ? { ...a, is_verified_agent: newValue } : a
+                            ));
+                            setStats(prev => ({
+                              ...prev,
+                              verified: newValue ? prev.verified + 1 : prev.verified - 1,
+                              unverified: newValue ? prev.unverified - 1 : prev.unverified + 1,
+                            }));
+                          }}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <PremiumToggle

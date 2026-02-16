@@ -1486,17 +1486,22 @@ export default function UnifiedAdminDashboard() {
                 </button>
               </div>
 
-              {/* Admin Creation - Owner/Super Admin Only */}
-              {permissions?.canAccessUserManagement && (
-                <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-200">
+              {/* User & Admin Management */}
+              {permissions?.canViewUsers && (
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-blue-900">👥 Admin Management</h3>
-                    <div className="text-2xl font-black text-blue-600">+</div>
+                    <h3 className="text-lg font-bold text-orange-900">👥 User & Admin Management</h3>
+                    <div className="text-2xl font-black text-orange-600">{users.length}</div>
                   </div>
-                  <p className="text-sm text-blue-800 mb-4">Create and manage admin accounts</p>
+                  <ul className="text-xs text-orange-800 mb-4 space-y-0.5 leading-tight">
+                    <li>• Create & manage admin accounts</li>
+                    <li>• Suspend or remove users</li>
+                    <li>• View all agents, landlords & FSBO</li>
+                    <li>• Payment enforcement</li>
+                  </ul>
                   <Link href="/admin-dashboard/user-management">
-                    <button className="w-full px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
-                      Admin Management →
+                    <button className="w-full px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors">
+                      Manage Users & Admins →
                     </button>
                   </Link>
                 </div>
@@ -1509,30 +1514,15 @@ export default function UnifiedAdminDashboard() {
                     <h3 className="text-lg font-bold text-emerald-900">👥 Agent Management</h3>
                     <div className="text-2xl">🛡️</div>
                   </div>
-                  <p className="text-sm text-emerald-800 mb-4">
-                    Verify agents and manage premium rotation
-                  </p>
+                  <ul className="text-xs text-emerald-800 mb-4 space-y-0.5 leading-tight">
+                    <li>• Verify & manage agent accounts</li>
+                    <li>• Toggle premium status</li>
+                    <li>• View agent profiles & properties</li>
+                    <li>• Search by name or email</li>
+                  </ul>
                   <Link href="/admin-dashboard/agents">
                     <button className="w-full px-4 py-2 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors">
                       Manage Agents →
-                    </button>
-                  </Link>
-                </div>
-              )}
-
-              {/* User & Suspension Management - Available to All Admin Levels */}
-              {permissions?.canViewUsers && (
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-orange-900">🚫 User & Payment Management</h3>
-                    <div className="text-2xl font-black text-orange-600">{users.length}</div>
-                  </div>
-                  <p className="text-sm text-orange-800 mb-4">
-                    View, suspend & manage user accounts for payment enforcement
-                  </p>
-                  <Link href="/admin-dashboard/users">
-                    <button className="w-full px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors">
-                      Manage Users & Suspensions →
                     </button>
                   </Link>
                 </div>
@@ -1575,24 +1565,11 @@ export default function UnifiedAdminDashboard() {
                 </div>
               )}
 
-              {/* Active Properties Summary */}
-              <div className="bg-gradient-to-br from-gray-50 to-blue-50 rounded-2xl p-6 border border-gray-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900">✅ Live Properties</h3>
-                  <div className="text-2xl font-black text-green-600">{statistics.totalActive}</div>
-                </div>
-                <p className="text-sm text-gray-800 mb-4">Properties currently live on the platform</p>
-                <button
-                  onClick={() => setActiveSection('properties')}
-                  className="w-full px-4 py-2 bg-gray-600 text-white font-semibold rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  View All Properties →
-                </button>
-              </div>
+
             </div>
 
             {/* Visitor Analytics - Bottom of dashboard for reference */}
-            <VisitorAnalytics />
+            {isAdmin && <VisitorAnalytics />}
           </div>
         )}
 
