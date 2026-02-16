@@ -635,7 +635,11 @@ export default function UserManagement() {
           </div>
 
           {users.filter(user => {
-            if (userTypeFilter !== 'all' && user.user_type !== userTypeFilter) return false;
+            if (userTypeFilter !== 'all') {
+              if (userTypeFilter === 'fsbo') {
+                if (user.user_type !== 'fsbo' && user.user_type !== 'owner') return false;
+              } else if (user.user_type !== userTypeFilter) return false;
+            }
             if (!searchTerm) return true;
             const search = searchTerm.toLowerCase();
             return user.email.toLowerCase().includes(search) ||
@@ -644,7 +648,7 @@ export default function UserManagement() {
             <div className="text-center py-12">
               <div className="text-6xl mb-4">👥</div>
               <h3 className="text-xl font-medium text-gray-600 mb-2">
-                {userTypeFilter === 'all' ? 'No users found' : `No ${userTypeFilter === 'admin' ? 'admin' : userTypeFilter} users found`}
+                {userTypeFilter === 'all' ? 'No users found' : `No ${userTypeFilter === 'admin' ? 'Admin' : userTypeFilter === 'fsbo' ? 'FSBO' : userTypeFilter === 'agent' ? 'Agent' : 'Landlord'} users found`}
               </h3>
               <p className="text-gray-500">Users will appear here when they are created.</p>
             </div>
@@ -689,7 +693,7 @@ export default function UserManagement() {
                           title={`ID: ${userData.id}`}
                         >
                           {[userData.first_name, userData.last_name].filter(Boolean).join(' ') ||
-                           userData.email?.split('@')[0] || 'User'}
+                           userData.email || 'Unknown User'}
                         </div>
                         {/* Country badge for admins from other countries */}
                         {userData.user_type === 'admin' && userData.country_id && userData.country_id !== adminData?.country_id && (
