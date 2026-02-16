@@ -19,6 +19,7 @@ interface User {
   suspended_at?: string;
   suspension_reason?: string;
   suspended_by?: string;
+  country_id?: string;
 }
 
 export default function UserManagement() {
@@ -126,12 +127,16 @@ export default function UserManagement() {
   async function loadUsers() {
     try {
       console.log('Loading all users (admins and regular users)...');
-      
+
+      const currentAdminLevel = adminData?.admin_level;
+      const currentCountry = adminData?.country_id;
+      const isHighLevelAdmin = currentAdminLevel === 'super' || currentAdminLevel === 'owner';
+
       // Load all users - both admins and regular users
       const { data: usersData, error: usersError } = await supabase
         .from('profiles')
         .select('*')
-        .in('user_type', ['admin', 'agent', 'landlord', 'fsbo'])  // Load all relevant user types
+        .in('user_type', ['admin', 'agent', 'landlord', 'fsbo'])
         .order('created_at', { ascending: false });
 
       if (usersError) {
@@ -140,8 +145,23 @@ export default function UserManagement() {
         return;
       }
 
-      console.log('Loaded users:', usersData?.length || 0);
-      setUsers(usersData || []);
+      let filtered: User[] = (usersData as User[]) || [];
+
+      // For high-level admins (super/owner): show ALL admins across ALL countries
+      // but still scope regular users (agent/landlord/fsbo) to current country
+      if (!isHighLevelAdmin && currentCountry) {
+        // Basic admins: everything scoped to their country
+        filtered = filtered.filter(u => !u.country_id || u.country_id === currentCountry);
+      } else if (isHighLevelAdmin && currentAdminLevel === 'owner' && currentCountry) {
+        // Owner admins: all admins visible, regular users scoped to country
+        filtered = filtered.filter(u =>
+          u.user_type === 'admin' || !u.country_id || u.country_id === currentCountry
+        );
+      }
+      // Super admins: no filtering, see everything
+
+      console.log('Loaded users:', filtered.length);
+      setUsers(filtered);
 
     } catch (err: any) {
       console.error('Failed to load users data:', err);
@@ -688,25 +708,25 @@ export default function UserManagement() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
+              <table className="w-full divide-y divide-gray-200 table-fixed">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[18%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       User
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[22%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[12%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Role
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[8%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Joined
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="w-[32%] px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
@@ -720,24 +740,28 @@ export default function UserManagement() {
                            `${user.first_name} ${user.last_name}`.toLowerCase().includes(search);
                   }).map((userData) => (
                     <tr key={userData.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {[userData.first_name, userData.last_name].filter(Boolean).join(' ') || 
-                             userData.email?.split('@')[0] || 'User'}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            ID: {userData.id.substring(0, 8)}...
-                          </div>
+                      <td className="px-3 py-3">
+                        <div
+                          className="text-sm font-medium text-gray-900 truncate"
+                          title={`ID: ${userData.id}`}
+                        >
+                          {[userData.first_name, userData.last_name].filter(Boolean).join(' ') ||
+                           userData.email?.split('@')[0] || 'User'}
                         </div>
+                        {/* Country badge for admins from other countries */}
+                        {userData.user_type === 'admin' && userData.country_id && userData.country_id !== adminData?.country_id && (
+                          <span className="inline-flex px-1.5 py-0.5 text-[10px] font-semibold rounded bg-indigo-100 text-indigo-700 mt-0.5">
+                            {userData.country_id}
+                          </span>
+                        )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
+                      <td className="px-3 py-3">
+                        <div className="text-sm text-gray-900 truncate" title={userData.email}>
                           {userData.email}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
                           userData.user_type === 'admin'
                             ? 'bg-red-100 text-red-800'
                             : userData.user_type === 'agent'
@@ -755,11 +779,11 @@ export default function UserManagement() {
                            'User'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col space-y-1">
+                      <td className="px-3 py-3">
+                        <div className="flex flex-col gap-1">
                           {userData.user_type === 'admin' && (
-                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              userData.admin_level === 'super' 
+                            <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full w-fit ${
+                              userData.admin_level === 'super'
                                 ? 'bg-red-100 text-red-800'
                                 : userData.admin_level === 'owner'
                                 ? 'bg-purple-100 text-purple-800'
@@ -767,31 +791,31 @@ export default function UserManagement() {
                                 ? 'bg-blue-100 text-blue-800'
                                 : 'bg-gray-100 text-gray-800'
                             }`}>
-                              {userData.admin_level === 'super' 
-                                ? 'Super Admin'
+                              {userData.admin_level === 'super'
+                                ? 'Super'
                                 : userData.admin_level === 'owner'
-                                ? 'Owner Admin'
-                                : userData.admin_level === 'basic' 
-                                ? 'Basic Admin'
+                                ? 'Owner'
+                                : userData.admin_level === 'basic'
+                                ? 'Basic'
                                 : 'Admin'}
                             </span>
                           )}
                           {userData.is_suspended && (
-                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                            <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-red-100 text-red-800 w-fit">
                               SUSPENDED
                             </span>
                           )}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(userData.created_at).toLocaleDateString()}
+                      <td className="px-3 py-3 text-xs text-gray-500 whitespace-nowrap">
+                        {new Date(userData.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-3 py-3 text-sm font-medium">
                         {userData.id !== user?.id ? (
-                          <div className="flex space-x-2">
+                          <div className="flex items-center gap-1.5 flex-wrap">
                             {/* SECURITY: Super Admins are PROTECTED */}
                             {userData.admin_level === 'super' ? (
-                              <span className="text-red-600 font-medium text-sm px-3 py-2 bg-red-50 rounded">
+                              <span className="text-red-600 font-medium text-xs px-2 py-1 bg-red-50 rounded">
                                 🛡️ Protected
                               </span>
                             ) : (
@@ -799,14 +823,14 @@ export default function UserManagement() {
                                 {userData.is_suspended ? (
                                   <button
                                     onClick={() => handleReactivateAdmin(userData.id)}
-                                    className="px-3 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
+                                    className="px-2 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700"
                                   >
                                     ✅ Reactivate
                                   </button>
                                 ) : (
                                   <button
                                     onClick={() => handleSuspendAdmin(userData)}
-                                    className="px-3 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700"
+                                    className="px-2 py-1 bg-orange-600 text-white rounded text-xs hover:bg-orange-700"
                                   >
                                     ⏸️ Suspend
                                   </button>
@@ -816,35 +840,35 @@ export default function UserManagement() {
                                          userData.admin_level === 'basic' ? 'basic_admin' :
                                          'basic_admin'}
                                   onChange={(e) => updateUserRole(userData.id, e.target.value)}
-                                  className="text-xs border border-gray-300 rounded px-2 py-1"
+                                  className="text-xs border border-gray-300 rounded px-1.5 py-1"
                                   disabled={userData.is_suspended}
                                 >
-                                  <option value="basic_admin">Basic Admin</option>
+                                  <option value="basic_admin">Basic</option>
                                   {(user?.admin_level === 'super' || user?.admin_level === 'owner') && (
-                                    <option value="owner">Owner Admin</option>
+                                    <option value="owner">Owner</option>
                                   )}
                                   {user?.admin_level === 'super' && (
-                                    <option value="super">Super Admin</option>
+                                    <option value="super">Super</option>
                                   )}
                                 </select>
-                                
+
                                 {/* DELETE BUTTON - With permission hierarchy */}
-                                {(user?.admin_level === 'super' || 
+                                {(user?.admin_level === 'super' ||
                                   (user?.admin_level === 'owner' && userData.admin_level === 'basic') ||
                                   (user?.admin_level === 'owner' && !userData.admin_level)) && (
                                   <button
                                     onClick={() => handleDeleteAdmin(userData)}
-                                    className="px-3 py-1 bg-red-800 text-white rounded text-xs hover:bg-red-900 border-2 border-red-600"
-                                    title="⚠️ PERMANENT DELETION - Use extreme caution"
+                                    className="px-2 py-1 bg-red-800 text-white rounded text-xs hover:bg-red-900 border border-red-600"
+                                    title="PERMANENT DELETION - Use extreme caution"
                                   >
-                                    🗑️ DELETE
+                                    🗑️
                                   </button>
                                 )}
                               </>
                             )}
                           </div>
                         ) : (
-                          <span className="text-gray-500 text-sm px-3 py-2 bg-gray-50 rounded">Current User</span>
+                          <span className="text-gray-500 text-xs px-2 py-1 bg-gray-50 rounded">You</span>
                         )}
                       </td>
                     </tr>

@@ -2351,22 +2351,56 @@ export default function UnifiedAdminDashboard() {
                         </div>
 
                         {/* Application Info */}
-                        <div className="rounded-lg p-3 bg-green-50 border border-green-200">
-                          <div className="text-xs font-medium mb-1 text-green-800">✅ Auto-Approved</div>
-                          <div className="text-sm text-green-700">
+                        <div className="rounded-lg p-3 mb-4 bg-purple-50 border border-purple-100">
+                          <div className="text-xs font-medium mb-2 text-purple-800">📋 Application Details</div>
+                          <div className="text-sm text-purple-700 space-y-1">
                             <div className="flex items-center justify-between">
-                              <span>📅 Registered:</span>
-                              <span>{new Date(owner.created_at).toLocaleDateString()}</span>
-                            </div>
-                            <div className="mt-1 text-xs text-green-600">
-                              Landlords receive instant dashboard access to manage properties
+                              <span>📅 Applied:</span>
+                              <span className="font-mono">{new Date(owner.created_at).toLocaleDateString()}</span>
                             </div>
                             {owner.is_founding_member && (
-                              <div className="mt-1 text-xs px-2 py-1 rounded bg-green-200 text-green-800">
+                              <div className="mt-2 text-xs px-2 py-1 rounded bg-purple-200 text-purple-800 text-center font-semibold">
                                 🌟 Founding Member
                               </div>
                             )}
                           </div>
+                        </div>
+
+                        {/* Account Status */}
+                        <div className="rounded-lg p-3 mb-4 bg-green-50 border border-green-200">
+                          <div className="text-xs font-medium mb-2 text-green-800">✅ Status</div>
+                          <div className="text-sm text-green-700">
+                            <p className="font-semibold">Auto-Approved Account</p>
+                            <p className="text-xs mt-1">User has immediate dashboard access to list rental properties</p>
+                          </div>
+                        </div>
+
+                        {/* What This Approval Does */}
+                        <div className="rounded-lg p-3 mb-4 bg-yellow-50 border border-yellow-200">
+                          <div className="text-xs font-medium mb-2 text-yellow-800">⚠️ Before You Approve</div>
+                          <div className="text-xs text-yellow-700">
+                            <p className="mb-1"><strong>This approves:</strong> The user account status</p>
+                            <p className="mb-1"><strong>This does NOT approve:</strong> Their property listings</p>
+                            <p><strong>Next step:</strong> Check Properties tab for their pending listings</p>
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => approveOwnerApplication(owner.id)}
+                            disabled={processingOwnerId === owner.id}
+                            className="w-full px-4 py-3 bg-green-600 text-white text-sm font-bold rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50"
+                          >
+                            {processingOwnerId === owner.id ? '⏳' : '✅'} Approve
+                          </button>
+                          <button
+                            onClick={() => setShowOwnerRejectModal(owner.id)}
+                            disabled={processingOwnerId === owner.id}
+                            className="w-full px-4 py-3 bg-red-600 text-white text-sm font-bold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50"
+                          >
+                            ❌ Reject
+                          </button>
                         </div>
                       </div>
                     </div>
