@@ -317,7 +317,7 @@ export default function EnhancedImageUpload({
                 }
               </p>
               <p className="text-sm text-gray-600">
-                Upload up to {maxImages} high-quality photos • {acceptedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')} • Auto-compressed for optimal upload
+                Upload up to {maxImages} high-quality photos • {[...new Set(acceptedTypes.map(t => (t.split('/')[1] || t.replace('.', '')).toUpperCase()))].join(', ')} • Auto-compressed for optimal upload
               </p>
             </div>
             
