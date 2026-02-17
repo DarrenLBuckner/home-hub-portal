@@ -929,6 +929,8 @@ export default function EditAgentProperty() {
   }
   // ─── END VIEW MODE ──────────────────────────────────────────────────────────
 
+  const isLandProperty = ['land', 'residential land', 'commercial land'].includes(form.property_type?.toLowerCase() || '');
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -1127,50 +1129,55 @@ export default function EditAgentProperty() {
               🏘️ Property Specifications
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
-                <input 
-                  name="bedrooms" 
-                  type="number" 
-                  placeholder="0" 
-                  value={form.bedrooms} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
-                <input 
-                  name="bathrooms" 
-                  type="number" 
-                  placeholder="0" 
-                  value={form.bathrooms} 
-                  onChange={handleChange} 
-                  className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">House Size (Optional)</label>
-                <div className="flex gap-2">
-                  <input 
-                    name="house_size_value" 
-                    type="number" 
-                    placeholder="2000" 
-                    value={form.house_size_value} 
-                    onChange={handleChange} 
-                    className="flex-1 px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900" 
-                  />
-                  <select 
-                    name="house_size_unit" 
-                    value={form.house_size_unit} 
-                    onChange={handleChange} 
-                    className="px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
-                  >
-                    <option value="sq ft">Sq Ft</option>
-                    <option value="sq m">Sq M</option>
-                  </select>
-                </div>
-              </div>
+              {/* Bedrooms & Bathrooms - hidden for land properties */}
+              {!isLandProperty && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Bedrooms</label>
+                    <input
+                      name="bedrooms"
+                      type="number"
+                      placeholder="0"
+                      value={form.bedrooms}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Bathrooms</label>
+                    <input
+                      name="bathrooms"
+                      type="number"
+                      placeholder="0"
+                      value={form.bathrooms}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">House Size (Optional)</label>
+                    <div className="flex gap-2">
+                      <input
+                        name="house_size_value"
+                        type="number"
+                        placeholder="2000"
+                        value={form.house_size_value}
+                        onChange={handleChange}
+                        className="flex-1 px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                      />
+                      <select
+                        name="house_size_unit"
+                        value={form.house_size_unit}
+                        onChange={handleChange}
+                        className="px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+                      >
+                        <option value="sq ft">Sq Ft</option>
+                        <option value="sq m">Sq M</option>
+                      </select>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -1268,22 +1275,25 @@ export default function EditAgentProperty() {
               )}
             </div>
             
+            {/* Year Built - hidden for land properties */}
+            {!isLandProperty && (
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 📅 Year Built
                 <span className="text-gray-700 text-xs ml-2">Optional - Builds buyer confidence</span>
               </label>
-              <input 
-                name="year_built" 
-                type="number" 
-                placeholder="e.g., 2020" 
-                value={form.year_built} 
-                onChange={handleChange} 
+              <input
+                name="year_built"
+                type="number"
+                placeholder="e.g., 2020"
+                value={form.year_built}
+                onChange={handleChange}
                 className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
                 min="1800"
                 max={new Date().getFullYear()}
               />
             </div>
+            )}
           </div>
 
           {/* 4. LOCATION */}
