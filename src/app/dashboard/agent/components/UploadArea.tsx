@@ -4,6 +4,7 @@ import React, { useCallback, useMemo, useState, useEffect } from "react";
 import { useDropzone } from "react-dropzone";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { compressImage } from "@/lib/imageCompression";
+import { convertHeicFiles } from "@/lib/heicConversion";
 
 export type LocalFile = {
   id: string;
@@ -39,21 +40,29 @@ export default function UploadArea({ propertyId }: { propertyId: string }) {
     return () => files.forEach(f => URL.revokeObjectURL(f.preview));
   }, [files]);
 
-  const onDrop = useCallback((accepted: File[]) => {
+  const onDrop = useCallback(async (accepted: File[]) => {
+    const filesToAdd = accepted.slice(0, Math.max(0, maxFiles - files.length));
+
+    // Convert any HEIC files to JPEG before adding
+    const { converted, errors } = await convertHeicFiles(filesToAdd);
+    if (errors.length > 0) {
+      alert(errors.map(e => e.error).join('\n'));
+    }
+
     setFiles(prev => [
       ...prev,
-      ...accepted.slice(0, Math.max(0, maxFiles - prev.length)).map(f => ({
+      ...converted.map(f => ({
         id: crypto.randomUUID(),
         file: f,
         preview: URL.createObjectURL(f),
         uploadStatus: 'pending' as const
       })),
     ]);
-  }, []);
+  }, [files.length]);
 
   const { getRootProps, getInputProps, isDragActive, isFocused, isDragReject } = useDropzone({
     onDrop,
-    accept: { "image/*": [] },
+    accept: { "image/*": ['.heic', '.heif'] },
     multiple: true,
     maxFiles,
     maxSize: 8 * 1024 * 1024, // 8MB per file

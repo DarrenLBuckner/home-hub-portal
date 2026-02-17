@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { convertHeicFiles, isHeicFile } from '@/lib/heicConversion';
 
 interface Step4PhotosProps {
   images: File[];
@@ -10,13 +11,14 @@ interface Step4PhotosProps {
 export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
   const [dragActive, setDragActive] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [isConverting, setIsConverting] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFiles = (files: FileList | null) => {
+  const handleFiles = async (files: FileList | null) => {
     if (!files) return;
 
     const validFiles = Array.from(files).filter(file => {
-      const isValidType = file.type.startsWith('image/');
+      const isValidType = file.type.startsWith('image/') || isHeicFile(file);
       const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB limit
       return isValidType && isValidSize;
     });
@@ -26,11 +28,22 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
       return;
     }
 
-    const newImages = [...images, ...validFiles];
+    // Convert any HEIC files to JPEG
+    setIsConverting(true);
+    const { converted, errors } = await convertHeicFiles(validFiles);
+    setIsConverting(false);
+
+    if (errors.length > 0) {
+      alert(errors.map(e => e.error).join('\n'));
+    }
+
+    if (converted.length === 0) return;
+
+    const newImages = [...images, ...converted];
     setImages(newImages);
 
     // Create preview URLs
-    const newPreviewUrls = validFiles.map(file => URL.createObjectURL(file));
+    const newPreviewUrls = converted.map(file => URL.createObjectURL(file));
     setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
   };
 
@@ -48,7 +61,7 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleFiles(e.dataTransfer.files);
     }
@@ -64,12 +77,12 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
   const removeImage = (index: number) => {
     const newImages = images.filter((_, i) => i !== index);
     const newPreviewUrls = previewUrls.filter((_, i) => i !== index);
-    
+
     // Revoke the URL to prevent memory leaks
     if (previewUrls[index]) {
       URL.revokeObjectURL(previewUrls[index]);
     }
-    
+
     setImages(newImages);
     setPreviewUrls(newPreviewUrls);
   };
@@ -77,13 +90,13 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
   const moveImage = (fromIndex: number, toIndex: number) => {
     const newImages = [...images];
     const newPreviewUrls = [...previewUrls];
-    
+
     const movedImage = newImages.splice(fromIndex, 1)[0];
     const movedPreview = newPreviewUrls.splice(fromIndex, 1)[0];
-    
+
     newImages.splice(toIndex, 0, movedImage);
     newPreviewUrls.splice(toIndex, 0, movedPreview);
-    
+
     setImages(newImages);
     setPreviewUrls(newPreviewUrls);
   };
@@ -91,12 +104,12 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold mb-4">Property Photos</h2>
-      
+
       {/* Upload Area */}
       <div
         className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-          dragActive 
-            ? 'border-blue-500 bg-blue-50' 
+          dragActive
+            ? 'border-blue-500 bg-blue-50'
             : 'border-gray-300 hover:border-gray-400'
         }`}
         onDragEnter={handleDrag}
@@ -108,27 +121,27 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
           ref={inputRef}
           type="file"
           multiple
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           onChange={handleChange}
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         />
-        
+
         <div className="space-y-4">
           <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           </div>
-          
+
           <div>
             <p className="text-lg font-medium text-gray-900 mb-1">
               Drop photos here, or click to select
             </p>
             <p className="text-sm text-gray-500">
-              Upload up to 10 high-quality photos (JPG, PNG, max 10MB each)
+              Upload up to 10 high-quality photos (JPG, PNG, HEIC, max 10MB each)
             </p>
           </div>
-          
+
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
@@ -139,6 +152,16 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
         </div>
       </div>
 
+      {/* HEIC Converting Indicator */}
+      {isConverting && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+            <p className="text-blue-800 text-sm">Converting iPhone photos...</p>
+          </div>
+        </div>
+      )}
+
       {/* Image Previews */}
       {images.length > 0 && (
         <div className="space-y-4">
@@ -146,7 +169,7 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
             <h3 className="text-lg font-medium">Uploaded Photos ({images.length}/10)</h3>
             <p className="text-sm text-gray-500">First photo will be the main image</p>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {previewUrls.map((url, index) => (
               <div key={index} className="relative group">
@@ -157,7 +180,7 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                
+
                 {/* Image Controls */}
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg flex items-center justify-center space-x-2 opacity-0 group-hover:opacity-100">
                   {index > 0 && (
@@ -171,7 +194,7 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
                       </svg>
                     </button>
                   )}
-                  
+
                   {index < images.length - 1 && (
                     <button
                       onClick={() => moveImage(index, index + 1)}
@@ -183,7 +206,7 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
                       </svg>
                     </button>
                   )}
-                  
+
                   <button
                     onClick={() => removeImage(index)}
                     className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
@@ -194,7 +217,7 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
                     </svg>
                   </button>
                 </div>
-                
+
                 {/* Main Image Badge */}
                 {index === 0 && (
                   <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">

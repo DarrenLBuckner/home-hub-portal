@@ -25,6 +25,7 @@
     "browser-image-compression": "^2.0.2",
     "countries-list": "^3.1.1",
     "dotenv": "^17.2.3",
+    "heic2any": "^0.0.4",
     "next": "^15.4.8",
     "next-intl": "^4.7.0",
     "openai": "^6.3.0",

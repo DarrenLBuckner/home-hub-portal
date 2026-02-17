@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import { convertHeicIfNeeded, isHeicFile } from '@/lib/heicConversion';
 
 interface ProfileImageUploadProps {
   currentImageUrl?: string;
@@ -85,8 +86,8 @@ export default function ProfileImageUpload({
   const validateFile = (file: File): string | null => {
     const acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
-    if (!acceptedTypes.includes(file.type)) {
-      return `File type not supported. Please use JPG, PNG, or WebP`;
+    if (!acceptedTypes.includes(file.type) && !isHeicFile(file)) {
+      return `File type not supported. Please use JPG, PNG, WebP, or HEIC`;
     }
     
     return null;
@@ -122,9 +123,20 @@ export default function ProfileImageUpload({
     setIsUploading(true);
     
     try {
+      // Convert HEIC to JPEG if needed (Canvas API cannot decode HEIC)
+      let fileToProcess = file;
+      try {
+        fileToProcess = await convertHeicIfNeeded(file);
+      } catch (heicError) {
+        alert('Could not convert HEIC file. Please upload a JPEG or PNG instead.');
+        setIsCompressing(false);
+        setIsUploading(false);
+        return;
+      }
+
       // Compress the image before upload
-      console.log('Original file size:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
-      const compressedFile = await compressImage(file);
+      console.log('Original file size:', (fileToProcess.size / 1024 / 1024).toFixed(2) + 'MB');
+      const compressedFile = await compressImage(fileToProcess);
       console.log('Compressed file size:', (compressedFile.size / 1024 / 1024).toFixed(2) + 'MB');
       
       setIsCompressing(false);
@@ -270,7 +282,7 @@ export default function ProfileImageUpload({
                       Click to upload or drag and drop
                     </p>
                     <p className="text-xs text-gray-500 mb-3">
-                      JPG, PNG or WebP • Photos are automatically compressed for fast loading
+                      JPG, PNG, WebP or HEIC • Photos are automatically compressed for fast loading
                     </p>
                     <button
                       type="button"
@@ -287,7 +299,7 @@ export default function ProfileImageUpload({
             <input
               ref={inputRef}
               type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp"
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
               onChange={handleInputChange}
               className="hidden"
             />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useId } from 'react';
+import { convertHeicFiles, isHeicFile } from '@/lib/heicConversion';
 
 interface EnhancedImageUploadProps {
   images: File[];
@@ -16,7 +17,7 @@ export default function EnhancedImageUpload({
   setImages,
   maxImages = 10,
   maxSizePerImage = 10,
-  acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
+  acceptedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/heic', 'image/heif', '.heic', '.heif'],
   className = ''
 }: EnhancedImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
@@ -42,8 +43,9 @@ export default function EnhancedImageUpload({
   });
 
   const validateFile = (file: File): string | null => {
-    if (!acceptedTypes.includes(file.type)) {
-      return `File type not supported. Please use: ${acceptedTypes.map(t => t.split('/')[1].toUpperCase()).join(', ')}`;
+    // HEIC files may have empty MIME type on some browsers, so also check by extension
+    if (!acceptedTypes.includes(file.type) && !isHeicFile(file)) {
+      return `File type not supported. Please use: JPEG, PNG, WebP, or HEIC`;
     }
     
     // Allow larger files since we'll compress them
@@ -157,19 +159,30 @@ export default function EnhancedImageUpload({
 
     if (validFiles.length > 0) {
       try {
-        // Show compression message for large files
-        const largeFiles = validFiles.filter(f => f.size > 1024 * 1024);
-        if (largeFiles.length > 0) {
-          console.log(`🔄 Compressing ${largeFiles.length} image(s)...`);
-        }
-
         // Start compression indicator
         setIsCompressing(true);
         setCompressingCount(validFiles.length);
 
+        // Convert any HEIC files to JPEG first (Canvas API cannot decode HEIC)
+        const { converted, errors: heicErrors } = await convertHeicFiles(validFiles);
+        if (heicErrors.length > 0) {
+          alert(heicErrors.map(e => e.error).join('\n'));
+        }
+        if (converted.length === 0) {
+          setIsCompressing(false);
+          setCompressingCount(0);
+          return;
+        }
+
+        // Show compression message for large files
+        const largeFiles = converted.filter(f => f.size > 1024 * 1024);
+        if (largeFiles.length > 0) {
+          console.log(`🔄 Compressing ${largeFiles.length} image(s)...`);
+        }
+
         // Compress all images
         const compressedFiles = await Promise.all(
-          validFiles.map(file => compressImage(file))
+          converted.map(file => compressImage(file))
         );
 
         const newImages = [...images, ...compressedFiles];
