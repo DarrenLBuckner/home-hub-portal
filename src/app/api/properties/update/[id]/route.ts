@@ -122,33 +122,36 @@ export async function PUT(
       console.log(`📸 Processing ${body.imageUrls.length} pre-uploaded image URLs for property update`);
 
       try {
+        // Use admin client to bypass RLS for media inserts (same as create route)
+        const adminSupabase = createAdminClient();
+
         // Add new images as property_media records (don't delete existing for now)
-        const existingMediaCount = await supabase
+        const existingMediaCount = await adminSupabase
           .from('property_media')
           .select('id', { count: 'exact' })
           .eq('property_id', propertyId);
 
         const startOrder = existingMediaCount.count || 0;
 
-        for (let i = 0; i < body.imageUrls.length; i++) {
-          const imageUrl = body.imageUrls[i];
+        const mediaInserts = body.imageUrls
+          .filter((url: any) => url && typeof url === 'string')
+          .map((imageUrl: string, i: number) => ({
+            property_id: propertyId,
+            media_url: imageUrl,
+            media_type: 'image',
+            display_order: startOrder + i,
+            is_primary: startOrder === 0 && i === 0
+          }));
 
-          if (imageUrl && typeof imageUrl === 'string') {
-            const { error: mediaError } = await supabase
-              .from('property_media')
-              .insert({
-                property_id: propertyId,
-                media_url: imageUrl,
-                media_type: 'image',
-                display_order: startOrder + i,
-                is_primary: startOrder === 0 && i === 0
-              });
+        if (mediaInserts.length > 0) {
+          const { error: mediaError } = await adminSupabase
+            .from('property_media')
+            .insert(mediaInserts);
 
-            if (mediaError) {
-              console.error('Media record error:', mediaError);
-            } else {
-              console.log(`✅ Pre-uploaded image ${i + 1} saved`);
-            }
+          if (mediaError) {
+            console.error('❌ Media insert error:', mediaError);
+          } else {
+            console.log(`✅ ${mediaInserts.length} pre-uploaded images saved to property_media`);
           }
         }
       } catch (imageError) {
@@ -159,19 +162,22 @@ export async function PUT(
     // Handle image uploads if provided (base64 data from other edit pages)
     if (body.images && Array.isArray(body.images) && body.images.length > 0) {
       console.log(`📸 Processing ${body.images.length} new images for property update`);
-      console.log('Image data format check:', body.images.map((img: any) => ({ 
-        name: img?.name, 
+      console.log('Image data format check:', body.images.map((img: any) => ({
+        name: img?.name,
         hasData: !!img?.data,
-        dataType: typeof img?.data 
+        dataType: typeof img?.data
       })));
-      
+
       try {
+        // Use admin client to bypass RLS for media operations (same as create route)
+        const adminSupabase = createAdminClient();
+
         // Delete existing property media
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await adminSupabase
           .from('property_media')
           .delete()
           .eq('property_id', propertyId);
-          
+
         if (deleteError) {
           console.warn('Warning: Could not delete existing media:', deleteError);
         }
@@ -179,7 +185,7 @@ export async function PUT(
         // Upload new images to Supabase storage and create media records
         for (let i = 0; i < body.images.length; i++) {
           const imageFile = body.images[i];
-          
+
           if (imageFile && typeof imageFile === 'object' && imageFile.name) {
             // Convert base64 to file if needed
             let fileBuffer;
@@ -192,9 +198,9 @@ export async function PUT(
               continue;
             }
 
-            // Upload to Supabase storage
+            // Upload to Supabase storage using admin client
             const fileName = `${propertyId}/${Date.now()}_${imageFile.name}`;
-            const { data: uploadData, error: uploadError } = await supabase.storage
+            const { data: uploadData, error: uploadError } = await adminSupabase.storage
               .from('property-images')
               .upload(fileName, fileBuffer, {
                 contentType: imageFile.type || 'image/jpeg'
@@ -206,12 +212,12 @@ export async function PUT(
             }
 
             // Get public URL
-            const { data: { publicUrl } } = supabase.storage
+            const { data: { publicUrl } } = adminSupabase.storage
               .from('property-images')
               .getPublicUrl(fileName);
 
             // Save media record to property_media table
-            const { error: mediaError } = await supabase
+            const { error: mediaError } = await adminSupabase
               .from('property_media')
               .insert({
                 property_id: propertyId,
