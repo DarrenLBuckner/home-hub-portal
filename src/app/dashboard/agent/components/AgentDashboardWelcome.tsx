@@ -18,8 +18,14 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
   const [isFoundingAdvisor, setIsFoundingAdvisor] = useState(false);
   const [stats, setStats] = useState({
     active: 0,
+    pending: 0,
     draft: 0,
     sold: 0,
+    rented: 0,
+    under_contract: 0,
+    off_market: 0,
+    rejected: 0,
+    total: 0,
   });
   const trackingChecked = useRef(false);
 
@@ -69,10 +75,17 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
           .select('status')
           .eq('user_id', userData.user.id);
         if (properties) {
+          const count = (status: string) => properties.filter((p: any) => p.status === status).length;
           setStats({
-            active: properties.filter((p: any) => p.status === 'active').length,
-            draft: properties.filter((p: any) => p.status === 'draft').length,
-            sold: properties.filter((p: any) => p.status === 'sold').length,
+            active: count('active'),
+            pending: count('pending'),
+            draft: count('draft'),
+            sold: count('sold'),
+            rented: count('rented'),
+            under_contract: count('under_contract'),
+            off_market: count('off_market'),
+            rejected: count('rejected'),
+            total: properties.length,
           });
         }
       }
@@ -105,51 +118,51 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold">{stats.active + stats.draft}</div>
+            <div className="text-2xl font-bold">{stats.total}</div>
             <div className="text-blue-100 text-sm">Total Properties</div>
           </div>
         </div>
       </div>
 
       {/* Enterprise Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Active Listings</p>
-              <p className="text-3xl font-bold text-green-600">{stats.active}</p>
+              <p className="text-gray-600 text-xs md:text-sm font-medium">Active Listings</p>
+              <p className="text-2xl md:text-3xl font-bold text-green-600">{stats.active}</p>
             </div>
-            <div className="text-4xl">🟢</div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-yellow-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm font-medium">Draft Properties</p>
-              <p className="text-3xl font-bold text-yellow-600">{stats.draft}</p>
-            </div>
-            <div className="text-4xl">📝</div>
+            <div className="text-3xl md:text-4xl">🟢</div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Sold Properties</p>
-              <p className="text-3xl font-bold text-blue-600">{stats.sold}</p>
+              <p className="text-gray-600 text-xs md:text-sm font-medium">Pending Review</p>
+              <p className="text-2xl md:text-3xl font-bold text-orange-600">{stats.pending}</p>
             </div>
-            <div className="text-4xl">🎉</div>
+            <div className="text-3xl md:text-4xl">🕐</div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-indigo-500">
+        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 border-l-4 border-yellow-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-gray-600 text-sm font-medium">Subscription Active</p>
-              <p className="text-3xl font-bold text-indigo-600">✓</p>
+              <p className="text-gray-600 text-xs md:text-sm font-medium">Drafts</p>
+              <p className="text-2xl md:text-3xl font-bold text-yellow-600">{stats.draft}</p>
             </div>
-            <div className="text-4xl">⭐</div>
+            <div className="text-3xl md:text-4xl">📝</div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-lg p-4 md:p-6 border-l-4 border-blue-500">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-600 text-xs md:text-sm font-medium">Sold / Rented</p>
+              <p className="text-2xl md:text-3xl font-bold text-blue-600">{stats.sold + stats.rented}</p>
+            </div>
+            <div className="text-3xl md:text-4xl">🎉</div>
           </div>
         </div>
       </div>
