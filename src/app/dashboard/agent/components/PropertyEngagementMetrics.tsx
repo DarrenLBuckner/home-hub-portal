@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { createClient } from '@/supabase';
 
 interface PropertyEngagement {
@@ -204,7 +205,7 @@ export default function PropertyEngagementMetrics({ userId }: { userId: string }
                 </div>
 
                 {/* Engagement Metrics */}
-                <div className="flex gap-4 text-sm">
+                <div className="flex items-center gap-4 text-sm">
                   <div className="text-center">
                     <p className="font-medium text-blue-600">{property.likes_count}</p>
                     <p className="text-gray-500">👍 Likes</p>
@@ -217,6 +218,15 @@ export default function PropertyEngagementMetrics({ userId }: { userId: string }
                     <p className="font-medium text-gray-900">{property.total_engagement}</p>
                     <p className="text-gray-500">📊 Total</p>
                   </div>
+                  <Link
+                    href={`/dashboard/agent/edit-property/${property.property_id}`}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </Link>
                 </div>
               </div>
 

@@ -280,10 +280,16 @@ export default function UniversalPropertyManager({
     setDeletingId(id);
     try {
       const supabase = createClient();
-      const { error } = await supabase
+      let deleteQuery = supabase
         .from('properties')
         .delete()
         .eq('id', id);
+
+      if (userType !== 'admin') {
+        deleteQuery = deleteQuery.eq('user_id', userId);
+      }
+
+      const { error } = await deleteQuery;
 
       if (error) throw error;
       

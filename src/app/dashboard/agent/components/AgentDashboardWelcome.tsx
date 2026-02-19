@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { createClient } from '@/supabase';
 import Link from 'next/link';
 import { trackAgentRegistration } from '@/lib/fbPixel';
 import FoundingAgentBadge from '@/components/FoundingAgentBadge';
@@ -24,7 +24,7 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
 
   useEffect(() => {
     const fetchAgentAndStats = async () => {
-      const supabase = createClientComponentClient();
+      const supabase = createClient();
       const { data: userData } = await supabase.auth.getUser();
 
       if (userData?.user?.id) {

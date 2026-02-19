@@ -2,7 +2,6 @@
 // src/app/(dashboard)/agent/page.tsx
 import AgentHeader from './components/AgentHeader';
 import AgentSidebar from './components/AgentSidebar';
-import ListingOverview from './components/ListingOverview';
 import UploadArea from './components/UploadArea';
 import MyPropertiesTab from './components/MyPropertiesTab';
 // ...existing code...
@@ -192,9 +191,6 @@ export default function AgentPage() {
           <div className="space-y-6 sm:space-y-8">
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
               <AgentDashboardWelcome />
-            </div>
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-              <ListingOverview />
             </div>
             {userId && (
               <PropertyEngagementMetrics userId={userId} />
