@@ -174,37 +174,28 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
           <p className="text-gray-600">Full access to all property types and agent-specific features</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Link href="/dashboard/agent/create-property">
-            <button className="w-full p-4 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2">
-              <span className="text-2xl">🏠</span>
-              <span>Create Property</span>
+            <button className="w-full p-5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex flex-col items-center space-y-2">
+              <span className="text-3xl">🏠</span>
+              <span className="text-lg">Create Property</span>
               <span className="text-xs opacity-75">Sales & Rentals</span>
             </button>
           </Link>
-          
+
           <button
             onClick={() => onNavigateTab?.('properties')}
-            className="w-full p-4 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2"
+            className="w-full p-5 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex flex-col items-center space-y-2"
           >
-            <span className="text-2xl">📊</span>
-            <span>Manage Listings</span>
+            <span className="text-3xl">📊</span>
+            <span className="text-lg">Manage Listings</span>
             <span className="text-xs opacity-75">Full Portfolio</span>
           </button>
 
-          <button
-            onClick={() => onNavigateTab?.('inquiries')}
-            className="w-full p-4 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2"
-          >
-            <span className="text-2xl">💬</span>
-            <span>Inquiries</span>
-            <span className="text-xs opacity-75">Client Communication</span>
-          </button>
-
           <Link href="/dashboard/agent/settings">
-            <button className="w-full p-4 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2">
-              <span className="text-2xl">⚙️</span>
-              <span>Settings</span>
+            <button className="w-full p-5 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex flex-col items-center space-y-2">
+              <span className="text-3xl">⚙️</span>
+              <span className="text-lg">Settings</span>
               <span className="text-xs opacity-75">Profile & Preferences</span>
             </button>
           </Link>

@@ -1,10 +1,6 @@
 "use client";
-// src/app/(dashboard)/agent/page.tsx
-import AgentHeader from './components/AgentHeader';
-import AgentSidebar from './components/AgentSidebar';
-import UploadArea from './components/UploadArea';
+
 import MyPropertiesTab from './components/MyPropertiesTab';
-// ...existing code...
 import AgentDashboardWelcome from './components/AgentDashboardWelcome';
 import PropertyEngagementMetrics from './components/PropertyEngagementMetrics';
 import TrainingVideosCard from '@/components/TrainingVideosCard';
@@ -148,29 +144,26 @@ export default function AgentPage() {
         </div>
       </div>
 
-      {/* Mobile-First Navigation Tabs */}
+      {/* Navigation Tabs */}
       <div className="bg-white border-b shadow-sm sticky top-16 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex overflow-x-auto scrollbar-hide space-x-2 sm:space-x-4 py-3">
+          <div className="flex space-x-1 sm:space-x-2 py-3">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
               { id: 'properties', label: 'Properties', icon: '🏘️' },
-              { id: 'listings', label: 'Listings', icon: '📋' },
-              { id: 'inquiries', label: 'Inquiries', icon: '👥' },
-              { id: 'reports', label: 'Reports', icon: '📊' },
               { id: 'settings', label: 'Settings', icon: '⚙️' }
             ].map(section => (
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
+                className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
                   activeSection === section.id
-                    ? 'bg-blue-100 text-blue-700 border-2 border-blue-200'
+                    ? 'bg-blue-600 text-white shadow-md'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                 }`}
               >
                 <span className="text-base">{section.icon}</span>
-                <span className="hidden sm:inline">{section.label}</span>
+                <span>{section.label}</span>
               </button>
             ))}
           </div>
@@ -250,96 +243,7 @@ export default function AgentPage() {
           )
         )}
         
-        {activeSection === 'listings' && (
-          isAgent ? (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-gradient-to-r from-green-500 to-blue-600 p-4 sm:p-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2">
-                  <span>📋</span>
-                  <span>Active Listings</span>
-                </h2>
-                <p className="text-green-100 text-sm sm:text-base mt-1">
-                  Manage your active property listings
-                </p>
-              </div>
-              <div className="p-4 sm:p-6">
-                <MyPropertiesTab userId={userId || ''} />
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 lg:p-8">
-              <div className="max-w-2xl mx-auto text-center">
-                <div className="text-4xl sm:text-6xl mb-4">📋</div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Professional Feature</h2>
-                <p className="text-gray-600 text-sm sm:text-base">Advanced listing management for professional users.</p>
-              </div>
-            </div>
-          )
-        )}
-        
-        {activeSection === 'inquiries' && (
-          isAgent ? (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-4 sm:p-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2">
-                  <span>👥</span>
-                  <span>Client Inquiries</span>
-                </h2>
-                <p className="text-purple-100 text-sm sm:text-base mt-1">
-                  Manage client inquiries and communications
-                </p>
-              </div>
-              <div className="p-4 sm:p-6">
-                <div className="text-center py-8 text-gray-500">
-                  <div className="text-4xl mb-4">💬</div>
-                  <p className="text-lg font-medium">Coming Soon</p>
-                  <p className="text-sm">Client inquiry management system</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 lg:p-8">
-              <div className="max-w-2xl mx-auto text-center">
-                <div className="text-4xl sm:text-6xl mb-4">👥</div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Professional Feature</h2>
-                <p className="text-gray-600 text-sm sm:text-base">Client inquiry management for professional users.</p>
-              </div>
-            </div>
-          )
-        )}
-        
-        {activeSection === 'reports' && (
-          isAgent ? (
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="bg-gradient-to-r from-indigo-500 to-blue-600 p-4 sm:p-6">
-                <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center space-x-2">
-                  <span>📊</span>
-                  <span>Sales Reports</span>
-                </h2>
-                <p className="text-indigo-100 text-sm sm:text-base mt-1">
-                  Analytics and performance insights
-                </p>
-              </div>
-              <div className="p-4 sm:p-6">
-                <div className="text-center py-8 text-gray-500">
-                  <div className="text-4xl mb-4">📈</div>
-                  <p className="text-lg font-medium">Coming Soon</p>
-                  <p className="text-sm">Sales reports and analytics dashboard</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 lg:p-8">
-              <div className="max-w-2xl mx-auto text-center">
-                <div className="text-4xl sm:text-6xl mb-4">📊</div>
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Professional Feature</h2>
-                <p className="text-gray-600 text-sm sm:text-base">Sales reports and analytics for professional users.</p>
-              </div>
-            </div>
-          )
-        )}
-        
-        {/* Settings section removed - redirects to /dashboard/agent/settings via useEffect */}
+        {/* Settings redirects via useEffect above */}
       </main>
     </div>
   );
