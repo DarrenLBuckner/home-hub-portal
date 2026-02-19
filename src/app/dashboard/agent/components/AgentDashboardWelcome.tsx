@@ -8,9 +8,10 @@ import FoundingAdvisorBadge from '@/components/FoundingAdvisorBadge';
 interface DashboardWelcomeProps {
   userType?: string | null;
   isAgent?: boolean;
+  onNavigateTab?: (tab: string) => void;
 }
 
-export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWelcomeProps) {
+export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab }: DashboardWelcomeProps) {
   const [agentName, setAgentName] = useState('');
   const [accountCode, setAccountCode] = useState('');
   const [subscriptionTier, setSubscriptionTier] = useState<string | undefined>();
@@ -169,21 +170,23 @@ export default function AgentDashboardWelcome({ userType, isAgent }: DashboardWe
             </button>
           </Link>
           
-          <Link href="/dashboard/agent/properties">
-            <button className="w-full p-4 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2">
-              <span className="text-2xl">📊</span>
-              <span>Manage Listings</span>
-              <span className="text-xs opacity-75">Full Portfolio</span>
-            </button>
-          </Link>
+          <button
+            onClick={() => onNavigateTab?.('properties')}
+            className="w-full p-4 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2"
+          >
+            <span className="text-2xl">📊</span>
+            <span>Manage Listings</span>
+            <span className="text-xs opacity-75">Full Portfolio</span>
+          </button>
 
-          <Link href="/dashboard/agent/inquiries">
-            <button className="w-full p-4 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2">
-              <span className="text-2xl">💬</span>
-              <span>Inquiries</span>
-              <span className="text-xs opacity-75">Client Communication</span>
-            </button>
-          </Link>
+          <button
+            onClick={() => onNavigateTab?.('inquiries')}
+            className="w-full p-4 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2"
+          >
+            <span className="text-2xl">💬</span>
+            <span>Inquiries</span>
+            <span className="text-xs opacity-75">Client Communication</span>
+          </button>
 
           <Link href="/dashboard/agent/settings">
             <button className="w-full p-4 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 flex flex-col items-center space-y-2">
