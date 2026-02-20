@@ -240,6 +240,28 @@ export async function PUT(
       }
     }
 
+    // Sync properties.images from property_media after any image changes
+    if ((body.imageUrls && Array.isArray(body.imageUrls) && body.imageUrls.length > 0) ||
+        (body.images && Array.isArray(body.images) && body.images.length > 0)) {
+      try {
+        const adminSupabase = createAdminClient();
+        const { data: allMedia, error: mediaFetchError } = await adminSupabase
+          .from('property_media')
+          .select('media_url')
+          .eq('property_id', propertyId)
+          .order('display_order', { ascending: true });
+
+        if (!mediaFetchError && allMedia) {
+          updateData.images = allMedia.map((m: any) => m.media_url);
+          console.log(`✅ properties.images synced with ${updateData.images.length} URLs`);
+        } else {
+          console.error('⚠️ Failed to fetch property_media for images sync:', mediaFetchError);
+        }
+      } catch (syncError) {
+        console.error('⚠️ Error syncing properties.images:', syncError);
+      }
+    }
+
     // Get current property to preserve status
     let propertyQuery = supabase
       .from("properties")

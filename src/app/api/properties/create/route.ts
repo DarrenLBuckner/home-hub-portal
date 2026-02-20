@@ -957,6 +957,18 @@ export async function POST(req: NextRequest) {
       } else {
         console.log('✅ IMAGE DEBUG - Media inserts successful:', mediaInserts.length, 'images');
         mediaInsertResult.successful = mediaInserts.length;
+
+        // Sync properties.images with property_media URLs
+        const { error: syncError } = await adminSupabase
+          .from('properties')
+          .update({ images: imageUrls })
+          .eq('id', propertyResult.id);
+
+        if (syncError) {
+          console.error('⚠️ Failed to sync properties.images:', syncError);
+        } else {
+          console.log('✅ properties.images synced with', imageUrls.length, 'URLs');
+        }
       }
     } else {
       console.warn('⚠️ IMAGE DEBUG - No images to insert! imageUrls array is empty');
