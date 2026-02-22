@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/supabase';
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
 import PropertySuccessScreen from "@/components/PropertySuccessScreen";
+import { saveDraft } from '@/lib/draftManager';
 
 // Step components
 import Step1BasicInfo from './components/Step1BasicInfo';
@@ -41,11 +42,22 @@ function CreateAgentPropertyContent() {
   const targetUserName = searchParams.get('user_name');
   const isCreatingForUser = !!targetUserId;
 
+  // Draft loading from URL (?draft=<id>)
+  const draftIdFromUrl = searchParams.get('draft');
+
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false); // Bulletproof double-submit prevention
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  // Draft tracking state
+  const [draftId, setDraftId] = useState<string | null>(draftIdFromUrl);
+  const [loadingDraft, setLoadingDraft] = useState(!!draftIdFromUrl);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [showDraftToast, setShowDraftToast] = useState(false);
+  const formDataRef = useRef<any>(null); // For beforeunload access
+  const draftIdRef = useRef<string | null>(draftIdFromUrl);
   const [formData, setFormData] = useState({
     // Basic Info
     title: '',
@@ -158,6 +170,133 @@ function CreateAgentPropertyContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [currentStep]);
 
+  // Keep refs in sync for beforeunload handler
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
+  useEffect(() => {
+    draftIdRef.current = draftId;
+  }, [draftId]);
+
+  // Load draft from URL parameter (?draft=<id>)
+  useEffect(() => {
+    if (!draftIdFromUrl) return;
+
+    const loadExistingDraft = async () => {
+      try {
+        const res = await fetch(`/api/properties/drafts/${draftIdFromUrl}`);
+        const data = await res.json();
+
+        if (data.success && data.draft) {
+          const d = data.draft;
+          setFormData(prev => ({
+            ...prev,
+            title: d.title || '',
+            description: d.description || '',
+            price: d.price?.toString() || '',
+            property_type: d.property_type || '',
+            property_category: d.property_category || 'residential',
+            bedrooms: d.bedrooms?.toString() || '',
+            bathrooms: d.bathrooms?.toString() || '',
+            house_size_value: d.house_size_value?.toString() || '',
+            house_size_unit: d.house_size_unit || 'sq ft',
+            land_size_value: d.land_size_value?.toString() || '',
+            land_size_unit: d.land_size_unit || 'sq ft',
+            year_built: d.year_built?.toString() || '',
+            amenities: d.amenities || [],
+            lot_length: d.lot_length?.toString() || '',
+            lot_width: d.lot_width?.toString() || '',
+            lot_dimension_unit: d.lot_dimension_unit || 'ft',
+            region: d.region || '',
+            city: d.city || '',
+            neighborhood: d.neighborhood || '',
+            address: d.address || '',
+            show_address: d.show_address || false,
+            country: d.country || 'GY',
+            currency: d.currency || 'GYD',
+            owner_email: d.owner_email || '',
+            owner_whatsapp: d.owner_whatsapp || '',
+            property_owner_whatsapp: d.property_owner_whatsapp || '',
+            property_owner_email: d.property_owner_email || '',
+            listing_protection: d.listing_protection ?? true,
+            listing_type: d.listing_type || 'sale',
+            commercial_type: d.commercial_type || '',
+            floor_size_sqft: d.floor_size_sqft?.toString() || '',
+            building_floor: d.building_floor || '',
+            number_of_floors: d.number_of_floors?.toString() || '',
+            parking_spaces: d.parking_spaces?.toString() || '',
+            loading_dock: d.loading_dock || false,
+            elevator_access: d.elevator_access || false,
+            climate_controlled: d.climate_controlled || false,
+            commercial_garage_entrance: d.commercial_garage_entrance || false,
+            zoning_type: d.zoning_type || '',
+            lease_term_years: d.lease_term_years || '',
+            lease_type: d.lease_type || '',
+            financing_available: d.financing_available || false,
+            financing_details: d.financing_details || '',
+          }));
+          setDraftId(draftIdFromUrl);
+        }
+      } catch (err) {
+        console.error('Error loading draft:', err);
+      } finally {
+        setLoadingDraft(false);
+      }
+    };
+
+    loadExistingDraft();
+  }, [draftIdFromUrl]);
+
+  // Save draft quietly on navigation (fire-and-forget, no blocking)
+  const saveDraftQuietly = useCallback(async (currentFormData: typeof formData) => {
+    // Don't save if submitting, already saving, or no meaningful data
+    if (isSavingDraft || isSubmitting || submittingRef.current) return;
+    if (!currentFormData.price && !currentFormData.title && !currentFormData.description) return;
+
+    setIsSavingDraft(true);
+    try {
+      const result = await saveDraft(
+        { ...currentFormData, listing_type: currentFormData.listing_type || 'sale' },
+        draftId || undefined
+      );
+
+      if (result.success && result.draftId) {
+        setDraftId(result.draftId);
+        draftIdRef.current = result.draftId;
+        setShowDraftToast(true);
+        setTimeout(() => setShowDraftToast(false), 2000);
+      }
+    } catch (err) {
+      console.error('Background draft save failed:', err);
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [draftId, isSavingDraft, isSubmitting]);
+
+  // Save draft on page unload (best-effort via sendBeacon)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      const fd = formDataRef.current;
+      if (!fd || (!fd.title && !fd.price && !fd.description)) return;
+
+      const draftTitle = fd.title || `${fd.property_type || 'Property'} - ${new Date().toLocaleDateString()}`;
+      const payload = JSON.stringify({
+        draft_id: draftIdRef.current,
+        title: draftTitle,
+        draft_type: fd.listing_type || 'sale',
+        ...fd,
+      });
+
+      navigator.sendBeacon(
+        '/api/properties/drafts',
+        new Blob([payload], { type: 'application/json' })
+      );
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
+
   // Calculate completion score in real-time
   const completionAnalysis = calculateCompletionScore({
     title: formData.title,
@@ -253,12 +392,14 @@ function CreateAgentPropertyContent() {
 
   const handleNext = () => {
     if (validateCurrentStep()) {
+      saveDraftQuietly(formData); // fire-and-forget save on navigation
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrevious = () => {
     setError('');
+    saveDraftQuietly(formData); // fire-and-forget save on navigation
     setCurrentStep(currentStep - 1);
   };
 
@@ -369,13 +510,14 @@ function CreateAgentPropertyContent() {
         console.error('❌ API request timed out after 30 seconds');
       }, 30000); // 30 second timeout
       
-      // Use new draft API instead of direct database insert
+      // Use new draft API — include draftId if we're updating an existing draft
       const response = await fetch('/api/properties/drafts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          ...(draftId ? { draft_id: draftId } : {}),
           draft_type: 'sale',
           site_id: 'guyana', // Default for agent created properties - could be made dynamic later
           ...draftData
@@ -633,6 +775,18 @@ function CreateAgentPropertyContent() {
 
   const steps = ['Basic Info', 'Details', 'Location', 'Photos', 'Contact', 'Review'];
 
+  // Show loading state while draft is being loaded from URL
+  if (loadingDraft) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your draft...</p>
+        </div>
+      </div>
+    );
+  }
+
   // Show success screen when property is submitted
   if (success) {
     // Redirect admin to admin dashboard if they created property for another user
@@ -672,6 +826,23 @@ function CreateAgentPropertyContent() {
                 </p>
                 <p className="text-sm text-purple-600 mt-1">
                   The property will count against their account limits and appear in their dashboard.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Draft resume banner */}
+        {draftId && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="bg-amber-100 rounded-full p-2">
+                <span className="text-lg">📝</span>
+              </div>
+              <div>
+                <p className="font-semibold text-amber-900">Resuming Draft</p>
+                <p className="text-amber-700 text-sm">
+                  Your progress is saved automatically when you navigate between steps.
                 </p>
               </div>
             </div>
@@ -820,6 +991,13 @@ function CreateAgentPropertyContent() {
             </div>
           )}
         </div>
+
+        {/* Draft saved toast */}
+        {showDraftToast && (
+          <div className="fixed bottom-6 right-6 z-50 bg-green-600 text-white px-4 py-2.5 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in text-sm font-medium">
+            <span>✓</span> Draft saved
+          </div>
+        )}
       </div>
     </div>
   );

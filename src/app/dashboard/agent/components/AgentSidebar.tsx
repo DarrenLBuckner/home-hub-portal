@@ -1,13 +1,31 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
 type SidebarProps = {
   activeSection: string;
   onSectionChange: (section: string) => void;
   userType?: string | null;
   isAgent?: boolean;
+  draftCount?: number;
 };
 
-export default function AgentSidebar({ activeSection, onSectionChange, userType, isAgent }: SidebarProps) {
+export default function AgentSidebar({ activeSection, onSectionChange, userType, isAgent, draftCount: draftCountProp }: SidebarProps) {
+  const [draftCount, setDraftCount] = useState(draftCountProp ?? 0);
+
+  // Fetch draft count if not provided as prop
+  useEffect(() => {
+    if (draftCountProp !== undefined) {
+      setDraftCount(draftCountProp);
+      return;
+    }
+    const fetchCount = async () => {
+      try {
+        const res = await fetch('/api/properties/drafts');
+        const data = await res.json();
+        if (data.success) setDraftCount(data.drafts?.length || 0);
+      } catch {}
+    };
+    fetchCount();
+  }, [draftCountProp]);
   const handleSectionChange = (section: string) => {
     // Allow access to dashboard for all users
     if (section === 'dashboard') {
@@ -100,14 +118,19 @@ export default function AgentSidebar({ activeSection, onSectionChange, userType,
             </button>
           </li>
           <li>
-            <button 
-              className="flex items-center justify-between w-full px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-50 hover:text-green-700" 
+            <button
+              className="flex items-center justify-between w-full px-4 py-3 rounded-lg font-medium text-gray-700 hover:bg-gray-50 hover:text-green-700"
               onClick={() => window.location.href = '/dashboard/drafts'}
             >
               <div className="flex items-center">
                 <span className="mr-3">💾</span>
                 My Drafts
               </div>
+              {draftCount > 0 && (
+                <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full font-semibold">
+                  {draftCount}
+                </span>
+              )}
             </button>
           </li>
           <li>
