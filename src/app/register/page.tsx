@@ -4,7 +4,6 @@ import { useSearchParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { usePricing } from '@/hooks/usePricing';
 import PromoCodeInput from '@/components/PromoCodeInput';
-import FoundingAgentCounter from '@/components/FoundingAgentCounter';
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -133,11 +132,8 @@ function RegistrationContent() {
     setPromoSpotNumber(null);
   };
 
-  const handleSelectFoundingMember = () => {
-    // Set a special founding member "plan" that will be handled during submission
-    setForm({ ...form, selected_plan: 'founding_member' });
-    setSelectedPlan('founding_member');
-    // Automatically proceed to next step
+  const handleSelectWithPromo = () => {
+    // Proceed with promo code benefits
     setCurrentStep(2);
     setError("");
   };
@@ -201,7 +197,7 @@ function RegistrationContent() {
           promo_code: validPromoCode,
           promo_benefits: promoBenefits,
           promo_spot_number: promoSpotNumber,
-          is_founding_member: !!validPromoCode
+          is_founding_member: false
         }),
       });
       
@@ -210,12 +206,8 @@ function RegistrationContent() {
         throw new Error(data.error || 'Registration failed');
       }
 
-      // Success - redirect to success page with promo code info if applicable
-      let successUrl = '/register-success';
-      if (validPromoCode && promoSpotNumber) {
-        successUrl += `?foundingMember=${promoSpotNumber}&code=${validPromoCode}`;
-      }
-      window.location.href = successUrl;
+      // Success - redirect to success page
+      window.location.href = '/register-success';
     } catch (err: any) {
       setError(err.message || "Something went wrong. Please try again.");
       setLoading(false);
@@ -269,12 +261,6 @@ function RegistrationContent() {
               </div>
             </div>
 
-            {/* Founding Agent Counter */}
-            <FoundingAgentCounter
-              userType="agent"
-              countryId={selectedCountry.code}
-            />
-
             {/* Promo Code Input */}
             <PromoCodeInput
               userType="agent"
@@ -284,14 +270,14 @@ function RegistrationContent() {
               initialCode={initialPromoCode}
             />
 
-            {/* Founding Member CTA */}
+            {/* Promo Code CTA */}
             {validPromoCode && promoBenefits && (
               <div className="mb-6">
                 <button
-                  onClick={handleSelectFoundingMember}
+                  onClick={handleSelectWithPromo}
                   className="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
                 >
-                  🚀 Continue as Founding Member
+                  Continue with Promo Code
                 </button>
               </div>
             )}
@@ -450,9 +436,9 @@ function RegistrationContent() {
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <div className="text-sm text-green-800">
                 {validPromoCode ? (
-                  <strong>🎉 100 days FREE as a Founding Member - No payment required</strong>
+                  <strong>🎉 Promo code applied - Special benefits included</strong>
                 ) : (
-                  <><strong>🎉 Launch Special:</strong> Get your first month free when you register now!</>
+                  <><strong>🎉 Register Free:</strong> List unlimited properties on Guyana's premier platform</>
                 )}
               </div>
             </div>

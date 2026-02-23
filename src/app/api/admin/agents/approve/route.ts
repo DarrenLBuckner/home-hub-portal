@@ -112,8 +112,8 @@ export async function POST(request: NextRequest) {
     let subscriptionTier = 'basic';
     let propertyLimit = 10; // Default for basic tier
 
-    if (agent.is_founding_member) {
-      // Founding members get professional tier with 25 properties
+    if (agent.is_founding_member && agent.promo_code) {
+      // Legacy founding members (program closed) get professional tier with 25 properties
       subscriptionTier = 'professional';
       propertyLimit = 25;
       console.log('🎖️ Founding member - assigning professional tier with 25 property limit');

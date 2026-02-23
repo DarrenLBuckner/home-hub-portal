@@ -12,7 +12,7 @@ function useFoundingAgentSpots(countryCode: string) {
     isLoading: boolean;
     isActive: boolean; // Whether the founding program is actually active
   }>({
-    spotsRemaining: 25,
+    spotsRemaining: 0,
     isLoading: true,
     isActive: false
   });
@@ -26,15 +26,15 @@ function useFoundingAgentSpots(countryCode: string) {
           body: JSON.stringify({ userType: 'agent', countryId: countryCode })
         });
         const result = await response.json();
-        if (result.success) {
-          // API returned valid data - program is active
+        if (result.success && !result.programClosed && result.spotsRemaining > 0) {
+          // Program is active with spots remaining
           setData({ spotsRemaining: result.spotsRemaining, isLoading: false, isActive: true });
         } else {
-          // API failed or program not found - show as coming soon
-          setData({ spotsRemaining: 25, isLoading: false, isActive: false });
+          // Program closed or no spots remaining
+          setData({ spotsRemaining: 0, isLoading: false, isActive: false });
         }
       } catch {
-        setData({ spotsRemaining: 25, isLoading: false, isActive: false });
+        setData({ spotsRemaining: 0, isLoading: false, isActive: false });
       }
     };
     fetchSpots();
@@ -387,8 +387,8 @@ function SelectCountryContent() {
   }, [searchParams]);
 
   // Promo codes for founding agent programs by country
+  // Note: GY founding program closed (26 agents enrolled). JM still available for future launch.
   const foundingAgentPromoCodes: Record<string, string> = {
-    'GY': 'FOUNDING-AGENT-GY',
     'JM': 'FOUNDING-AGENT-JM',
   };
 

@@ -67,10 +67,10 @@ export async function POST(request: Request) {
       user_type: "agent",
       status: "pending_review",
       submitted_at: new Date().toISOString(),
-      promo_code: promo_code,
+      promo_code: promo_code || null,
       promo_benefits: promo_benefits ? JSON.stringify(promo_benefits) : null,
-      promo_spot_number: promo_spot_number,
-      is_founding_member: !!promo_code,
+      promo_spot_number: promo_spot_number || null,
+      is_founding_member: false,
       user_created: false, // Flag to track if user account exists yet
 
       // Reference fields - store all individual reference data for admin review
@@ -142,7 +142,7 @@ export async function POST(request: Request) {
           specialties: agentData.specialties,
           target_region: agentData.target_region,
           selected_plan: agentData.selected_plan,
-          is_founding_member: !!promo_code,
+          is_founding_member: false,
           reference1_name: agentData.reference1_name,
           reference1_phone: normalizedRef1,
           reference1_email: agentData.reference1_email,
