@@ -2,7 +2,6 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from 'next/navigation';
 import { usePricing } from '@/hooks/usePricing';
-import PromoCodeInput from '@/components/PromoCodeInput';
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -21,11 +20,6 @@ function LandlordRegistrationContent() {
   const [selectedPlan, setSelectedPlan] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  
-  // Promo code state
-  const [validPromoCode, setValidPromoCode] = useState<string | null>(null);
-  const [promoBenefits, setPromoBenefits] = useState<any>(null);
-  const [promoSpotNumber, setPromoSpotNumber] = useState<number | null>(null);
   
   // Fetch pricing data for current country and landlord user type
   const { plans: landlordPlans, country: pricingCountry, loading: plansLoading } = usePricing(selectedCountry.code, 'landlord');
@@ -96,28 +90,6 @@ function LandlordRegistrationContent() {
     setFormData({ ...formData, country: countryCode });
   };
 
-  // Promo code handlers
-  const handleValidPromoCode = (code: string, benefits: any, spotNumber: number) => {
-    setValidPromoCode(code);
-    setPromoBenefits(benefits);
-    setPromoSpotNumber(spotNumber);
-  };
-
-  const handleClearPromoCode = () => {
-    setValidPromoCode(null);
-    setPromoBenefits(null);
-    setPromoSpotNumber(null);
-  };
-
-  const handleSelectFoundingMember = () => {
-    // Set a special founding member "plan" that will be handled during submission
-    setFormData({ ...formData, plan: 'founding_member' });
-    setSelectedPlan('founding_member');
-    // Advance to step 2
-    setCurrentStep(2);
-    setError('');
-  };
-
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 1:
@@ -173,11 +145,7 @@ function LandlordRegistrationContent() {
           password: formData.password,
           plan: formData.plan,
           country: formData.country,
-          // Include promo code information
-          promo_code: validPromoCode,
-          promo_benefits: promoBenefits,
-          promo_spot_number: promoSpotNumber,
-          is_founding_member: !!validPromoCode
+          is_founding_member: false
         }),
       });
       
@@ -242,36 +210,6 @@ function LandlordRegistrationContent() {
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                 <div className="text-sm text-gray-600 mb-1">📍 Location</div>
                 <div className="text-base font-medium text-gray-900">{selectedCountry.name}</div>
-              </div>
-            </div>
-
-            {/* Promo Code Input */}
-            <PromoCodeInput
-              userType="landlord"
-              countryId={selectedCountry.code}
-              onValidCode={handleValidPromoCode}
-              onClearCode={handleClearPromoCode}
-            />
-
-            {/* Founding Member CTA */}
-            {validPromoCode && promoBenefits && (
-              <div className="mb-6">
-                <button
-                  onClick={handleSelectFoundingMember}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
-                >
-                  🚀 Continue as Founding Member
-                </button>
-              </div>
-            )}
-
-            {/* Divider */}
-            <div className="relative my-8">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-gray-500">Or choose a paid plan</span>
               </div>
             </div>
 

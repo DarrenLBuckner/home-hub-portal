@@ -2,7 +2,6 @@
 import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from 'next/navigation';
 import FSBORegistrationNew from "@/components/FSBORegistrationNew";
-import PromoCodeInput from "@/components/PromoCodeInput";
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -28,11 +27,6 @@ function FSBORegistrationContent() {
   const [selectedCountry, setSelectedCountry] = useState(countries[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-
-  // Promo code state
-  const [validPromoCode, setValidPromoCode] = useState<string | null>(null);
-  const [promoBenefits, setPromoBenefits] = useState<any>(null);
-  const [promoSpotNumber, setPromoSpotNumber] = useState<number | null>(null);
 
   // Handle URL parameters on component mount
   useEffect(() => {
@@ -62,25 +56,6 @@ function FSBORegistrationContent() {
   const handleCountryChange = (countryCode: string) => {
     const country = countries.find(c => c.code === countryCode) || countries[0];
     setSelectedCountry(country);
-  };
-
-  // Promo code handlers
-  const handleValidPromoCode = (code: string, benefits: any, spotNumber: number) => {
-    setValidPromoCode(code);
-    setPromoBenefits(benefits);
-    setPromoSpotNumber(spotNumber);
-  };
-
-  const handleClearPromoCode = () => {
-    setValidPromoCode(null);
-    setPromoBenefits(null);
-    setPromoSpotNumber(null);
-  };
-
-  const handleSelectFoundingMember = () => {
-    // Set a special founding member "plan" that will be handled during submission
-    setSelectedPlan('founding_member');
-    setCurrentStep(3); // Skip plan selection, go directly to registration
   };
 
   const handleChooseRegularPlans = () => {
@@ -116,11 +91,7 @@ function FSBORegistrationContent() {
           phone: formData.phone,
           password: formData.password,
           plan: selectedPlan,
-          // Include promo code information
-          promo_code: validPromoCode,
-          promo_benefits: promoBenefits,
-          promo_spot_number: promoSpotNumber,
-          is_founding_member: !!validPromoCode
+          is_founding_member: false
         }),
       });
       const data = await response.json();
@@ -141,41 +112,9 @@ function FSBORegistrationContent() {
       
       setIsSubmitting(false);
       setCurrentStep(4); // Move to completion step after validation
-      
-      // Founding members complete registration immediately (no payment needed)
-      if (validPromoCode && promoBenefits) {
-        try {
-          const completeResponse = await fetch('/api/register/fsbo/complete', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              tempRegistrationId: data.tempRegistrationId,
-              registrationData: data.registrationData,
-              paymentVerified: false // Founding members don't need payment
-            }),
-          });
-          
-          const completeData = await completeResponse.json();
-          
-          if (!completeResponse.ok) {
-            throw new Error(completeData.error || 'Failed to complete registration');
-          }
-          
-          // Clear session storage since registration is complete
-          sessionStorage.removeItem('fsboRegistration');
-          
-          // Show success step instead of immediate redirect
-          setCurrentStep(5);
-        } catch (completeError: any) {
-          console.error('Registration completion error:', completeError);
-          setError(`Registration failed: ${completeError.message}`);
-          setIsSubmitting(false);
-          setCurrentStep(3); // Go back to registration form
-        }
-      } else {
-        // Regular users - show success message first, then redirect to payment
-        setCurrentStep(5);
-      }
+
+      // Show success message, then redirect to payment
+      setCurrentStep(5);
     } catch (error: any) {
       setError(error.message);
       setIsSubmitting(false);
@@ -191,7 +130,7 @@ function FSBORegistrationContent() {
       <div className="max-w-md mx-auto lg:max-w-4xl bg-white lg:bg-transparent p-4 lg:p-6 lg:rounded-2xl lg:shadow-xl space-y-6 lg:space-y-8">
         <h1 className="text-2xl lg:text-3xl font-extrabold text-center text-orange-600 mb-2 tracking-tight drop-shadow-lg">For Sale By Owner Registration</h1>
         
-        {/* Step 1: Initial promo code entry */}
+        {/* Step 1: Country display and continue */}
         {currentStep === 1 && (
         <>
           {/* Country Display (Read-only) */}
@@ -202,37 +141,15 @@ function FSBORegistrationContent() {
             </div>
           </div>
 
-          {/* Promo Code Input */}
+          {/* Continue to Plan Selection */}
           <div className="mb-6">
-            <PromoCodeInput
-              userType="fsbo"
-              countryId={selectedCountry.code}
-              onValidCode={handleValidPromoCode}
-              onClearCode={handleClearPromoCode}
-            />
-
-            {/* Founding Member CTA */}
-            {validPromoCode && promoBenefits && (
-              <div className="mb-6">
-                <button
-                  onClick={handleSelectFoundingMember}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
-                >
-                  🚀 Continue as Founding Member
-                </button>
-              </div>
-            )}
-
-              {/* Regular Plans CTA */}
-              <div className="mt-6">
-                <button
-                  onClick={handleChooseRegularPlans}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-medium text-lg shadow-lg transform hover:scale-[1.02] transition-all"
-                >
-                  Choose Regular Plan
-                </button>
-              </div>
-            </div>
+            <button
+              onClick={handleChooseRegularPlans}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-medium text-lg shadow-lg transform hover:scale-[1.02] transition-all"
+            >
+              Choose Your Plan
+            </button>
+          </div>
         </>
         )}
 
@@ -262,16 +179,11 @@ function FSBORegistrationContent() {
           <div className="space-y-6">
             <div className="flex items-center justify-between mb-6">
               <button
-                onClick={() => setCurrentStep(selectedPlan === 'founding_member' ? 1 : 2)}
+                onClick={() => setCurrentStep(2)}
                 className="flex items-center text-blue-600 hover:text-blue-800"
               >
                 ← Back
               </button>
-              {selectedPlan === 'founding_member' && validPromoCode && (
-                <div className="bg-green-100 text-green-800 px-3 py-1 rounded-lg text-sm font-medium">
-                  Founding Member #{promoSpotNumber}
-                </div>
-              )}
             </div>
             
             <FSBORegistrationNew.RegistrationForm
@@ -302,18 +214,12 @@ function FSBORegistrationContent() {
                 </svg>
               </div>
               <h2 className="text-2xl font-bold text-green-600 mb-2">🎉 Registration Complete!</h2>
-              {validPromoCode && promoSpotNumber && (
-                <div className="bg-green-100 text-green-800 px-4 py-2 rounded-lg inline-block font-medium mb-4">
-                  Founding Member #{promoSpotNumber}
-                </div>
-              )}
             </div>
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
               <h3 className="text-lg font-semibold text-blue-800 mb-2">📧 Please Check Your Email</h3>
               <p className="text-blue-700 mb-4">
-                We've sent a welcome message to <strong>{formData.email}</strong> with 
-                {validPromoCode ? ' important information about your founding member benefits and how to get started.' : ' your account details and next steps.'}
+                We've sent a welcome message to <strong>{formData.email}</strong> with your account details and next steps.
               </p>
               <p className="text-sm text-blue-600">
                 Don't see it? Check your spam/junk folder and add info@portalhomehub.com to your contacts.
@@ -321,26 +227,15 @@ function FSBORegistrationContent() {
             </div>
 
             <div className="space-y-4">
-              {validPromoCode ? (
-                <button
-                  onClick={() => window.location.href = `/login?success=fsbo-founding-member&firstName=${encodeURIComponent(formData.firstName)}`}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
-                >
-                  Continue to Login
-                </button>
-              ) : (
-                <button
-                  onClick={() => window.location.href = '/register/payment'}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
-                >
-                  Continue to Payment
-                </button>
-              )}
-              
+              <button
+                onClick={() => window.location.href = '/register/payment'}
+                className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
+              >
+                Continue to Payment
+              </button>
+
               <p className="text-sm text-gray-500">
-                {validPromoCode 
-                  ? 'Ready to list your first property? Login and start immediately - no approval needed!'
-                  : 'Complete your payment to activate your FSBO account and start listing.'}
+                Complete your payment to activate your FSBO account and start listing.
               </p>
             </div>
           </div>

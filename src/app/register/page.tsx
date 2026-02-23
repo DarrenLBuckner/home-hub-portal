@@ -3,7 +3,6 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { usePricing } from '@/hooks/usePricing';
-import PromoCodeInput from '@/components/PromoCodeInput';
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -22,11 +21,6 @@ function RegistrationContent() {
   const [selectedPlan, setSelectedPlan] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  
-  // Promo code state
-  const [validPromoCode, setValidPromoCode] = useState<string | null>(null);
-  const [promoBenefits, setPromoBenefits] = useState<any>(null);
-  const [promoSpotNumber, setPromoSpotNumber] = useState<number | null>(null);
   
   // Password visibility state
   const [showPassword, setShowPassword] = useState(false);
@@ -65,9 +59,6 @@ function RegistrationContent() {
     reference2_phone: "",
     reference2_email: "",
   });
-
-  // Get initial promo code from URL
-  const initialPromoCode = searchParams?.get('code') || undefined;
 
   // Handle URL parameters on component mount
   useEffect(() => {
@@ -117,25 +108,6 @@ function RegistrationContent() {
     const country = countries.find(c => c.code === countryCode) || countries[0];
     setSelectedCountry(country);
     setForm({ ...form, country: countryCode });
-  };
-
-  // Promo code handlers
-  const handleValidPromoCode = (code: string, benefits: any, spotNumber: number) => {
-    setValidPromoCode(code);
-    setPromoBenefits(benefits);
-    setPromoSpotNumber(spotNumber);
-  };
-
-  const handleClearPromoCode = () => {
-    setValidPromoCode(null);
-    setPromoBenefits(null);
-    setPromoSpotNumber(null);
-  };
-
-  const handleSelectWithPromo = () => {
-    // Proceed with promo code benefits
-    setCurrentStep(2);
-    setError("");
   };
 
   const validateStep = (step: number): boolean => {
@@ -193,10 +165,6 @@ function RegistrationContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
-          // Add promo code information if available
-          promo_code: validPromoCode,
-          promo_benefits: promoBenefits,
-          promo_spot_number: promoSpotNumber,
           is_founding_member: false
         }),
       });
@@ -261,42 +229,8 @@ function RegistrationContent() {
               </div>
             </div>
 
-            {/* Promo Code Input */}
-            <PromoCodeInput
-              userType="agent"
-              countryId={selectedCountry.code}
-              onValidCode={handleValidPromoCode}
-              onClearCode={handleClearPromoCode}
-              initialCode={initialPromoCode}
-            />
-
-            {/* Promo Code CTA */}
-            {validPromoCode && promoBenefits && (
-              <div className="mb-6">
-                <button
-                  onClick={handleSelectWithPromo}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white py-4 px-6 rounded-xl font-bold text-lg shadow-lg transform hover:scale-[1.02] transition-all"
-                >
-                  Continue with Promo Code
-                </button>
-              </div>
-            )}
-
-            {/* Only show paid plan options if NO promo code is applied */}
-            {!validPromoCode && (
-              <>
-                {/* Divider */}
-                <div className="relative my-8">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-300"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-white text-gray-500">Or choose a paid plan</span>
-                  </div>
-                </div>
-
-                {/* Plan Cards - Enhanced with compelling benefits */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8 items-stretch">
+            {/* Plan Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-8 items-stretch">
               {plansLoading ? (
                 <>
                   {[1, 2, 3].map(i => (
@@ -429,17 +363,11 @@ function RegistrationContent() {
                 })
               )}
                 </div>
-              </>
-            )}
 
-            {/* Bottom Banner - different message based on promo code */}
+            {/* Bottom Banner */}
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <div className="text-sm text-green-800">
-                {validPromoCode ? (
-                  <strong>🎉 Promo code applied - Special benefits included</strong>
-                ) : (
-                  <><strong>🎉 Register Free:</strong> List unlimited properties on Guyana's premier platform</>
-                )}
+                <strong>🎉 Register Free:</strong> List unlimited properties on Guyana's premier platform
               </div>
             </div>
           </div>
