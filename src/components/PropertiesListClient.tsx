@@ -23,6 +23,16 @@ interface Property {
   listing_type: string;
   status: string;
   created_at: string;
+  available_from?: string | null;
+}
+
+function getAvailabilityBadge(property: Property): { text: string; classes: string } | null {
+  if (property.listing_type !== 'rent' && property.listing_type !== 'lease' && property.listing_type !== 'short_term_rent') return null;
+  if (!property.available_from) return { text: 'Available Now', classes: 'bg-green-500 text-white' };
+  const date = new Date(property.available_from);
+  if (date <= new Date()) return { text: 'Available Now', classes: 'bg-green-500 text-white' };
+  const label = date.toLocaleString('default', { month: 'short', year: 'numeric' });
+  return { text: `Available ${label}`, classes: 'bg-amber-500 text-white' };
 }
 
 interface PropertiesListClientProps {
@@ -354,7 +364,7 @@ export default function PropertiesListClient({
                     {property.description}
                   </p>
 
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="text-2xl font-bold text-emerald-600">
                       {formatPrice(property.price, property.currency)}
                     </div>
@@ -362,6 +372,19 @@ export default function PropertiesListClient({
                       {property.property_type}
                     </div>
                   </div>
+
+                  {/* Availability badge — card body, Zillow/Property24 style */}
+                  {(() => {
+                    const badge = getAvailabilityBadge(property);
+                    if (!badge) return null;
+                    return (
+                      <div className="mb-3">
+                        <span className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${badge.classes}`}>
+                          {badge.text}
+                        </span>
+                      </div>
+                    );
+                  })()}
 
                   {/* Property Features */}
                   <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">

@@ -35,6 +35,7 @@ export default function EditLandlordProperty() {
     deposit_amount: '',
     utilities_included: [],
     pet_policy: '',
+    available_from: '',
     
     // Property Details
     bedrooms: '',
@@ -179,6 +180,7 @@ export default function EditLandlordProperty() {
             currency: normalizedProperty.currency || 'GYD',
             owner_email: normalizedProperty.owner_email || '',
             owner_whatsapp: normalizedProperty.owner_whatsapp || '',
+            available_from: normalizedProperty.available_from || '',
           });
 
           // Set existing images
@@ -273,6 +275,7 @@ export default function EditLandlordProperty() {
         owner_email: formData.owner_email,
         owner_whatsapp: formData.owner_whatsapp,
         listing_type: 'rent', // Landlord properties are always rentals
+        available_from: formData.available_from || null,
         updated_at: new Date().toISOString(),
       };
 

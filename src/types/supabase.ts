@@ -61,6 +61,7 @@ export interface Database {
             lease_type: string | null;
             financing_available: boolean;
             financing_details: string | null;
+            available_from: string | null;
         };
         Insert: {
             id?: string;
@@ -92,6 +93,7 @@ export interface Database {
             lease_type?: string | null;
             financing_available?: boolean;
             financing_details?: string | null;
+            available_from?: string | null;
         };
         Update: {
             id?: string;
@@ -123,6 +125,7 @@ export interface Database {
             lease_type?: string | null;
             financing_available?: boolean;
             financing_details?: string | null;
+            available_from?: string | null;
         };
       };
     };

@@ -47,6 +47,7 @@ type PropertyForm = {
   lotWidth: string; // Hidden but kept for DB compatibility
   lotDimensionUnit: string; // Hidden but kept for DB compatibility
   owner_whatsapp: string;
+  available_from: string;
 };
 
 export default function CreateLandlordProperty() {
@@ -106,6 +107,7 @@ export default function CreateLandlordProperty() {
     lotWidth: "", // Hidden but kept for DB compatibility
     lotDimensionUnit: "ft", // Hidden but kept for DB compatibility
     owner_whatsapp: "",
+    available_from: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -293,6 +295,7 @@ export default function CreateLandlordProperty() {
           region: selectedRegion,
           currency: currencyCode,
           listing_type: "rent",
+          available_from: form.available_from || null,
           city: selectedRegion,
           propertyCategory: "rental",
           site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana',
@@ -438,6 +441,50 @@ export default function CreateLandlordProperty() {
               <option value="daily">Daily</option>
             </select>
           </div>
+        </div>
+
+        {/* AVAILABILITY */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            When is the property available?
+          </label>
+          <div className="flex gap-4 mb-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="availability_type"
+                checked={!form.available_from}
+                onChange={() => setForm(prev => ({ ...prev, available_from: "" }))}
+                className="text-green-600"
+              />
+              <span className="text-sm font-medium text-gray-700">Available Now</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                name="availability_type"
+                checked={!!form.available_from}
+                onChange={() => setForm(prev => ({ ...prev, available_from: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] }))}
+                className="text-green-600"
+              />
+              <span className="text-sm font-medium text-gray-700">Available from a specific date</span>
+            </label>
+          </div>
+          {!!form.available_from && (
+            <div>
+              <input
+                type="date"
+                name="available_from"
+                value={form.available_from}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={handleChange}
+                className="w-full border rounded-lg px-4 py-3 text-base"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Your listing stays active — tenants will see when the property becomes available
+              </p>
+            </div>
+          )}
         </div>
 
         {/* 4. COUNTRY (defaulted to GY) - NO REGION DROPDOWN */}

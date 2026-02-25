@@ -236,7 +236,25 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
                   <span className="text-lg text-gray-600 font-normal">/month</span>
                 )}
               </p>
-              
+
+              {/* Availability — hero section, near price (Zillow/Property24 standard) */}
+              {(property.listing_type === 'rent' || property.listing_type === 'lease' || property.listing_type === 'short_term_rent') && (() => {
+                const af = (property as any).available_from;
+                if (!af || new Date(af) <= new Date()) {
+                  return (
+                    <span className="inline-block text-sm font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700 border border-green-200 mb-3">
+                      Available Now
+                    </span>
+                  );
+                }
+                const label = new Date(af).toLocaleString('default', { month: 'long', year: 'numeric' });
+                return (
+                  <span className="inline-block text-sm font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-700 border border-amber-200 mb-3">
+                    Available from {label}
+                  </span>
+                );
+              })()}
+
               <p className="text-gray-700 flex items-center gap-2">
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
@@ -315,6 +333,18 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
               <div className="bg-white rounded-lg shadow-md p-6">
                 <h2 className="text-xl font-semibold mb-4">Rental Information</h2>
                 <div className="space-y-3">
+                  {/* Availability — always shown for rentals */}
+                  <div className="flex justify-between border-b pb-2">
+                    <span className="text-gray-600">Availability:</span>
+                    {(() => {
+                      const af = (property as any).available_from;
+                      if (!af || new Date(af) <= new Date()) {
+                        return <span className="font-semibold text-green-600">Available Now</span>;
+                      }
+                      const label = new Date(af).toLocaleString('default', { month: 'long', year: 'numeric' });
+                      return <span className="font-semibold text-amber-600">From {label}</span>;
+                    })()}
+                  </div>
                   {property.deposit_amount && (
                     <div className="flex justify-between border-b pb-2">
                       <span className="text-gray-600">Security Deposit:</span>

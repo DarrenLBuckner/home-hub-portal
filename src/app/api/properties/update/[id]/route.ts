@@ -115,6 +115,7 @@ export async function PUT(
       deposit_amount: body.deposit_amount ? parseFloat(body.deposit_amount) : null,
       utilities_included: body.utilities_included || null,
       pet_policy: body.pet_policy || null,
+      available_from: body.available_from || null,
     };
 
     // Handle pre-uploaded image URLs (from agent edit page which uploads directly to Supabase)

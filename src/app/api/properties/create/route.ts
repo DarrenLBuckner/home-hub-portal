@@ -726,6 +726,9 @@ export async function POST(req: NextRequest) {
         country_id: body.country || 'GY',  // Use country code from form data
         created_at: new Date().toISOString(),
 
+        // Availability (for rental listings via agent)
+        available_from: body.available_from || null,
+
         // Attestation fields (agents don't require attestation but we track it if provided)
         ownership_attested: body.attestation || body.confirms_ownership || false,
         attestation_date: (body.attestation || body.confirms_ownership) ? attestationDate : null,
@@ -759,6 +762,7 @@ export async function POST(req: NextRequest) {
         
         // Rental-specific fields
         rental_type: body.rentalType || 'monthly',
+        available_from: body.available_from || null,
         currency: body.currency || 'GYD',
 
         // Video URL (for Pro/Elite tier landlords) - sanitized to prevent pattern errors

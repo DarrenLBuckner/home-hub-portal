@@ -1027,10 +1027,10 @@ export default function UniversalPropertyManager({
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-xs">
                               <button 
-                                onClick={() => updatePropertyStatus(property.id, property.propertyCategory === 'rental' ? 'rented' : 'sold')}
+                                onClick={() => updatePropertyStatus(property.id, ['rent','lease','short_term_rent'].includes(property.listing_type) ? 'rented' : 'sold')}
                                 className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
                               >
-                                {property.propertyCategory === 'rental' ? '🏠 Completed - Rented' : '🏆 Completed - Sold'}
+                                {['rent','lease','short_term_rent'].includes(property.listing_type) ? '🏠 Completed - Rented' : '🏆 Completed - Sold'}
                               </button>
                               <button 
                                 onClick={() => {
@@ -1064,10 +1064,10 @@ export default function UniversalPropertyManager({
                                 ✅ Put Back on Market
                               </button>
                               <button 
-                                onClick={() => updatePropertyStatus(property.id, property.propertyCategory === 'rental' ? 'rented' : 'sold')}
+                                onClick={() => updatePropertyStatus(property.id, ['rent','lease','short_term_rent'].includes(property.listing_type) ? 'rented' : 'sold')}
                                 className="flex-1 px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
                               >
-                                {property.propertyCategory === 'rental' ? '🏠 Rented' : '🏆 Sold'}
+                                {['rent','lease','short_term_rent'].includes(property.listing_type) ? '🏠 Rented' : '🏆 Sold'}
                               </button>
                             </div>
                           </div>
@@ -1077,21 +1077,27 @@ export default function UniversalPropertyManager({
                         {property.status === 'active' && (
                           <div className="space-y-2">
                             <div className="text-xs text-green-700 bg-green-50 p-2 rounded border border-green-200">
-                              <strong>Live Listing:</strong> Your property is visible to potential {property.propertyCategory === 'rental' ? 'renters' : 'buyers'}
+                              <strong>Live Listing:</strong> Your property is visible to potential {['rent','lease','short_term_rent'].includes(property.listing_type) ? 'renters' : 'buyers'}
                             </div>
                             <div className="grid grid-cols-2 gap-2 text-xs">
-                              <button 
+                              <button
                                 onClick={() => updatePropertyStatus(property.id, 'under_contract')}
                                 className="px-2 py-1 bg-orange-600 text-white rounded hover:bg-orange-700 transition"
                                 title="Mark as under contract"
                               >
                                 📝 Under Contract
                               </button>
-                              <button 
-                                onClick={() => updatePropertyStatus(property.id, property.propertyCategory === 'rental' ? 'rented' : 'sold')}
+                              <button
+                                onClick={() => {
+                                  const isRental = ['rent','lease','short_term_rent'].includes(property.listing_type);
+                                  const msg = isRental
+                                    ? 'Mark this property as rented? It will be removed from the public site immediately.'
+                                    : 'Mark this property as sold? It will remain visible on the site for social proof.';
+                                  if (confirm(msg)) updatePropertyStatus(property.id, isRental ? 'rented' : 'sold');
+                                }}
                                 className="px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
                               >
-                                {property.propertyCategory === 'rental' ? '🏠 Rented' : '🏆 Sold'}
+                                {['rent','lease','short_term_rent'].includes(property.listing_type) ? '🏠 Mark Rented' : '🏆 Mark Sold'}
                               </button>
                               <button 
                                 onClick={() => {
@@ -1133,7 +1139,7 @@ export default function UniversalPropertyManager({
                                 disabled
                                 className="px-2 py-1 bg-gray-300 text-gray-500 rounded cursor-not-allowed opacity-50"
                               >
-                                {property.propertyCategory === 'rental' ? '🏠 Rented' : '🏆 Sold'}
+                                {['rent','lease','short_term_rent'].includes(property.listing_type) ? '🏠 Mark Rented' : '🏆 Mark Sold'}
                               </button>
                               <button
                                 disabled
