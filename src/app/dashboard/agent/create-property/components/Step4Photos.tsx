@@ -252,7 +252,8 @@ export default function Step4Photos({ images, setImages, videoUrl, onVideoUrlCha
             Video Tour (Optional)
           </label>
           <p className="text-sm text-gray-500 mb-3">
-            Add a YouTube or Vimeo link to showcase your property
+            Add a YouTube or Vimeo link to showcase your property.
+            On your phone? <a href="https://studio.youtube.com/channel/UC/videos/upload" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Upload to YouTube</a> first, then paste the link here.
           </p>
           <input
             type="url"
