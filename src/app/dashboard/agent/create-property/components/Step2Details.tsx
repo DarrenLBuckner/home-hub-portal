@@ -227,48 +227,56 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
             </div>
           </div>
 
-          {/* Availability - Only for rental/lease/short-term listings */}
-          {(formData.listing_type === 'rent' || formData.listing_type === 'lease' || formData.listing_type === 'short_term_rent') && (
-            <div className="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
-              <h4 className="font-medium text-emerald-800 mb-3">Availability</h4>
-              <div className="space-y-3">
-                <div className="flex gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="availability_type"
-                      checked={!formData.available_from}
-                      onChange={() => handleChange('available_from', '')}
-                      className="text-emerald-600"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Available Now</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="availability_type"
-                      checked={!!formData.available_from}
-                      onChange={() => handleChange('available_from', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])}
-                      className="text-emerald-600"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Available from a date</span>
-                  </label>
-                </div>
-                {!!formData.available_from && (
-                  <div>
-                    <input
-                      type="date"
-                      value={formData.available_from || ''}
-                      min={new Date().toISOString().split('T')[0]}
-                      onChange={(e) => handleChange('available_from', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">The listing stays active — tenants see when it becomes available</p>
-                  </div>
-                )}
+          {/* Availability - All listing types */}
+          <div className="mt-4 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+            <h4 className="font-medium text-emerald-800 mb-3">
+              {formData.listing_type === 'sale' ? 'When is this property available?' : 'Availability'}
+            </h4>
+            <div className="space-y-3">
+              <div className="flex gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="availability_type"
+                    checked={!formData.available_from}
+                    onChange={() => handleChange('available_from', '')}
+                    className="text-emerald-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    {formData.listing_type === 'sale' ? 'On the market now' : 'Available Now'}
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="availability_type"
+                    checked={!!formData.available_from}
+                    onChange={() => handleChange('available_from', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])}
+                    className="text-emerald-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    {formData.listing_type === 'sale' ? 'Coming soon — set a date' : 'Available from a date'}
+                  </span>
+                </label>
               </div>
+              {!!formData.available_from && (
+                <div>
+                  <input
+                    type="date"
+                    value={formData.available_from || ''}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => handleChange('available_from', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formData.listing_type === 'sale'
+                      ? 'Your listing will show as "Coming Soon" until this date'
+                      : 'Your listing stays active — clients see when it becomes available'}
+                  </p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Lease Terms - Only for lease listings */}
           {formData.listing_type === 'lease' && (

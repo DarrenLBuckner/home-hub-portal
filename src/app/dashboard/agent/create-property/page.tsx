@@ -104,6 +104,7 @@ function CreateAgentPropertyContent() {
     // Listing fields
     listing_type: 'sale',
     status: 'pending',
+    available_from: '',
 
     // Media
     video_url: '',

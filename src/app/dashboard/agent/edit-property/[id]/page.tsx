@@ -44,6 +44,7 @@ interface FormData {
   lot_dimension_unit: string;
   owner_whatsapp: string;
   video_url: string;
+  available_from: string;
   // Commercial Property Fields
   property_category: 'residential' | 'commercial';
   commercial_type: string;
@@ -103,7 +104,8 @@ export default function EditAgentProperty() {
     lot_dimension_unit: "ft",
     owner_whatsapp: "",
     video_url: "",
-    
+    available_from: "",
+
     // Commercial Property Fields
     property_category: 'residential',
     commercial_type: '',
@@ -247,6 +249,7 @@ export default function EditAgentProperty() {
             lot_dimension_unit: normalizedProperty.lot_dimension_unit || 'ft',
             owner_whatsapp: normalizedProperty.owner_whatsapp || '',
             video_url: normalizedProperty.video_url || '',
+            available_from: normalizedProperty.available_from || '',
 
             // Commercial property fields
             property_category: normalizedProperty.property_category || 'residential',
@@ -397,6 +400,7 @@ export default function EditAgentProperty() {
             lot_dimension_unit: normalized.lot_dimension_unit || 'ft',
             owner_whatsapp: normalized.owner_whatsapp || '',
             video_url: normalized.video_url || '',
+            available_from: normalized.available_from || '',
             property_category: normalized.property_category || 'residential',
             commercial_type: normalized.commercial_type || '',
             floor_size_sqft: normalized.floor_size_sqft?.toString() || '',
@@ -559,6 +563,7 @@ export default function EditAgentProperty() {
         show_address: form.show_address,
         owner_whatsapp: form.owner_whatsapp,
         video_url: form.video_url || null,
+        available_from: form.available_from || null,
         currency: currencyCode,
         country: selectedCountry, // FIX: Include country field
         site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana', // FIX: Include site_id for routing
@@ -777,6 +782,14 @@ export default function EditAgentProperty() {
                     <span className="capitalize">{form.property_category}</span>
                     <span>•</span>
                     <span>For {form.listing_type === 'lease' ? 'Lease' : form.listing_type === 'rent' ? 'Rent' : 'Sale'}</span>
+                    {form.available_from && new Date(form.available_from) > new Date() && (
+                      <>
+                        <span>•</span>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800">
+                          {form.listing_type === 'sale' ? 'Coming Soon' : `Available ${new Date(form.available_from).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`}
+                        </span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="text-right">
@@ -1120,6 +1133,57 @@ export default function EditAgentProperty() {
                     }}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Availability */}
+            <div className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+              <h4 className="font-medium text-emerald-800 mb-3">
+                {form.listing_type === 'sale' ? 'When is this property available?' : 'Availability'}
+              </h4>
+              <div className="space-y-3">
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="availability_type"
+                      checked={!form.available_from}
+                      onChange={() => setForm(prev => ({ ...prev, available_from: '' }))}
+                      className="text-emerald-600"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      {form.listing_type === 'sale' ? 'On the market now' : 'Available Now'}
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="availability_type"
+                      checked={!!form.available_from}
+                      onChange={() => setForm(prev => ({ ...prev, available_from: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] }))}
+                      className="text-emerald-600"
+                    />
+                    <span className="text-sm font-medium text-gray-700">
+                      {form.listing_type === 'sale' ? 'Coming soon — set a date' : 'Available from a date'}
+                    </span>
+                  </label>
+                </div>
+                {!!form.available_from && (
+                  <div>
+                    <input
+                      type="date"
+                      value={form.available_from}
+                      min={new Date().toISOString().split('T')[0]}
+                      onChange={(e) => setForm(prev => ({ ...prev, available_from: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      {form.listing_type === 'sale'
+                        ? 'Your listing will show as "Coming Soon" until this date'
+                        : 'Your listing stays active — clients see when it becomes available'}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
