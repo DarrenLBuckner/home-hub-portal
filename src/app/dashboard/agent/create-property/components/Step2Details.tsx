@@ -233,7 +233,7 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
               {formData.listing_type === 'sale' ? 'When is this property available?' : 'Availability'}
             </h4>
             <div className="space-y-3">
-              <div className="flex gap-3">
+              <div className="flex flex-col gap-2">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
@@ -250,29 +250,51 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
                   <input
                     type="radio"
                     name="availability_type"
-                    checked={!!formData.available_from}
+                    checked={formData.available_from === '9999-12-31'}
+                    onChange={() => handleChange('available_from', '9999-12-31')}
+                    className="text-emerald-600"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Coming soon
+                  </span>
+                  <span className="text-xs text-gray-400">(no date shown to public)</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="availability_type"
+                    checked={!!formData.available_from && formData.available_from !== '9999-12-31'}
                     onChange={() => handleChange('available_from', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])}
                     className="text-emerald-600"
                   />
                   <span className="text-sm font-medium text-gray-700">
-                    {formData.listing_type === 'sale' ? 'Coming soon — set a date' : 'Available from a date'}
+                    {formData.listing_type === 'sale' ? 'Coming soon — with a date' : 'Available from a specific date'}
                   </span>
                 </label>
               </div>
-              {!!formData.available_from && (
+              {!!formData.available_from && formData.available_from !== '9999-12-31' && (
                 <div>
                   <input
                     type="date"
                     value={formData.available_from || ''}
                     min={new Date().toISOString().split('T')[0]}
                     onChange={(e) => handleChange('available_from', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500 text-sm ${
+                      formData.available_from && new Date(formData.available_from) < new Date(new Date().toISOString().split('T')[0])
+                        ? 'border-red-400' : 'border-gray-300'
+                    }`}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    {formData.listing_type === 'sale'
-                      ? 'Your listing will show as "Coming Soon" until this date'
-                      : 'Your listing stays active — clients see when it becomes available'}
-                  </p>
+                  {formData.available_from && new Date(formData.available_from) < new Date(new Date().toISOString().split('T')[0]) ? (
+                    <p className="text-xs text-red-600 mt-1 font-medium">
+                      This date has already passed. Please choose a future date.
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {formData.listing_type === 'sale'
+                        ? 'This date will show publicly on your listing'
+                        : 'Your listing stays active — clients see when it becomes available'}
+                    </p>
+                  )}
                 </div>
               )}
             </div>
