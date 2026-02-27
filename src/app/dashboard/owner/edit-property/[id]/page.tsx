@@ -280,7 +280,8 @@ export default function EditFSBOProperty() {
         },
         body: JSON.stringify({
           ...propertyData,
-          images: images // New images to upload
+          images: images, // New images to upload
+          existingImages: existingImages, // Existing URLs to keep (removals will be reconciled)
         }),
       });
 
@@ -408,9 +409,11 @@ export default function EditFSBOProperty() {
           )}
           
           {currentStep === 4 && (
-            <Step4Photos 
+            <Step4Photos
               images={images}
               setImages={setImages}
+              existingImages={existingImages}
+              setExistingImages={setExistingImages}
             />
           )}
           

@@ -118,6 +118,31 @@ export async function PUT(
       available_from: body.available_from || null,
     };
 
+    // Reconcile existing images: delete any property_media records whose URL is no longer in the keep list
+    if (body.existingImages !== undefined && Array.isArray(body.existingImages)) {
+      try {
+        const adminSupabase = createAdminClient();
+        const { data: currentMedia } = await adminSupabase
+          .from('property_media')
+          .select('id, media_url')
+          .eq('property_id', propertyId)
+          .eq('media_type', 'image');
+
+        if (currentMedia && currentMedia.length > 0) {
+          const toDelete = currentMedia
+            .filter((m: any) => !(body.existingImages as string[]).includes(m.media_url))
+            .map((m: any) => m.id);
+
+          if (toDelete.length > 0) {
+            await adminSupabase.from('property_media').delete().in('id', toDelete);
+            console.log(`🗑️ Reconciled ${toDelete.length} removed image(s) from property_media`);
+          }
+        }
+      } catch (reconcileError) {
+        console.error('Image reconciliation error:', reconcileError);
+      }
+    }
+
     // Handle pre-uploaded image URLs (from agent edit page which uploads directly to Supabase)
     if (body.imageUrls && Array.isArray(body.imageUrls) && body.imageUrls.length > 0) {
       console.log(`📸 Processing ${body.imageUrls.length} pre-uploaded image URLs for property update`);
@@ -173,15 +198,26 @@ export async function PUT(
         // Use admin client to bypass RLS for media operations (same as create route)
         const adminSupabase = createAdminClient();
 
-        // Delete existing property media
-        const { error: deleteError } = await adminSupabase
+        // Only delete all existing media when existingImages wasn't sent (backward compat).
+        // When existingImages is present, reconciliation already removed the unwanted records above.
+        if (body.existingImages === undefined) {
+          const { error: deleteError } = await adminSupabase
+            .from('property_media')
+            .delete()
+            .eq('property_id', propertyId);
+
+          if (deleteError) {
+            console.warn('Warning: Could not delete existing media:', deleteError);
+          }
+        }
+
+        // Determine the starting display_order so new images are appended after any kept existing ones
+        const { count: keptCount } = await adminSupabase
           .from('property_media')
-          .delete()
+          .select('id', { count: 'exact', head: true })
           .eq('property_id', propertyId);
 
-        if (deleteError) {
-          console.warn('Warning: Could not delete existing media:', deleteError);
-        }
+        const startOrder = keptCount || 0;
 
         // Upload new images to Supabase storage and create media records
         for (let i = 0; i < body.images.length; i++) {
@@ -224,8 +260,8 @@ export async function PUT(
                 property_id: propertyId,
                 media_url: publicUrl,
                 media_type: 'image',
-                display_order: i,
-                is_primary: i === 0
+                display_order: startOrder + i,
+                is_primary: startOrder === 0 && i === 0
               });
 
             if (mediaError) {
@@ -242,7 +278,8 @@ export async function PUT(
     }
 
     // Sync properties.images from property_media after any image changes
-    if ((body.imageUrls && Array.isArray(body.imageUrls) && body.imageUrls.length > 0) ||
+    if ((body.existingImages !== undefined) ||
+        (body.imageUrls && Array.isArray(body.imageUrls) && body.imageUrls.length > 0) ||
         (body.images && Array.isArray(body.images) && body.images.length > 0)) {
       try {
         const adminSupabase = createAdminClient();
