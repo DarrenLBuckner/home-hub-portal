@@ -6,12 +6,15 @@ import { convertHeicFiles, isHeicFile } from '@/lib/heicConversion';
 interface Step4PhotosProps {
   images: File[];
   setImages: (images: File[]) => void;
+  videoUrl?: string;
+  onVideoUrlChange?: (url: string) => void;
 }
 
-export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
+export default function Step4Photos({ images, setImages, videoUrl, onVideoUrlChange }: Step4PhotosProps) {
   const [dragActive, setDragActive] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isConverting, setIsConverting] = useState(false);
+  const [videoError, setVideoError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = async (files: FileList | null) => {
@@ -241,6 +244,41 @@ export default function Step4Photos({ images, setImages }: Step4PhotosProps) {
           <li>• High-quality photos get more views and inquiries</li>
         </ul>
       </div>
+
+      {/* Video Tour (Optional) */}
+      {onVideoUrlChange && (
+        <div className="border border-gray-200 rounded-lg p-4">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Video Tour (Optional)
+          </label>
+          <p className="text-sm text-gray-500 mb-3">
+            Add a YouTube or Vimeo link to showcase your property
+          </p>
+          <input
+            type="url"
+            value={videoUrl || ''}
+            onChange={(e) => onVideoUrlChange(e.target.value)}
+            onBlur={(e) => {
+              const url = e.target.value.trim();
+              if (url && !url.match(/youtube\.com|youtu\.be|vimeo\.com/i)) {
+                setVideoError('Please enter a YouTube or Vimeo URL');
+              } else {
+                setVideoError('');
+              }
+            }}
+            placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+            className={`w-full border rounded-lg px-4 py-3 text-base ${
+              videoError ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          {videoError && (
+            <p className="text-sm text-red-600 mt-1">{videoError}</p>
+          )}
+          <p className="text-xs text-gray-500 mt-1">
+            Paste a YouTube or Vimeo URL. Video will display on your listing.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

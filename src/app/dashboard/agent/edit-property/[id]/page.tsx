@@ -558,6 +558,7 @@ export default function EditAgentProperty() {
         address: form.address,
         show_address: form.show_address,
         owner_whatsapp: form.owner_whatsapp,
+        video_url: form.video_url || null,
         currency: currencyCode,
         country: selectedCountry, // FIX: Include country field
         site_id: selectedCountry === 'JM' ? 'jamaica' : 'guyana', // FIX: Include site_id for routing
@@ -1660,6 +1661,33 @@ export default function EditAgentProperty() {
                 setImages={setImages}
                 maxImages={25}
               />
+            </div>
+
+            {/* Video Tour (Optional) */}
+            <div className="border border-gray-200 rounded-lg p-4 mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Video Tour (Optional)
+              </label>
+              <p className="text-sm text-gray-500 mb-3">
+                Add a YouTube or Vimeo link to showcase your property
+              </p>
+              <input
+                type="url"
+                name="video_url"
+                value={form.video_url}
+                onChange={handleChange}
+                onBlur={(e) => {
+                  const url = e.target.value.trim();
+                  if (url && !url.match(/youtube\.com|youtu\.be|vimeo\.com/i)) {
+                    setError('Video URL: Please enter a YouTube or Vimeo URL');
+                  }
+                }}
+                placeholder="https://youtube.com/watch?v=... or https://vimeo.com/..."
+                className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Paste a YouTube or Vimeo URL. Video will display on your listing.
+              </p>
             </div>
           </div>
 

@@ -105,6 +105,9 @@ function CreateAgentPropertyContent() {
     listing_type: 'sale',
     status: 'pending',
 
+    // Media
+    video_url: '',
+
     // NEW: Commercial fields
     commercial_type: '',
     floor_size_sqft: '',
@@ -919,7 +922,14 @@ function CreateAgentPropertyContent() {
           {currentStep === 1 && <Step1BasicInfo formData={formData} setFormData={setFormData} />}
           {currentStep === 2 && <Step2Details formData={formData} setFormData={setFormData} />}
           {currentStep === 3 && <Step3Location formData={formData} setFormData={setFormData} />}
-          {currentStep === 4 && <Step4Photos images={images} setImages={setImages} />}
+          {currentStep === 4 && (
+            <Step4Photos
+              images={images}
+              setImages={setImages}
+              videoUrl={formData.video_url}
+              onVideoUrlChange={(url) => setFormData(prev => ({ ...prev, video_url: url }))}
+            />
+          )}
           {currentStep === 5 && (
             <Step5Contact
               formData={formData}
