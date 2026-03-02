@@ -6,7 +6,8 @@ import { createClient } from '@/supabase';
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
 import PropertySuccessScreen from "@/components/PropertySuccessScreen";
-import { saveDraft } from '@/lib/draftManager';
+import { saveDraft, deleteDraft } from '@/lib/draftManager';
+import { uploadImagesToSupabaseWithStatus } from '@/lib/supabaseImageUpload';
 
 // Step components
 import Step1BasicInfo from './components/Step1BasicInfo';
@@ -131,6 +132,8 @@ function CreateAgentPropertyContent() {
   });
   
   const [images, setImages] = useState<File[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
+  const [imageUploadWarning, setImageUploadWarning] = useState('');
 
   // State for target user profile (for admin-on-behalf-of creation)
   const [targetUserProfile, setTargetUserProfile] = useState<{
@@ -244,6 +247,22 @@ function CreateAgentPropertyContent() {
             financing_details: d.financing_details || '',
           }));
           setDraftId(draftIdFromUrl);
+
+          // Restore previously uploaded image URLs from draft
+          const savedImageUrls: string[] = [];
+          if (Array.isArray(d.image_urls)) {
+            savedImageUrls.push(...d.image_urls);
+          } else if (Array.isArray(d.images)) {
+            // Legacy format: images stored as [{url, isPrimary, altText}]
+            for (const img of d.images) {
+              if (typeof img === 'string') savedImageUrls.push(img);
+              else if (img?.url) savedImageUrls.push(img.url);
+            }
+          }
+          if (savedImageUrls.length > 0) {
+            setExistingImageUrls(savedImageUrls);
+            console.log(`📸 Restored ${savedImageUrls.length} image(s) from draft`);
+          }
         }
       } catch (err) {
         console.error('Error loading draft:', err);
@@ -262,9 +281,47 @@ function CreateAgentPropertyContent() {
     if (!currentFormData.price && !currentFormData.title && !currentFormData.description) return;
 
     setIsSavingDraft(true);
+    setImageUploadWarning('');
     try {
+      // Upload any new images to Supabase Storage before saving draft
+      let imageUrlsForDraft = [...existingImageUrls];
+
+      if (images.length > 0) {
+        console.log(`📸 Draft save: uploading ${images.length} new image(s) to storage...`);
+        try {
+          const supabase = createClient();
+          const { data: { user } } = await supabase.auth.getUser();
+
+          if (user) {
+            const uploadResult = await uploadImagesToSupabaseWithStatus(images, user.id);
+
+            if (uploadResult.totalSuccessful > 0) {
+              const newUrls = uploadResult.images.map(img => img.url);
+              imageUrlsForDraft = [...imageUrlsForDraft, ...newUrls];
+              // Move uploaded files out of images[] into existingImageUrls
+              setExistingImageUrls(imageUrlsForDraft);
+              setImages([]);
+              console.log(`✅ Draft save: ${uploadResult.totalSuccessful} image(s) uploaded`);
+            }
+
+            if (uploadResult.failedImages.length > 0) {
+              const failedNames = uploadResult.failedImages.map(f => f.name).join(', ');
+              console.warn(`⚠️ Draft save: ${uploadResult.failedImages.length} image(s) failed: ${failedNames}`);
+              setImageUploadWarning(`${uploadResult.failedImages.length} photo(s) couldn't be saved yet. They'll retry on next save.`);
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('⚠️ Draft image upload failed, saving draft without new images:', uploadErr);
+          setImageUploadWarning('Photos couldn\'t be uploaded right now. Your other changes were saved.');
+        }
+      }
+
       const result = await saveDraft(
-        { ...currentFormData, listing_type: currentFormData.listing_type || 'sale' },
+        {
+          ...currentFormData,
+          listing_type: currentFormData.listing_type || 'sale',
+          image_urls: imageUrlsForDraft.length > 0 ? imageUrlsForDraft : undefined,
+        },
         draftId || undefined
       );
 
@@ -279,7 +336,7 @@ function CreateAgentPropertyContent() {
     } finally {
       setIsSavingDraft(false);
     }
-  }, [draftId, isSavingDraft, isSubmitting]);
+  }, [draftId, isSavingDraft, isSubmitting, images, existingImageUrls]);
 
   // Save draft on page unload (best-effort via sendBeacon)
   useEffect(() => {
@@ -413,20 +470,49 @@ function CreateAgentPropertyContent() {
 
   const handleSaveAsDraft = async () => {
     if (!validateCurrentStep()) return;
-    
+
     setIsSubmitting(true);
     setError('');
-    
+
     console.log('🎯 Starting save draft process...');
-    
+
     try {
-      // Initialize Supabase client
       const supabase = createClient();
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        setError('Please login to save a draft');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Upload new images using the robust upload utility
+      let allImageUrls = [...existingImageUrls];
+      if (images.length > 0) {
+        console.log(`📸 Uploading ${images.length} new image(s) to storage...`);
+        const uploadResult = await uploadImagesToSupabaseWithStatus(images, user.id);
+
+        if (uploadResult.totalSuccessful > 0) {
+          const newUrls = uploadResult.images.map(img => img.url);
+          allImageUrls = [...allImageUrls, ...newUrls];
+          setExistingImageUrls(allImageUrls);
+          setImages([]);
+          console.log(`✅ ${uploadResult.totalSuccessful} image(s) uploaded`);
+        }
+
+        if (uploadResult.failedImages.length > 0) {
+          const failedNames = uploadResult.failedImages.map(f => f.name).join(', ');
+          console.error(`❌ Failed to upload: ${failedNames}`);
+          setError(`Failed to upload ${uploadResult.failedImages.length} image(s): ${failedNames}. Other data will still be saved.`);
+        }
+      }
+
       const draftData: any = {
         title: formData.title,
         description: formData.description,
         price: Number(formData.price),
         property_type: formData.property_type || 'Single Family Home',
+        property_category: formData.property_category || 'residential',
         bedrooms: Number(formData.bedrooms) || 0,
         bathrooms: Number(formData.bathrooms) || 0,
         house_size_value: Number(formData.house_size_value) || 1000,
@@ -445,139 +531,67 @@ function CreateAgentPropertyContent() {
         show_address: formData.show_address || false,
         latitude: formData.latitude,
         longitude: formData.longitude,
+        country: formData.country || 'GY',
+        currency: formData.currency || 'GYD',
         owner_email: formData.owner_email,
         owner_whatsapp: formData.owner_whatsapp || '',
         property_owner_whatsapp: formData.property_owner_whatsapp || '',
         property_owner_email: formData.property_owner_email || '',
         listing_protection: formData.listing_protection ?? true,
         listing_type: 'sale',
-        images: [] // Initialize empty, will upload images separately
+        image_urls: allImageUrls.length > 0 ? allImageUrls : undefined,
       };
-      
-      // Upload images first if any exist
-      const uploadedImageUrls: string[] = [];
-      if (images.length > 0) {
-        console.log('📸 Uploading images to storage...');
-        
-        for (let i = 0; i < images.length; i++) {
-          const file = images[i];
-          try {
-            console.log(`📤 Uploading image ${i + 1}/${images.length}: ${file.name}`);
-            
-            // Create unique filename
-            const timestamp = Date.now();
-            const extension = file.name.split('.').pop() || 'jpg';
-            const fileName = `agent/${timestamp}-${i}.${extension}`;
-            
-            // Upload to Supabase storage
-            const { data: uploadData, error: uploadError } = await supabase.storage
-              .from('property-images')
-              .upload(fileName, file);
-            
-            if (uploadError) {
-              console.error(`❌ Image upload error for ${fileName}:`, uploadError);
-              throw uploadError;
-            }
-            
-            // Get public URL
-            const { data: urlData } = supabase.storage
-              .from('property-images')
-              .getPublicUrl(fileName);
-              
-            if (urlData?.publicUrl) {
-              uploadedImageUrls.push(urlData.publicUrl);
-              console.log(`✅ Uploaded image ${i + 1}:`, urlData.publicUrl);
-            } else {
-              console.error(`❌ Failed to get public URL for ${fileName}`);
-            }
-          } catch (uploadErr: any) {
-            console.error(`❌ Failed to upload image ${i + 1}:`, uploadErr);
-            setError(`Failed to upload image "${file.name}": ${uploadErr.message}`);
-            return; // Stop the process if image upload fails
-          }
-        }
-        
-        // Add uploaded URLs to draft data
-        draftData.images = uploadedImageUrls.map((url, index) => ({
-          url: url,
-          isPrimary: index === 0,
-          altText: `Property image ${index + 1}`
-        }));
-        
-        console.log(`✅ All ${images.length} images uploaded successfully`);
-      }
-      
-      console.log('🚀 Sending draft to API...', { 
-        hasImages: draftData.images.length > 0,
+
+      console.log('🚀 Sending draft to API...', {
+        imageCount: allImageUrls.length,
         title: draftData.title,
-        email: formData.owner_email 
       });
-      
-      // Create AbortController for timeout
+
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        controller.abort();
-        console.error('❌ API request timed out after 30 seconds');
-      }, 30000); // 30 second timeout
-      
-      // Use new draft API — include draftId if we're updating an existing draft
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const response = await fetch('/api/properties/drafts', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...(draftId ? { draft_id: draftId } : {}),
           draft_type: 'sale',
-          site_id: 'guyana', // Default for agent created properties - could be made dynamic later
+          site_id: 'guyana',
           ...draftData
         }),
         signal: controller.signal
       });
 
       clearTimeout(timeoutId);
-      
-      console.log('📡 API Response status:', response.status);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('❌ API returned error status:', response.status, errorText);
         throw new Error(`Server error (${response.status}): ${errorText || 'Unknown error'}`);
       }
 
       const result = await response.json();
-      console.log('📊 API Response:', result);
-      
+
       if (!result.success) {
-        console.error('❌ API returned failure:', result.error);
         throw new Error(result.error || 'Failed to save draft');
       }
-      
+
       console.log('✅ Draft saved successfully:', result.draft_id);
-      
-      // Success - redirect to dashboard with draft message
       router.push('/dashboard/agent?success=Property saved as draft');
-      
+
     } catch (error: any) {
       console.error('💥 Save draft error:', error);
-      
-      // Provide specific error messages for common issues
+
       if (error.name === 'AbortError') {
         setError('Request timed out. Please check your internet connection and try again.');
-      } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      } else if (error.message?.includes('Failed to fetch') || error.message?.includes('NetworkError')) {
         setError('Network error. Please check your internet connection and try again.');
-      } else if (error.message.includes('Unauthorized') || error.message.includes('401')) {
+      } else if (error.message?.includes('Unauthorized') || error.message?.includes('401')) {
         setError('Session expired. Please refresh the page and log in again.');
       } else {
         setError(`Failed to save draft: ${error.message || 'Unknown error occurred'}`);
       }
-      
-      // Also log to help debugging
-      console.error('📝 Form data at time of error:', formData);
-      console.error('📸 Images at time of error:', images.length);
     } finally {
       setIsSubmitting(false);
-      console.log('🏁 Save draft process completed');
     }
   };
 
@@ -687,16 +701,17 @@ function CreateAgentPropertyContent() {
         ...(targetUserId && { target_user_id: targetUserId })
       };
 
-      // Upload images directly to Supabase Storage (bypasses API payload limits)
-      // This is the correct approach - images go directly to storage, only URLs go to API
-      let imageUrls: string[] = [];
+      // Start with any previously uploaded images from draft
+      let imageUrls: string[] = [...existingImageUrls];
+
+      // Upload any NEW images to Supabase Storage (bypasses API payload limits)
       if (images.length > 0) {
-        console.log('📤 Uploading images directly to Supabase Storage...');
+        console.log(`📤 Uploading ${images.length} new image(s) to Supabase Storage...`);
         try {
           const { uploadImagesToSupabase } = await import('@/lib/supabaseImageUpload');
           const uploadedImages = await uploadImagesToSupabase(images, user.id);
-          imageUrls = uploadedImages.map(img => img.url);
-          console.log(`✅ ${imageUrls.length} images uploaded successfully`);
+          imageUrls = [...imageUrls, ...uploadedImages.map(img => img.url)];
+          console.log(`✅ ${uploadedImages.length} new + ${existingImageUrls.length} existing = ${imageUrls.length} total images`);
         } catch (err) {
           console.error('Failed to upload images to storage:', err);
           setError('Failed to upload images. Please try again.');
@@ -752,6 +767,15 @@ function CreateAgentPropertyContent() {
         }
       }
 
+      // Clean up the draft now that the property is created
+      if (draftId) {
+        console.log('🗑️ Cleaning up draft after successful submission:', draftId);
+        deleteDraft(draftId).then(ok => {
+          if (ok) console.log('✅ Draft deleted');
+          else console.warn('⚠️ Draft cleanup failed (non-critical)');
+        });
+      }
+
       // Success - show success screen (PropertySuccessScreen will handle redirect)
       console.log('Property submission complete, showing success screen...');
       setSuccess(true);
@@ -802,7 +826,7 @@ function CreateAgentPropertyContent() {
   // Show success screen when property is submitted
   if (success) {
     // Redirect admin to admin dashboard if they created property for another user
-    const redirectPath = isCreatingForUser ? '/admin-dashboard' : '/dashboard/agent';
+    const redirectPath = isCreatingForUser ? '/admin-dashboard/unified' : '/dashboard/agent';
 
     return (
       <PropertySuccessScreen
@@ -926,6 +950,19 @@ function CreateAgentPropertyContent() {
           </div>
         )}
 
+        {/* Image upload warning (non-blocking) */}
+        {imageUploadWarning && (
+          <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-amber-500">📸</span>
+                <p className="text-amber-800 text-sm">{imageUploadWarning}</p>
+              </div>
+              <button onClick={() => setImageUploadWarning('')} className="text-amber-400 hover:text-amber-600 text-lg leading-none">&times;</button>
+            </div>
+          </div>
+        )}
+
         {/* Form steps - Enhanced styling */}
         <div className="min-h-[500px] bg-gray-50 p-8 rounded-xl border border-gray-200">
           {currentStep === 1 && <Step1BasicInfo formData={formData} setFormData={setFormData} />}
@@ -935,6 +972,8 @@ function CreateAgentPropertyContent() {
             <Step4Photos
               images={images}
               setImages={setImages}
+              existingImages={existingImageUrls}
+              setExistingImages={setExistingImageUrls}
               videoUrl={formData.video_url}
               onVideoUrlChange={(url) => setFormData(prev => ({ ...prev, video_url: url }))}
             />

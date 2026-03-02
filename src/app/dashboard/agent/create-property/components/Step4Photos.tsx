@@ -6,11 +6,13 @@ import { convertHeicFiles, isHeicFile } from '@/lib/heicConversion';
 interface Step4PhotosProps {
   images: File[];
   setImages: (images: File[]) => void;
+  existingImages?: string[];
+  setExistingImages?: (images: string[]) => void;
   videoUrl?: string;
   onVideoUrlChange?: (url: string) => void;
 }
 
-export default function Step4Photos({ images, setImages, videoUrl, onVideoUrlChange }: Step4PhotosProps) {
+export default function Step4Photos({ images, setImages, existingImages = [], setExistingImages, videoUrl, onVideoUrlChange }: Step4PhotosProps) {
   const [dragActive, setDragActive] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isConverting, setIsConverting] = useState(false);
@@ -26,7 +28,8 @@ export default function Step4Photos({ images, setImages, videoUrl, onVideoUrlCha
       return isValidType && isValidSize;
     });
 
-    if (validFiles.length + images.length > 10) {
+    const totalCount = existingImages.length + images.length;
+    if (validFiles.length + totalCount > 10) {
       alert('Maximum 10 images allowed');
       return;
     }
@@ -74,6 +77,12 @@ export default function Step4Photos({ images, setImages, videoUrl, onVideoUrlCha
     e.preventDefault();
     if (e.target.files && e.target.files[0]) {
       handleFiles(e.target.files);
+    }
+  };
+
+  const removeExistingImage = (index: number) => {
+    if (setExistingImages) {
+      setExistingImages(existingImages.filter((_, i) => i !== index));
     }
   };
 
@@ -165,21 +174,57 @@ export default function Step4Photos({ images, setImages, videoUrl, onVideoUrlCha
         </div>
       )}
 
-      {/* Image Previews */}
-      {images.length > 0 && (
+      {/* Image Previews - existing saved photos + newly added */}
+      {(existingImages.length + images.length) > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Uploaded Photos ({images.length}/10)</h3>
+            <h3 className="text-lg font-medium">Photos ({existingImages.length + images.length}/10)</h3>
             <p className="text-sm text-gray-500">First photo will be the main image</p>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {previewUrls.map((url, index) => (
-              <div key={index} className="relative group">
+            {/* Existing saved images (URLs from draft/database) */}
+            {existingImages.map((url, index) => (
+              <div key={`existing-${index}`} className="relative group">
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                   <img
                     src={url}
-                    alt={`Preview ${index + 1}`}
+                    alt={`Photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <button
+                    onClick={() => removeExistingImage(index)}
+                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
+                    title="Remove"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {index === 0 && (
+                  <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                    Main Photo
+                  </div>
+                )}
+
+                <div className="absolute top-2 right-2 bg-gray-600 text-white text-xs px-2 py-1 rounded">
+                  Saved
+                </div>
+              </div>
+            ))}
+
+            {/* Newly added images (File objects, not yet uploaded) */}
+            {previewUrls.map((url, index) => (
+              <div key={`new-${index}`} className="relative group">
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                  <img
+                    src={url}
+                    alt={`New Photo ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -221,12 +266,16 @@ export default function Step4Photos({ images, setImages, videoUrl, onVideoUrlCha
                   </button>
                 </div>
 
-                {/* Main Image Badge */}
-                {index === 0 && (
+                {/* Main Image Badge - only if no existing images */}
+                {existingImages.length === 0 && index === 0 && (
                   <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
                     Main Photo
                   </div>
                 )}
+
+                <div className="absolute top-2 right-2 bg-green-600 text-white text-xs px-2 py-1 rounded">
+                  New
+                </div>
               </div>
             ))}
           </div>
