@@ -768,9 +768,11 @@ function CreateAgentPropertyContent() {
       }
 
       // Clean up the draft now that the property is created
-      if (draftId) {
-        console.log('🗑️ Cleaning up draft after successful submission:', draftId);
-        deleteDraft(draftId).then(ok => {
+      // Use draftIdRef (always current) instead of draftId state (stale in closure)
+      const currentDraftId = draftIdRef.current || draftId;
+      if (currentDraftId) {
+        console.log('🗑️ Cleaning up draft after successful submission:', currentDraftId);
+        deleteDraft(currentDraftId).then(ok => {
           if (ok) console.log('✅ Draft deleted');
           else console.warn('⚠️ Draft cleanup failed (non-critical)');
         });
