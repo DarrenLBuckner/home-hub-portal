@@ -614,3 +614,113 @@ export async function POST(
   }
 }
 
+// PATCH /api/properties/update/[id] - Admin property reassignment (change user_id only)
+export async function PATCH(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options: any) {
+            cookieStore.set({ name, value, ...options });
+          },
+          remove(name: string, options: any) {
+            cookieStore.set({ name, value: '', ...options });
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify super admin
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('admin_level')
+      .eq('id', user.id)
+      .single();
+
+    if (userProfile?.admin_level !== 'super') {
+      return NextResponse.json({ error: 'Super admin privileges required' }, { status: 403 });
+    }
+
+    const propertyId = params.id;
+    const body = await request.json();
+    const { reassign_to_user_id } = body;
+
+    if (!reassign_to_user_id) {
+      return NextResponse.json({ error: 'reassign_to_user_id is required' }, { status: 400 });
+    }
+
+    const adminSupabase = createAdminClient();
+
+    // Validate target user exists
+    const { data: targetUser, error: targetError } = await adminSupabase
+      .from('profiles')
+      .select('id, user_type, first_name, last_name')
+      .eq('id', reassign_to_user_id)
+      .single();
+
+    if (targetError || !targetUser) {
+      return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
+    }
+
+    // Get current property for logging
+    const { data: currentProperty } = await adminSupabase
+      .from('properties')
+      .select('id, user_id, listing_type')
+      .eq('id', propertyId)
+      .single();
+
+    if (!currentProperty) {
+      return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+    }
+
+    // Determine listed_by_type based on target user's type
+    let listedByType = 'agent';
+    if (targetUser.user_type === 'landlord') listedByType = 'landlord';
+    else if (targetUser.user_type === 'fsbo' || targetUser.user_type === 'owner') listedByType = 'owner';
+
+    // Update only user_id and listed_by_type
+    const { error: updateError } = await adminSupabase
+      .from('properties')
+      .update({
+        user_id: reassign_to_user_id,
+        listed_by_type: listedByType,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', propertyId);
+
+    if (updateError) {
+      console.error('Reassignment error:', updateError);
+      return NextResponse.json({ error: 'Failed to reassign property' }, { status: 500 });
+    }
+
+    console.log(`🔄 Property ${propertyId} reassigned from ${currentProperty.user_id} to ${reassign_to_user_id} (${targetUser.first_name} ${targetUser.last_name}) by admin ${user.id}`);
+
+    return NextResponse.json({
+      success: true,
+      message: `Property reassigned to ${targetUser.first_name} ${targetUser.last_name}`,
+      new_owner: {
+        id: targetUser.id,
+        name: `${targetUser.first_name} ${targetUser.last_name}`,
+        user_type: targetUser.user_type,
+      },
+    });
+  } catch (error) {
+    console.error('Property reassignment API error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+

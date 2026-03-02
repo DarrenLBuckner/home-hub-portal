@@ -64,6 +64,10 @@ export default function PropertyReviewPage() {
   const [priceEditMode, setPriceEditMode] = useState<string | null>(null);
   const [newPrice, setNewPrice] = useState<string>("");
   const [showPriceModal, setShowPriceModal] = useState(false);
+  const [showReassignModal, setShowReassignModal] = useState(false);
+  const [reassignTargetId, setReassignTargetId] = useState<string>("");
+  const [availableAgents, setAvailableAgents] = useState<Array<{id: string; first_name: string; last_name: string; company: string; user_type: string}>>([]);
+  const [reassignLoading, setReassignLoading] = useState(false);
   
   // Filters
   const [filters, setFilters] = useState<PropertyFilters>({
@@ -265,6 +269,61 @@ export default function PropertyReviewPage() {
         return `/dashboard/owner/edit-property/${property.id}`;
     }
   };
+
+  async function handleReassignOpen(property: Property) {
+    setSelectedProperty(property);
+    setReassignTargetId("");
+    setShowReassignModal(true);
+
+    // Load available agents/users for the dropdown
+    try {
+      const { data: agents, error } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, company, user_type')
+        .in('user_type', ['agent', 'landlord', 'owner', 'fsbo'])
+        .order('first_name', { ascending: true });
+
+      if (!error && agents) {
+        setAvailableAgents(agents);
+      }
+    } catch (err) {
+      console.error('Error loading agents:', err);
+    }
+  }
+
+  async function handleReassign() {
+    if (!selectedProperty || !reassignTargetId) return;
+
+    setReassignLoading(true);
+    try {
+      const response = await fetch(`/api/properties/update/${selectedProperty.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          reassign_to_user_id: reassignTargetId,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(`Error reassigning property: ${result.error || 'Unknown error'}`);
+      } else {
+        const targetAgent = availableAgents.find(a => a.id === reassignTargetId);
+        const targetName = targetAgent ? `${targetAgent.first_name} ${targetAgent.last_name}` : reassignTargetId;
+        alert(`Property reassigned to ${targetName} successfully!`);
+        setShowReassignModal(false);
+        setSelectedProperty(null);
+        setReassignTargetId("");
+        await loadProperties();
+      }
+    } catch (err) {
+      alert('Error reassigning property');
+      console.error(err);
+    } finally {
+      setReassignLoading(false);
+    }
+  }
 
   if (adminLoading || loading) {
     return (
@@ -524,6 +583,14 @@ export default function PropertyReviewPage() {
                             </button>
                           </Link>
 
+                          {/* Reassign Property to Different Agent/User */}
+                          <button
+                            onClick={() => handleReassignOpen(property)}
+                            className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                          >
+                            🔄 Reassign
+                          </button>
+
                           {/* Status Management */}
                           {(property.status === 'pending' || property.status === 'draft') && (
                             <>
@@ -669,6 +736,76 @@ export default function PropertyReviewPage() {
                   setShowPriceModal(false);
                   setSelectedProperty(null);
                   setNewPrice("");
+                }}
+                className="w-full px-4 py-3 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reassign Property Modal */}
+      {showReassignModal && selectedProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">🔄 Reassign Property</h3>
+              <button
+                onClick={() => {
+                  setShowReassignModal(false);
+                  setSelectedProperty(null);
+                  setReassignTargetId("");
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-1">Property: <strong>{selectedProperty.title}</strong></p>
+              <p className="text-sm text-gray-600 mb-4">
+                Current owner: <strong>
+                  {selectedProperty.owner
+                    ? `${selectedProperty.owner.first_name} ${selectedProperty.owner.last_name}`
+                    : 'Unknown'}
+                </strong>
+              </p>
+
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Reassign to <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={reassignTargetId}
+                onChange={(e) => setReassignTargetId(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">Select an agent or user...</option>
+                {availableAgents.map((agent) => (
+                  <option key={agent.id} value={agent.id}>
+                    {agent.first_name} {agent.last_name}
+                    {agent.company ? ` — ${agent.company}` : ''}
+                    {` (${agent.user_type})`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col space-y-3">
+              <button
+                onClick={handleReassign}
+                disabled={!reassignTargetId || reassignLoading}
+                className="w-full px-4 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              >
+                {reassignLoading ? 'Reassigning...' : '🔄 Reassign Property'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowReassignModal(false);
+                  setSelectedProperty(null);
+                  setReassignTargetId("");
                 }}
                 className="w-full px-4 py-3 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
               >
