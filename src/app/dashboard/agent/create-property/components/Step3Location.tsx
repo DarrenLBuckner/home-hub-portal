@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import GlobalSouthLocationSelector from '@/components/GlobalSouthLocationSelector';
 import AITitleSuggester from '@/components/AITitleSuggester';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+
+const MAP_LIBRARIES: ('places')[] = ['places'];
 
 interface Step3LocationProps {
   formData: any;
@@ -126,6 +129,18 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
           </p>
         </div>
       </div>
+
+      {/* Pin Location on Map (Optional) */}
+      <PinLocationMap
+        latitude={formData.latitude}
+        longitude={formData.longitude}
+        onLocationSelect={(lat: number, lng: number) => {
+          setFormData((prev: any) => ({ ...prev, latitude: lat, longitude: lng }));
+        }}
+        onLocationClear={() => {
+          setFormData((prev: any) => ({ ...prev, latitude: null, longitude: null }));
+        }}
+      />
 
       {/* Owner Information - Duplicate Protection */}
       <div className="mt-8 p-6 bg-amber-50 border border-amber-200 rounded-lg">
@@ -282,6 +297,135 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
           />
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── Pin Location Map Sub-Component ── */
+
+interface PinLocationMapProps {
+  latitude?: number | null;
+  longitude?: number | null;
+  onLocationSelect: (lat: number, lng: number) => void;
+  onLocationClear: () => void;
+}
+
+const GUYANA_CENTER = { lat: 6.8013, lng: -58.1551 };
+
+function PinLocationMap({ latitude, longitude, onLocationSelect, onLocationClear }: PinLocationMapProps) {
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries: MAP_LIBRARIES,
+  });
+
+  const [searchInput, setSearchInput] = useState('');
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const hasPin = latitude != null && longitude != null;
+
+  const center = hasPin
+    ? { lat: latitude!, lng: longitude! }
+    : GUYANA_CENTER;
+
+  const zoom = hasPin ? 15 : 7;
+
+  // Set up Places Autocomplete
+  useEffect(() => {
+    if (!isLoaded || !inputRef.current) return;
+
+    const autocomplete = new google.maps.places.Autocomplete(inputRef.current, {
+      types: ['geocode', 'establishment'],
+      componentRestrictions: { country: ['gy', 'jm', 'tt', 'bb'] },
+    });
+
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace();
+      if (place.geometry?.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        onLocationSelect(lat, lng);
+        setSearchInput(place.formatted_address || place.name || '');
+      }
+    });
+
+    autocompleteRef.current = autocomplete;
+  }, [isLoaded, onLocationSelect]);
+
+  const handleMapClick = useCallback(
+    (e: google.maps.MapMouseEvent) => {
+      if (e.latLng) {
+        onLocationSelect(e.latLng.lat(), e.latLng.lng());
+      }
+    },
+    [onLocationSelect]
+  );
+
+  if (!isLoaded) {
+    return (
+      <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="h-[300px] bg-gray-100 rounded-lg animate-pulse flex items-center justify-center text-gray-400 text-sm">
+          Loading map...
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+      <div className="flex items-center gap-2 mb-3">
+        <span className="text-lg">📍</span>
+        <h3 className="text-sm font-semibold text-gray-800">
+          Pin Location on Map <span className="text-gray-400 font-normal">(optional)</span>
+        </h3>
+      </div>
+      <p className="text-xs text-gray-600 mb-3">
+        Drop a pin on the map to show buyers the approximate area. You can search for an address or click directly on the map.
+      </p>
+
+      {/* Search box */}
+      <input
+        ref={inputRef}
+        type="text"
+        value={searchInput}
+        onChange={(e) => setSearchInput(e.target.value)}
+        placeholder="Search address or area..."
+        className="w-full px-3 py-2 mb-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      />
+
+      {/* Map */}
+      <GoogleMap
+        mapContainerStyle={{ width: '100%', height: '300px', borderRadius: '0.5rem' }}
+        center={center}
+        zoom={zoom}
+        onClick={handleMapClick}
+        options={{
+          disableDefaultUI: true,
+          zoomControl: true,
+          streetViewControl: false,
+          mapTypeControl: false,
+        }}
+      >
+        {hasPin && <Marker position={{ lat: latitude!, lng: longitude! }} />}
+      </GoogleMap>
+
+      {/* Pin info / clear */}
+      {hasPin ? (
+        <div className="flex items-center justify-between mt-2">
+          <p className="text-xs text-green-700">
+            📍 Pin set: {latitude!.toFixed(5)}, {longitude!.toFixed(5)}
+          </p>
+          <button
+            type="button"
+            onClick={onLocationClear}
+            className="text-xs text-red-600 hover:text-red-800"
+          >
+            Remove pin
+          </button>
+        </div>
+      ) : (
+        <p className="text-xs text-gray-500 mt-2">Click on the map or search above to drop a pin</p>
+      )}
     </div>
   );
 }

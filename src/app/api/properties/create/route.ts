@@ -691,7 +691,11 @@ export async function POST(req: NextRequest) {
         region: body.region,
         city: body.city,
         neighborhood: body.neighborhood,
-        
+        address: body.address || null,
+        show_address: body.show_address ?? false,
+        latitude: body.latitude ? parseFloat(body.latitude) : null,
+        longitude: body.longitude ? parseFloat(body.longitude) : null,
+
         // Agent-specific fields
         currency: body.currency || 'GYD',
         listed_by_type: listedByType,
@@ -759,7 +763,12 @@ export async function POST(req: NextRequest) {
         country: body.country,
         region: body.region,
         city: body.region, // Use region as city for rentals
-        
+        neighborhood: body.neighborhood || null,
+        address: body.address || null,
+        show_address: body.show_address ?? false,
+        latitude: body.latitude ? parseFloat(body.latitude) : null,
+        longitude: body.longitude ? parseFloat(body.longitude) : null,
+
         // Rental-specific fields
         rental_type: body.rentalType || 'monthly',
         available_from: body.available_from || null,
@@ -815,7 +824,11 @@ export async function POST(req: NextRequest) {
         region: body.region,
         city: body.city,
         neighborhood: body.neighborhood || null,
-        
+        address: body.address || null,
+        show_address: body.show_address ?? false,
+        latitude: body.latitude ? parseFloat(body.latitude) : null,
+        longitude: body.longitude ? parseFloat(body.longitude) : null,
+
         // Step 5 - Contact - sanitized to prevent pattern errors
         owner_email: sanitizeEmail(body.owner_email),
         owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp),

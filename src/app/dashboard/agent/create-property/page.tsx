@@ -89,6 +89,8 @@ function CreateAgentPropertyContent() {
     neighborhood: '',
     address: '',
     show_address: false,
+    latitude: null as number | null,
+    longitude: null as number | null,
     country: 'GY',
     currency: 'GYD',
 
@@ -216,6 +218,8 @@ function CreateAgentPropertyContent() {
             neighborhood: d.neighborhood || '',
             address: d.address || '',
             show_address: d.show_address || false,
+            latitude: d.latitude || null,
+            longitude: d.longitude || null,
             country: d.country || 'GY',
             currency: d.currency || 'GYD',
             owner_email: d.owner_email || '',
@@ -439,6 +443,8 @@ function CreateAgentPropertyContent() {
         neighborhood: formData.neighborhood || '',
         address: formData.address || '',
         show_address: formData.show_address || false,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         owner_email: formData.owner_email,
         owner_whatsapp: formData.owner_whatsapp || '',
         property_owner_whatsapp: formData.property_owner_whatsapp || '',
@@ -640,6 +646,8 @@ function CreateAgentPropertyContent() {
         neighborhood: formData.neighborhood || '',
         address: formData.address || '',
         show_address: formData.show_address || false,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         country: formData.country || 'GY',
 
         // Contact info (Agent's contact)

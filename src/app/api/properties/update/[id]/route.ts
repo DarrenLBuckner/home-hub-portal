@@ -100,6 +100,8 @@ export async function PUT(
       neighborhood: body.neighborhood || null,
       address: body.address || null,
       show_address: body.show_address ?? false,
+      latitude: body.latitude ? parseFloat(body.latitude) : null,
+      longitude: body.longitude ? parseFloat(body.longitude) : null,
       site_id: body.site_id || (body.country === 'JM' ? 'jamaica' : 'guyana'),
 
       // Step 4 - Currency
