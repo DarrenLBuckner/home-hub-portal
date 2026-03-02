@@ -88,6 +88,12 @@ export async function PUT(
       return NextResponse.json({ error: 'No permission to reject properties' }, { status: 403 });
     }
 
+    // Basic admins cannot change status to under_contract, sold, or rented
+    const restrictedStatuses = ['under_contract', 'sold', 'rented'];
+    if ((profile as ProfileType).admin_level === 'basic' && restrictedStatuses.includes(body.status)) {
+      return NextResponse.json({ error: 'Basic admins cannot change properties to this status' }, { status: 403 });
+    }
+
     // Get the property to check permissions
     const { data: property, error: propertyError } = await adminSupabase
       .from('properties')
@@ -117,11 +123,9 @@ export async function PUT(
       updateData.rejection_reason = body.rejection_reason;
     }
 
-    // Add admin who processed this
-    if (body.status === 'active' || body.status === 'rejected') {
-      updateData.reviewed_by = user.id;
-      updateData.reviewed_at = new Date().toISOString();
-    }
+    // Track which admin made this status change
+    updateData.reviewed_by = user.id;
+    updateData.reviewed_at = new Date().toISOString();
 
     // Update property status using service role client
     const { data: updatedProperty, error: updateError } = await (adminSupabase as any)
@@ -178,13 +182,22 @@ export async function PUT(
       console.warn('⚠️ Failed to send property notification email:', emailError);
     }
 
+    // Map status to action type for logging
+    const statusActionMap: Record<string, string> = {
+      active: 'property_approved',
+      rejected: 'property_rejected',
+      under_contract: 'property_under_contract',
+      sold: 'property_sold',
+      rented: 'property_rented',
+    };
+
     // Try to log the admin action (optional, won't fail if table doesn't exist)
     try {
       await adminSupabase
         .from('admin_actions')
         .insert({
           admin_id: user.id,
-          action_type: body.status === 'active' ? 'property_approved' : 'property_rejected',
+          action_type: statusActionMap[body.status] || `property_status_${body.status}`,
           target_type: 'property',
           target_id: propertyId,
           details: {
@@ -198,10 +211,19 @@ export async function PUT(
       // Continue without failing the main operation
     }
 
+    // Human-readable status messages
+    const statusMessageMap: Record<string, string> = {
+      active: 'Property approved successfully',
+      rejected: 'Property rejected successfully',
+      under_contract: 'Property marked as under contract',
+      sold: 'Property marked as sold',
+      rented: 'Property marked as rented',
+    };
+
     return NextResponse.json({
       success: true,
       property: updatedProperty,
-      message: `Property ${body.status === 'active' ? 'approved' : 'rejected'} successfully`
+      message: statusMessageMap[body.status] || `Property status updated to ${body.status}`
     });
     
   } catch (error) {

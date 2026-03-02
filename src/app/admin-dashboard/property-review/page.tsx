@@ -68,7 +68,10 @@ export default function PropertyReviewPage() {
   const [reassignTargetId, setReassignTargetId] = useState<string>("");
   const [availableAgents, setAvailableAgents] = useState<Array<{id: string; first_name: string; last_name: string; company: string; user_type: string}>>([]);
   const [reassignLoading, setReassignLoading] = useState(false);
-  
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{ propertyId: string; status: string; propertyTitle: string; actionLabel: string } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
+
   // Filters
   const [filters, setFilters] = useState<PropertyFilters>({
     status: 'all',
@@ -219,22 +222,31 @@ export default function PropertyReviewPage() {
     }
   }
 
-  async function updatePropertyStatus(propertyId: string, newStatus: string) {
+  // Opens confirmation dialog before changing property status
+  function requestStatusChange(propertyId: string, newStatus: string, propertyTitle: string, actionLabel: string) {
+    setConfirmAction({ propertyId, status: newStatus, propertyTitle, actionLabel });
+    setShowConfirmDialog(true);
+  }
+
+  // Actually performs the status change after confirmation
+  async function executeStatusChange() {
+    if (!confirmAction) return;
+    setConfirmLoading(true);
     try {
-      const response = await fetch(`/api/properties/status/${propertyId}`, {
+      const response = await fetch(`/api/properties/status/${confirmAction.propertyId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          status: newStatus
+          status: confirmAction.status
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        alert(`Error updating status: ${result.error || 'Unknown error'}`);
+        alert(`Error: ${result.error || 'Unknown error'}`);
         console.error('Status update error:', result);
       } else {
         alert(`✅ ${result.message || 'Property status updated successfully'}!`);
@@ -243,8 +255,15 @@ export default function PropertyReviewPage() {
     } catch (error) {
       alert('Error updating status');
       console.error('Status update error:', error);
+    } finally {
+      setConfirmLoading(false);
+      setShowConfirmDialog(false);
+      setConfirmAction(null);
     }
   }
+
+  const isBasicAdmin = adminData?.admin_level === 'basic';
+  const canManageStatus = !isBasicAdmin; // Only super/owner can mark under contract, sold, rented, reassign, change price
 
   // Get unique values for filter dropdowns
   const uniqueRegions = [...new Set(properties.map(p => p.region).filter(Boolean))];
@@ -568,40 +587,44 @@ export default function PropertyReviewPage() {
 
                         {/* Action Buttons */}
                         <div className="flex flex-wrap gap-2">
-                          {/* Price Management */}
-                          <button
-                            onClick={() => handlePriceEdit(property)}
-                            className="px-4 py-2 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-colors flex items-center gap-2"
-                          >
-                            💰 Change Price
-                          </button>
+                          {/* Price Management - Super/Owner only */}
+                          {canManageStatus && (
+                            <button
+                              onClick={() => handlePriceEdit(property)}
+                              className="px-4 py-2 bg-yellow-500 text-black font-bold rounded-lg hover:bg-yellow-400 transition-colors flex items-center gap-2"
+                            >
+                              💰 Change Price
+                            </button>
+                          )}
 
-                          {/* Edit Property */}
+                          {/* Edit Property - All admins */}
                           <Link href={getEditUrl(property)}>
                             <button className="px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
                               ✏️ Edit Property
                             </button>
                           </Link>
 
-                          {/* Reassign Property to Different Agent/User */}
-                          <button
-                            onClick={() => handleReassignOpen(property)}
-                            className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
-                          >
-                            🔄 Reassign
-                          </button>
+                          {/* Reassign - Super/Owner only */}
+                          {canManageStatus && (
+                            <button
+                              onClick={() => handleReassignOpen(property)}
+                              className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                            >
+                              🔄 Reassign
+                            </button>
+                          )}
 
                           {/* Status Management */}
                           {(property.status === 'pending' || property.status === 'draft') && (
                             <>
                               <button
-                                onClick={() => updatePropertyStatus(property.id, 'active')}
+                                onClick={() => requestStatusChange(property.id, 'active', property.title, 'Approve')}
                                 className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors"
                               >
                                 ✅ Approve
                               </button>
                               <button
-                                onClick={() => updatePropertyStatus(property.id, 'rejected')}
+                                onClick={() => requestStatusChange(property.id, 'rejected', property.title, 'Reject')}
                                 className="px-4 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition-colors"
                               >
                                 ❌ Reject
@@ -609,16 +632,16 @@ export default function PropertyReviewPage() {
                             </>
                           )}
 
-                          {property.status === 'active' && (
+                          {property.status === 'active' && canManageStatus && (
                             <>
                               <button
-                                onClick={() => updatePropertyStatus(property.id, 'under_contract')}
+                                onClick={() => requestStatusChange(property.id, 'under_contract', property.title, 'Mark Under Contract')}
                                 className="px-4 py-2 bg-[#F97316] text-white font-bold rounded-lg hover:bg-orange-600 transition-colors"
                               >
                                 📝 Mark Under Contract
                               </button>
                               <button
-                                onClick={() => updatePropertyStatus(property.id, property.listing_type === 'rental' ? 'rented' : 'sold')}
+                                onClick={() => requestStatusChange(property.id, property.listing_type === 'rental' ? 'rented' : 'sold', property.title, property.listing_type === 'rental' ? 'Mark Rented' : 'Mark Sold')}
                                 className="px-4 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors"
                               >
                                 {property.listing_type === 'rental' ? '🏠 Mark Rented' : '🏆 Mark Sold'}
@@ -626,16 +649,16 @@ export default function PropertyReviewPage() {
                             </>
                           )}
 
-                          {property.status === 'under_contract' && (
+                          {property.status === 'under_contract' && canManageStatus && (
                             <>
                               <button
-                                onClick={() => updatePropertyStatus(property.id, property.listing_type === 'rental' ? 'rented' : 'sold')}
+                                onClick={() => requestStatusChange(property.id, property.listing_type === 'rental' ? 'rented' : 'sold', property.title, property.listing_type === 'rental' ? 'Complete - Rented' : 'Complete - Sold')}
                                 className="px-4 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors"
                               >
                                 {property.listing_type === 'rental' ? '🏠 Completed - Rented' : '🏆 Completed - Sold'}
                               </button>
                               <button
-                                onClick={() => updatePropertyStatus(property.id, 'active')}
+                                onClick={() => requestStatusChange(property.id, 'active', property.title, 'Put Back on Market')}
                                 className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors"
                               >
                                 ↩️ Back to Market
@@ -648,26 +671,14 @@ export default function PropertyReviewPage() {
                               <span className={`font-semibold ${property.status === 'sold' ? 'text-[#DC2626]' : 'text-[#2563EB]'}`}>
                                 {statusMessages[property.status]}
                               </span>
-                              <button
-                                disabled
-                                className="px-4 py-2 bg-gray-400 text-white font-bold rounded-lg cursor-not-allowed opacity-50"
-                              >
-                                📝 Mark Under Contract
-                              </button>
-                              <button
-                                disabled
-                                className="px-4 py-2 bg-gray-400 text-white font-bold rounded-lg cursor-not-allowed opacity-50"
-                              >
-                                {property.listing_type === 'rental' ? '🏠 Mark Rented' : '🏆 Mark Sold'}
-                              </button>
                             </div>
                           )}
 
-                          {/* View Details - Opens property in new tab */}
-                          <button 
+                          {/* View Details - All admins */}
+                          <button
                             onClick={() => window.open(getEditUrl(property) + '?mode=view', '_blank')}
                             className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-                            title="View/edit property details in new tab"
+                            title="View property details in new tab"
                           >
                             👁 View Details
                           </button>
@@ -807,6 +818,77 @@ export default function PropertyReviewPage() {
                   setSelectedProperty(null);
                   setReassignTargetId("");
                 }}
+                className="w-full px-4 py-3 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && confirmAction && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Confirm Action</h3>
+              <button
+                onClick={() => {
+                  setShowConfirmDialog(false);
+                  setConfirmAction(null);
+                }}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-2">
+                Property: <strong>{confirmAction.propertyTitle}</strong>
+              </p>
+              <div className={`p-4 rounded-lg ${
+                confirmAction.status === 'rejected' ? 'bg-red-50 border border-red-200' :
+                confirmAction.status === 'active' ? 'bg-green-50 border border-green-200' :
+                'bg-yellow-50 border border-yellow-200'
+              }`}>
+                <p className={`text-sm font-medium ${
+                  confirmAction.status === 'rejected' ? 'text-red-800' :
+                  confirmAction.status === 'active' ? 'text-green-800' :
+                  'text-yellow-800'
+                }`}>
+                  Are you sure you want to <strong>{confirmAction.actionLabel}</strong> this property?
+                </p>
+                {confirmAction.status === 'rejected' && (
+                  <p className="text-xs text-red-600 mt-2">This will remove the property from the marketplace.</p>
+                )}
+                {(confirmAction.status === 'sold' || confirmAction.status === 'rented') && (
+                  <p className="text-xs text-yellow-600 mt-2">This will mark the property as no longer available.</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col space-y-3">
+              <button
+                onClick={executeStatusChange}
+                disabled={confirmLoading}
+                className={`w-full px-4 py-3 font-bold rounded-xl transition-colors disabled:opacity-50 ${
+                  confirmAction.status === 'rejected'
+                    ? 'bg-red-600 text-white hover:bg-red-700'
+                    : confirmAction.status === 'active'
+                    ? 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {confirmLoading ? 'Processing...' : `Yes, ${confirmAction.actionLabel}`}
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmDialog(false);
+                  setConfirmAction(null);
+                }}
+                disabled={confirmLoading}
                 className="w-full px-4 py-3 border-2 border-gray-300 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-colors"
               >
                 Cancel
