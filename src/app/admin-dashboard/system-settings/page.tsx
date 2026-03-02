@@ -84,8 +84,8 @@ export default function SystemSettings() {
                 <div className="font-medium">{adminData?.display_name || adminData?.email || 'Admin User'}</div>
               </div>
               <Link href="/admin-dashboard">
-                <button className="px-4 py-2 bg-gray-600 text-white text-sm font-medium rounded hover:bg-gray-700 transition-colors">
-                  Dashboard
+                <button className="px-4 py-2 bg-gray-600 text-white text-sm font-bold rounded-lg hover:bg-gray-700 transition-colors">
+                  ← Back to Dashboard
                 </button>
               </Link>
               <button

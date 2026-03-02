@@ -43,8 +43,7 @@ export default function AgentPage() {
         if (adminUser) {
           setUserType('admin');
           
-          // SECURITY: Only owner/super admins can create properties
-          // Basic admins should only review/approve, not create
+          // All admin levels can create properties on behalf of agents
           const { data: adminProfile } = await supabase
             .from('profiles')
             .select('admin_level, phone, country_id')
@@ -54,11 +53,12 @@ export default function AgentPage() {
           if (adminProfile?.country_id) {
             setCountryCode(adminProfile.country_id);
           }
-            
-          const canCreateProperties = adminProfile?.admin_level === 'owner' || 
-                                    adminProfile?.admin_level === 'super';
-          
-          setIsAgent(canCreateProperties); // Only owner/super admins get agent access
+
+          const canCreateProperties = adminProfile?.admin_level === 'owner' ||
+                                    adminProfile?.admin_level === 'super' ||
+                                    adminProfile?.admin_level === 'basic';
+
+          setIsAgent(canCreateProperties);
           
           // Set WhatsApp number from profile
           if (adminProfile?.phone) {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 /**
  * Admin Services Management Page
@@ -185,11 +186,18 @@ export default function AdminServicesPage() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Services Management</h1>
-          <p className="mt-2 text-gray-600">
-            Manage services across all Home Hub websites
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Services Management</h1>
+            <p className="mt-2 text-gray-600">
+              Manage services across all Home Hub websites
+            </p>
+          </div>
+          <Link href="/admin-dashboard">
+            <button className="px-3 py-2 bg-gray-600 text-white text-sm font-bold rounded-lg hover:bg-gray-700 transition-colors">
+              ← Back to Dashboard
+            </button>
+          </Link>
         </div>
 
         {/* Controls */}

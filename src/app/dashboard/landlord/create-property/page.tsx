@@ -68,13 +68,13 @@ export default function CreateLandlordProperty() {
 
       const { data: profile } = await supabase
         .from('profiles')
-        .select('user_type, subscription_status')
+        .select('user_type, subscription_status, admin_level')
         .eq('id', authUser.id)
         .single();
 
-      // Allow landlords and eligible admins
-      const adminEmails = ['mrdarrenbuckner@gmail.com', 'qumar@guyanahomehub.com'];
-      const isAdmin = profile?.user_type === 'admin' && adminEmails.includes(authUser.email || '');
+      // All admin levels (super, owner, basic) can create landlord properties
+      const isAdmin = profile?.user_type === 'admin' &&
+        ['super', 'owner', 'basic'].includes(profile?.admin_level);
 
       if (!profile || (profile.user_type !== 'landlord' && !isAdmin)) {
         window.location.href = '/dashboard';

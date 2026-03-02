@@ -66,7 +66,7 @@ export default function CreateFSBOListing() {
       // Check if user is FSBO or eligible admin
       const { data: profile } = await supabase
         .from('profiles')
-        .select('user_type, subscription_status')
+        .select('user_type, subscription_status, admin_level')
         .eq('id', authUser.id)
         .single();
 
@@ -75,16 +75,11 @@ export default function CreateFSBOListing() {
         return;
       }
 
-      // Check admin config for admin levels (Owner Admin and Super Admin can bypass)
-      const adminConfig: { [email: string]: { level: string } } = {
-        'mrdarrenbuckner@gmail.com': { level: 'super' },
-        'qumar@guyanahomehub.com': { level: 'owner' }
-      };
+      // All admin levels (super, owner, basic) can create FSBO listings on behalf of users
+      const isEligibleAdmin = profile.user_type === 'admin' &&
+        ['super', 'owner', 'basic'].includes(profile.admin_level);
 
-      const adminInfo = adminConfig[authUser.email || ''];
-      const isEligibleAdmin = profile.user_type === 'admin' && adminInfo && ['super', 'owner'].includes(adminInfo.level);
-
-      // Allow if: eligible admin (super/owner) OR regular FSBO user
+      // Allow if: eligible admin OR regular FSBO user
       if (!isEligibleAdmin && profile.user_type !== 'fsbo') {
         window.location.href = '/dashboard';
         return;

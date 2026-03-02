@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
     // Get user profile for permissions
     const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('user_type, email, country_id')
+      .select('user_type, email, country_id, admin_level')
       .eq('id', user.id)
       .single();
       
@@ -310,29 +310,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // BULLETPROOF ADMIN DETECTION - Based on working emergency bypass
-    const ADMIN_REGISTRY = {
-      super: ['mrdarrenbuckner@gmail.com'] as string[],
-      owner: ['qumar@guyanahomehub.com'] as string[],
-      basic: [] as string[] // For future country-specific admins
-    };
-
-    function getAdminLevel(email: string | undefined): 'super' | 'owner' | 'basic' | null {
-      if (!email) return null;
-      
-      const normalizedEmail = email.toLowerCase().trim();
-      
-      if (ADMIN_REGISTRY.super.includes(normalizedEmail)) return 'super';
-      if (ADMIN_REGISTRY.owner.includes(normalizedEmail)) return 'owner';
-      if (ADMIN_REGISTRY.basic.includes(normalizedEmail)) return 'basic';
-      
-      return null;
-    }
-
-    // Apply bulletproof admin detection
-    const adminLevel = getAdminLevel(userProfile.email);
+    // Admin detection - use database admin_level from profiles table
     // All admin levels (super, owner, basic) can create properties for users
     // Territory restrictions are enforced separately below
+    const adminLevel = (userProfile.user_type === 'admin' && userProfile.admin_level)
+      ? userProfile.admin_level as 'super' | 'owner' | 'basic'
+      : null;
     const isEligibleAdmin = adminLevel !== null;
 
     // ============================================================

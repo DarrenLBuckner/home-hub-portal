@@ -93,10 +93,11 @@ export default function OwnerDashboard() {
         }
 
         // Check if user is authorized for Owner dashboard
-        // Allow: Owner users, Super Admins, and Owner Admins
-        const isAuthorizedForOwner = profile.user_type === 'owner' || 
-                                    profile.admin_level === 'super' || 
-                                    profile.admin_level === 'owner';
+        // Allow: Owner users and all admin levels
+        const isAuthorizedForOwner = profile.user_type === 'owner' ||
+                                    profile.admin_level === 'super' ||
+                                    profile.admin_level === 'owner' ||
+                                    profile.admin_level === 'basic';
         
         if (!isAuthorizedForOwner) {
           console.log('❌ Unauthorized access to Owner dashboard. User type:', profile.user_type, 'Admin level:', profile.admin_level);

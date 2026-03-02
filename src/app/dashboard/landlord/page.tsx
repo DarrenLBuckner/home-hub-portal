@@ -45,10 +45,11 @@ export default function LandlordDashboard() {
 
       if (profile) {
         // Check if user is authorized for Landlord dashboard
-        // Allow: Landlord users, Super Admins, and Owner Admins
-        const isAuthorizedForLandlord = profile.user_type === 'landlord' || 
-                                       profile.admin_level === 'super' || 
-                                       profile.admin_level === 'owner';
+        // Allow: Landlord users and all admin levels
+        const isAuthorizedForLandlord = profile.user_type === 'landlord' ||
+                                       profile.admin_level === 'super' ||
+                                       profile.admin_level === 'owner' ||
+                                       profile.admin_level === 'basic';
         
         if (!isAuthorizedForLandlord) {
           console.log('❌ Unauthorized access to Landlord dashboard. User type:', profile.user_type, 'Admin level:', profile.admin_level);

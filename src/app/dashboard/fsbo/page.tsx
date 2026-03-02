@@ -42,10 +42,11 @@ export default function FSBODashboard() {
 
       if (profile) {
         // Check if user is authorized for FSBO dashboard
-        // Allow: FSBO users, Super Admins, and Owner Admins
-        const isAuthorizedForFSBO = profile.user_type === 'fsbo' || 
-                                   profile.admin_level === 'super' || 
-                                   profile.admin_level === 'owner';
+        // Allow: FSBO users and all admin levels
+        const isAuthorizedForFSBO = profile.user_type === 'fsbo' ||
+                                   profile.admin_level === 'super' ||
+                                   profile.admin_level === 'owner' ||
+                                   profile.admin_level === 'basic';
         
         if (!isAuthorizedForFSBO) {
           console.log('❌ Unauthorized access to FSBO dashboard. User type:', profile.user_type, 'Admin level:', profile.admin_level);
