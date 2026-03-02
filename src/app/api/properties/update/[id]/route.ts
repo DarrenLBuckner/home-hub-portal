@@ -52,7 +52,7 @@ export async function PUT(
     }
 
     const userAdminLevel = userProfile?.admin_level;
-    const isUserAdmin = userAdminLevel && ['super', 'owner'].includes(userAdminLevel);
+    const isUserAdmin = userAdminLevel && ['super', 'owner', 'basic'].includes(userAdminLevel);
     const userCountryId = userProfile?.country_id;
 
     const propertyId = params.id;
@@ -326,13 +326,11 @@ export async function PUT(
 
     // Apply access control based on user type
     if (isUserAdmin) {
-      // Super Admin can edit any property
       if (userAdminLevel === 'super') {
         console.log('🔓 Super Admin: Full edit access to all properties');
-      }
-      // Owner Admin can only edit properties in their country
-      else if (userAdminLevel === 'owner' && userCountryId) {
-        console.log(`🔓 Owner Admin: Edit access limited to country ${userCountryId}`);
+      } else if (userCountryId) {
+        // Owner and Basic admins: country-scoped access
+        console.log(`🔓 ${userAdminLevel} Admin: Edit access limited to country ${userCountryId}`);
         propertyQuery = propertyQuery.eq('country_id', userCountryId);
       }
     } else {
@@ -360,8 +358,8 @@ export async function PUT(
     if (!isUserAdmin) {
       // Regular users can only update their own properties
       updateQuery = updateQuery.eq('user_id', user.id);
-    } else if (userAdminLevel === 'owner' && userCountryId) {
-      // Owner admins can only update properties in their country
+    } else if (userAdminLevel !== 'super' && userCountryId) {
+      // Owner and Basic admins: country-scoped updates
       updateQuery = updateQuery.eq('country_id', userCountryId);
     }
 

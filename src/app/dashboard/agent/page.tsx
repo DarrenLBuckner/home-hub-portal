@@ -33,73 +33,58 @@ export default function AgentPage() {
       setUserId(data?.user?.id || null);
       
       if (data?.user?.id) {
-        // Check if user is admin (admin_users table)
-        const { data: adminUser } = await supabase
-          .from('admin_users')
-          .select('*')
-          .eq('user_id', data.user.id)
+        // Check if user is admin via profiles table
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_type, admin_level, phone, country_id')
+          .eq('id', data.user.id)
           .single();
-        
-        if (adminUser) {
-          setUserType('admin');
-          
-          // All admin levels can create properties on behalf of agents
-          const { data: adminProfile } = await supabase
-            .from('profiles')
-            .select('admin_level, phone, country_id')
-            .eq('id', data.user.id)
-            .single();
 
-          if (adminProfile?.country_id) {
-            setCountryCode(adminProfile.country_id);
+        if (profile?.user_type === 'admin' && profile.admin_level) {
+          setUserType('admin');
+
+          if (profile.country_id) {
+            setCountryCode(profile.country_id);
           }
 
-          const canCreateProperties = adminProfile?.admin_level === 'owner' ||
-                                    adminProfile?.admin_level === 'super' ||
-                                    adminProfile?.admin_level === 'basic';
+          const canCreateProperties = profile.admin_level === 'owner' ||
+                                    profile.admin_level === 'super' ||
+                                    profile.admin_level === 'basic';
 
           setIsAgent(canCreateProperties);
-          
+
           // Set WhatsApp number from profile
-          if (adminProfile?.phone) {
-            setAgentWhatsapp(adminProfile.phone);
+          if (profile.phone) {
+            setAgentWhatsapp(profile.phone);
           }
-        } else {
-          // Check profiles table for regular users
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('user_type, phone, country_id')
-            .eq('id', data.user.id)
-            .single();
+        } else if (profile) {
+          // Regular user (agent, landlord, fsbo, etc.)
+          setUserType(profile.user_type);
+          setIsAgent(profile.user_type === 'agent');
 
-          if (profile) {
-            setUserType(profile.user_type);
-            setIsAgent(profile.user_type === 'agent');
+          // Set WhatsApp number from profile
+          if (profile.phone) {
+            setAgentWhatsapp(profile.phone);
+          }
 
-            // Set WhatsApp number from profile
-            if (profile.phone) {
-              setAgentWhatsapp(profile.phone);
-            }
+          // Set country code from profile
+          if (profile.country_id) {
+            setCountryCode(profile.country_id);
+          }
 
-            // Set country code from profile
-            if (profile.country_id) {
-              setCountryCode(profile.country_id);
-            }
+          // Fetch agent vetting status for agents
+          if (profile.user_type === 'agent') {
+            const { data: vetting } = await supabase
+              .from('agent_vetting')
+              .select('status, rejection_reason, first_name')
+              .eq('user_id', data.user.id)
+              .single();
 
-            // Fetch agent vetting status for agents
-            if (profile.user_type === 'agent') {
-              const { data: vetting } = await supabase
-                .from('agent_vetting')
-                .select('status, rejection_reason, first_name')
-                .eq('user_id', data.user.id)
-                .single();
-
-              if (vetting) {
-                setAgentVettingStatus(vetting.status);
-                setRejectionReason(vetting.rejection_reason);
-                if (vetting.first_name) {
-                  setUserName(vetting.first_name);
-                }
+            if (vetting) {
+              setAgentVettingStatus(vetting.status);
+              setRejectionReason(vetting.rejection_reason);
+              if (vetting.first_name) {
+                setUserName(vetting.first_name);
               }
             }
           }

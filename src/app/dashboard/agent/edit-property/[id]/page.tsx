@@ -169,7 +169,7 @@ export default function EditAgentProperty() {
         }
 
         const userAdminLevel = userProfile?.admin_level;
-        const isUserAdmin = userAdminLevel && ['super', 'owner'].includes(userAdminLevel);
+        const isUserAdmin = userAdminLevel && ['super', 'owner', 'basic'].includes(userAdminLevel);
         setIsAdmin(!!isUserAdmin);
         setAdminLevel(userAdminLevel || null);
 
@@ -189,13 +189,11 @@ export default function EditAgentProperty() {
 
         // Apply access control based on user type
         if (isUserAdmin) {
-          // Super Admin can edit any property
           if (userAdminLevel === 'super') {
             console.log('🔓 Super Admin: Full edit access to all properties');
-          }
-          // Owner Admin can only edit properties in their country
-          else if (userAdminLevel === 'owner' && userProfile?.country_id) {
-            console.log(`🔓 Owner Admin: Edit access limited to country ${userProfile.country_id}`);
+          } else if (userProfile?.country_id) {
+            // Owner and Basic admins: country-scoped access
+            console.log(`🔓 ${userAdminLevel} Admin: Edit access limited to country ${userProfile.country_id}`);
             propertyQuery = propertyQuery.eq('country_id', userProfile.country_id);
           }
         } else {

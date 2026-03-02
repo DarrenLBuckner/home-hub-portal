@@ -208,7 +208,7 @@ export default function UniversalPropertyManager({
       );
 
       setAdminPermissions(permissions);
-      fetchProperties();
+      fetchProperties(permissions);
     } catch (err: any) {
       console.error('Admin permissions error:', err);
       setError('Failed to load admin permissions');
@@ -216,12 +216,12 @@ export default function UniversalPropertyManager({
     }
   };
 
-  const fetchProperties = async () => {
+  const fetchProperties = async (permissionsOverride?: any) => {
     setLoading(true);
     setError(null);
     try {
       const supabase = createClient();
-      
+
       let query = supabase
         .from('properties')
         .select(`
@@ -236,20 +236,21 @@ export default function UniversalPropertyManager({
         `)
         .order('created_at', { ascending: false });
 
+      // Use passed permissions or fall back to state (state may be stale on first call)
+      const perms = permissionsOverride || adminPermissions;
+
       // Apply filtering based on user type
       if (userType === 'admin') {
         console.log('🔧 Admin mode: Loading properties with country filtering...');
-        
+
         // Apply country filter for non-super admins
-        if (adminPermissions && !adminPermissions.canViewAllCountries && adminPermissions.countryFilter) {
-          console.log(`🌍 Filtering properties for country: ${adminPermissions.countryFilter}`);
-          query = query.eq('country_id', adminPermissions.countryFilter);
-        } else if (adminPermissions && adminPermissions.canViewAllCountries) {
+        if (perms && !perms.canViewAllCountries && perms.countryFilter) {
+          console.log(`🌍 Filtering properties for country: ${perms.countryFilter}`);
+          query = query.eq('country_id', perms.countryFilter);
+        } else if (perms && perms.canViewAllCountries) {
           console.log('🌍 Super Admin: Loading ALL properties from ALL countries');
         } else {
-          console.log('⚠️ Admin permissions not loaded yet, but admin user should see all properties');
-          console.log('🔍 Loading ALL properties for admin (no country filter applied)');
-          // Don't filter by user_id for admin users - they should see all properties
+          console.log('⚠️ Admin permissions not loaded yet, loading all properties');
         }
       } else {
         // Regular users (agent, landlord, fsbo) only see their own properties

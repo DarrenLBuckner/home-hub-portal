@@ -35,42 +35,29 @@ export default function AgentSettings() {
         return;
       }
 
-      // Check if user is agent or admin (admins have agent access)
-      const { data: adminUser } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('user_id', authUser.id)
-        .single();
-
-      if (adminUser) {
-        // Admin user - fetch profile from profiles table
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', authUser.id)
-          .single();
-
-        setUser(authUser);
-        setProfile(profileData);
-        setOriginalProfile({ ...profileData });
-        
-        // Get admin's property count for sync confirmation
-        const { data: properties } = await supabase
-          .from('properties')
-          .select('id')
-          .eq('user_id', authUser.id);
-        
-        setPropertyCount(properties?.length || 0);
-        setLoading(false);
-        return;
-      }
-
-      // Regular user - check if agent
+      // Check if user is agent or admin via profiles table
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', authUser.id)
         .single();
+
+      if (profileData?.user_type === 'admin' && profileData.admin_level) {
+        // Admin user
+        setUser(authUser);
+        setProfile(profileData);
+        setOriginalProfile({ ...profileData });
+
+        // Get admin's property count for sync confirmation
+        const { data: properties } = await supabase
+          .from('properties')
+          .select('id')
+          .eq('user_id', authUser.id);
+
+        setPropertyCount(properties?.length || 0);
+        setLoading(false);
+        return;
+      }
 
       if (!profileData || profileData.user_type !== 'agent') {
         window.location.href = '/dashboard';

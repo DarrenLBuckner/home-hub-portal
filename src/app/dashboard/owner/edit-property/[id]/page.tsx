@@ -99,7 +99,7 @@ export default function EditFSBOProperty() {
         }
 
         const userAdminLevel = userProfile?.admin_level;
-        const isUserAdmin = userAdminLevel && ['super', 'owner'].includes(userAdminLevel);
+        const isUserAdmin = userAdminLevel && ['super', 'owner', 'basic'].includes(userAdminLevel);
         setIsAdmin(!!isUserAdmin);
         setAdminLevel(userAdminLevel || null);
 
@@ -121,12 +121,12 @@ export default function EditFSBOProperty() {
         if (isUserAdmin) {
           if (userAdminLevel === 'super') {
             console.log('🔓 Super Admin: Full edit access to all properties');
-          } else if (userAdminLevel === 'owner' && userProfile?.country_id) {
-            console.log(`🔓 Owner Admin: Edit access limited to country ${userProfile.country_id}`);
+          } else if (userProfile?.country_id) {
+            // Owner and Basic admins: country-scoped access
+            console.log(`🔓 ${userAdminLevel} Admin: Edit access limited to country ${userProfile.country_id}`);
             propertyQuery = propertyQuery.eq('country_id', userProfile.country_id);
           }
         } else {
-          // Regular users (including Basic Admin until permissions defined) can only edit their own properties
           // Regular users can only edit their own properties
           propertyQuery = propertyQuery.eq('user_id', user.id);
         }
