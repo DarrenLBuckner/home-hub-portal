@@ -146,7 +146,8 @@ export default function AgentManagementPage() {
           agent.first_name?.toLowerCase().includes(search) ||
           agent.last_name?.toLowerCase().includes(search) ||
           agent.email?.toLowerCase().includes(search) ||
-          `${agent.first_name} ${agent.last_name}`.toLowerCase().includes(search)
+          agent.phone?.toLowerCase().includes(search) ||
+          `${agent.first_name || ''} ${agent.last_name || ''}`.toLowerCase().includes(search)
       );
     }
 
@@ -451,7 +452,7 @@ export default function AgentManagementPage() {
                         <VerificationToggle
                           agentId={agent.id}
                           initialValue={agent.is_verified_agent || false}
-                          agentName={`${agent.first_name} ${agent.last_name}`}
+                          agentName={`${agent.first_name || ''} ${agent.last_name || ''}`.trim()}
                           onToggle={(newValue: boolean) => {
                             setAgents(prev => prev.map(a =>
                               a.id === agent.id ? { ...a, is_verified_agent: newValue } : a
@@ -468,7 +469,7 @@ export default function AgentManagementPage() {
                         <PremiumToggle
                           agentId={agent.id}
                           initialValue={agent.is_premium_agent || false}
-                          agentName={`${agent.first_name} ${agent.last_name}`}
+                          agentName={`${agent.first_name || ''} ${agent.last_name || ''}`.trim()}
                           onToggle={(newValue: boolean) => {
                             // Update local state
                             setAgents(prev => prev.map(a =>

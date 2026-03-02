@@ -168,7 +168,8 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
         user.account_code?.toLowerCase().includes(search) ||
         user.email?.toLowerCase().includes(search) ||
         `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase().includes(search) ||
-        user.display_name?.toLowerCase().includes(search)
+        user.display_name?.toLowerCase().includes(search) ||
+        user.phone?.toLowerCase().includes(search)
       );
     }
 
@@ -442,7 +443,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
 
   // Navigate to property creation form with target user pre-selected
   const handleCreatePropertyForUser = (user: User) => {
-    const userName = user.display_name || `${user.first_name} ${user.last_name}`;
+    const userName = user.display_name || `${user.first_name || ''} ${user.last_name || ''}`.trim();
     router.push(`/dashboard/agent/create-property?for_user=${user.id}&user_name=${encodeURIComponent(userName)}`);
   };
 
@@ -564,7 +565,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-1">
-                          {user.display_name || `${user.first_name} ${user.last_name}`}
+                          {user.display_name || `${user.first_name || ''} ${user.last_name || ''}`.trim()}
                         </h3>
                         <p className="text-sm text-gray-600">{user.email}</p>
                         {user.phone && (
@@ -603,7 +604,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                         </p>
                         <LastEmailIndicator userId={user.id} />
                         <button
-                          onClick={() => setEmailHistoryUser({ id: user.id, name: `${user.first_name} ${user.last_name}` })}
+                          onClick={() => setEmailHistoryUser({ id: user.id, name: `${user.first_name || ''} ${user.last_name || ''}`.trim() })}
                           className="text-xs text-blue-600 hover:text-blue-800 mt-1 text-left"
                         >
                           View Email History
