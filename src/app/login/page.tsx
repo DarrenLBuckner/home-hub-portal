@@ -62,7 +62,7 @@ function LoginContent() {
       
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('user_type, email, first_name, last_name')
+        .select('user_type, email, first_name, last_name, admin_level')
         .eq('id', data.user.id)
         .single();
 

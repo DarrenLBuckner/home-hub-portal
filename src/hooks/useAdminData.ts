@@ -152,9 +152,9 @@ export function hasAdminPropertyPrivileges(adminData: AdminData | null): boolean
   if (!adminData || adminData.user_type !== 'admin') {
     return false;
   }
-  
-  // Super and Owner admins get unlimited property creation
-  return adminData.admin_level === 'super' || adminData.admin_level === 'owner';
+
+  // Super, Owner, and Basic admins can create properties on behalf of agents
+  return adminData.admin_level === 'super' || adminData.admin_level === 'owner' || adminData.admin_level === 'basic';
 }
 
 // Utility function to get display name

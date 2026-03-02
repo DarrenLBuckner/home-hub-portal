@@ -109,34 +109,36 @@ export function getAdminPermissions(
     };
   }
 
-  // Basic Admin - First line admin, can approve/reject properties and accept payments
+  // Basic Admin - Country-scoped operational staff with full property/agent management
+  // Can manage properties, agents, FSBO, landlords. View-only for user management and pricing.
+  // No access to system settings.
   if (adminLevel === 'basic') {
     return {
-      canViewUsers: true,
-      canEditUsers: false,
-      canDeleteUsers: false,
+      canViewUsers: true,              // Can VIEW user list (read-only)
+      canEditUsers: false,             // Cannot edit/create/suspend users
+      canDeleteUsers: false,           // Cannot delete users
       canViewPayments: true,
       canProcessPayments: true,
       canAcceptPayments: true,
-      canIssueRefunds: false, // Cannot issue refunds
-      canApproveProperties: true, // Can approve properties
-      canRejectProperties: true, // Can reject properties
-      canEscalateToHigherAdmin: true, // Can escalate to owner/super admin
+      canIssueRefunds: false,          // Cannot issue refunds
+      canApproveProperties: true,      // Full property approval
+      canRejectProperties: true,       // Full property rejection
+      canEscalateToHigherAdmin: true,  // Can escalate to owner/super admin
       canViewSystemSettings: false,
       canEditSystemSettings: false,
-      canViewAllDashboards: false,
-      canManageAdmins: false,
-      // Navigation permissions - Basic Admin gets minimal access
-      canAccessDiagnostics: false,       // NO access to diagnostics
-      canAccessSystemSettings: false,    // NO access to system settings
-      canAccessUserManagement: false,    // NO access to user management
-      canAccessPricingManagement: false, // NO access to pricing
-      canAccessSettings: true,           // Basic settings only
-      // Granular pricing permissions - Basic Admin gets no pricing access
-      canEditGlobalPricing: false,       // NO pricing access
-      canEditCountryPricing: false,      // NO pricing access
-      canViewAllCountryPricing: false,   // NO pricing access
-      canViewCountryPricing: false,      // NO pricing access
+      canViewAllDashboards: true,      // Can view dashboard sections
+      canManageAdmins: false,          // Cannot create/delete admins
+      // Navigation permissions - Basic Admin gets property/agent management access
+      canAccessDiagnostics: false,        // NO access to diagnostics
+      canAccessSystemSettings: false,     // NO access to system settings
+      canAccessUserManagement: true,      // CAN view user management (read-only)
+      canAccessPricingManagement: true,   // CAN view pricing (read-only)
+      canAccessSettings: true,            // Basic settings only
+      // Granular pricing permissions - Basic Admin can VIEW but not edit
+      canEditGlobalPricing: false,        // NO pricing edit
+      canEditCountryPricing: false,       // NO pricing edit
+      canViewAllCountryPricing: false,    // Only their country
+      canViewCountryPricing: true,        // CAN view their country's pricing
       assignedCountryId: countryId || null,
       assignedCountryName: countryName || null,
       canViewAllCountries: false,

@@ -1351,6 +1351,18 @@ export default function UnifiedAdminDashboard() {
         </div>
       </div>
 
+      {/* Basic Admin Banner */}
+      {adminData?.admin_level === 'basic' && (
+        <div className="bg-blue-50 border-b border-blue-200">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-center text-sm text-blue-800">
+              <span className="mr-2">ℹ️</span>
+              <span>You&apos;re logged in as a Basic Administrator for <strong>{permissions?.assignedCountryName || permissions?.countryFilter || 'your country'}</strong>. Some features are view-only.</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Navigation */}
       <NavigationTabs />
 
@@ -1496,25 +1508,40 @@ export default function UnifiedAdminDashboard() {
               {permissions?.canViewUsers && (
                 <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-orange-900">👥 User & Admin Management</h3>
+                    <h3 className="text-lg font-bold text-orange-900">
+                      👥 User & Admin Management
+                      {adminData?.admin_level === 'basic' && (
+                        <span className="ml-2 text-sm font-normal text-orange-600">🔒 (View Only)</span>
+                      )}
+                    </h3>
                     <div className="text-2xl font-black text-orange-600">{users.length}</div>
                   </div>
                   <ul className="text-xs text-orange-800 mb-4 space-y-0.5 leading-tight">
-                    <li>• Create & manage admin accounts</li>
-                    <li>• Suspend or remove users</li>
-                    <li>• View all agents, landlords & FSBO</li>
-                    <li>• Payment enforcement</li>
+                    {adminData?.admin_level === 'basic' ? (
+                      <>
+                        <li>• View all agents, landlords & FSBO</li>
+                        <li>• View user details & status</li>
+                        <li>• View payment information</li>
+                      </>
+                    ) : (
+                      <>
+                        <li>• Create & manage admin accounts</li>
+                        <li>• Suspend or remove users</li>
+                        <li>• View all agents, landlords & FSBO</li>
+                        <li>• Payment enforcement</li>
+                      </>
+                    )}
                   </ul>
                   <Link href="/admin-dashboard/user-management">
                     <button className="w-full px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors">
-                      Manage Users & Admins →
+                      {adminData?.admin_level === 'basic' ? 'View Users →' : 'Manage Users & Admins →'}
                     </button>
                   </Link>
                 </div>
               )}
 
-              {/* Agent Management - Owner/Super Admin Only */}
-              {(adminData?.admin_level === 'super' || adminData?.admin_level === 'owner') && (
+              {/* Agent Management - All Admins */}
+              {(adminData?.admin_level === 'super' || adminData?.admin_level === 'owner' || adminData?.admin_level === 'basic') && (
                 <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-6 border border-emerald-200">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold text-emerald-900">👥 Agent Management</h3>
@@ -1538,17 +1565,45 @@ export default function UnifiedAdminDashboard() {
               {permissions?.canAccessPricingManagement && (
                 <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-green-900">💰 Pricing Control</h3>
+                    <h3 className="text-lg font-bold text-green-900">
+                      💰 Pricing Control
+                      {adminData?.admin_level === 'basic' && (
+                        <span className="ml-2 text-sm font-normal text-green-600">🔒 (View Only)</span>
+                      )}
+                    </h3>
                     <div className="text-xl text-green-600">$</div>
                   </div>
                   <p className="text-sm text-green-800 mb-4">
-                    {permissions.canViewAllCountries 
+                    {permissions.canViewAllCountries
                       ? 'Manage pricing for all countries and user types'
+                      : adminData?.admin_level === 'basic'
+                      ? `View pricing for ${permissions.countryFilter}`
                       : `Manage pricing for ${permissions.countryFilter}`}
                   </p>
                   <Link href="/admin-dashboard/pricing">
                     <button className="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">
-                      Manage Pricing →
+                      {adminData?.admin_level === 'basic' ? 'View Pricing →' : 'Manage Pricing →'}
+                    </button>
+                  </Link>
+                </div>
+              )}
+
+              {/* Agent Engagement */}
+              {(adminData?.admin_level === 'super' || adminData?.admin_level === 'owner' || adminData?.admin_level === 'basic') && (
+                <div className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl p-6 border border-cyan-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-cyan-900">📨 Agent Engagement</h3>
+                    <div className="text-2xl">📊</div>
+                  </div>
+                  <ul className="text-xs text-cyan-800 mb-4 space-y-0.5 leading-tight">
+                    <li>• Track inactive agents with 0 listings</li>
+                    <li>• Send reminder emails to agents</li>
+                    <li>• View agent activity & payment status</li>
+                    <li>• Bulk email engagement campaigns</li>
+                  </ul>
+                  <Link href="/admin-dashboard/agent-engagement">
+                    <button className="w-full px-4 py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition-colors">
+                      Manage Engagement →
                     </button>
                   </Link>
                 </div>

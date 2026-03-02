@@ -104,10 +104,12 @@ export default function UserManagement() {
         .filter(Boolean)
         .join(' ') || adminData.email?.split('@')[0] || 'User';
       
-      const adminLevelDisplay = adminData.admin_level === 'super' 
+      const adminLevelDisplay = adminData.admin_level === 'super'
         ? 'Super Admin'
         : adminData.admin_level === 'owner'
-        ? 'Owner Admin' 
+        ? 'Owner Admin'
+        : adminData.admin_level === 'basic'
+        ? 'Basic Admin (View Only)'
         : 'Admin';
 
       setUser({ 
@@ -624,12 +626,14 @@ export default function UserManagement() {
                 }).length})
               </h2>
               <div className="flex items-center space-x-3">
-                <button 
-                  onClick={() => setShowAddUser(true)}
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium"
-                >
-                  + Add User
-                </button>
+                {user?.admin_level !== 'basic' && (
+                  <button
+                    onClick={() => setShowAddUser(true)}
+                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    + Add User
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -743,6 +747,10 @@ export default function UserManagement() {
                             {userData.admin_level === 'super' ? (
                               <span className="text-red-600 font-medium text-xs px-2 py-1 bg-red-50 rounded">
                                 🛡️ Protected
+                              </span>
+                            ) : user?.admin_level === 'basic' ? (
+                              <span className="text-gray-500 text-xs px-2 py-1 bg-gray-50 rounded">
+                                View Only
                               </span>
                             ) : (
                               <>
