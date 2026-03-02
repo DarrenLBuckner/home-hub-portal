@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { getTierBenefits } from '@/lib/subscription-utils';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
+import { geocodeAddress } from '@/lib/geocoding';
 import { createAdminClient } from '@/supabase-admin';
 
 // Map country codes to site IDs for multi-tenant support
@@ -852,6 +853,21 @@ export async function POST(req: NextRequest) {
         attestation_date: (body.attestation || body.confirms_ownership) ? attestationDate : null,
         attestation_ip: (body.attestation || body.confirms_ownership) ? attestationIp : null,
       };
+    }
+
+    // Auto-geocode if agent didn't provide coordinates
+    if (!propertyData.latitude && !propertyData.longitude) {
+      const coords = await geocodeAddress({
+        address: body.address,
+        neighborhood: body.neighborhood,
+        city: body.city || body.region,
+        region: body.region,
+        country: body.country,
+      });
+      if (coords) {
+        propertyData.latitude = coords.lat;
+        propertyData.longitude = coords.lng;
+      }
     }
 
     // Log the data being inserted for debugging

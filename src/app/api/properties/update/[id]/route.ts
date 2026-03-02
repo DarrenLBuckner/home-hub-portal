@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
 import { getCountryAwareAdminPermissions } from '@/lib/auth/adminPermissions';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
+import { geocodeAddress } from '@/lib/geocoding';
 
 export async function PUT(
   request: Request,
@@ -119,6 +120,21 @@ export async function PUT(
       pet_policy: body.pet_policy || null,
       available_from: body.available_from || null,
     };
+
+    // Auto-geocode if coordinates are missing
+    if (!updateData.latitude && !updateData.longitude) {
+      const coords = await geocodeAddress({
+        address: body.address,
+        neighborhood: body.neighborhood,
+        city: body.city || body.region,
+        region: body.region,
+        country: body.country,
+      });
+      if (coords) {
+        updateData.latitude = coords.lat;
+        updateData.longitude = coords.lng;
+      }
+    }
 
     // Reconcile existing images: delete any property_media records whose URL is no longer in the keep list
     if (body.existingImages !== undefined && Array.isArray(body.existingImages)) {

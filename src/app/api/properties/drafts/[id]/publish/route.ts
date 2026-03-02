@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
+import { geocodeAddress } from '@/lib/geocoding';
 
 export const runtime = 'nodejs';
 
@@ -130,10 +131,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       price: draftData.price,
       currency: draftData.currency || 'USD',
       
-      // Location data (only fields that exist in database)
+      // Location data
       location: draftData.location || draftData.region || draftData.city,
       city: draftData.city,
       region: draftData.region,
+      neighborhood: draftData.neighborhood || null,
+      address: draftData.address || null,
+      show_address: draftData.show_address ?? false,
+      latitude: draftData.latitude ? parseFloat(draftData.latitude) : null,
+      longitude: draftData.longitude ? parseFloat(draftData.longitude) : null,
       
       // Property details
       bedrooms: draftData.bedrooms,
@@ -162,6 +168,21 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       updated_at: new Date().toISOString()
     };
 
+
+    // Auto-geocode if draft didn't include coordinates
+    if (!propertyData.latitude && !propertyData.longitude) {
+      const coords = await geocodeAddress({
+        address: draftData.address,
+        neighborhood: draftData.neighborhood,
+        city: draftData.city,
+        region: draftData.region,
+        country: draftOwnerProfile.country_id,
+      });
+      if (coords) {
+        propertyData.latitude = coords.lat;
+        propertyData.longitude = coords.lng;
+      }
+    }
 
     // Insert into properties table
     const { data: newProperty, error: propertyError } = await supabase
