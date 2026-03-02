@@ -1470,7 +1470,7 @@ export default function UnifiedAdminDashboard() {
                   Manage All Properties →
                 </button>
                 <button
-                  onClick={() => setActiveSection('users')}
+                  onClick={() => router.push('/admin-dashboard/users')}
                   className="w-full mt-2 px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors"
                 >
                   ➕ Create Property for a User →
