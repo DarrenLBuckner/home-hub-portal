@@ -13,6 +13,8 @@ import { normalizePropertyData } from "@/lib/propertyNormalization";
 // Simplified property types matching CREATE form
 const PROPERTY_TYPES = [
   { value: "House", label: "House" },
+  { value: "Apartment", label: "Apartment" },
+  { value: "Condo", label: "Condo" },
   { value: "Land", label: "Land" },
   { value: "Commercial", label: "Commercial Building" },
 ];

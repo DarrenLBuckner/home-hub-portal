@@ -11,6 +11,7 @@ import { OwnershipAttestationFull } from "@/components/OwnershipAttestation";
 const PROPERTY_TYPES = [
   { value: "House", label: "House", icon: "🏠" },
   { value: "Apartment", label: "Apartment", icon: "🏢" },
+  { value: "Condo", label: "Condo", icon: "🏢" },
 ];
 
 // Simplified amenities for Landlords - showing 10 with user-friendly labels

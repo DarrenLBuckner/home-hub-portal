@@ -15,7 +15,7 @@ const PROPERTY_TYPE_MAP: Record<string, string> = {
   'Bungalow': 'House',
   'Cottage': 'House',
   'Duplex': 'Multi-family',
-  'Condo': 'Apartment',
+  'Condo': 'Condo',
   'Townhouse': 'House',
 
   // Land types - normalize legacy values
@@ -97,6 +97,7 @@ export function getPropertyTypeLabel(propertyType: string): string {
   const labels: Record<string, string> = {
     'House': 'House',
     'Apartment': 'Apartment',
+    'Condo': 'Condo',
     'Multi-family': 'Multi-family',
     'Land': 'Land',
     'Residential Land': 'Residential Land',

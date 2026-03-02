@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { getActiveCountries, getCountryRegions } from "@/lib/countries";
 import { createClient } from "@/supabase";
 
-const PROPERTY_TYPES = ["House", "Apartment", "Land", "Commercial"];
+const PROPERTY_TYPES = ["House", "Apartment", "Condo", "Land", "Commercial"];
 const FEATURES = ["Pool", "Garage", "Garden", "Security", "Furnished", "AC", "Internet", "Pet Friendly"];
 
 type PropertyForm = {

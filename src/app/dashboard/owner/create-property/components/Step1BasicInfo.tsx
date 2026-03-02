@@ -6,6 +6,7 @@ import { useState } from 'react';
 const FSBO_PROPERTY_TYPES = [
   { value: 'House', label: 'House', icon: '🏠', enabled: true },
   { value: 'Apartment', label: 'Apartment', icon: '🏢', enabled: true },
+  { value: 'Condo', label: 'Condo', icon: '🏢', enabled: true },
   { value: 'Multi-family', label: 'Multi-family', icon: '🏘️', enabled: true },
   // Disabled - Agent Only (land types)
   { value: 'Land', label: 'Land', icon: '🌿', enabled: false },

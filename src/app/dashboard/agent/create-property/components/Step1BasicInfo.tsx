@@ -12,6 +12,7 @@ interface Step1BasicInfoProps {
 const RESIDENTIAL_TYPES = [
   { value: 'House', label: 'House', icon: '🏠' },
   { value: 'Apartment', label: 'Apartment', icon: '🏢' },
+  { value: 'Condo', label: 'Condo', icon: '🏢' },
   { value: 'Multi-family', label: 'Multi-family', icon: '🏘️' },
   { value: 'Land', label: 'Land', icon: '🌿' },
   { value: 'Residential Land', label: 'Residential Land', icon: '🌿' },

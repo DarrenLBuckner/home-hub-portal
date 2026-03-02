@@ -1059,6 +1059,7 @@ export default function EditAgentProperty() {
                     <>
                       <option value="House">🏠 House</option>
                       <option value="Apartment">🏢 Apartment</option>
+                      <option value="Condo">🏢 Condo</option>
                       <option value="Land">🌿 Land</option>
                     </>
                   ) : (
