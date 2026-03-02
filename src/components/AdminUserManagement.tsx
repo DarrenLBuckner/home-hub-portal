@@ -36,12 +36,15 @@ interface AdminUserManagementProps {
     countryFilter: string | null;
     canManageUsers: boolean;
   };
+  adminLevel?: string;
 }
 
 const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
   adminUserId,
-  permissions
+  permissions,
+  adminLevel
 }) => {
+  const isBasicAdmin = adminLevel === 'basic';
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -95,62 +98,23 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
     try {
       setLoading(true);
 
-      let query = supabase
-        .from('profiles')
-        .select(`
-          id,
-          account_code,
-          email,
-          first_name,
-          last_name,
-          display_name,
-          user_type,
-          country_id,
-          subscription_status,
-          is_suspended,
-          suspended_at,
-          suspension_reason,
-          suspended_by,
-          created_at,
-          phone,
-          company
-        `)
-        .in('user_type', ['agent', 'landlord', 'fsbo']) // All non-admin user types
-        .neq('id', adminUserId) // Exclude current admin
-        .order('created_at', { ascending: false });
-
-      // Apply country filter for Owner Admins
-      if (!permissions.canViewAllCountries && permissions.countryFilter) {
-        query = query.eq('country_id', permissions.countryFilter);
+      // Use server API route (service role) to bypass RLS restrictions
+      const response = await fetch('/api/admin/users');
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Failed to load users');
       }
 
-      const { data: profiles, error: profilesError } = await query;
+      const data = await response.json();
+      const profiles = data.users || [];
 
-      if (profilesError) throw profilesError;
+      // Enrich with payment status display
+      const usersWithStatus = profiles.map((user: any) => ({
+        ...user,
+        payment_status: user.subscription_status === 'active' ? 'current' : 'overdue'
+      }));
 
-      // Get property counts for each user
-      const usersWithCounts = await Promise.all(
-        (profiles || []).map(async (user: any) => {
-          const { count } = await supabase
-            .from('properties')
-            .select('*', { count: 'exact', head: true })
-            .eq('user_id', user.id);
-
-          // Get last payment date (mock for now - you'll need to implement based on your payment tracking)
-          const lastPaymentDate = user.subscription_status === 'active' 
-            ? new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString()
-            : null;
-
-          return {
-            ...user,
-            property_count: count || 0,
-            last_payment_date: lastPaymentDate,
-            payment_status: user.subscription_status === 'active' ? 'current' : 'overdue'
-          };
-        })
-      );
-
-      setUsers(usersWithCounts);
+      setUsers(usersWithStatus);
     } catch (error) {
       console.error('Error loading users:', error);
     } finally {
@@ -631,24 +595,26 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                       <div className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm text-center border-2 border-dashed border-gray-300">
                         🛡️ Protected Account
                       </div>
-                    ) : user.is_suspended ? (
-                      <button
-                        onClick={() => handleReactivateUser(user.id)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-                      >
-                        ✅ Reactivate
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleSuspendUser(user)}
-                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
-                      >
-                        🚫 Suspend
-                      </button>
+                    ) : !isBasicAdmin && (
+                      user.is_suspended ? (
+                        <button
+                          onClick={() => handleReactivateUser(user.id)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                        >
+                          ✅ Reactivate
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleSuspendUser(user)}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                        >
+                          🚫 Suspend
+                        </button>
+                      )
                     )}
 
-                    {/* Subscription Status Controls */}
-                    {!isSuperAdmin(user.email) && (
+                    {/* Subscription Status Controls - Not for basic admin */}
+                    {!isSuperAdmin(user.email) && !isBasicAdmin && (
                       user.subscription_status === 'active' ? (
                         <button
                           onClick={() => handleDeactivateSubscription(user.id)}
@@ -665,7 +631,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                         </button>
                       )
                     )}
-                    
+
                     <button
                       onClick={() => handleEmailUser(user)}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
@@ -674,7 +640,6 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                     </button>
 
                     {/* Create Property for User - Admin Managed Listing Service */}
-                    {/* Shows for all non-admin users when admin has proper permissions */}
                     {!isSuperAdmin(user.email) && (
                       <button
                         onClick={() => handleCreatePropertyForUser(user)}
@@ -685,8 +650,8 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                       </button>
                     )}
 
-                    {/* DANGER ZONE: Delete User */}
-                    {!isSuperAdmin(user.email) && permissions.canManageUsers && (
+                    {/* DANGER ZONE: Delete User - Not for basic admin */}
+                    {!isSuperAdmin(user.email) && !isBasicAdmin && permissions.canManageUsers && (
                       <button
                         onClick={() => handleDeleteUser(user)}
                         className="px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900 transition-colors text-sm border-2 border-red-600"

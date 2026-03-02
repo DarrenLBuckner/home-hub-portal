@@ -52,11 +52,12 @@ export default function AdminUsers() {
 
       setPermissions(userPermissions);
 
-      setUser({ 
-        ...authUser, 
+      setUser({
+        ...authUser,
         name: `${profile.first_name} ${profile.last_name}`,
         email: profile.email,
-        role: profile.user_type 
+        role: profile.user_type,
+        admin_level: profile.admin_level
       });
 
       setLoading(false);
@@ -206,6 +207,7 @@ export default function AdminUsers() {
                 countryFilter: permissions?.countryFilter || null,
                 canManageUsers: permissions?.canEditUsers || false
               }}
+              adminLevel={user?.admin_level}
             />
             
             <div className="bg-white shadow overflow-hidden sm:rounded-md" style={{ display: 'none' }}>
