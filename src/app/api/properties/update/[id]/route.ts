@@ -644,15 +644,16 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Verify super admin
+    // Verify admin (super or owner level)
     const { data: userProfile } = await supabase
       .from('profiles')
-      .select('admin_level')
+      .select('admin_level, country_id')
       .eq('id', user.id)
       .single();
 
-    if (userProfile?.admin_level !== 'super') {
-      return NextResponse.json({ error: 'Super admin privileges required' }, { status: 403 });
+    const adminLevel = userProfile?.admin_level;
+    if (!adminLevel || !['super', 'owner'].includes(adminLevel)) {
+      return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
     }
 
     const propertyId = params.id;
@@ -668,7 +669,7 @@ export async function PATCH(
     // Validate target user exists
     const { data: targetUser, error: targetError } = await adminSupabase
       .from('profiles')
-      .select('id, user_type, first_name, last_name')
+      .select('id, user_type, first_name, last_name, country_id')
       .eq('id', reassign_to_user_id)
       .single();
 
@@ -676,15 +677,26 @@ export async function PATCH(
       return NextResponse.json({ error: 'Target user not found' }, { status: 404 });
     }
 
-    // Get current property for logging
+    // Get current property for logging and territory check
     const { data: currentProperty } = await adminSupabase
       .from('properties')
-      .select('id, user_id, listing_type')
+      .select('id, user_id, listing_type, country_id')
       .eq('id', propertyId)
       .single();
 
     if (!currentProperty) {
       return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+    }
+
+    // Owner admins: enforce territory — property and target user must be in their country
+    if (adminLevel === 'owner') {
+      const adminCountry = userProfile.country_id;
+      if (currentProperty.country_id !== adminCountry) {
+        return NextResponse.json({ error: 'Cannot reassign properties outside your territory' }, { status: 403 });
+      }
+      if (targetUser.country_id !== adminCountry) {
+        return NextResponse.json({ error: 'Cannot reassign to a user outside your territory' }, { status: 403 });
+      }
     }
 
     // Determine listed_by_type based on target user's type
