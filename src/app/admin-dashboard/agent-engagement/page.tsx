@@ -145,7 +145,7 @@ export default function AgentEngagementPage() {
   const [loading, setLoading] = useState(true);
   const [agents, setAgents] = useState<AgentData[]>([]);
   const [stats, setStats] = useState<EngagementStats>({ totalAgents: 0, zeroListings: 0, inactive15Days: 0, inactive30Days: 0 });
-  const [activeTab, setActiveTab] = useState<TabType>('inactive');
+  const [activeTab, setActiveTab] = useState<TabType>('activity');
   const [inactiveFilter, setInactiveFilter] = useState<InactiveFilter>('all');
   const [selectedAgents, setSelectedAgents] = useState<Set<string>>(new Set());
   const [showReminderModal, setShowReminderModal] = useState(false);
@@ -364,16 +364,6 @@ export default function AgentEngagementPage() {
         <div className="bg-white border-b border-gray-200 rounded-t-xl mb-0">
           <div className="flex">
             <button
-              onClick={() => setActiveTab('inactive')}
-              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'inactive'
-                  ? 'border-cyan-600 text-cyan-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Inactive Agents ({stats.zeroListings})
-            </button>
-            <button
               onClick={() => setActiveTab('activity')}
               className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'activity'
@@ -382,6 +372,16 @@ export default function AgentEngagementPage() {
               }`}
             >
               Agent Activity ({stats.totalAgents})
+            </button>
+            <button
+              onClick={() => setActiveTab('inactive')}
+              className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'inactive'
+                  ? 'border-cyan-600 text-cyan-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              Inactive Agents ({stats.zeroListings})
             </button>
             <button
               onClick={() => setActiveTab('payment')}
@@ -399,11 +399,141 @@ export default function AgentEngagementPage() {
           </div>
         </div>
 
+        {/* Section Explanation Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div
+            onClick={() => setActiveTab('activity')}
+            className={`rounded-xl p-4 border cursor-pointer transition-all ${
+              activeTab === 'activity'
+                ? 'bg-cyan-50 border-cyan-300 ring-2 ring-cyan-200'
+                : 'bg-white border-gray-200 hover:border-cyan-200'
+            }`}
+          >
+            <div className="text-lg mb-1">📨 Agent Activity</div>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              View all agents and their listing activity. Use the <strong>"Send Message"</strong> button next to any agent to send them a direct email
+              (e.g., reminders, instructions, or follow-ups sent to you via WhatsApp).
+            </p>
+          </div>
+          <div
+            onClick={() => setActiveTab('inactive')}
+            className={`rounded-xl p-4 border cursor-pointer transition-all ${
+              activeTab === 'inactive'
+                ? 'bg-orange-50 border-orange-300 ring-2 ring-orange-200'
+                : 'bg-white border-gray-200 hover:border-orange-200'
+            }`}
+          >
+            <div className="text-lg mb-1">🚨 Inactive Agents</div>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              Agents who signed up but have <strong>zero property listings</strong>. Select one or more agents and send bulk reminder emails to encourage them to post their first listing.
+            </p>
+          </div>
+          <div
+            onClick={() => setActiveTab('payment')}
+            className={`rounded-xl p-4 border cursor-pointer transition-all ${
+              activeTab === 'payment'
+                ? 'bg-green-50 border-green-300 ring-2 ring-green-200'
+                : 'bg-white border-gray-200 hover:border-green-200'
+            }`}
+          >
+            <div className="text-lg mb-1">💳 Payment Status</div>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              View agent subscription plans and payment status. See who is active, trialing, or has overdue payments.
+              {adminData?.admin_level === 'basic' && <span className="text-gray-400"> (View only for Basic Admin)</span>}
+            </p>
+          </div>
+        </div>
+
         {/* Tab Content */}
         <div className="bg-white rounded-b-xl border border-t-0 border-gray-200 shadow-sm">
-          {/* Tab 1: Inactive Agents */}
+          {/* Tab 1: Agent Activity Overview */}
+          {activeTab === 'activity' && (
+            <div className="p-4">
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-blue-800 text-sm">
+                  <strong>How to use:</strong> Find the agent you need to contact, then click <strong>"Send Message"</strong> to email them directly.
+                  You can use pre-built templates or customize the message. Perfect for forwarding instructions received via WhatsApp.
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Agent</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Active</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Drafts</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subscription</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {activityAgents.map(agent => (
+                      <tr key={agent.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center">
+                            <div className="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center mr-3">
+                              <span className="text-xs font-medium text-cyan-700">
+                                {agent.first_name?.charAt(0) || 'A'}
+                              </span>
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {agent.first_name} {agent.last_name}
+                                {agent.is_verified_agent && <span className="ml-1 text-green-500">✓</span>}
+                                {agent.is_premium_agent && <span className="ml-1 text-yellow-500">⭐</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{agent.email}</td>
+                        <td className="px-4 py-3">
+                          <span className={`text-sm font-bold ${agent.active_listings > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                            {agent.active_listings}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-500">{agent.draft_listings}</td>
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
+                            agent.subscription_status === 'active' ? 'bg-green-100 text-green-700' :
+                            agent.subscription_status === 'trialing' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {agent.subscription_status || 'none'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <Link href={`/admin-dashboard/agents/${agent.id}`}>
+                              <button className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded hover:bg-gray-200">
+                                View Profile
+                              </button>
+                            </Link>
+                            <button
+                              onClick={() => openReminderModal(agent.id)}
+                              className="px-2 py-1 text-xs font-medium bg-cyan-50 text-cyan-700 rounded hover:bg-cyan-100"
+                            >
+                              Send Message
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 2: Inactive Agents */}
           {activeTab === 'inactive' && (
             <div className="p-4">
+              <div className="mb-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-orange-800 text-sm">
+                  <strong>How to use:</strong> These are agents who signed up but never posted a listing. Use the filter buttons to narrow by days since signup.
+                  Select agents with the checkboxes, then click <strong>"Send Reminder"</strong> to email them a templated follow-up encouraging them to list their first property.
+                </p>
+              </div>
               {/* Filters and Actions */}
               <div className="flex flex-wrap items-center gap-3 mb-4">
                 <div className="flex gap-2">
@@ -518,79 +648,6 @@ export default function AgentEngagementPage() {
                   </table>
                 </div>
               )}
-            </div>
-          )}
-
-          {/* Tab 2: Agent Activity Overview */}
-          {activeTab === 'activity' && (
-            <div className="p-4">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Agent</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Active</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Drafts</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subscription</th>
-                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {activityAgents.map(agent => (
-                      <tr key={agent.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <div className="flex items-center">
-                            <div className="h-8 w-8 rounded-full bg-cyan-100 flex items-center justify-center mr-3">
-                              <span className="text-xs font-medium text-cyan-700">
-                                {agent.first_name?.charAt(0) || 'A'}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="text-sm font-medium text-gray-900">
-                                {agent.first_name} {agent.last_name}
-                                {agent.is_verified_agent && <span className="ml-1 text-green-500">✓</span>}
-                                {agent.is_premium_agent && <span className="ml-1 text-yellow-500">⭐</span>}
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{agent.email}</td>
-                        <td className="px-4 py-3">
-                          <span className={`text-sm font-bold ${agent.active_listings > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                            {agent.active_listings}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-500">{agent.draft_listings}</td>
-                        <td className="px-4 py-3">
-                          <span className={`inline-flex px-2 py-0.5 text-xs font-medium rounded-full ${
-                            agent.subscription_status === 'active' ? 'bg-green-100 text-green-700' :
-                            agent.subscription_status === 'trialing' ? 'bg-blue-100 text-blue-700' :
-                            'bg-gray-100 text-gray-600'
-                          }`}>
-                            {agent.subscription_status || 'none'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Link href={`/admin-dashboard/agents/${agent.id}`}>
-                              <button className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded hover:bg-gray-200">
-                                View Profile
-                              </button>
-                            </Link>
-                            <button
-                              onClick={() => openReminderModal(agent.id)}
-                              className="px-2 py-1 text-xs font-medium bg-cyan-50 text-cyan-700 rounded hover:bg-cyan-100"
-                            >
-                              Send Message
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
             </div>
           )}
 

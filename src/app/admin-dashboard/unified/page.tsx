@@ -1490,54 +1490,73 @@ export default function UnifiedAdminDashboard() {
               </div>
 
               {/* Draft Properties Management */}
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 border border-purple-200">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-purple-900">📝 Draft Properties</h3>
-                  <div className="text-2xl font-black text-purple-600">{statistics.totalDrafts}</div>
+              {adminData?.admin_level === 'basic' ? (
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 opacity-60 cursor-not-allowed">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-gray-400">📝 Draft Properties <span className="text-sm font-normal">🔒</span></h3>
+                    <div className="text-2xl font-black text-gray-400">{statistics.totalDrafts}</div>
+                  </div>
+                  <p className="text-sm text-gray-400 mb-4">Manage incomplete property drafts saved by users</p>
+                  <div className="w-full px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg text-center">
+                    Not Available for Basic Admin
+                  </div>
                 </div>
-                <p className="text-sm text-purple-800 mb-4">Manage incomplete property drafts saved by users</p>
-                <button
-                  onClick={() => setActiveSection('drafts')}
-                  className="w-full px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors"
-                >
-                  Manage Draft Properties →
-                </button>
-              </div>
+              ) : (
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-2xl p-6 border border-purple-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-purple-900">📝 Draft Properties</h3>
+                    <div className="text-2xl font-black text-purple-600">{statistics.totalDrafts}</div>
+                  </div>
+                  <p className="text-sm text-purple-800 mb-4">Manage incomplete property drafts saved by users</p>
+                  <button
+                    onClick={() => setActiveSection('drafts')}
+                    className="w-full px-4 py-2 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors"
+                  >
+                    Manage Draft Properties →
+                  </button>
+                </div>
+              )}
 
               {/* User & Admin Management */}
               {permissions?.canViewUsers && (
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-orange-900">
-                      👥 User & Admin Management
-                      {adminData?.admin_level === 'basic' && (
-                        <span className="ml-2 text-sm font-normal text-orange-600">🔒 (View Only)</span>
-                      )}
-                    </h3>
-                    <div className="text-2xl font-black text-orange-600">{users.length}</div>
+                adminData?.admin_level === 'basic' ? (
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 opacity-60 cursor-not-allowed">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-gray-400">
+                        👥 User & Admin Management <span className="text-sm font-normal">🔒</span>
+                      </h3>
+                      <div className="text-2xl font-black text-gray-400">{users.length}</div>
+                    </div>
+                    <ul className="text-xs text-gray-400 mb-4 space-y-0.5 leading-tight">
+                      <li>• View all agents, landlords & FSBO</li>
+                      <li>• View user details & status</li>
+                      <li>• View payment information</li>
+                    </ul>
+                    <div className="w-full px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg text-center">
+                      Not Available for Basic Admin
+                    </div>
                   </div>
-                  <ul className="text-xs text-orange-800 mb-4 space-y-0.5 leading-tight">
-                    {adminData?.admin_level === 'basic' ? (
-                      <>
-                        <li>• View all agents, landlords & FSBO</li>
-                        <li>• View user details & status</li>
-                        <li>• View payment information</li>
-                      </>
-                    ) : (
-                      <>
-                        <li>• Create & manage admin accounts</li>
-                        <li>• Suspend or remove users</li>
-                        <li>• View all agents, landlords & FSBO</li>
-                        <li>• Payment enforcement</li>
-                      </>
-                    )}
-                  </ul>
-                  <Link href="/admin-dashboard/user-management">
-                    <button className="w-full px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors">
-                      {adminData?.admin_level === 'basic' ? 'View Users →' : 'Manage Users & Admins →'}
-                    </button>
-                  </Link>
-                </div>
+                ) : (
+                  <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-orange-900">
+                        👥 User & Admin Management
+                      </h3>
+                      <div className="text-2xl font-black text-orange-600">{users.length}</div>
+                    </div>
+                    <ul className="text-xs text-orange-800 mb-4 space-y-0.5 leading-tight">
+                      <li>• Create & manage admin accounts</li>
+                      <li>• Suspend or remove users</li>
+                      <li>• View all agents, landlords & FSBO</li>
+                      <li>• Payment enforcement</li>
+                    </ul>
+                    <Link href="/admin-dashboard/user-management">
+                      <button className="w-full px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors">
+                        Manage Users & Admins →
+                      </button>
+                    </Link>
+                  </div>
+                )
               )}
 
               {/* Agent Management - All Admins */}
@@ -1563,29 +1582,41 @@ export default function UnifiedAdminDashboard() {
 
               {/* Pricing Management Quick Access */}
               {permissions?.canAccessPricingManagement && (
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-bold text-green-900">
-                      💰 Pricing Control
-                      {adminData?.admin_level === 'basic' && (
-                        <span className="ml-2 text-sm font-normal text-green-600">🔒 (View Only)</span>
-                      )}
-                    </h3>
-                    <div className="text-xl text-green-600">$</div>
+                adminData?.admin_level === 'basic' ? (
+                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200 opacity-60 cursor-not-allowed">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-gray-400">
+                        💰 Pricing Control <span className="text-sm font-normal">🔒</span>
+                      </h3>
+                      <div className="text-xl text-gray-400">$</div>
+                    </div>
+                    <p className="text-sm text-gray-400 mb-4">
+                      View pricing for {permissions.countryFilter}
+                    </p>
+                    <div className="w-full px-4 py-2 bg-gray-400 text-white font-semibold rounded-lg text-center">
+                      Not Available for Basic Admin
+                    </div>
                   </div>
-                  <p className="text-sm text-green-800 mb-4">
-                    {permissions.canViewAllCountries
-                      ? 'Manage pricing for all countries and user types'
-                      : adminData?.admin_level === 'basic'
-                      ? `View pricing for ${permissions.countryFilter}`
-                      : `Manage pricing for ${permissions.countryFilter}`}
-                  </p>
-                  <Link href="/admin-dashboard/pricing">
-                    <button className="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">
-                      {adminData?.admin_level === 'basic' ? 'View Pricing →' : 'Manage Pricing →'}
-                    </button>
-                  </Link>
-                </div>
+                ) : (
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-green-900">
+                        💰 Pricing Control
+                      </h3>
+                      <div className="text-xl text-green-600">$</div>
+                    </div>
+                    <p className="text-sm text-green-800 mb-4">
+                      {permissions.canViewAllCountries
+                        ? 'Manage pricing for all countries and user types'
+                        : `Manage pricing for ${permissions.countryFilter}`}
+                    </p>
+                    <Link href="/admin-dashboard/pricing">
+                      <button className="w-full px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors">
+                        Manage Pricing →
+                      </button>
+                    </Link>
+                  </div>
+                )
               )}
 
               {/* Agent Engagement */}
