@@ -8,6 +8,7 @@ import { createAdminClient } from '@/supabase-admin';
 import { getCountryAwareAdminPermissions } from '@/lib/auth/adminPermissions';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
 import { geocodeAddress } from '@/lib/geocoding';
+import { generateAltTextBatch } from '@/lib/ai/generateAltText';
 
 export async function PUT(
   request: Request,
@@ -196,6 +197,36 @@ export async function PUT(
             console.error('❌ Media insert error:', mediaError);
           } else {
             console.log(`✅ ${mediaInserts.length} pre-uploaded images saved to property_media`);
+
+            // Generate AI alt text for new images
+            try {
+              const newUrls = mediaInserts.map((m: any) => m.media_url);
+              console.log('🤖 Generating AI alt text for', newUrls.length, 'new images...');
+              const altTextMap = await generateAltTextBatch(newUrls, {
+                title: body.title,
+                propertyType: body.propertyType || body.property_type,
+                listingType: body.listingType || body.listing_type,
+                location: body.city,
+                neighborhood: body.neighborhood,
+                bedrooms: body.bedrooms ? Number(body.bedrooms) : undefined,
+                bathrooms: body.bathrooms ? Number(body.bathrooms) : undefined,
+              });
+
+              let altTextCount = 0;
+              for (const [url, altText] of altTextMap) {
+                if (altText) {
+                  await adminSupabase
+                    .from('property_media')
+                    .update({ alt_text: altText })
+                    .eq('property_id', propertyId)
+                    .eq('media_url', url);
+                  altTextCount++;
+                }
+              }
+              console.log(`✅ AI alt text generated for ${altTextCount}/${newUrls.length} images`);
+            } catch (altTextError) {
+              console.error('⚠️ Alt text generation failed (non-fatal):', altTextError);
+            }
           }
         }
       } catch (imageError) {

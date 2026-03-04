@@ -75,7 +75,7 @@ export async function GET(
     // Step 2: Fetch property images separately (multiple rows)
     const { data: media, error: mediaError } = await supabase
       .from('property_media')
-      .select('media_url, media_type, display_order, is_primary')
+      .select('media_url, media_type, display_order, is_primary, alt_text')
       .eq('property_id', id)
       .order('display_order', { ascending: true })
 

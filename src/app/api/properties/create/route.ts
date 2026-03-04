@@ -5,6 +5,7 @@ import { getTierBenefits } from '@/lib/subscription-utils';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
 import { geocodeAddress } from '@/lib/geocoding';
 import { createAdminClient } from '@/supabase-admin';
+import { generateAltTextBatch } from '@/lib/ai/generateAltText';
 
 // Map country codes to site IDs for multi-tenant support
 // site_id is the lowercase country name used in domain (e.g., 'guyana' for guyanahomehub.com)
@@ -984,6 +985,37 @@ export async function POST(req: NextRequest) {
           console.error('⚠️ Failed to sync properties.images:', syncError);
         } else {
           console.log('✅ properties.images synced with', imageUrls.length, 'URLs');
+        }
+
+        // Generate AI alt text for all images (non-blocking to property creation)
+        try {
+          console.log('🤖 Generating AI alt text for', imageUrls.length, 'images...');
+          const altTextMap = await generateAltTextBatch(imageUrls, {
+            title: body.title,
+            propertyType: body.propertyType || body.property_type,
+            listingType: body.listingType || body.listing_type,
+            location: body.city,
+            neighborhood: body.neighborhood,
+            bedrooms: body.bedrooms ? Number(body.bedrooms) : undefined,
+            bathrooms: body.bathrooms ? Number(body.bathrooms) : undefined,
+          });
+
+          // Update each media row with generated alt text
+          let altTextCount = 0;
+          for (const [url, altText] of altTextMap) {
+            if (altText) {
+              await adminSupabase
+                .from('property_media')
+                .update({ alt_text: altText })
+                .eq('property_id', propertyResult.id)
+                .eq('media_url', url);
+              altTextCount++;
+            }
+          }
+          console.log(`✅ AI alt text generated for ${altTextCount}/${imageUrls.length} images`);
+        } catch (altTextError) {
+          // Non-fatal: property is created, alt text can be backfilled later
+          console.error('⚠️ Alt text generation failed (non-fatal):', altTextError);
         }
       }
     } else {
