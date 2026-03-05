@@ -403,24 +403,37 @@ export async function POST(req: NextRequest) {
 
     if (isEligibleAdmin && !isAdminCreatingForUser) {
       // CASE 1: Admin creating property for THEMSELVES
-      // Default to unlimited for admin users
-      console.log('✅ Admin creating for self - no property limits applied');
+      // Admin users have no app-level limits, but the DB trigger may still check property_limit.
+      // Ensure the DB limit accommodates this insert.
+      const { count: adminPropCount } = await supabase
+        .from('properties')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .in('status', ['active', 'pending', 'draft']);
+
+      const { data: adminLimitData } = await supabase
+        .from('profiles')
+        .select('property_limit')
+        .eq('id', userId)
+        .single();
+
+      const adminDbLimit = adminLimitData?.property_limit ?? 1;
+      if ((adminPropCount || 0) >= adminDbLimit) {
+        const newLimit = (adminPropCount || 0) + 1;
+        console.log(`⬆️ Admin self-create: bumping property_limit from ${adminDbLimit} to ${newLimit}`);
+        await supabase.from('profiles').update({ property_limit: newLimit }).eq('id', userId);
+      }
+      console.log('✅ Admin creating for self - no app-level limits applied');
 
     } else if (isEligibleAdmin && isAdminCreatingForUser && targetUserProfile) {
       // CASE 2: Admin creating property FOR ANOTHER USER
-      // Check limits against the TARGET USER's account, not the admin's
+      // Admin authority overrides the user's plan limits.
+      // Auto-bump the user's property_limit in the DB so the database trigger passes.
       console.log('🔍 Admin creating for user - checking target user limits:', {
         targetUserId: effectiveUserId,
         targetUserType: targetUserProfile.user_type,
         targetTier: targetUserProfile.subscription_tier
       });
-
-      // Get tier benefits for target user
-      const targetTierBenefits = getTierBenefits(
-        targetUserProfile.user_type,
-        targetUserProfile.subscription_tier || 'basic'
-      );
-      const targetMaxAllowed = targetTierBenefits.maxListings;
 
       // Count target user's current properties
       const { count: targetCurrentCount, error: targetCountError } = await supabase
@@ -436,33 +449,56 @@ export async function POST(req: NextRequest) {
         }, { status: 500 });
       }
 
-      // Check if target user's limit would be exceeded (999 = unlimited)
-      if (targetMaxAllowed !== 999 && (targetCurrentCount || 0) >= targetMaxAllowed) {
-        console.error('❌ Target user property limit exceeded:', {
-          targetUserId: effectiveUserId,
-          currentCount: targetCurrentCount,
-          maxAllowed: targetMaxAllowed
-        });
+      // Get the user's current DB property_limit
+      const { data: targetLimitData } = await supabase
+        .from('profiles')
+        .select('property_limit')
+        .eq('id', effectiveUserId)
+        .single();
 
-        const targetUserName = `${targetUserProfile.first_name || ''} ${targetUserProfile.last_name || ''}`.trim() || 'User';
+      const currentDbLimit = targetLimitData?.property_limit ?? 1;
+      const currentCount = targetCurrentCount || 0;
 
-        return NextResponse.json({
-          error: `Cannot create property: ${targetUserName}'s account has reached its limit`,
-          details: {
-            target_user_id: effectiveUserId,
-            target_user_name: targetUserName,
-            current_count: targetCurrentCount || 0,
-            max_allowed: targetMaxAllowed,
-            subscription_tier: targetUserProfile.subscription_tier || 'basic',
-            user_type: targetUserProfile.user_type
-          }
-        }, { status: 403 });
+      // If the user is at or over their DB limit, bump it so the database trigger passes
+      if (currentCount >= currentDbLimit) {
+        const newLimit = currentCount + 1;
+        console.log(`⬆️ Admin override: bumping property_limit for user ${effectiveUserId} from ${currentDbLimit} to ${newLimit}`);
+
+        const { error: bumpError } = await supabase
+          .from('profiles')
+          .update({ property_limit: newLimit })
+          .eq('id', effectiveUserId);
+
+        if (bumpError) {
+          console.error('Failed to bump property_limit:', bumpError);
+          return NextResponse.json({
+            error: "Unable to adjust user's property limit. Please contact support."
+          }, { status: 500 });
+        }
+
+        // Log the admin action
+        try {
+          await supabase.from('admin_actions').insert({
+            admin_id: userId,
+            action_type: 'property_limit_override',
+            target_type: 'profile',
+            target_id: effectiveUserId,
+            details: {
+              previous_limit: currentDbLimit,
+              new_limit: newLimit,
+              reason: 'Admin created property on behalf of user',
+              current_property_count: currentCount
+            }
+          } as any);
+        } catch (logErr) {
+          console.warn('Failed to log property limit override:', logErr);
+        }
       }
 
-      console.log('✅ Target user property limit check passed:', {
+      console.log('✅ Admin creating for user - property limit check/override complete:', {
         targetUserId: effectiveUserId,
-        currentCount: targetCurrentCount || 0,
-        maxAllowed: targetMaxAllowed
+        currentCount,
+        dbLimit: currentDbLimit
       });
 
     } else {

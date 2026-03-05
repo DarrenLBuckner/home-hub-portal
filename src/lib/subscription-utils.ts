@@ -120,8 +120,9 @@ export async function getUserProfile(user: User): Promise<UserProfile | null> {
 export function getTierBenefits(userType: string, tier: string) {
   if (!userType) return { canUploadVideo: false, maxPhotos: 0, maxListings: 0 }
   
-  // Admin/Superadmin/Owner always gets full access
-  if (userType === 'admin' || userType === 'superadmin' || userType === 'owner') {
+  // Admin/Superadmin always gets full access
+  // Note: 'owner' user_type is FSBO, not admin. Owner admins have user_type='admin' + admin_level='owner'
+  if (userType === 'admin' || userType === 'superadmin') {
     return { canUploadVideo: true, maxPhotos: 50, maxListings: 999 }
   }
 
@@ -140,6 +141,13 @@ export function getTierBenefits(userType: string, tier: string) {
       premium: { canUploadVideo: true, maxPhotos: 50, maxListings: 1 }
     },
     fsbo: {
+      basic: { canUploadVideo: false, maxPhotos: 10, maxListings: 1 },
+      plus: { canUploadVideo: false, maxPhotos: 15, maxListings: 1 },
+      portfolio: { canUploadVideo: true, maxPhotos: 25, maxListings: 2 },
+      premium: { canUploadVideo: true, maxPhotos: 30, maxListings: 1 }
+    },
+    // 'owner' is the DB user_type for FSBO users - same limits as fsbo
+    owner: {
       basic: { canUploadVideo: false, maxPhotos: 10, maxListings: 1 },
       plus: { canUploadVideo: false, maxPhotos: 15, maxListings: 1 },
       portfolio: { canUploadVideo: true, maxPhotos: 25, maxListings: 2 },
