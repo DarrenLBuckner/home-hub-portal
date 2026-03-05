@@ -681,7 +681,7 @@ export async function PATCH(
       .single();
 
     const adminLevel = userProfile?.admin_level;
-    if (!adminLevel || !['super', 'owner'].includes(adminLevel)) {
+    if (!adminLevel || !['super', 'owner', 'basic'].includes(adminLevel)) {
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
     }
 
@@ -698,7 +698,7 @@ export async function PATCH(
     // Validate target user exists
     const { data: targetUser, error: targetError } = await adminSupabase
       .from('profiles')
-      .select('id, user_type, first_name, last_name, country_id')
+      .select('id, user_type, first_name, last_name, country_id, email, phone')
       .eq('id', reassign_to_user_id)
       .single();
 
@@ -717,8 +717,8 @@ export async function PATCH(
       return NextResponse.json({ error: 'Property not found' }, { status: 404 });
     }
 
-    // Owner admins: enforce territory — property and target user must be in their country
-    if (adminLevel === 'owner') {
+    // Owner/Basic admins: enforce territory — property and target user must be in their country
+    if (adminLevel === 'owner' || adminLevel === 'basic') {
       const adminCountry = userProfile.country_id;
       if (currentProperty.country_id !== adminCountry) {
         return NextResponse.json({ error: 'Cannot reassign properties outside your territory' }, { status: 403 });
@@ -733,12 +733,14 @@ export async function PATCH(
     if (targetUser.user_type === 'landlord') listedByType = 'landlord';
     else if (targetUser.user_type === 'fsbo' || targetUser.user_type === 'owner') listedByType = 'owner';
 
-    // Update only user_id and listed_by_type
+    // Update user_id, listed_by_type, and contact fields from new owner's profile
     const { error: updateError } = await adminSupabase
       .from('properties')
       .update({
         user_id: reassign_to_user_id,
         listed_by_type: listedByType,
+        owner_email: targetUser.email || null,
+        owner_whatsapp: targetUser.phone || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', propertyId);

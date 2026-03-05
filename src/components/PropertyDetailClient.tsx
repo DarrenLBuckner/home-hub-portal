@@ -93,9 +93,12 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
     return `mailto:${email}?subject=${subject}&body=${body}`;
   };
 
-  // Get owner display name
-  const ownerName = property.owner 
-    ? `${property.owner.first_name || ''} ${property.owner.last_name || ''}`.trim() || 'Property Owner'
+  // Get owner display name — hide admin names on public listings
+  const isAdminOwner = property.owner?.user_type === 'admin';
+  const ownerName = property.owner
+    ? (isAdminOwner
+      ? 'Property Contact'
+      : `${property.owner.first_name || ''} ${property.owner.last_name || ''}`.trim() || 'Property Owner')
     : 'Property Owner';
 
   // Property images
@@ -396,7 +399,7 @@ export default function PropertyDetailClient({ property }: PropertyDetailProps) 
             <div className="sticky top-4">
               <ContactCard
                 ownerName={ownerName}
-                userType={property.owner?.user_type}
+                userType={isAdminOwner ? property.listed_by_type : property.owner?.user_type}
                 whatsappLink={whatsappLink}
                 emailLink={property.owner_email || property.owner?.email ? getEmailLink(property.owner_email || property.owner?.email) : undefined}
                 propertyStatus={property.status}

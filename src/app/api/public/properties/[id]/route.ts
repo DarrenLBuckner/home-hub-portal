@@ -99,9 +99,9 @@ export async function GET(
             })
             ?.map((m: any) => m.media_url) || []);
 
-    // Extract agent profile data if user is an agent OR admin
-    const canShowProfile = property.profiles?.user_type === 'agent' || property.profiles?.user_type === 'admin'
-    const agentProfile = canShowProfile ? {
+    // Extract agent profile data — only for actual agents, never expose admin identity
+    const isAgent = property.profiles?.user_type === 'agent'
+    const agentProfile = isAgent ? {
       id: property.profiles.id,
       first_name: property.profiles.first_name,
       last_name: property.profiles.last_name,
@@ -114,14 +114,15 @@ export async function GET(
       is_verified_agent: property.profiles.is_verified_agent
     } : null
 
-    // Step 4: Detect private listing (FSBO/Landlord)
+    // Step 4: Detect private listing (FSBO/Landlord/Admin-created without agent)
     const isPrivateListing = (
       property.listing_source === 'fsbo' ||
       property.listing_source === 'landlord' ||
       property.listed_by_type === 'owner' ||
       property.listed_by_type === 'fsbo' ||
       property.profiles?.user_type === 'fsbo' ||
-      property.profiles?.user_type === 'landlord'
+      property.profiles?.user_type === 'landlord' ||
+      property.profiles?.user_type === 'admin'
     );
 
     // Weekly rotation agent selection
@@ -148,10 +149,13 @@ export async function GET(
       return hash;
     }
 
-    // Owner contact extraction
+    // Owner contact extraction — hide admin identity on public listings
+    const isAdminUser = property.profiles?.user_type === 'admin';
     const ownerContact = isPrivateListing ? {
-      name: property.profiles?.first_name ? `${property.profiles.first_name} ${property.profiles.last_name || ''}`.trim() : 'Property Owner',
-      phone: property.owner_whatsapp || null
+      name: isAdminUser
+        ? 'Property Contact'
+        : (property.profiles?.first_name ? `${property.profiles.first_name} ${property.profiles.last_name || ''}`.trim() : 'Property Owner'),
+      phone: property.owner_whatsapp || (isAdminUser ? null : property.profiles?.phone) || null
     } : null;
 
     // Promoted agent selection
