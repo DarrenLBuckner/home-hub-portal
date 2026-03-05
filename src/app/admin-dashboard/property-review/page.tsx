@@ -118,37 +118,25 @@ export default function PropertyReviewPage() {
 
   async function loadProperties() {
     try {
-      console.log('🔄 Loading all properties for review...');
-      
-      // Build query with profiles data
-      let propertiesQuery = supabase
-        .from('properties')
-        .select(`
-          *,
-          owner:profiles!user_id (
-            id,
-            email,
-            first_name,
-            last_name,
-            user_type
-          )
-        `)
-        .order('created_at', { ascending: false });
+      console.log('🔄 Loading all properties for review via admin API...');
 
-      // Apply country filter for non-super admins
-      if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
-        propertiesQuery = propertiesQuery.eq('country_id', permissions.countryFilter);
-      }
+      // Use server-side API endpoint which uses service role key (bypasses RLS)
+      // This ensures all admin levels (super, owner, basic) can see properties
+      const response = await fetch('/api/admin/properties', {
+        cache: 'no-store',
+        credentials: 'include',
+      });
 
-      const { data: allProperties, error: propertiesError } = await propertiesQuery;
-
-      if (propertiesError) {
-        console.error('Properties error:', propertiesError);
-        setError('Failed to load properties');
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        console.error('Properties API error:', response.status, errData);
+        setError(errData.error || 'Failed to load properties');
+        setLoading(false);
         return;
       }
 
-      setProperties(allProperties || []);
+      const data = await response.json();
+      setProperties(data.properties || []);
       setLoading(false);
 
     } catch (error) {
@@ -263,7 +251,8 @@ export default function PropertyReviewPage() {
   }
 
   const isBasicAdmin = adminData?.admin_level === 'basic';
-  const canManageStatus = !isBasicAdmin; // Only super/owner can mark under contract, sold, rented, reassign, change price
+  const canManageStatus = !isBasicAdmin; // Only super/owner can mark under contract, sold, rented, change price
+  const canReassign = true; // All admin levels can reassign (basic admins create properties for others)
 
   // Get unique values for filter dropdowns
   const uniqueRegions = [...new Set(properties.map(p => p.region).filter(Boolean))];
@@ -294,16 +283,17 @@ export default function PropertyReviewPage() {
     setReassignTargetId("");
     setShowReassignModal(true);
 
-    // Load available agents/users for the dropdown
+    // Load available agents/users for the dropdown via admin API (bypasses RLS)
     try {
-      const { data: agents, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, company, user_type')
-        .in('user_type', ['agent', 'landlord', 'owner', 'fsbo'])
-        .order('first_name', { ascending: true });
-
-      if (!error && agents) {
-        setAvailableAgents(agents);
+      const response = await fetch('/api/admin/users', {
+        cache: 'no-store',
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAvailableAgents(data.users || []);
+      } else {
+        console.error('Error loading agents:', response.status);
       }
     } catch (err) {
       console.error('Error loading agents:', err);
@@ -604,8 +594,8 @@ export default function PropertyReviewPage() {
                             </button>
                           </Link>
 
-                          {/* Reassign - Super/Owner only */}
-                          {canManageStatus && (
+                          {/* Reassign - All admin levels (basic admins create properties for others) */}
+                          {canReassign && (
                             <button
                               onClick={() => handleReassignOpen(property)}
                               className="px-4 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2"

@@ -108,101 +108,36 @@ export default function MobileOptimizedAdminDashboard() {
 
   async function loadDashboardData() {
     try {
-      console.log('🔄 Loading dashboard data...');
-      
-      // Build query with profiles data for pending properties
-      let propertiesQuery = supabase
-        .from('properties')
-        .select(`
-          *,
-          owner:profiles!user_id (
-            id,
-            email,
-            first_name,
-            last_name,
-            user_type
-          )
-        `)
-        .in('status', ['pending', 'draft']);
+      console.log('🔄 Loading dashboard data via admin API...');
 
-      // Apply country filter for non-super admins
-      if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
-        propertiesQuery = propertiesQuery.eq('country_id', permissions.countryFilter);
-      }
+      // Use server-side API endpoint which uses service role key (bypasses RLS)
+      // This ensures all admin levels (super, owner, basic) can see properties
+      const [pendingRes, activeRes] = await Promise.all([
+        fetch('/api/admin/properties?status=pending', { cache: 'no-store', credentials: 'include' }),
+        fetch('/api/admin/properties?status=active', { cache: 'no-store', credentials: 'include' }),
+      ]);
 
-      const { data: properties, error: propertiesError } = await propertiesQuery;
-
-      if (propertiesError) {
-        console.error('Properties error:', propertiesError);
+      if (!pendingRes.ok || !activeRes.ok) {
+        console.error('Properties API error:', pendingRes.status, activeRes.status);
         setError('Failed to load properties');
         return;
       }
 
-      setPendingProperties(properties || []);
+      const pendingData = await pendingRes.json();
+      const activeData = await activeRes.json();
 
-      // Load approved/active properties for editing
-      let approvedQuery = supabase
-        .from('properties')
-        .select(`
-          *,
-          owner:profiles!user_id (
-            id,
-            email,
-            first_name,
-            last_name,
-            user_type
-          )
-        `)
-        .eq('status', 'active');
+      setPendingProperties(pendingData.properties || []);
+      setApprovedProperties(activeData.properties || []);
 
-      // Apply same country filter
-      if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
-        approvedQuery = approvedQuery.eq('country_id', permissions.countryFilter);
-      }
-
-      const { data: approvedProps, error: approvedError } = await approvedQuery;
-
-      if (approvedError) {
-        console.error('Approved properties error:', approvedError);
-      } else {
-        setApprovedProperties(approvedProps || []);
-      }
-
-      // Load basic statistics including listed_by_type for proper counting
-      const { data: stats, error: statsError } = await supabase
-        .from('properties')
-        .select('status, created_at, user_id, listed_by_type');
-
-      if (statsError) {
-        console.error('Stats error:', statsError);
-        return;
-      }
-
-      const today = new Date().toISOString().split('T')[0];
-      const todaySubmissions = stats?.filter((p: any) => 
-        p.created_at.startsWith(today)
-      ).length || 0;
-
-      // Count properties by listed_by_type (this is the key field for the portal)
-      let byUserType = { fsbo: 0, agent: 0, landlord: 0 };
-      
-      if (stats) {
-        stats.forEach((property: any) => {
-          // Count active properties only by their listed_by_type
-          if (property.status === 'active') {
-            if (property.listed_by_type === 'owner') byUserType.fsbo++;
-            else if (property.listed_by_type === 'agent') byUserType.agent++;
-            else if (property.listed_by_type === 'landlord') byUserType.landlord++;
-          }
-        });
-      }
+      // Use statistics from the API response
+      const stats = pendingData.statistics;
 
       setStatistics({
-        totalPending: properties?.length || 0,
-        todaySubmissions,
-        byUserType,
-        totalActive: stats?.filter((p: any) => p.status === 'active').length || 0,
-        totalRejected: stats?.filter((p: any) => p.status === 'rejected').length || 0,
+        totalPending: stats?.totalPending ?? (pendingData.properties?.length || 0),
+        todaySubmissions: stats?.todaySubmissions ?? 0,
+        byUserType: stats?.byUserType ?? { fsbo: 0, agent: 0, landlord: 0 },
+        totalActive: stats?.totalActive ?? (activeData.properties?.length || 0),
+        totalRejected: stats?.totalRejected ?? 0,
       });
 
     } catch (error) {

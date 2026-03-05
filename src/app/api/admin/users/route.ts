@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
         phone,
         company
       `)
-      .in('user_type', ['agent', 'landlord', 'fsbo'])
+      .in('user_type', ['agent', 'landlord', 'owner', 'fsbo'])
       .neq('id', user.id)
       .order('created_at', { ascending: false });
 

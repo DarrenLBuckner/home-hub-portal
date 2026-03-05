@@ -133,134 +133,39 @@ export default function AdminDashboard() {
   }
 
   async function loadDashboardData() {
-    
+
     try {
-      // First try simple query without joins to avoid table structure issues
-      console.log('Loading pending properties...');
-      
-      const { data: pendingData, error: pendingError } = await supabase
-        .from('properties')
-        .select(`
-          *,
-          owner:profiles!user_id(first_name, last_name, user_type)
-        `)
-        .in('status', ['pending', 'draft'])
-        .order('created_at', { ascending: true });
+      console.log('Loading dashboard data via admin API...');
 
-      if (pendingError) {
-        console.error('Error loading pending properties:', pendingError);
-        throw pendingError;
-      }
-      
-      console.log('Loaded pending properties:', pendingData?.length || 0);
-      setPendingProperties(pendingData || []);
+      // Use server-side API endpoint which uses service role key (bypasses RLS)
+      // This ensures all admin levels (super, owner, basic) can see properties
+      const pendingRes = await fetch('/api/admin/properties?status=pending', {
+        cache: 'no-store',
+        credentials: 'include',
+      });
 
-      // Try to load images separately if property_media table exists
-      if (pendingData && pendingData.length > 0) {
-        try {
-          const propertyIds = pendingData.map((p: any) => p.id);
-          const { data: mediaData, error: mediaError } = await supabase
-            .from('property_media')
-            .select('property_id, media_url, is_primary')
-            .in('property_id', propertyIds);
-            
-          if (!mediaError && mediaData) {
-            console.log('Loaded property media:', mediaData.length);
-          } else if (mediaError) {
-            console.log('Property media table not available:', mediaError.message);
-          }
-        } catch (mediaErr) {
-          console.log('Property media loading failed (table may not exist):', mediaErr);
-        }
+      if (!pendingRes.ok) {
+        console.error('Properties API error:', pendingRes.status);
+        throw new Error('Failed to load properties');
       }
+
+      const pendingData = await pendingRes.json();
+      console.log('Loaded pending properties:', pendingData.properties?.length || 0);
+      setPendingProperties(pendingData.properties || []);
+
+      // Use statistics from the API response
+      const stats = pendingData.statistics;
 
       // Load statistics with robust error handling
-      const today = new Date().toISOString().split('T')[0];
-      console.log('Loading statistics...');
-      
       try {
-        // Count pending and draft (both need admin review)
-        const { count: totalPending } = await supabase
-          .from('properties')
-          .select('*', { count: 'exact', head: true })
-          .in('status', ['pending', 'draft']);
-        console.log('Total pending:', totalPending);
-
-        // Count today's submissions
-        const { count: todaySubmissions } = await supabase
-          .from('properties')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', today + 'T00:00:00.000Z')
-          .lt('created_at', today + 'T23:59:59.999Z');
-        console.log('Today submissions:', todaySubmissions);
-
-        // Count by user type for pending properties (handle missing column gracefully)
-        let byUserType = { fsbo: 0, agent: 0, landlord: 0 };
-        try {
-          const { data: byUserTypeData, error: typeError } = await supabase
-            .from('properties')
-            .select('listed_by_type')
-            .in('status', ['pending', 'draft']);
-
-          if (!typeError && byUserTypeData) {
-            byUserType = {
-              fsbo: byUserTypeData?.filter((p: any) => p.listed_by_type === 'owner' || p.listed_by_type === 'fsbo').length || 0,
-              agent: byUserTypeData?.filter((p: any) => p.listed_by_type === 'agent').length || 0,
-              landlord: byUserTypeData?.filter((p: any) => p.listed_by_type === 'landlord').length || 0,
-            };
-            console.log('By user type:', byUserType);
-          } else {
-            console.log('listed_by_type column not available, using defaults');
-          }
-        } catch (typeErr) {
-          console.log('User type stats failed, using defaults:', typeErr);
-        }
-
-        // Count active properties (try multiple status values)
-        let totalActive = 0;
-        try {
-          const { count: activeCount } = await supabase
-            .from('properties')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'active');
-          
-          const { count: availableCount } = await supabase
-            .from('properties')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'available');
-            
-          const { count: approvedCount } = await supabase
-            .from('properties')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'available');
-
-          totalActive = (activeCount || 0) + (availableCount || 0) + (approvedCount || 0);
-          console.log('Total active properties:', totalActive, {activeCount, availableCount, approvedCount});
-        } catch (activeErr) {
-          console.log('Active count failed:', activeErr);
-        }
-
-        // Count rejected properties
-        let totalRejected = 0;
-        try {
-          const { count: rejectedCount } = await supabase
-            .from('properties')
-            .select('*', { count: 'exact', head: true })
-            .eq('status', 'rejected');
-          totalRejected = rejectedCount || 0;
-          console.log('Total rejected:', totalRejected);
-        } catch (rejectedErr) {
-          console.log('Rejected count failed:', rejectedErr);
-        }
-
         setStatistics({
-          totalPending: totalPending || 0,
-          todaySubmissions: todaySubmissions || 0,
-          byUserType,
-          totalActive,
-          totalRejected,
+          totalPending: stats?.totalPending ?? (pendingData.properties?.length || 0),
+          todaySubmissions: stats?.todaySubmissions ?? 0,
+          byUserType: stats?.byUserType ?? { fsbo: 0, agent: 0, landlord: 0 },
+          totalActive: stats?.totalActive ?? 0,
+          totalRejected: stats?.totalRejected ?? 0,
         });
-        
+
       } catch (statsErr) {
         console.error('Statistics loading failed:', statsErr);
         // Use defaults if statistics fail
