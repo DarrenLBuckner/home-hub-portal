@@ -101,7 +101,7 @@ export async function GET(
 
     // Extract agent profile data — only for actual agents, never expose admin identity
     const isAgent = property.profiles?.user_type === 'agent'
-    const agentProfile = isAgent ? {
+    let agentProfile = isAgent ? {
       id: property.profiles.id,
       first_name: property.profiles.first_name,
       last_name: property.profiles.last_name,
@@ -113,6 +113,32 @@ export async function GET(
       is_founding_advisor: property.profiles.is_founding_advisor,
       is_verified_agent: property.profiles.is_verified_agent
     } : null
+
+    // Fallback: listed_by_type is 'agent' but the profiles join didn't return an agent
+    // (e.g., admin-created listing where user_id still points to the admin profile)
+    // Do a direct lookup to find the agent profile by user_id
+    if (property.listed_by_type === 'agent' && !agentProfile && property.user_id) {
+      const { data: fallbackProfile } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, phone, profile_image, company, user_type, is_founding_member, is_founding_advisor, is_verified_agent')
+        .eq('id', property.user_id)
+        .single()
+
+      if (fallbackProfile) {
+        agentProfile = {
+          id: fallbackProfile.id,
+          first_name: fallbackProfile.first_name,
+          last_name: fallbackProfile.last_name,
+          phone: fallbackProfile.phone || property.owner_whatsapp,
+          profile_image: fallbackProfile.profile_image,
+          company: fallbackProfile.company,
+          user_type: 'agent',
+          is_founding_member: fallbackProfile.is_founding_member,
+          is_founding_advisor: fallbackProfile.is_founding_advisor,
+          is_verified_agent: fallbackProfile.is_verified_agent
+        }
+      }
+    }
 
     // Step 4: Detect private listing (FSBO/Landlord) — agent listings are never private
     const isPrivateListing = (
