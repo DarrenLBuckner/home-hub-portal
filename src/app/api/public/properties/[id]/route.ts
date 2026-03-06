@@ -114,15 +114,18 @@ export async function GET(
       is_verified_agent: property.profiles.is_verified_agent
     } : null
 
-    // Step 4: Detect private listing (FSBO/Landlord/Admin-created without agent)
+    // Step 4: Detect private listing (FSBO/Landlord) — agent listings are never private
     const isPrivateListing = (
-      property.listing_source === 'fsbo' ||
-      property.listing_source === 'landlord' ||
-      property.listed_by_type === 'owner' ||
-      property.listed_by_type === 'fsbo' ||
-      property.profiles?.user_type === 'fsbo' ||
-      property.profiles?.user_type === 'landlord' ||
-      property.profiles?.user_type === 'admin'
+      property.listed_by_type === 'agent'
+        ? false
+        : (
+            property.listing_source === 'fsbo' ||
+            property.listing_source === 'landlord' ||
+            property.listed_by_type === 'owner' ||
+            property.listed_by_type === 'fsbo' ||
+            property.profiles?.user_type === 'fsbo' ||
+            property.profiles?.user_type === 'landlord'
+          )
     );
 
     // Weekly rotation agent selection

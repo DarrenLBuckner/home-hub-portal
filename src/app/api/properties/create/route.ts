@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
     const isRental = listingType === 'rent';
     const isSale = listingType === 'sale';
     const isLease = listingType === 'lease';
-    const isAgent = userType === 'agent';
+    let isAgent = userType === 'agent';
 
     // Property category (residential vs commercial)
     const propertyCategory = body.property_category || 'residential';
@@ -235,6 +235,7 @@ export async function POST(req: NextRequest) {
       if (userType === 'owner') return 'owner';
       if (userType === 'fsbo') return 'owner';
       if (userType === 'landlord') return 'landlord';
+      if (userType === 'admin') return listingType === 'rent' ? 'landlord' : 'owner';
       return listingType === 'rent' ? 'landlord' : 'owner';
     };
     let listedByType = getListedByType(userType, listingType);
@@ -386,12 +387,20 @@ export async function POST(req: NextRequest) {
         });
 
       } catch (error) {
-        // If any error in target user validation, log and fall back to existing behavior
-        console.error('⚠️ Error in admin-for-user validation, falling back to standard creation:', error);
-        effectiveUserId = userId;
-        createdByUserId = userId;
-        isAdminCreatingForUser = false;
+        console.error('[create-property] Admin-on-behalf-of failed:', error);
+        return NextResponse.json(
+          {
+            error: 'Failed to assign property to the selected agent. Please verify the agent exists and belongs to your territory, then try again.',
+            details: error instanceof Error ? error.message : 'Unknown error'
+          },
+          { status: 400 }
+        );
       }
+    }
+
+    // Recalculate isAgent after admin-on-behalf-of may have changed listedByType
+    if (isAdminCreatingForUser) {
+      isAgent = listedByType === 'agent';
     }
 
     // CRITICAL DEBUG - Add a clear marker for admin path
