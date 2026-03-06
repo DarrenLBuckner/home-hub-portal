@@ -916,7 +916,10 @@ export async function POST(req: NextRequest) {
     console.log('  Full propertyData:', JSON.stringify(propertyData, null, 2));
 
     // Insert property into properties table
-    const { data: propertyResult, error: dbError } = await supabase
+    // Use admin client when creating on behalf of another user to bypass RLS
+    // (RLS checks auth.uid() = user_id, which fails when admin sets user_id to the target agent)
+    const insertClient = isAdminCreatingForUser ? createAdminClient() : supabase;
+    const { data: propertyResult, error: dbError } = await insertClient
       .from("properties")
       .insert(propertyData)
       .select('id')
