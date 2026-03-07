@@ -144,6 +144,9 @@ export default function EditAgentProperty() {
   const [ownerName, setOwnerName] = useState<string>('');
   const [propertyCreatedAt, setPropertyCreatedAt] = useState<string>('');
   const [propertyUpdatedAt, setPropertyUpdatedAt] = useState<string>('');
+  const [deleteConfirm, setDeleteConfirm] = useState<{ index: number; url: string } | null>(null);
+  const [isImageDeleting, setIsImageDeleting] = useState(false);
+  const [imageToast, setImageToast] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -502,6 +505,35 @@ export default function EditAgentProperty() {
 
   const handleImagesChange = (images: File[]) => {
     setImages(images);
+  };
+
+  const confirmDeleteImage = async () => {
+    if (!deleteConfirm) return;
+    const { index, url } = deleteConfirm;
+    const isCoverPhoto = index === 0;
+    setIsImageDeleting(true);
+    try {
+      const res = await fetch(`/api/properties/${propertyId}/delete-image`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: url }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Failed to delete image');
+        return;
+      }
+      setExistingImages(data.images);
+      if (isCoverPhoto && data.images.length > 0) {
+        setImageToast('Cover photo updated to next available photo.');
+        setTimeout(() => setImageToast(null), 3000);
+      }
+    } catch {
+      alert('Failed to delete image. Please try again.');
+    } finally {
+      setIsImageDeleting(false);
+      setDeleteConfirm(null);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1720,7 +1752,7 @@ export default function EditAgentProperty() {
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {existingImages.map((url, index) => (
-                    <div key={index} className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
+                    <div key={index} className="relative aspect-video rounded-lg overflow-hidden border border-gray-200 group">
                       <img
                         src={url}
                         alt={`Property image ${index + 1}`}
@@ -1731,11 +1763,21 @@ export default function EditAgentProperty() {
                           Primary
                         </span>
                       )}
+                      {/* Delete button */}
+                      <button
+                        onClick={() => setDeleteConfirm({ index, url })}
+                        className="absolute top-1 right-1 w-7 h-7 bg-red-600 text-white rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-md"
+                        title="Remove photo"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                     </div>
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  These images are already saved. Add new images below to include them.
+                  These images are already saved. Click the X on any photo to remove it.
                 </p>
               </div>
             )}
@@ -1813,6 +1855,50 @@ export default function EditAgentProperty() {
           </div>
         </form>
       </div>
+
+      {/* Image Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl w-full max-w-sm p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Remove this photo?</h3>
+            {existingImages.length + images.length <= 1 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                <p className="text-sm text-yellow-800">
+                  This is the only photo. Your listing will show no image if you remove it.
+                </p>
+              </div>
+            )}
+            {deleteConfirm.index === 0 && existingImages.length > 1 && (
+              <p className="text-sm text-gray-600 mb-3">
+                This is the cover photo. The next photo will become the new cover.
+              </p>
+            )}
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={isImageDeleting}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteImage}
+                disabled={isImageDeleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {isImageDeleting ? 'Removing...' : 'Yes, Remove'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Toast Notification */}
+      {imageToast && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg z-50 text-sm font-medium">
+          {imageToast}
+        </div>
+      )}
     </div>
   );
 }

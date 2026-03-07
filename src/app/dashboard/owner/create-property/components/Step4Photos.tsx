@@ -8,12 +8,16 @@ interface Step4PhotosProps {
   setImages: (images: File[]) => void;
   existingImages?: string[];
   setExistingImages?: (images: string[]) => void;
+  propertyId?: string;
 }
 
-export default function Step4Photos({ images, setImages, existingImages = [], setExistingImages }: Step4PhotosProps) {
+export default function Step4Photos({ images, setImages, existingImages = [], setExistingImages, propertyId }: Step4PhotosProps) {
   const [dragActive, setDragActive] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isConverting, setIsConverting] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ index: number; url: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const totalCount = existingImages.length + images.length;
@@ -78,9 +82,59 @@ export default function Step4Photos({ images, setImages, existingImages = [], se
     }
   };
 
-  const removeExistingImage = (index: number) => {
-    if (setExistingImages) {
+  const showToast = (message: string) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleDeleteExistingImage = (index: number) => {
+    const totalPhotos = existingImages.length + images.length;
+    if (totalPhotos <= 1) {
+      setDeleteConfirm({ index, url: existingImages[index] });
+      return;
+    }
+    setDeleteConfirm({ index, url: existingImages[index] });
+  };
+
+  const confirmDeleteExistingImage = async () => {
+    if (!deleteConfirm || !setExistingImages) return;
+    const { index, url } = deleteConfirm;
+    const isCoverPhoto = index === 0;
+
+    // If we have a propertyId, delete from storage + DB immediately
+    if (propertyId) {
+      setIsDeleting(true);
+      try {
+        const res = await fetch(`/api/properties/${propertyId}/delete-image`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl: url }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          alert(data.error || 'Failed to delete image');
+          setIsDeleting(false);
+          setDeleteConfirm(null);
+          return;
+        }
+        // Update local state from API response
+        setExistingImages(data.images);
+        if (isCoverPhoto && data.images.length > 0) {
+          showToast('Cover photo updated to next available photo.');
+        }
+      } catch {
+        alert('Failed to delete image. Please try again.');
+      } finally {
+        setIsDeleting(false);
+        setDeleteConfirm(null);
+      }
+    } else {
+      // No propertyId (create flow) — just remove from local state
       setExistingImages(existingImages.filter((_, i) => i !== index));
+      if (isCoverPhoto && existingImages.length > 1) {
+        showToast('Cover photo updated to next available photo.');
+      }
+      setDeleteConfirm(null);
     }
   };
 
@@ -192,17 +246,16 @@ export default function Step4Photos({ images, setImages, existingImages = [], se
                   />
                 </div>
 
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <button
-                    onClick={() => removeExistingImage(index)}
-                    className="p-2 bg-red-600 text-white rounded-full hover:bg-red-700"
-                    title="Remove"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
+                {/* Delete button — visible on hover (desktop) or always (mobile) */}
+                <button
+                  onClick={() => handleDeleteExistingImage(index)}
+                  className="absolute top-2 right-2 w-7 h-7 bg-red-600 text-white rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-md"
+                  title="Remove photo"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
 
                 {index === 0 && (
                   <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
@@ -285,6 +338,50 @@ export default function Step4Photos({ images, setImages, existingImages = [], se
           <li>• High-quality photos get more views and inquiries</li>
         </ul>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl w-full max-w-sm p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Remove this photo?</h3>
+            {existingImages.length + images.length <= 1 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
+                <p className="text-sm text-yellow-800">
+                  This is the only photo. Your listing will show no image if you remove it.
+                </p>
+              </div>
+            )}
+            {deleteConfirm.index === 0 && existingImages.length > 1 && (
+              <p className="text-sm text-gray-600 mb-3">
+                This is the cover photo. The next photo will become the new cover.
+              </p>
+            )}
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteExistingImage}
+                disabled={isDeleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-50"
+              >
+                {isDeleting ? 'Removing...' : 'Yes, Remove'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-4 py-3 rounded-lg shadow-lg z-50 text-sm font-medium">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }

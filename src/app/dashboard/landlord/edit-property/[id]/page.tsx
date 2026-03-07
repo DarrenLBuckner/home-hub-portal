@@ -407,9 +407,12 @@ export default function EditLandlordProperty() {
           )}
           
           {currentStep === 4 && (
-            <Step4Photos 
+            <Step4Photos
               images={images}
               setImages={setImages}
+              existingImages={existingImages}
+              setExistingImages={setExistingImages}
+              propertyId={propertyId}
             />
           )}
           

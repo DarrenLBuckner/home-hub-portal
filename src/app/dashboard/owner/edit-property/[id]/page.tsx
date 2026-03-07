@@ -414,6 +414,7 @@ export default function EditFSBOProperty() {
               setImages={setImages}
               existingImages={existingImages}
               setExistingImages={setExistingImages}
+              propertyId={propertyId}
             />
           )}
           
