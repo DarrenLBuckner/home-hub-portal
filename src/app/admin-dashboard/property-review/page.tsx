@@ -156,7 +156,7 @@ export default function PropertyReviewPage() {
     
     // User type filter
     if (filters.userType !== 'all') {
-      filtered = filtered.filter(p => p.owner?.user_type === filters.userType);
+      filtered = filtered.filter(p => p.listed_by_type === filters.userType);
     }
     
     // Price range filter
@@ -265,7 +265,7 @@ export default function PropertyReviewPage() {
   };
 
   const getEditUrl = (property: Property) => {
-    const userType = property.owner?.user_type || property.listed_by_type;
+    const userType = property.listed_by_type || property.owner?.user_type;
     switch (userType) {
       case 'agent':
         return `/dashboard/agent/edit-property/${property.id}`;
@@ -542,7 +542,7 @@ export default function PropertyReviewPage() {
                                 {property.status.toUpperCase()}
                               </span>
                               <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-full">
-                                {displayUserType(property.owner?.user_type || '')}
+                                {displayUserType(property.listed_by_type || property.owner?.user_type || '')}
                               </span>
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 mb-1">{property.title}</h3>
@@ -563,14 +563,18 @@ export default function PropertyReviewPage() {
 
                         {/* Owner Info */}
                         <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                          <div className="text-xs font-medium text-gray-700 mb-1">Property Owner</div>
+                          <div className="text-xs font-medium text-gray-700 mb-1">
+                            {property.listed_by_type === 'agent' ? 'Listing Agent' : property.listed_by_type === 'landlord' ? 'Landlord' : 'Property Owner'}
+                          </div>
                           <div className="text-sm text-gray-600">
                             📧 {property.owner_email} {property.owner_whatsapp && `• 📱 ${property.owner_whatsapp}`}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
-                            {property.owner ? 
-                              [property.owner.first_name, property.owner.last_name].filter(Boolean).join(' ') || 'Unknown User'
-                              : 'Unknown User'
+                            {property.owner?.user_type === 'admin'
+                              ? `Admin-created (${displayUserType(property.listed_by_type || '')} listing)`
+                              : property.owner
+                                ? [property.owner.first_name, property.owner.last_name].filter(Boolean).join(' ') || 'Unknown User'
+                                : 'Unknown User'
                             }
                           </div>
                         </div>
