@@ -1,9 +1,10 @@
 interface Step6ReviewProps {
   formData: any;
   images: File[];
+  existingImageUrls?: string[];
 }
 
-export default function Step6Review({ formData, images }: Step6ReviewProps) {
+export default function Step6Review({ formData, images, existingImageUrls = [] }: Step6ReviewProps) {
   const formatPrice = (price: string) => {
     if (!price || isNaN(Number(price))) return 'Not specified';
     return `GYD ${Number(price).toLocaleString()}`;
@@ -119,15 +120,15 @@ export default function Step6Review({ formData, images }: Step6ReviewProps) {
 
       {/* Photos */}
       <div className="bg-white p-6 rounded-lg border">
-        <h3 className="text-lg font-semibold mb-4 text-gray-900">Photos ({images.length})</h3>
-        {images.length > 0 ? (
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">Photos ({existingImageUrls.length + images.length})</h3>
+        {existingImageUrls.length + images.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {images.slice(0, 8).map((image, index) => (
-              <div key={index} className="relative">
+            {existingImageUrls.slice(0, 8).map((url, index) => (
+              <div key={`existing-${index}`} className="relative">
                 <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                   <img
-                    src={URL.createObjectURL(image)}
-                    alt={`Preview ${index + 1}`}
+                    src={url}
+                    alt={`Photo ${index + 1}`}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -138,9 +139,25 @@ export default function Step6Review({ formData, images }: Step6ReviewProps) {
                 )}
               </div>
             ))}
-            {images.length > 8 && (
+            {images.slice(0, Math.max(0, 8 - existingImageUrls.length)).map((image, index) => (
+              <div key={`new-${index}`} className="relative">
+                <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                  <img
+                    src={URL.createObjectURL(image)}
+                    alt={`New photo ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                {existingImageUrls.length === 0 && index === 0 && (
+                  <div className="absolute top-2 left-2 bg-blue-600 text-white text-xs px-2 py-1 rounded">
+                    Main
+                  </div>
+                )}
+              </div>
+            ))}
+            {existingImageUrls.length + images.length > 8 && (
               <div className="aspect-square bg-gray-100 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500 text-sm">+{images.length - 8} more</p>
+                <p className="text-gray-500 text-sm">+{existingImageUrls.length + images.length - 8} more</p>
               </div>
             )}
           </div>

@@ -984,7 +984,7 @@ function CreateAgentPropertyContent() {
               isCreatingForUser={isCreatingForUser}
             />
           )}
-          {currentStep === 6 && <Step6Review formData={formData} images={images} />}
+          {currentStep === 6 && <Step6Review formData={formData} images={images} existingImageUrls={existingImageUrls} />}
         </div>
 
         {/* Enhanced Navigation buttons */}
