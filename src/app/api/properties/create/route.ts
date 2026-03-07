@@ -334,7 +334,9 @@ export async function POST(req: NextRequest) {
         console.log('🔄 Admin creating property for user:', { adminId: userId, targetUserId, adminLevel });
 
         // Validate target user exists and get their profile
-        const { data: targetUser, error: targetError } = await supabase
+        // Use admin client to bypass RLS — the cookie-scoped client can only read the logged-in user's own profile
+        const adminSupabase = createAdminClient() as any;
+        const { data: targetUser, error: targetError } = await adminSupabase
           .from('profiles')
           .select('id, country_id, user_type, subscription_tier, email, first_name, last_name')
           .eq('id', targetUserId)
@@ -351,7 +353,7 @@ export async function POST(req: NextRequest) {
         // Territory check: Owner/Basic admins can only create for users in their territory
         if (adminLevel !== 'super') {
           // Get admin's country_id for comparison
-          const { data: adminProfile } = await supabase
+          const { data: adminProfile } = await adminSupabase
             .from('profiles')
             .select('country_id')
             .eq('id', userId)
