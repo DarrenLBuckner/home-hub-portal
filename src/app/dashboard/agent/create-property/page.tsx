@@ -142,23 +142,19 @@ function CreateAgentPropertyContent() {
   } | null>(null);
 
   // Fetch target user profile when creating for another user
+  // Uses admin API route to bypass RLS (client-side Supabase can't read other users' profiles)
   useEffect(() => {
     const fetchTargetUserProfile = async () => {
       if (!targetUserId) return;
 
       try {
-        const supabase = createClient();
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('email, phone')
-          .eq('id', targetUserId)
-          .single();
-
-        if (error) {
-          console.error('Error fetching target user profile:', error);
+        const res = await fetch(`/api/admin/users/${targetUserId}`);
+        if (!res.ok) {
+          console.error('Error fetching target user profile:', res.status);
           return;
         }
 
+        const profile = await res.json();
         if (profile) {
           setTargetUserProfile({
             email: profile.email || '',
