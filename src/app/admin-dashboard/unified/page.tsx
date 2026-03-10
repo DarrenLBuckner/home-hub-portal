@@ -1515,6 +1515,13 @@ export default function UnifiedAdminDashboard() {
                       Manage Agents →
                     </button>
                   </Link>
+                  {(adminData?.admin_level === 'super' || adminData?.admin_level === 'owner') && (
+                    <Link href="/admin/agents">
+                      <button className="w-full mt-2 px-4 py-2 bg-emerald-100 text-emerald-800 font-semibold rounded-lg hover:bg-emerald-200 transition-colors text-sm">
+                        Agent Review Queue →
+                      </button>
+                    </Link>
+                  )}
                 </div>
               )}
 
@@ -1573,6 +1580,27 @@ export default function UnifiedAdminDashboard() {
                   <Link href="/admin-dashboard/agent-engagement">
                     <button className="w-full px-4 py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition-colors">
                       Manage Engagement →
+                    </button>
+                  </Link>
+                </div>
+              )}
+
+              {/* Report Export - Owner & Super Admin */}
+              {(adminData?.admin_level === 'super' || adminData?.admin_level === 'owner') && (
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-indigo-900">📊 Report Export</h3>
+                    <div className="text-xl text-indigo-600">📈</div>
+                  </div>
+                  <p className="text-sm text-indigo-800 mb-2">Diaspora Housing Index quarterly reports</p>
+                  <ul className="text-xs text-indigo-700 mb-4 space-y-0.5 leading-tight">
+                    <li>• Listings by status, type, and region</li>
+                    <li>• Price distribution and currency breakdown</li>
+                    <li>• Export as PDF, JSON, or CSV</li>
+                  </ul>
+                  <Link href="/admin/report-export">
+                    <button className="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 transition-colors">
+                      Generate Reports →
                     </button>
                   </Link>
                 </div>
