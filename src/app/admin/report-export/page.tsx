@@ -17,12 +17,20 @@ const REGION_MAP: Record<string, string> = {
   'GY-R4-Diamond': 'Diamond EBD',
 };
 
-const PRICE_BUCKETS = [
+const SALE_PRICE_BUCKETS = [
   { label: 'Under $10K', min: 0, max: 9999 },
   { label: '$10K–$50K', min: 10000, max: 49999 },
   { label: '$50K–$200K', min: 50000, max: 199999 },
   { label: '$200K–$500K', min: 200000, max: 499999 },
   { label: 'Over $500K', min: 500000, max: Infinity },
+];
+
+const RENT_PRICE_BUCKETS = [
+  { label: 'Under $500/mo', min: 0, max: 499 },
+  { label: '$500–$2K/mo', min: 500, max: 1999 },
+  { label: '$2K–$5K/mo', min: 2000, max: 4999 },
+  { label: '$5K–$10K/mo', min: 5000, max: 9999 },
+  { label: 'Over $10K/mo', min: 10000, max: Infinity },
 ];
 
 // ── Types ──────────────────────────────────────────────────
@@ -32,6 +40,7 @@ interface Property {
   title: string;
   status: string;
   property_type: string;
+  listing_type: string;
   region: string;
   price: number;
   usd_price: number | null;
@@ -51,6 +60,14 @@ interface StatusCount {
 
 interface TypeStat {
   property_type: string;
+  listing_type: string;
+  count: number;
+  avg_usd: number;
+  median_usd: number;
+}
+
+interface TransactionTypeStat {
+  listing_type: string;
   count: number;
   avg_usd: number;
   median_usd: number;
@@ -59,6 +76,7 @@ interface TypeStat {
 interface RegionStat {
   code: string;
   name: string;
+  listing_type: string;
   count: number;
   total_views: number;
   avg_usd: number;
@@ -68,6 +86,7 @@ interface TopViewed {
   title: string;
   region: string;
   property_type: string;
+  listing_type: string;
   usd_price: number | null;
   price: number;
   currency: string;
@@ -105,9 +124,11 @@ interface ReportData {
   totalProperties: number;
   a_statusCounts: StatusCount[];
   b_typeStats: TypeStat[];
+  b2_transactionStats: TransactionTypeStat[];
   c_regionStats: RegionStat[];
   d_topViewed: TopViewed[];
-  e_priceBuckets: PriceBucket[];
+  e_saleBuckets: PriceBucket[];
+  e_rentBuckets: PriceBucket[];
   f_amenityFreq: AmenityFreq[];
   g_monthlyNew: MonthCount[];
   h_soldInPeriod: Property[];
@@ -133,6 +154,13 @@ function fmt(n: number): string {
 
 function fmtUsd(n: number): string {
   return '$' + fmt(Math.round(n));
+}
+
+function fmtListingType(lt: string): string {
+  if (lt === 'rent') return 'For Rent';
+  if (lt === 'sale') return 'For Sale';
+  if (lt === 'lease') return 'For Lease';
+  return lt || 'Unknown';
 }
 
 function quarterStart(): string {
@@ -171,31 +199,43 @@ function downloadCSV(data: ReportData) {
 
   sections.push('');
   sections.push('=== By Property Type ===');
-  sections.push('Type,Count,Avg USD,Median USD');
+  sections.push('Type,Listing Type,Count,Avg USD,Median USD');
   data.b_typeStats.forEach((r) =>
-    sections.push(`${r.property_type},${r.count},${Math.round(r.avg_usd)},${Math.round(r.median_usd)}`)
+    sections.push(`${r.property_type},${fmtListingType(r.listing_type)},${r.count},${Math.round(r.avg_usd)},${Math.round(r.median_usd)}`)
+  );
+
+  sections.push('');
+  sections.push('=== Listings by Transaction Type ===');
+  sections.push('Transaction Type,Count,Avg USD,Median USD');
+  data.b2_transactionStats.forEach((r) =>
+    sections.push(`${fmtListingType(r.listing_type)},${r.count},${Math.round(r.avg_usd)},${Math.round(r.median_usd)}`)
   );
 
   sections.push('');
   sections.push('=== By Region ===');
-  sections.push('Region,Count,Total Views,Avg USD');
+  sections.push('Region,Listing Type,Count,Total Views,Avg USD');
   data.c_regionStats.forEach((r) =>
-    sections.push(`${r.name},${r.count},${r.total_views},${Math.round(r.avg_usd)}`)
+    sections.push(`${r.name},${fmtListingType(r.listing_type)},${r.count},${r.total_views},${Math.round(r.avg_usd)}`)
   );
 
   sections.push('');
   sections.push('=== Top 10 Most Viewed ===');
-  sections.push('Title,Region,Type,USD Price,Price,Currency,Views,Views 30d');
+  sections.push('Title,Region,Type,Listing,USD Price,Price,Currency,Views,Views 30d');
   data.d_topViewed.forEach((r) =>
     sections.push(
-      `"${r.title}",${r.region},${r.property_type},${r.usd_price ?? ''},${r.price},${r.currency},${r.views},${r.view_count_30d ?? ''}`
+      `"${r.title}",${r.region},${r.property_type},${fmtListingType(r.listing_type)},${r.usd_price ?? ''},${r.price},${r.currency},${r.views},${r.view_count_30d ?? ''}`
     )
   );
 
   sections.push('');
-  sections.push('=== Price Distribution (USD) ===');
+  sections.push('=== For Sale Price Distribution (USD) ===');
   sections.push('Bucket,Count');
-  data.e_priceBuckets.forEach((r) => sections.push(`${r.label},${r.count}`));
+  data.e_saleBuckets.forEach((r) => sections.push(`${r.label},${r.count}`));
+
+  sections.push('');
+  sections.push('=== For Rent Price Distribution (USD monthly) ===');
+  sections.push('Bucket,Count');
+  data.e_rentBuckets.forEach((r) => sections.push(`${r.label},${r.count}`));
 
   sections.push('');
   sections.push('=== Amenity Frequency ===');
@@ -347,7 +387,7 @@ export default function ReportExportPage() {
       const { data: properties, error: fetchErr } = await supabase
         .from('properties')
         .select(
-          'id, title, status, property_type, region, price, usd_price, currency, views, view_count_30d, amenities, created_at, first_listed_at, status_changed_at'
+          'id, title, status, property_type, listing_type, region, price, usd_price, currency, views, view_count_30d, amenities, created_at, first_listed_at, status_changed_at'
         )
         .gte('created_at', from)
         .lte('created_at', to)
@@ -364,40 +404,61 @@ export default function ReportExportPage() {
         .map(([status, count]) => ({ status, count }))
         .sort((a, b) => b.count - a.count);
 
-      // (b) By property_type
-      const typeGroups = new Map<string, Property[]>();
+      // (b) By property_type split by listing_type
+      const typeListingGroups = new Map<string, Property[]>();
       props.forEach((p) => {
-        const key = p.property_type || 'Unknown';
-        if (!typeGroups.has(key)) typeGroups.set(key, []);
-        typeGroups.get(key)!.push(p);
+        const key = `${p.property_type || 'Unknown'}|||${p.listing_type || 'unknown'}`;
+        if (!typeListingGroups.has(key)) typeListingGroups.set(key, []);
+        typeListingGroups.get(key)!.push(p);
       });
-      const b_typeStats: TypeStat[] = Array.from(typeGroups.entries()).map(([pt, items]) => {
+      const b_typeStats: TypeStat[] = Array.from(typeListingGroups.entries()).map(([key, items]) => {
+        const [pt, lt] = key.split('|||');
         const prices = items.map((i) => i.usd_price ?? 0).filter((v) => v > 0);
         return {
           property_type: pt,
+          listing_type: lt,
+          count: items.length,
+          avg_usd: prices.length ? prices.reduce((a, b) => a + b, 0) / prices.length : 0,
+          median_usd: median(prices),
+        };
+      }).sort((a, b) => a.property_type.localeCompare(b.property_type) || b.count - a.count);
+
+      // (b2) Listings by transaction type (headline summary)
+      const txGroups = new Map<string, Property[]>();
+      props.forEach((p) => {
+        const lt = p.listing_type || 'unknown';
+        if (!txGroups.has(lt)) txGroups.set(lt, []);
+        txGroups.get(lt)!.push(p);
+      });
+      const b2_transactionStats: TransactionTypeStat[] = Array.from(txGroups.entries()).map(([lt, items]) => {
+        const prices = items.map((i) => i.usd_price ?? 0).filter((v) => v > 0);
+        return {
+          listing_type: lt,
           count: items.length,
           avg_usd: prices.length ? prices.reduce((a, b) => a + b, 0) / prices.length : 0,
           median_usd: median(prices),
         };
       }).sort((a, b) => b.count - a.count);
 
-      // (c) By region
-      const regionGroups = new Map<string, Property[]>();
+      // (c) By region split by listing_type
+      const regionListingGroups = new Map<string, Property[]>();
       props.forEach((p) => {
-        const key = p.region || 'Unknown';
-        if (!regionGroups.has(key)) regionGroups.set(key, []);
-        regionGroups.get(key)!.push(p);
+        const key = `${p.region || 'Unknown'}|||${p.listing_type || 'unknown'}`;
+        if (!regionListingGroups.has(key)) regionListingGroups.set(key, []);
+        regionListingGroups.get(key)!.push(p);
       });
-      const c_regionStats: RegionStat[] = Array.from(regionGroups.entries()).map(([code, items]) => {
+      const c_regionStats: RegionStat[] = Array.from(regionListingGroups.entries()).map(([key, items]) => {
+        const [code, lt] = key.split('|||');
         const prices = items.map((i) => i.usd_price ?? 0).filter((v) => v > 0);
         return {
           code,
           name: regionName(code),
+          listing_type: lt,
           count: items.length,
           total_views: items.reduce((s, i) => s + (i.views || 0), 0),
           avg_usd: prices.length ? prices.reduce((a, b) => a + b, 0) / prices.length : 0,
         };
-      }).sort((a, b) => b.count - a.count);
+      }).sort((a, b) => a.name.localeCompare(b.name) || b.count - a.count);
 
       // (d) Top 10 most viewed
       const d_topViewed: TopViewed[] = [...props]
@@ -407,6 +468,7 @@ export default function ReportExportPage() {
           title: p.title,
           region: regionName(p.region),
           property_type: p.property_type,
+          listing_type: p.listing_type || 'unknown',
           usd_price: p.usd_price,
           price: p.price,
           currency: p.currency,
@@ -414,10 +476,21 @@ export default function ReportExportPage() {
           view_count_30d: p.view_count_30d,
         }));
 
-      // (e) Price distribution (usd_price buckets)
-      const e_priceBuckets: PriceBucket[] = PRICE_BUCKETS.map((bucket) => ({
+      // (e) Price distribution — split by sale vs rent
+      const saleProps = props.filter((p) => p.listing_type === 'sale');
+      const rentProps = props.filter((p) => p.listing_type === 'rent' || p.listing_type === 'lease');
+
+      const e_saleBuckets: PriceBucket[] = SALE_PRICE_BUCKETS.map((bucket) => ({
         label: bucket.label,
-        count: props.filter((p) => {
+        count: saleProps.filter((p) => {
+          const v = p.usd_price ?? 0;
+          return v >= bucket.min && v <= bucket.max;
+        }).length,
+      }));
+
+      const e_rentBuckets: PriceBucket[] = RENT_PRICE_BUCKETS.map((bucket) => ({
+        label: bucket.label,
+        count: rentProps.filter((p) => {
           const v = p.usd_price ?? 0;
           return v >= bucket.min && v <= bucket.max;
         }).length,
@@ -464,7 +537,7 @@ export default function ReportExportPage() {
       const { data: soldData } = await supabase
         .from('properties')
         .select(
-          'id, title, status, property_type, region, price, usd_price, currency, views, view_count_30d, amenities, created_at, first_listed_at, status_changed_at'
+          'id, title, status, property_type, listing_type, region, price, usd_price, currency, views, view_count_30d, amenities, created_at, first_listed_at, status_changed_at'
         )
         .eq('status', 'sold')
         .gte('status_changed_at', from)
@@ -503,9 +576,11 @@ export default function ReportExportPage() {
         totalProperties: props.length,
         a_statusCounts,
         b_typeStats,
+        b2_transactionStats,
         c_regionStats,
         d_topViewed,
-        e_priceBuckets,
+        e_saleBuckets,
+        e_rentBuckets,
         f_amenityFreq,
         g_monthlyNew,
         h_soldInPeriod,
@@ -683,9 +758,23 @@ export default function ReportExportPage() {
               {/* (b) By Property Type */}
               <SectionCard title="b. By Property Type">
                 <DataTable
-                  headers={['Type', 'Count', 'Avg USD', 'Median USD']}
+                  headers={['Type', 'Listing Type', 'Count', 'Avg USD', 'Median USD']}
                   rows={report.b_typeStats.map((r) => [
                     r.property_type,
+                    fmtListingType(r.listing_type),
+                    fmt(r.count),
+                    fmtUsd(r.avg_usd),
+                    fmtUsd(r.median_usd),
+                  ])}
+                />
+              </SectionCard>
+
+              {/* (b2) Listings by Transaction Type */}
+              <SectionCard title="b2. Listings by Transaction Type">
+                <DataTable
+                  headers={['Transaction Type', 'Count', 'Avg USD', 'Median USD']}
+                  rows={report.b2_transactionStats.map((r) => [
+                    fmtListingType(r.listing_type),
                     fmt(r.count),
                     fmtUsd(r.avg_usd),
                     fmtUsd(r.median_usd),
@@ -696,9 +785,10 @@ export default function ReportExportPage() {
               {/* (c) By Region */}
               <SectionCard title="c. By Region">
                 <DataTable
-                  headers={['Region', 'Count', 'Total Views', 'Avg USD']}
+                  headers={['Region', 'Listing Type', 'Count', 'Total Views', 'Avg USD']}
                   rows={report.c_regionStats.map((r) => [
                     r.name,
+                    fmtListingType(r.listing_type),
                     fmt(r.count),
                     fmt(r.total_views),
                     fmtUsd(r.avg_usd),
@@ -709,11 +799,12 @@ export default function ReportExportPage() {
               {/* (d) Top 10 Most Viewed */}
               <SectionCard title="d. Top 10 Most Viewed">
                 <DataTable
-                  headers={['Title', 'Region', 'Type', 'USD Price', 'Price', 'Currency', 'Views', '30d Views']}
+                  headers={['Title', 'Region', 'Type', 'Listing', 'USD Price', 'Price', 'Currency', 'Views', '30d Views']}
                   rows={report.d_topViewed.map((r) => [
                     r.title,
                     r.region,
                     r.property_type,
+                    fmtListingType(r.listing_type),
                     r.usd_price ? fmtUsd(r.usd_price) : '—',
                     fmt(r.price),
                     r.currency,
@@ -723,11 +814,19 @@ export default function ReportExportPage() {
                 />
               </SectionCard>
 
-              {/* (e) Price Distribution */}
-              <SectionCard title="e. Price Distribution (USD)">
+              {/* (e) Price Distribution — Sale */}
+              <SectionCard title="e. For Sale — Price Distribution (USD)">
                 <DataTable
                   headers={['Bucket', 'Count']}
-                  rows={report.e_priceBuckets.map((r) => [r.label, fmt(r.count)])}
+                  rows={report.e_saleBuckets.map((r) => [r.label, fmt(r.count)])}
+                />
+              </SectionCard>
+
+              {/* (e) Price Distribution — Rent */}
+              <SectionCard title="e. For Rent — Price Distribution (USD monthly)">
+                <DataTable
+                  headers={['Bucket', 'Count']}
+                  rows={report.e_rentBuckets.map((r) => [r.label, fmt(r.count)])}
                 />
               </SectionCard>
 
