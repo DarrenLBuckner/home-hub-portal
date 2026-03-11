@@ -461,7 +461,9 @@ export async function POST(req: NextRequest) {
       }
 
       // Get the user's current DB property_limit
-      const { data: targetLimitData } = await supabase
+      // Use admin client to read/write target user's profile (cookie-scoped client is bound to admin's own user and RLS blocks cross-user profile writes)
+      const adminClientForLimits = createAdminClient() as any;
+      const { data: targetLimitData } = await adminClientForLimits
         .from('profiles')
         .select('property_limit')
         .eq('id', effectiveUserId)
@@ -475,7 +477,7 @@ export async function POST(req: NextRequest) {
         const newLimit = currentCount + 1;
         console.log(`⬆️ Admin override: bumping property_limit for user ${effectiveUserId} from ${currentDbLimit} to ${newLimit}`);
 
-        const { error: bumpError } = await supabase
+        const { error: bumpError } = await adminClientForLimits
           .from('profiles')
           .update({ property_limit: newLimit })
           .eq('id', effectiveUserId);
