@@ -1039,36 +1039,38 @@ export async function POST(req: NextRequest) {
           console.log('✅ properties.images synced with', imageUrls.length, 'URLs');
         }
 
-        // Generate AI alt text for all images (non-blocking to property creation)
-        try {
-          console.log('🤖 Generating AI alt text for', imageUrls.length, 'images...');
-          const altTextMap = await generateAltTextBatch(imageUrls, {
-            title: body.title,
-            propertyType: body.propertyType || body.property_type,
-            listingType: body.listingType || body.listing_type,
-            location: body.city,
-            neighborhood: body.neighborhood,
-            bedrooms: body.bedrooms ? Number(body.bedrooms) : undefined,
-            bathrooms: body.bathrooms ? Number(body.bathrooms) : undefined,
-          });
-
-          // Update each media row with generated alt text
-          let altTextCount = 0;
-          for (const [url, altText] of altTextMap) {
-            if (altText) {
-              await adminSupabase
-                .from('property_media')
-                .update({ alt_text: altText })
-                .eq('property_id', propertyResult.id)
-                .eq('media_url', url);
-              altTextCount++;
+        // Generate AI alt text for all images — truly non-blocking (fire-and-forget)
+        // This was previously awaited, which could block the response for 30-60+ seconds
+        // and cause Vercel function timeouts, leaving the client spinner stuck forever.
+        const propertyId = propertyResult.id;
+        const altTextContext = {
+          title: body.title,
+          propertyType: body.propertyType || body.property_type,
+          listingType: body.listingType || body.listing_type,
+          location: body.city,
+          neighborhood: body.neighborhood,
+          bedrooms: body.bedrooms ? Number(body.bedrooms) : undefined,
+          bathrooms: body.bathrooms ? Number(body.bathrooms) : undefined,
+        };
+        // Fire-and-forget: don't await — let it run in the background
+        generateAltTextBatch(imageUrls, altTextContext)
+          .then(async (altTextMap) => {
+            let altTextCount = 0;
+            for (const [url, altText] of altTextMap) {
+              if (altText) {
+                await adminSupabase
+                  .from('property_media')
+                  .update({ alt_text: altText })
+                  .eq('property_id', propertyId)
+                  .eq('media_url', url);
+                altTextCount++;
+              }
             }
-          }
-          console.log(`✅ AI alt text generated for ${altTextCount}/${imageUrls.length} images`);
-        } catch (altTextError) {
-          // Non-fatal: property is created, alt text can be backfilled later
-          console.error('⚠️ Alt text generation failed (non-fatal):', altTextError);
-        }
+            console.log(`✅ AI alt text generated for ${altTextCount}/${imageUrls.length} images`);
+          })
+          .catch((altTextError) => {
+            console.error('⚠️ Alt text generation failed (non-fatal):', altTextError);
+          });
       }
     } else {
       console.warn('⚠️ IMAGE DEBUG - No images to insert! imageUrls array is empty');

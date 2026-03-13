@@ -170,6 +170,40 @@ function CreateAgentPropertyContent() {
     fetchTargetUserProfile();
   }, [targetUserId]);
 
+  // Auto-populate agent contact info on form load (not just Step 5)
+  // This ensures drafts saved before reaching Step 5 include contact info
+  useEffect(() => {
+    if (isCreatingForUser) return; // Admin-on-behalf-of has its own logic
+
+    const populateAgentContact = async () => {
+      try {
+        const supabase = createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Auto-populate email if empty
+        if (user.email) {
+          setFormData((prev: any) => prev.owner_email ? prev : { ...prev, owner_email: user.email });
+        }
+
+        // Auto-populate WhatsApp from profile phone if empty
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.phone) {
+          setFormData((prev: any) => prev.owner_whatsapp ? prev : { ...prev, owner_whatsapp: profile.phone });
+        }
+      } catch (error) {
+        console.warn('Could not auto-populate agent contact:', error);
+      }
+    };
+
+    populateAgentContact();
+  }, [isCreatingForUser]);
+
   // Scroll to top when step changes
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -227,6 +261,7 @@ function CreateAgentPropertyContent() {
             property_owner_email: d.property_owner_email || '',
             listing_protection: d.listing_protection ?? true,
             listing_type: d.listing_type || 'sale',
+            available_from: d.available_from || '',
             commercial_type: d.commercial_type || '',
             floor_size_sqft: d.floor_size_sqft?.toString() || '',
             building_floor: d.building_floor || '',
@@ -534,7 +569,8 @@ function CreateAgentPropertyContent() {
         property_owner_whatsapp: formData.property_owner_whatsapp || '',
         property_owner_email: formData.property_owner_email || '',
         listing_protection: formData.listing_protection ?? true,
-        listing_type: 'sale',
+        listing_type: formData.listing_type || 'sale',
+        available_from: formData.available_from || null,
         image_urls: allImageUrls.length > 0 ? allImageUrls : undefined,
       };
 
@@ -690,8 +726,11 @@ function CreateAgentPropertyContent() {
         financing_available: formData.financing_available || false,
         financing_details: formData.financing_details || null,
 
-        // Status
-        status: 'pending',
+        // Availability (coming soon / available from date)
+        available_from: formData.available_from || null,
+
+        // Note: status is intentionally omitted — the API determines it via auto-approve logic
+        // (agents get 'active', FSBO/landlord get 'pending')
 
         // Admin-on-behalf-of creation: Include target user ID if admin is creating for another user
         ...(targetUserId && { target_user_id: targetUserId })
@@ -727,13 +766,18 @@ function CreateAgentPropertyContent() {
 
       // Submit to API instead of direct Supabase
       // Payload is now small - just URLs, no base64 image data
+      // 45-second timeout prevents infinite spinner if API hangs
+      const submitController = new AbortController();
+      const submitTimeout = setTimeout(() => submitController.abort(), 45000);
       const response = await fetch('/api/properties/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(propertyDataWithImages)
+        body: JSON.stringify(propertyDataWithImages),
+        signal: submitController.signal
       });
+      clearTimeout(submitTimeout);
 
       const result = await response.json();
 
