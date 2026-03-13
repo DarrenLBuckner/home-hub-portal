@@ -20,7 +20,10 @@ export const AMENITIES_CATEGORIES = [
       { id: 'water_tank', label: 'Water Storage Tank' },
       { id: 'borehole', label: 'Borehole/Well' },
       { id: 'indoor_plumbing', label: 'Indoor Plumbing' },
-      { id: 'septic_tank', label: 'Septic Tank/Sewer Connection' }
+      { id: 'septic_tank', label: 'Septic Tank/Sewer Connection' },
+      { id: 'pressurized_water', label: 'Pressurized Water System' },
+      { id: 'hot_water', label: 'Hot Water' },
+      { id: 'water_filtration', label: 'Water Filtration System' }
     ]
   },
   {
@@ -57,7 +60,8 @@ export const AMENITIES_CATEGORIES = [
       { id: 'tiled_floors', label: 'Tiled Floors' },
       { id: 'internet_ready', label: 'Internet/Fiber Optic Ready' },
       { id: 'laundry', label: 'Laundry Area' },
-      { id: 'furnished', label: 'Furnished' }
+      { id: 'furnished', label: 'Furnished' },
+      { id: 'semi_furnished', label: 'Semi-Furnished' }
     ]
   },
   {

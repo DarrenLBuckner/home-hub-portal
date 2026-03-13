@@ -43,6 +43,10 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
     { value: 'Gated', label: 'Gated/Fenced' },
     { value: 'Solar', label: 'Solar Panels' },
     { value: 'Garage', label: 'Garage' },
+    { value: 'pressurized_water', label: 'Pressurized Water System' },
+    { value: 'hot_water', label: 'Hot Water' },
+    { value: 'water_filtration', label: 'Water Filtration System' },
+    { value: 'semi_furnished', label: 'Semi-Furnished' },
   ];
 
   return (

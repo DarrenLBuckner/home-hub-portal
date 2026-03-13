@@ -26,6 +26,10 @@ const RESIDENTIAL_AMENITIES = [
   { value: 'Internet', label: 'Internet Ready' },
   { value: 'Parking', label: 'Parking' },
   { value: 'Solar', label: 'Solar Panels' },
+  { value: 'pressurized_water', label: 'Pressurized Water System' },
+  { value: 'hot_water', label: 'Hot Water' },
+  { value: 'water_filtration', label: 'Water Filtration System' },
+  { value: 'semi_furnished', label: 'Semi-Furnished' },
 ];
 
 const COMMERCIAL_AMENITIES = [
