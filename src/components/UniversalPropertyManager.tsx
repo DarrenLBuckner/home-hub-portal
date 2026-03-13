@@ -85,6 +85,15 @@ const statusConfig = {
     description: 'Incomplete property listings that need to be finished',
     statusMessage: 'This is a draft - complete and submit for review'
   },
+  hidden: {
+    label: 'Hidden',
+    color: 'bg-amber-100 text-amber-800',
+    badgeColor: 'bg-amber-600 text-white',
+    badgeText: 'HIDDEN BY ADMIN',
+    icon: '🚫',
+    description: 'Properties hidden by admin for quality issues — awaiting correction by the listing agent',
+    statusMessage: 'This property was hidden by an admin — check the reason and update your listing'
+  },
   off_market: {
     label: 'Off Market',
     color: 'bg-gray-100 text-gray-700',

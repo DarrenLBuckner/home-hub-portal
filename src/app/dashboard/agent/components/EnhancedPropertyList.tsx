@@ -56,6 +56,15 @@ const statusConfig = {
     description: 'Property is under contract but not yet sold/rented',
     statusMessage: 'This property is under contract'
   },
+  hidden: {
+    label: 'Hidden',
+    color: 'bg-amber-100 text-amber-800',
+    badgeColor: 'bg-amber-600 text-white',
+    badgeText: 'HIDDEN BY ADMIN',
+    icon: '🚫',
+    description: 'Property hidden by admin — review the reason and update your listing',
+    statusMessage: 'This property was hidden by an admin'
+  },
   rejected: {
     label: 'Rejected',
     color: 'bg-red-200 text-red-800',
@@ -390,6 +399,22 @@ export default function EnhancedPropertyList({ userId }: { userId: string }) {
                             🏆 Mark Sold
                           </button>
                         )}
+                      </div>
+                    )}
+
+                    {property.status === 'hidden' && (
+                      <div className="space-y-2">
+                        <div className="text-xs text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+                          <strong>Hidden by admin:</strong> {property.rejection_reason || 'Please review and update your listing'}
+                        </div>
+                        <div className="flex gap-2 text-xs">
+                          <button
+                            onClick={() => handleEdit(property.id)}
+                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                          >
+                            🔧 Fix & Edit
+                          </button>
+                        </div>
                       </div>
                     )}
 

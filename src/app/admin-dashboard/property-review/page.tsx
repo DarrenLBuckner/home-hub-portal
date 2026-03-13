@@ -71,6 +71,7 @@ export default function PropertyReviewPage() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ propertyId: string; status: string; propertyTitle: string; actionLabel: string } | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  const [hiddenReason, setHiddenReason] = useState("");
 
   // Filters
   const [filters, setFilters] = useState<PropertyFilters>({
@@ -227,7 +228,9 @@ export default function PropertyReviewPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          status: confirmAction.status
+          status: confirmAction.status,
+          ...(confirmAction.status === 'hidden' && hiddenReason ? { hidden_reason: hiddenReason } : {}),
+          ...(confirmAction.status === 'active' && confirmAction.actionLabel === 'Unhide' ? { _from_hidden: true } : {}),
         }),
       });
 
@@ -247,6 +250,7 @@ export default function PropertyReviewPage() {
       setConfirmLoading(false);
       setShowConfirmDialog(false);
       setConfirmAction(null);
+      setHiddenReason("");
     }
   }
 
@@ -393,6 +397,7 @@ export default function PropertyReviewPage() {
                 <option value="all">All Status</option>
                 <option value="pending">Pending</option>
                 <option value="available">Available</option>
+                <option value="hidden">Hidden by Admin</option>
                 <option value="sold">Sold</option>
                 <option value="rented">Rented</option>
                 <option value="rejected">Rejected</option>
@@ -495,6 +500,8 @@ export default function PropertyReviewPage() {
               const statusColor = {
                 'pending': 'bg-yellow-100 text-yellow-800',
                 'available': 'bg-green-100 text-green-800',
+                'active': 'bg-green-100 text-green-800',
+                'hidden': 'bg-amber-100 text-amber-800',
                 'sold': 'bg-[#DC2626] text-white',
                 'rented': 'bg-[#2563EB] text-white',
                 'under_contract': 'bg-[#F97316] text-white',
@@ -505,6 +512,7 @@ export default function PropertyReviewPage() {
                 sold: 'This property has been sold',
                 rented: 'This property has been rented',
                 under_contract: 'This property is under contract',
+                hidden: 'Hidden by admin — awaiting correction',
               };
 
               const isCompletedStatus = ['sold', 'rented', 'under_contract'].includes(property.status);
@@ -626,19 +634,44 @@ export default function PropertyReviewPage() {
                             </>
                           )}
 
-                          {property.status === 'active' && canManageStatus && (
+                          {property.status === 'active' && (
                             <>
+                              {/* Hide - available to ALL admin levels */}
                               <button
-                                onClick={() => requestStatusChange(property.id, 'under_contract', property.title, 'Mark Under Contract')}
-                                className="px-4 py-2 bg-[#F97316] text-white font-bold rounded-lg hover:bg-orange-600 transition-colors"
+                                onClick={() => requestStatusChange(property.id, 'hidden', property.title, 'Hide Listing')}
+                                className="px-4 py-2 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 transition-colors"
                               >
-                                📝 Mark Under Contract
+                                🚫 Hide Listing
                               </button>
+                              {canManageStatus && (
+                                <>
+                                  <button
+                                    onClick={() => requestStatusChange(property.id, 'under_contract', property.title, 'Mark Under Contract')}
+                                    className="px-4 py-2 bg-[#F97316] text-white font-bold rounded-lg hover:bg-orange-600 transition-colors"
+                                  >
+                                    📝 Mark Under Contract
+                                  </button>
+                                  <button
+                                    onClick={() => requestStatusChange(property.id, property.listing_type === 'rental' ? 'rented' : 'sold', property.title, property.listing_type === 'rental' ? 'Mark Rented' : 'Mark Sold')}
+                                    className="px-4 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors"
+                                  >
+                                    {property.listing_type === 'rental' ? '🏠 Mark Rented' : '🏆 Mark Sold'}
+                                  </button>
+                                </>
+                              )}
+                            </>
+                          )}
+
+                          {property.status === 'hidden' && (
+                            <>
+                              <div className="w-full bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+                                <strong>Hidden reason:</strong> {property.rejection_reason || 'No reason provided'}
+                              </div>
                               <button
-                                onClick={() => requestStatusChange(property.id, property.listing_type === 'rental' ? 'rented' : 'sold', property.title, property.listing_type === 'rental' ? 'Mark Rented' : 'Mark Sold')}
-                                className="px-4 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors"
+                                onClick={() => requestStatusChange(property.id, 'active', property.title, 'Unhide')}
+                                className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors"
                               >
-                                {property.listing_type === 'rental' ? '🏠 Mark Rented' : '🏆 Mark Sold'}
+                                ✅ Unhide — Restore to Active
                               </button>
                             </>
                           )}
@@ -844,11 +877,13 @@ export default function PropertyReviewPage() {
               </p>
               <div className={`p-4 rounded-lg ${
                 confirmAction.status === 'rejected' ? 'bg-red-50 border border-red-200' :
+                confirmAction.status === 'hidden' ? 'bg-amber-50 border border-amber-200' :
                 confirmAction.status === 'active' ? 'bg-green-50 border border-green-200' :
                 'bg-yellow-50 border border-yellow-200'
               }`}>
                 <p className={`text-sm font-medium ${
                   confirmAction.status === 'rejected' ? 'text-red-800' :
+                  confirmAction.status === 'hidden' ? 'text-amber-800' :
                   confirmAction.status === 'active' ? 'text-green-800' :
                   'text-yellow-800'
                 }`}>
@@ -856,6 +891,21 @@ export default function PropertyReviewPage() {
                 </p>
                 {confirmAction.status === 'rejected' && (
                   <p className="text-xs text-red-600 mt-2">This will remove the property from the marketplace.</p>
+                )}
+                {confirmAction.status === 'hidden' && (
+                  <>
+                    <p className="text-xs text-amber-700 mt-2">This will hide the property from public view until the agent corrects the issues. The listing is NOT deleted.</p>
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-amber-900 mb-1">Reason for hiding (visible to agent)</label>
+                      <textarea
+                        value={hiddenReason}
+                        onChange={(e) => setHiddenReason(e.target.value)}
+                        placeholder="e.g., Property images are screenshots, not actual photos. Please upload real photos of the property."
+                        rows={3}
+                        className="w-full text-sm border border-amber-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-amber-500 bg-white"
+                      />
+                    </div>
+                  </>
                 )}
                 {(confirmAction.status === 'sold' || confirmAction.status === 'rented') && (
                   <p className="text-xs text-yellow-600 mt-2">This will mark the property as no longer available.</p>
@@ -870,6 +920,8 @@ export default function PropertyReviewPage() {
                 className={`w-full px-4 py-3 font-bold rounded-xl transition-colors disabled:opacity-50 ${
                   confirmAction.status === 'rejected'
                     ? 'bg-red-600 text-white hover:bg-red-700'
+                    : confirmAction.status === 'hidden'
+                    ? 'bg-amber-600 text-white hover:bg-amber-700'
                     : confirmAction.status === 'active'
                     ? 'bg-green-600 text-white hover:bg-green-700'
                     : 'bg-blue-600 text-white hover:bg-blue-700'

@@ -89,6 +89,7 @@ export async function PUT(
     }
 
     // Basic admins cannot change status to under_contract, sold, or rented
+    // (but CAN hide/unhide properties — that's available to all admin levels)
     const restrictedStatuses = ['under_contract', 'sold', 'rented'];
     if ((profile as ProfileType).admin_level === 'basic' && restrictedStatuses.includes(body.status)) {
       return NextResponse.json({ error: 'Basic admins cannot change properties to this status' }, { status: 403 });
@@ -118,9 +119,16 @@ export async function PUT(
       updated_at: new Date().toISOString()
     };
 
-    // Add rejection reason if provided
+    // Add rejection/hidden reason if provided
     if (body.status === 'rejected' && body.rejection_reason) {
       updateData.rejection_reason = body.rejection_reason;
+    }
+    if (body.status === 'hidden' && body.hidden_reason) {
+      updateData.rejection_reason = body.hidden_reason; // Reuse rejection_reason column for hidden reason
+    }
+    // Clear rejection_reason when unhiding (restoring to active)
+    if (body.status === 'active' && body._from_hidden) {
+      updateData.rejection_reason = null;
     }
 
     // Track which admin made this status change
@@ -186,6 +194,7 @@ export async function PUT(
     const statusActionMap: Record<string, string> = {
       active: 'property_approved',
       rejected: 'property_rejected',
+      hidden: 'property_hidden',
       under_contract: 'property_under_contract',
       sold: 'property_sold',
       rented: 'property_rented',
@@ -203,7 +212,8 @@ export async function PUT(
           details: {
             previous_status: (property as any).status,
             new_status: body.status,
-            rejection_reason: body.rejection_reason || null
+            rejection_reason: body.rejection_reason || null,
+            hidden_reason: body.hidden_reason || null
           }
         } as any);
     } catch (logError) {
@@ -215,6 +225,7 @@ export async function PUT(
     const statusMessageMap: Record<string, string> = {
       active: 'Property approved successfully',
       rejected: 'Property rejected successfully',
+      hidden: 'Property hidden from public view — agent will be notified to fix issues',
       under_contract: 'Property marked as under contract',
       sold: 'Property marked as sold',
       rented: 'Property marked as rented',
