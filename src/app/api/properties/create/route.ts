@@ -125,16 +125,38 @@ export async function POST(req: NextRequest) {
     }
     
     const userType = userProfile.user_type;
-    
+
     // AUTO-APPROVAL LOGIC:
-    // - Agents: Auto-approve (they're verified professionals)
+    // - Premier agents (6+ active listings): Auto-approve — trusted, high-volume professionals
+    // - All other agents: Require admin review (status = 'pending')
     // - Superadmin: Auto-approve in production
     // - FSBO/Owner/Landlord: Require admin review (status = 'pending')
-    const shouldAutoApprove = (userType: string): boolean => {
+    const PREMIER_THRESHOLD = 6;
+
+    const shouldAutoApprove = async (userType: string, userId: string): Promise<boolean> => {
       const normalizedType = userType?.toLowerCase();
 
-      // Agents are verified professionals - auto-approve their listings
-      if (normalizedType === 'agent') return true;
+      // Premier agents (6+ active listings) get auto-approval
+      if (normalizedType === 'agent') {
+        try {
+          const adminClient = createAdminClient();
+          const { count } = await adminClient
+            .from('properties')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', userId)
+            .eq('status', 'active');
+
+          if ((count ?? 0) >= PREMIER_THRESHOLD) {
+            console.log(`✅ Auto-approving: agent ${userId} has ${count} active listings (premier threshold: ${PREMIER_THRESHOLD})`);
+            return true;
+          }
+          console.log(`⏳ Agent ${userId} has ${count ?? 0} active listings — requires manual approval (need ${PREMIER_THRESHOLD}+)`);
+          return false;
+        } catch (err) {
+          console.error('Error checking agent listing count for auto-approval:', err);
+          return false; // Fail safe: require manual review
+        }
+      }
 
       // Superadmins auto-approve in production
       if (normalizedType === 'superadmin' && process.env.NODE_ENV === 'production') return true;
@@ -142,7 +164,10 @@ export async function POST(req: NextRequest) {
       // All other user types (fsbo, owner, landlord) require review
       return false;
     };
-    
+
+    // Pre-compute auto-approval status (async) so we can use it in object literals below
+    const isAutoApproved = await shouldAutoApprove(userType, user.id);
+
     // Read the request body once
     const body = await req.json();
 
@@ -205,7 +230,7 @@ export async function POST(req: NextRequest) {
       // Ensure user_id is set correctly
       user_id: user.id,
       // Set status based on operation type
-      status: isDraftSave ? 'draft' : (shouldAutoApprove(userType) ? 'active' : 'pending')
+      status: isDraftSave ? 'draft' : (isAutoApproved ? 'active' : 'pending')
     };
     
     const userId = user.id;
@@ -759,7 +784,7 @@ export async function POST(req: NextRequest) {
         // System fields
         user_id: effectiveUserId,                    // Property owner (target user if admin-created)
         created_by: createdByUserId,                 // Audit: who actually created this property
-        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
+        status: body.status || (isAutoApproved ? 'active' : 'pending'),
         site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
         created_at: new Date().toISOString(),
@@ -821,7 +846,7 @@ export async function POST(req: NextRequest) {
         listing_type: listingType,
         listed_by_type: listedByType,
         property_category: propertyCategory,
-        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
+        status: body.status || (isAutoApproved ? 'active' : 'pending'),
         site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
         created_at: new Date().toISOString(),
@@ -876,7 +901,7 @@ export async function POST(req: NextRequest) {
         listing_type: listingType,
         listed_by_type: listedByType,
         property_category: propertyCategory,
-        status: body.status || (shouldAutoApprove(userType) ? 'active' : 'pending'),
+        status: body.status || (isAutoApproved ? 'active' : 'pending'),
         site_id: body.site_id || getSiteIdFromCountry(body.country),  // Multi-tenant: maps country code to site name
         country_id: body.country || 'GY',  // Use country code from form data
         created_at: new Date().toISOString(),
@@ -1082,7 +1107,7 @@ export async function POST(req: NextRequest) {
     if (isDraftSave) {
       successMessage = '💾 Draft saved successfully';
     } else if (isPublishDraft) {
-      successMessage = shouldAutoApprove(userType)
+      successMessage = isAutoApproved
         ? '🚀 Draft published and automatically approved!'
         : '🚀 Draft submitted for review';
     } else if (isAdminCreatingForUser && targetUserProfile) {
@@ -1096,7 +1121,7 @@ export async function POST(req: NextRequest) {
         targetUserName,
         timestamp: new Date().toISOString()
       });
-    } else if (shouldAutoApprove(userType)) {
+    } else if (isAutoApproved) {
       successMessage = 'Property automatically approved and published! ✅';
     }
 

@@ -1172,47 +1172,48 @@ export default function EditAgentProperty() {
             </div>
 
             {/* Availability */}
-            <div className="mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-200">
-              <h4 className="font-medium text-emerald-800 mb-3">
+            <div className="mt-6 p-5 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border-2 border-amber-300 shadow-sm">
+              <h4 className="text-base font-bold text-amber-900 mb-1 flex items-center gap-2">
                 {form.listing_type === 'sale' ? 'When is this property available?' : 'Availability'}
               </h4>
+              <p className="text-xs text-amber-700 mb-3">Choose how this listing appears to buyers</p>
               <div className="space-y-3">
-                <div className="flex flex-col gap-2">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <div className="flex flex-col gap-3">
+                  <label className="flex items-center gap-3 cursor-pointer p-2.5 rounded-lg bg-white/70 border border-amber-200 hover:bg-white transition-colors">
                     <input
                       type="radio"
                       name="availability_type"
                       checked={!form.available_from}
                       onChange={() => setForm(prev => ({ ...prev, available_from: '' }))}
-                      className="text-emerald-600"
+                      className="text-amber-600 w-4 h-4"
                     />
-                    <span className="text-sm font-medium text-gray-700">
+                    <span className="text-sm font-semibold text-gray-800">
                       {form.listing_type === 'sale' ? 'On the market now' : 'Available Now'}
                     </span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label className="flex items-center gap-3 cursor-pointer p-2.5 rounded-lg bg-white/70 border border-amber-200 hover:bg-white transition-colors">
                     <input
                       type="radio"
                       name="availability_type"
                       checked={form.available_from === '9999-12-31'}
                       onChange={() => setForm(prev => ({ ...prev, available_from: '9999-12-31' }))}
-                      className="text-emerald-600"
+                      className="text-amber-600 w-4 h-4"
                     />
-                    <span className="text-sm font-medium text-gray-700">
-                      Coming soon
+                    <span className="text-sm font-semibold text-gray-800">
+                      Coming Soon
                     </span>
-                    <span className="text-xs text-gray-400">(no date shown to public)</span>
+                    <span className="text-xs text-amber-600 font-medium">(no date shown to public)</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label className="flex items-center gap-3 cursor-pointer p-2.5 rounded-lg bg-white/70 border border-amber-200 hover:bg-white transition-colors">
                     <input
                       type="radio"
                       name="availability_type"
                       checked={!!form.available_from && form.available_from !== '9999-12-31'}
                       onChange={() => setForm(prev => ({ ...prev, available_from: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] }))}
-                      className="text-emerald-600"
+                      className="text-amber-600 w-4 h-4"
                     />
-                    <span className="text-sm font-medium text-gray-700">
-                      {form.listing_type === 'sale' ? 'Coming soon — with a date' : 'Available from a specific date'}
+                    <span className="text-sm font-semibold text-gray-800">
+                      {form.listing_type === 'sale' ? 'Coming Soon — with a date' : 'Available from a specific date'}
                     </span>
                   </label>
                 </div>
