@@ -32,6 +32,7 @@ export async function GET(
         *,
         profiles!properties_user_id_fkey (
           id,
+          slug,
           first_name,
           last_name,
           phone,
@@ -103,6 +104,7 @@ export async function GET(
     const isAgent = property.profiles?.user_type === 'agent'
     let agentProfile = isAgent ? {
       id: property.profiles.id,
+      slug: property.profiles.slug,
       first_name: property.profiles.first_name,
       last_name: property.profiles.last_name,
       phone: property.profiles.phone,
@@ -120,13 +122,14 @@ export async function GET(
     if (property.listed_by_type === 'agent' && !agentProfile && property.user_id) {
       const { data: fallbackProfile } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, phone, profile_image, company, user_type, is_founding_member, is_founding_advisor, is_verified_agent')
+        .select('id, slug, first_name, last_name, phone, profile_image, company, user_type, is_founding_member, is_founding_advisor, is_verified_agent')
         .eq('id', property.user_id)
         .single()
 
       if (fallbackProfile) {
         agentProfile = {
           id: fallbackProfile.id,
+          slug: fallbackProfile.slug,
           first_name: fallbackProfile.first_name,
           last_name: fallbackProfile.last_name,
           phone: fallbackProfile.phone || property.owner_whatsapp,
