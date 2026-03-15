@@ -35,9 +35,10 @@ interface GeocodingResult {
  * Returns null if geocoding fails — never throws.
  */
 export async function geocodeAddress(fields: GeocodingFields): Promise<GeocodingResult | null> {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  // Prefer a dedicated server-side key (no HTTP referer restrictions)
+  const apiKey = process.env.GOOGLE_MAPS_SERVER_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
-    console.warn('⚠️ Geocoding skipped: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY not set');
+    console.warn('⚠️ Geocoding skipped: no Google Maps API key set (GOOGLE_MAPS_SERVER_KEY or NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)');
     return null;
   }
 
