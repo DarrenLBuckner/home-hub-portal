@@ -174,7 +174,7 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
           <p className="text-gray-600">Full access to all property types and agent-specific features</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Link href="/dashboard/agent/create-property">
             <button className="w-full p-5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex flex-col items-center space-y-2">
               <span className="text-3xl">🏠</span>
@@ -191,6 +191,14 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
             <span className="text-lg">Manage Listings</span>
             <span className="text-xs opacity-75">Full Portfolio</span>
           </button>
+
+          <Link href="/dashboard/agent/bio-builder">
+            <button className="w-full p-5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex flex-col items-center space-y-2">
+              <span className="text-3xl">&#9997;</span>
+              <span className="text-lg">Build My Bio</span>
+              <span className="text-xs opacity-75">AI-Powered Profile</span>
+            </button>
+          </Link>
 
           <Link href="/dashboard/agent/settings">
             <button className="w-full p-5 rounded-xl bg-gradient-to-r from-gray-500 to-gray-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex flex-col items-center space-y-2">

@@ -7,6 +7,7 @@ import MyDraftsSection from './components/MyDraftsSection';
 import TrainingVideosCard from '@/components/TrainingVideosCard';
 import TrainingResourcesCard from '@/components/TrainingResourcesCard';
 import AccountStatusBanner from '@/components/AccountStatusBanner';
+import BioCompletionBanner from '@/components/BioCompletionBanner';
 
 
 
@@ -168,6 +169,7 @@ export default function AgentPage() {
 
         {activeSection === 'dashboard' && (
           <div className="space-y-6 sm:space-y-8">
+            <BioCompletionBanner />
             <MyDraftsSection />
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
               <AgentDashboardWelcome onNavigateTab={setActiveSection} />
