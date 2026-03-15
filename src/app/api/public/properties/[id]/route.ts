@@ -41,7 +41,8 @@ export async function GET(
           company,
           is_founding_member,
           is_founding_advisor,
-          is_verified_agent
+          is_verified_agent,
+          is_premium_agent
         )
       `)
       .eq('id', id)
@@ -113,7 +114,8 @@ export async function GET(
       user_type: property.profiles.user_type,
       is_founding_member: property.profiles.is_founding_member,
       is_founding_advisor: property.profiles.is_founding_advisor,
-      is_verified_agent: property.profiles.is_verified_agent
+      is_verified_agent: property.profiles.is_verified_agent,
+      is_premium_agent: property.profiles.is_premium_agent
     } : null
 
     // Fallback: listed_by_type is 'agent' but the profiles join didn't return an agent
@@ -122,7 +124,7 @@ export async function GET(
     if (property.listed_by_type === 'agent' && !agentProfile && property.user_id) {
       const { data: fallbackProfile } = await supabase
         .from('profiles')
-        .select('id, slug, first_name, last_name, phone, profile_image, company, user_type, is_founding_member, is_founding_advisor, is_verified_agent')
+        .select('id, slug, first_name, last_name, phone, profile_image, company, user_type, is_founding_member, is_founding_advisor, is_verified_agent, is_premium_agent')
         .eq('id', property.user_id)
         .single()
 
@@ -138,7 +140,8 @@ export async function GET(
           user_type: 'agent',
           is_founding_member: fallbackProfile.is_founding_member,
           is_founding_advisor: fallbackProfile.is_founding_advisor,
-          is_verified_agent: fallbackProfile.is_verified_agent
+          is_verified_agent: fallbackProfile.is_verified_agent,
+          is_premium_agent: fallbackProfile.is_premium_agent
         }
       }
     }
