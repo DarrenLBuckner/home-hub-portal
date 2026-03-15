@@ -108,50 +108,58 @@ const STEPS = [
   {
     id: 'motivation',
     title: 'What drives you?',
-    subtitle: 'Why did you get into real estate? Pick all that apply.',
+    subtitle: 'Why did you get into real estate? Pick up to 3.',
     why: 'Buyers connect with agents who have a real reason for doing this work. Your "why" builds trust before you even speak to them.',
+    maxSelections: 3,
   },
   {
     id: 'propertyTypes',
     title: 'What do you specialize in?',
-    subtitle: 'Pick the property types you work with most.',
+    subtitle: 'Pick the property types you work with most (up to 4).',
     why: 'When a buyer sees you specialize in exactly what they\'re looking for, you become their first call — not just another agent on the list.',
+    maxSelections: 4,
   },
   {
     id: 'neighborhoods',
     title: 'Your areas',
-    subtitle: 'Which neighborhoods or regions do you know best?',
+    subtitle: 'Which neighborhoods or regions do you know best? (up to 5)',
     why: 'Local knowledge is your biggest selling point. Diaspora buyers especially need someone who knows the ground — this shows you\'re that person.',
+    maxSelections: 5,
   },
   {
     id: 'buyerTypes',
     title: 'Who you serve',
-    subtitle: 'What types of clients do you work with?',
+    subtitle: 'What types of clients do you work with? (up to 4)',
     why: 'A first-time buyer wants to see you work with first-time buyers. An investor wants to see you work with investors. This is how they find YOU.',
+    maxSelections: 4,
   },
   {
     id: 'strengths',
     title: 'What sets you apart?',
-    subtitle: 'What makes you different from other agents?',
+    subtitle: 'What makes you different from other agents? (up to 4)',
     why: 'This is the part of your bio that turns a maybe into a WhatsApp message. Clients want to know what they\'re getting that they can\'t get elsewhere.',
+    maxSelections: 4,
   },
   {
     id: 'languages',
     title: 'Languages',
-    subtitle: 'What languages do you speak?',
+    subtitle: 'What languages do you speak? (up to 4)',
     why: 'In Guyana\'s multicultural market, speaking a client\'s language — literally — can be the deciding factor.',
+    maxSelections: 4,
   },
   {
     id: 'personalTouch',
     title: 'Your personal style',
-    subtitle: 'How would you describe the way you work?',
+    subtitle: 'How would you describe the way you work? (up to 3)',
     why: 'People don\'t just hire an agent — they hire a person. This tells them what it\'s actually like to work with you.',
+    maxSelections: 3,
   },
   {
     id: 'community',
     title: 'Community',
-    subtitle: 'Are you involved in the community?',
+    subtitle: 'Are you involved in the community? (up to 3)',
     why: 'Community involvement shows you\'re rooted and trusted locally. It\'s one more reason for a client to feel confident choosing you.',
+    maxSelections: 3,
   },
   {
     id: 'extraNote',
@@ -270,6 +278,8 @@ export default function BioBuilderPage() {
   const stepId = step.id as StepId;
   const isLastStep = currentStep === STEPS.length - 1;
 
+  const maxSelections = step.maxSelections;
+
   const toggleOption = (option: string) => {
     if (stepId === 'extraNote') return;
     setAnswers(prev => {
@@ -277,6 +287,8 @@ export default function BioBuilderPage() {
       if (current.includes(option)) {
         return { ...prev, [stepId]: current.filter(o => o !== option) };
       }
+      // Enforce selection cap
+      if (maxSelections && current.length >= maxSelections) return prev;
       return { ...prev, [stepId]: [...current, option] };
     });
   };
@@ -400,9 +412,14 @@ export default function BioBuilderPage() {
           <p className="text-gray-600 mb-2">
             Your professional bio is now visible on your public agent profile.
           </p>
-          <p className="text-gray-500 text-sm mb-6">
-            Every client who visits your profile on Guyana HomeHub will now see a polished, professional bio that builds trust and shows them exactly why they should work with you. That&apos;s how you turn profile views into WhatsApp messages.
+          <p className="text-gray-500 text-sm mb-4">
+            Every client who visits your profile on Guyana HomeHub will now see a polished, professional bio that builds trust and shows them exactly why they should work with you.
           </p>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-left">
+            <p className="text-amber-800 text-sm">
+              Now make sure your profile photo is a professional headshot and your contact details are up to date — clients will see these alongside your bio.
+            </p>
+          </div>
           <div className="bg-gray-50 rounded-xl p-6 mb-6 text-left">
             <h3 className="text-sm font-semibold text-gray-500 uppercase mb-2">Your Bio</h3>
             <p className="text-gray-700 leading-relaxed whitespace-pre-line">
@@ -411,22 +428,17 @@ export default function BioBuilderPage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
-              href="/dashboard/agent"
+              href="/dashboard/agent/settings"
               className="px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition"
+            >
+              Complete My Profile
+            </Link>
+            <Link
+              href="/dashboard/agent"
+              className="px-5 py-2.5 bg-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-300 transition"
             >
               Back to Dashboard
             </Link>
-            <button
-              onClick={() => {
-                setSaved(false);
-                setGeneratedBios([]);
-                setSelectedBioIndex(null);
-                setCurrentStep(0);
-              }}
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition"
-            >
-              Redo Bio
-            </button>
           </div>
         </div>
       </main>
@@ -671,19 +683,25 @@ export default function BioBuilderPage() {
             <div className="grid grid-cols-1 gap-2">
               {OPTIONS_MAP[stepId]?.map((option) => {
                 const selected = (answers[stepId] as string[]).includes(option);
+                const currentCount = (answers[stepId] as string[]).length;
+                const atLimit = maxSelections ? currentCount >= maxSelections : false;
+                const disabled = !selected && atLimit;
                 return (
                   <button
                     key={option}
                     onClick={() => toggleOption(option)}
+                    disabled={disabled}
                     className={`w-full text-left p-3.5 rounded-xl border-2 transition-all text-sm sm:text-base ${
                       selected
                         ? 'border-green-500 bg-green-50 text-green-800 font-medium'
+                        : disabled
+                        ? 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
                         : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
                     <span className="flex items-center gap-3">
                       <span className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${
-                        selected ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                        selected ? 'border-green-500 bg-green-500' : disabled ? 'border-gray-200' : 'border-gray-300'
                       }`}>
                         {selected && (
                           <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -696,6 +714,9 @@ export default function BioBuilderPage() {
                   </button>
                 );
               })}
+              {maxSelections && (answers[stepId] as string[]).length >= maxSelections && (
+                <p className="text-sm text-amber-600 text-center mt-2">Maximum {maxSelections} selected — deselect one to change.</p>
+              )}
             </div>
           )}
         </div>
