@@ -47,16 +47,7 @@ export async function GET(
       `)
       .eq('id', id)
       .eq('site_id', siteId)
-      .or(
-        // Sale properties: show active, under_contract, sold
-        `and(listing_type.eq.sale,status.in.(active,under_contract,sold)),` +
-        // Rental properties: show active only (rented properties hidden)
-        `and(listing_type.eq.rent,status.eq.active),` +
-        // Lease properties: show active, under_contract
-        `and(listing_type.eq.lease,status.in.(active,under_contract)),` +
-        // Short-term rent: show active only
-        `and(listing_type.eq.short_term_rent,status.eq.active)`
-      )
+      .in('status', ['active', 'under_contract', 'off_market', 'sold', 'rented'])
       .single()
 
     if (propertyError) {

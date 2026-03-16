@@ -36,7 +36,7 @@ async function getAgent(slug: string) {
   const agent = data as unknown as PremierAgent | null;
   if (error || !agent) return null;
 
-  // Fetch active listings for this agent
+  // Fetch visible listings for this agent (sold/rented demoted to bottom for social proof)
   const { data: listings } = await supabase
     .from('properties')
     .select(`
@@ -47,7 +47,7 @@ async function getAgent(slug: string) {
       )
     `)
     .eq('user_id', agent.id)
-    .eq('status', 'active')
+    .in('status', ['active', 'under_contract', 'off_market', 'sold', 'rented'])
     .order('created_at', { ascending: false });
 
   // Fetch bio/specialties from agent_vetting
@@ -93,8 +93,16 @@ export default async function AgentProfilePage({ params }: AgentPageProps) {
 
   const { agent, listings, vetting } = result;
 
+  // Sort: active/under_contract/off_market first, sold/rented last
+  const demotedStatuses = new Set(['sold', 'rented']);
+  const sortedListings = [...(listings || [])].sort((a: any, b: any) => {
+    const aD = demotedStatuses.has(a.status) ? 1 : 0;
+    const bD = demotedStatuses.has(b.status) ? 1 : 0;
+    return aD - bD;
+  });
+
   // Transform listings to include primary image
-  const transformedListings = listings.map((listing: any) => {
+  const transformedListings = sortedListings.map((listing: any) => {
     const images = listing.property_media
       ?.filter((m: any) => m.media_type === 'image')
       ?.sort((a: any, b: any) => {
@@ -115,6 +123,7 @@ export default async function AgentProfilePage({ params }: AgentPageProps) {
       city: listing.city,
       region: listing.region,
       listing_type: listing.listing_type,
+      status: listing.status,
       image: images[0] || null,
     };
   });

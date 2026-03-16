@@ -30,7 +30,7 @@ export default async function PropertyDetailPage({
       )
     `)
     .eq('id', params.id)
-    .eq('status', 'active')
+    .in('status', ['active', 'under_contract', 'off_market', 'sold', 'rented'])
     .single();
 
   if (error || !property) {

@@ -23,14 +23,15 @@ export async function GET(request: NextRequest) {
     
     console.log(`🔍 Fetching properties - site: ${site}, listing_type: ${listing_type}, listing_type_multiple: ${listing_type_multiple}, category: ${propertyCategory}, search: "${searchQuery}", location: "${locationQuery}"`)
     
-    // Build the query - show properties with proper visibility logic:
-    // - SALE properties: show active, under_contract, sold (for social proof)
-    // - RENT properties: show active only (hide rented units)
-    // - LEASE properties: show active, under_contract (commercial leases)
+    // Build the query - show all publicly visible statuses across all listing types
+    // Sold and rented agent listings are kept visible (social proof) and demoted to bottom after fetch
     let query = supabase
       .from('properties')
       .select(`
         *,
+        profiles!properties_user_id_fkey (
+          user_type
+        ),
         property_media!property_media_property_id_fkey (
           media_url,
           media_type,
@@ -38,16 +39,7 @@ export async function GET(request: NextRequest) {
           is_primary
         )
       `)
-      .or(
-        // Sale properties: show active, under_contract, sold for social proof
-        `and(listing_type.eq.sale,status.in.(active,under_contract,sold)),` +
-        // Rental properties: show active only (hide rented units)
-        `and(listing_type.eq.rent,status.eq.active),` +
-        // Lease properties: show active, under_contract (commercial leases)
-        `and(listing_type.eq.lease,status.in.(active,under_contract)),` +
-        // Short-term rent properties: show active only
-        `and(listing_type.eq.short_term_rent,status.eq.active)`
-      )
+      .in('status', ['active', 'under_contract', 'off_market', 'sold', 'rented'])
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
     
@@ -109,16 +101,7 @@ export async function GET(request: NextRequest) {
     let countQuery = supabase
       .from('properties')
       .select('*', { count: 'exact', head: true })
-      .or(
-        // Sale properties: count active, under_contract, sold
-        `and(listing_type.eq.sale,status.in.(active,under_contract,sold)),` +
-        // Rental properties: count active only
-        `and(listing_type.eq.rent,status.eq.active),` +
-        // Lease properties: count active, under_contract
-        `and(listing_type.eq.lease,status.in.(active,under_contract)),` +
-        // Short-term rent properties: count active only
-        `and(listing_type.eq.short_term_rent,status.eq.active)`
-      )
+      .in('status', ['active', 'under_contract', 'off_market', 'sold', 'rented'])
 
     if (site) {
       countQuery = countQuery.eq('site_id', site)
@@ -139,6 +122,16 @@ export async function GET(request: NextRequest) {
       console.error('Count error:', countError)
     }
     
+    // Sort: demote sold/rented AGENT listings to the bottom, preserve order within each group
+    const demotedStatuses = new Set(['sold', 'rented'])
+    properties?.sort((a: any, b: any) => {
+      const aIsAgentDemoted = a.profiles?.user_type === 'agent' && demotedStatuses.has(a.status)
+      const bIsAgentDemoted = b.profiles?.user_type === 'agent' && demotedStatuses.has(b.status)
+      if (aIsAgentDemoted && !bIsAgentDemoted) return 1
+      if (!aIsAgentDemoted && bIsAgentDemoted) return -1
+      return 0 // preserve existing order within same group
+    })
+
     // Transform the data to include images properly
     const transformedProperties = properties?.map((property: any) => {
       // Prefer images from the property.images column if present
@@ -156,7 +149,8 @@ export async function GET(request: NextRequest) {
       return {
         ...property,
         images,
-        property_media: undefined // Remove the nested object
+        property_media: undefined, // Remove the nested object
+        profiles: undefined // Remove the profiles join
       }
     }) || []
     
