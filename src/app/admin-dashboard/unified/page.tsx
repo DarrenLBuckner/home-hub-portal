@@ -1572,10 +1572,12 @@ export default function UnifiedAdminDashboard() {
                     <div className="text-2xl">📊</div>
                   </div>
                   <ul className="text-xs text-cyan-800 mb-4 space-y-0.5 leading-tight">
+                    <li>• View agent emails, phone numbers & profiles</li>
+                    <li>• See active listings & draft counts per agent</li>
+                    <li>• Send direct emails to any agent</li>
                     <li>• Track inactive agents with 0 listings</li>
-                    <li>• Send reminder emails to agents</li>
-                    <li>• View agent activity & payment status</li>
-                    <li>• Bulk email engagement campaigns</li>
+                    <li>• View subscription & payment status</li>
+                    <li>• Bulk engagement campaigns</li>
                   </ul>
                   <Link href="/admin-dashboard/agent-engagement">
                     <button className="w-full px-4 py-2 bg-cyan-600 text-white font-semibold rounded-lg hover:bg-cyan-700 transition-colors">
