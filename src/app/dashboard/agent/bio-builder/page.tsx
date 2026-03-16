@@ -14,6 +14,7 @@ const MOTIVATION_OPTIONS = [
   'I transitioned from another career',
   'I want to help the diaspora invest back home',
   'I enjoy connecting people with the right property',
+  'Other',
 ];
 
 const PROPERTY_TYPE_OPTIONS = [
@@ -29,33 +30,26 @@ const PROPERTY_TYPE_OPTIONS = [
 
 const NEIGHBORHOOD_OPTIONS = [
   'Georgetown',
-  'East Bank Demerara',
-  'West Coast Demerara',
-  'East Coast Demerara',
+  'Greater Georgetown / Georgetown Outskirts',
+  'East Coast Demerara (Lower)',
+  'East Coast Demerara (Upper)',
+  'East Bank Demerara (Lower)',
+  'East Bank Demerara (Upper)',
   'West Bank Demerara',
-  'Berbice (New Amsterdam & surrounding)',
-  'Linden',
+  'West Coast Demerara',
   'Essequibo',
-  'Bartica',
-  'Lethem',
-  'Diamond / Grove',
-  'Turkeyen / UG area',
-  'Bel Air / Prashad Nagar',
-  'Kitty / Campbellville',
-  'Queenstown / Lamaha',
-  'Republic Park / Eccles',
+  'Linden',
+  'Outlying Areas',
 ];
 
 const BUYER_TYPE_OPTIONS = [
-  'Guyanese diaspora buying from abroad',
-  'First-time homebuyers',
-  'Property investors',
-  'Families upgrading homes',
-  'Expats relocating to Guyana',
-  'Corporate & business buyers',
-  'Retirees settling in Guyana',
-  'Renters looking for long-term',
-  'Renters looking for short-term / Airbnb',
+  'Home buyers',
+  'Property sellers',
+  'Renters',
+  'Landlords',
+  'Investors',
+  'Developers',
+  'New construction / building clients',
 ];
 
 const STRENGTH_OPTIONS = [
@@ -70,6 +64,7 @@ const STRENGTH_OPTIONS = [
   'I specialize in diaspora buyers and remote transactions',
   'I have strong negotiation skills',
   'I provide virtual tours and video walkthroughs',
+  'Other — describe in your own words',
 ];
 
 const LANGUAGE_OPTIONS = [
@@ -90,6 +85,7 @@ const PERSONAL_TOUCH_OPTIONS = [
   'I make the process fun and stress-free',
   'I\'m data-driven — I bring market knowledge to every deal',
   'I believe in building long-term relationships, not quick sales',
+  'Other — describe your style',
 ];
 
 const COMMUNITY_OPTIONS = [
@@ -108,58 +104,57 @@ const STEPS = [
   {
     id: 'motivation',
     title: 'What drives you?',
-    subtitle: 'Why did you get into real estate? Pick up to 3.',
+    subtitle: 'Why did you get into real estate? Pick all that apply.',
     why: 'Buyers connect with agents who have a real reason for doing this work. Your "why" builds trust before you even speak to them.',
-    maxSelections: 3,
   },
   {
     id: 'propertyTypes',
     title: 'What do you specialize in?',
-    subtitle: 'Pick the property types you work with most (up to 4).',
+    subtitle: 'Pick the property types you work with most (up to 6).',
     why: 'When a buyer sees you specialize in exactly what they\'re looking for, you become their first call — not just another agent on the list.',
-    maxSelections: 4,
+    maxSelections: 6,
   },
   {
     id: 'neighborhoods',
     title: 'Your areas',
-    subtitle: 'Which neighborhoods or regions do you know best? (up to 5)',
+    subtitle: 'Which regions do you cover? (up to 8)',
     why: 'Local knowledge is your biggest selling point. Diaspora buyers especially need someone who knows the ground — this shows you\'re that person.',
-    maxSelections: 5,
+    maxSelections: 8,
   },
   {
     id: 'buyerTypes',
     title: 'Who you serve',
-    subtitle: 'What types of clients do you work with? (up to 4)',
+    subtitle: 'What types of clients do you work with? (up to 5)',
     why: 'A first-time buyer wants to see you work with first-time buyers. An investor wants to see you work with investors. This is how they find YOU.',
-    maxSelections: 4,
+    maxSelections: 5,
   },
   {
     id: 'strengths',
     title: 'What sets you apart?',
-    subtitle: 'What makes you different from other agents? (up to 4)',
+    subtitle: 'What makes you different from other agents? (up to 6)',
     why: 'This is the part of your bio that turns a maybe into a WhatsApp message. Clients want to know what they\'re getting that they can\'t get elsewhere.',
-    maxSelections: 4,
+    maxSelections: 6,
   },
   {
     id: 'languages',
     title: 'Languages',
-    subtitle: 'What languages do you speak? (up to 4)',
+    subtitle: 'What languages do you speak? (up to 6)',
     why: 'In Guyana\'s multicultural market, speaking a client\'s language — literally — can be the deciding factor.',
-    maxSelections: 4,
+    maxSelections: 6,
   },
   {
     id: 'personalTouch',
     title: 'Your personal style',
-    subtitle: 'How would you describe the way you work? (up to 3)',
+    subtitle: 'How would you describe the way you work? (up to 6)',
     why: 'People don\'t just hire an agent — they hire a person. This tells them what it\'s actually like to work with you.',
-    maxSelections: 3,
+    maxSelections: 6,
   },
   {
     id: 'community',
     title: 'Community',
-    subtitle: 'Are you involved in the community? (up to 3)',
+    subtitle: 'Are you involved in the community? (up to 6)',
     why: 'Community involvement shows you\'re rooted and trusted locally. It\'s one more reason for a client to feel confident choosing you.',
-    maxSelections: 3,
+    maxSelections: 6,
   },
   {
     id: 'extraNote',
@@ -184,12 +179,15 @@ const OPTIONS_MAP: Record<string, string[]> = {
 
 interface Answers {
   motivation: string[];
+  motivation_other: string;
   propertyTypes: string[];
   neighborhoods: string[];
   buyerTypes: string[];
   strengths: string[];
+  strengths_other: string;
   languages: string[];
   personalTouch: string[];
+  personal_touch_other: string;
   community: string[];
   extraNote: string;
 }
@@ -199,12 +197,15 @@ export default function BioBuilderPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({
     motivation: [],
+    motivation_other: '',
     propertyTypes: [],
     neighborhoods: [],
     buyerTypes: [],
     strengths: [],
+    strengths_other: '',
     languages: [],
     personalTouch: [],
+    personal_touch_other: '',
     community: [],
     extraNote: '',
   });
@@ -213,6 +214,7 @@ export default function BioBuilderPage() {
   const [yearsExperience, setYearsExperience] = useState<number | null>(null);
   const [generatedBios, setGeneratedBios] = useState<string[]>([]);
   const [selectedBioIndex, setSelectedBioIndex] = useState<number | null>(null);
+  const [editingBioIndex, setEditingBioIndex] = useState<number | null>(null);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -294,8 +296,8 @@ export default function BioBuilderPage() {
   };
 
   const totalSelected = Object.entries(answers)
-    .filter(([key]) => key !== 'extraNote')
-    .reduce((sum, [, val]) => sum + (val as string[]).length, 0);
+    .filter(([key]) => key !== 'extraNote' && !key.endsWith('_other'))
+    .reduce((sum, [, val]) => sum + (Array.isArray(val) ? val.length : 0), 0);
 
   // +1 for intro screen in progress calculation
   const progressPercent = Math.round((currentStep / STEPS.length) * 100);
@@ -332,12 +334,15 @@ export default function BioBuilderPage() {
           company: agentCompany,
           yearsExperience,
           motivation: answers.motivation,
+          motivation_other: answers.motivation_other || undefined,
           propertyTypes: answers.propertyTypes,
           neighborhoods: answers.neighborhoods,
           buyerTypes: answers.buyerTypes,
           strengths: answers.strengths,
+          strengths_other: answers.strengths_other || undefined,
           languages: answers.languages,
           personalTouch: answers.personalTouch,
+          personal_touch_other: answers.personal_touch_other || undefined,
           communityInvolvement: answers.community,
           additionalNote: answers.extraNote || undefined,
         }),
@@ -466,10 +471,10 @@ export default function BioBuilderPage() {
 
           <div className="space-y-4 mb-6">
             {generatedBios.map((bio, index) => (
-              <button
+              <div
                 key={index}
-                onClick={() => setSelectedBioIndex(index)}
-                className={`w-full text-left p-5 rounded-xl border-2 transition-all ${
+                onClick={() => { if (editingBioIndex !== index) setSelectedBioIndex(index); }}
+                className={`w-full text-left p-5 rounded-xl border-2 transition-all cursor-pointer ${
                   selectedBioIndex === index
                     ? 'border-green-500 bg-green-50 shadow-md'
                     : 'border-gray-200 bg-white hover:border-gray-300'
@@ -481,14 +486,39 @@ export default function BioBuilderPage() {
                   }`}>
                     Option {index + 1}
                   </span>
-                  {selectedBioIndex === index && (
-                    <span className="text-green-600 text-sm font-medium">Selected</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {selectedBioIndex === index && (
+                      <span className="text-green-600 text-sm font-medium">Selected</span>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedBioIndex(index);
+                        setEditingBioIndex(editingBioIndex === index ? null : index);
+                      }}
+                      className="text-xs px-2.5 py-1 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 transition"
+                    >
+                      {editingBioIndex === index ? 'Done' : 'Edit'}
+                    </button>
+                  </div>
                 </div>
-                <p className="text-gray-700 leading-relaxed whitespace-pre-line text-sm sm:text-base">
-                  {bio}
-                </p>
-              </button>
+                {editingBioIndex === index ? (
+                  <textarea
+                    value={bio}
+                    onChange={(e) => {
+                      const updated = [...generatedBios];
+                      updated[index] = e.target.value;
+                      setGeneratedBios(updated);
+                    }}
+                    rows={6}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 resize-y text-gray-700 text-sm sm:text-base leading-relaxed"
+                  />
+                ) : (
+                  <p className="text-gray-700 leading-relaxed whitespace-pre-line text-sm sm:text-base">
+                    {bio}
+                  </p>
+                )}
+              </div>
             ))}
           </div>
 
@@ -714,6 +744,46 @@ export default function BioBuilderPage() {
                   </button>
                 );
               })}
+              {/* "Other" free text fields */}
+              {stepId === 'motivation' && (answers.motivation as string[]).includes('Other') && (
+                <div className="mt-3">
+                  <input
+                    type="text"
+                    value={answers.motivation_other}
+                    onChange={(e) => setAnswers(prev => ({ ...prev, motivation_other: e.target.value }))}
+                    placeholder="Tell us what drives you..."
+                    maxLength={150}
+                    className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700 text-sm"
+                  />
+                  <p className="text-xs text-gray-400 mt-1 text-right">{answers.motivation_other.length}/150</p>
+                </div>
+              )}
+              {stepId === 'strengths' && (answers.strengths as string[]).includes('Other — describe in your own words') && (
+                <div className="mt-3">
+                  <input
+                    type="text"
+                    value={answers.strengths_other}
+                    onChange={(e) => setAnswers(prev => ({ ...prev, strengths_other: e.target.value }))}
+                    placeholder="What sets you apart?"
+                    maxLength={200}
+                    className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700 text-sm"
+                  />
+                  <p className="text-xs text-gray-400 mt-1 text-right">{answers.strengths_other.length}/200</p>
+                </div>
+              )}
+              {stepId === 'personalTouch' && (answers.personalTouch as string[]).includes('Other — describe your style') && (
+                <div className="mt-3">
+                  <input
+                    type="text"
+                    value={answers.personal_touch_other}
+                    onChange={(e) => setAnswers(prev => ({ ...prev, personal_touch_other: e.target.value }))}
+                    placeholder="Describe your personal style..."
+                    maxLength={150}
+                    className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 text-gray-700 text-sm"
+                  />
+                  <p className="text-xs text-gray-400 mt-1 text-right">{answers.personal_touch_other.length}/150</p>
+                </div>
+              )}
               {maxSelections && (answers[stepId] as string[]).length >= maxSelections && (
                 <p className="text-sm text-amber-600 text-center mt-2">Maximum {maxSelections} selected — deselect one to change.</p>
               )}

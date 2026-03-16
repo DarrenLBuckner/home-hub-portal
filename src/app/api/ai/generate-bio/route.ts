@@ -14,12 +14,15 @@ interface BioQuestionnaireData {
   yearsExperience?: number;
   // Questionnaire answers (all tap-based selections)
   motivation: string[];
+  motivation_other?: string;
   propertyTypes: string[];
   neighborhoods: string[];
   buyerTypes: string[];
   strengths: string[];
+  strengths_other?: string;
   languages: string[];
   personalTouch: string[];
+  personal_touch_other?: string;
   communityInvolvement: string[];
   additionalNote?: string; // The one optional short text field
 }
@@ -100,7 +103,9 @@ function buildBioPrompt(data: BioQuestionnaireData): string {
   }
 
   if (data.motivation.length > 0) {
-    lines.push(`What drives them in real estate: ${data.motivation.join(', ')}.`);
+    const motivations = data.motivation.filter(m => m !== 'Other');
+    if (data.motivation_other) motivations.push(data.motivation_other);
+    if (motivations.length > 0) lines.push(`What drives them in real estate: ${motivations.join(', ')}.`);
   }
 
   if (data.propertyTypes.length > 0) {
@@ -116,7 +121,9 @@ function buildBioPrompt(data: BioQuestionnaireData): string {
   }
 
   if (data.strengths.length > 0) {
-    lines.push(`What sets them apart: ${data.strengths.join(', ')}.`);
+    const strengths = data.strengths.filter(s => s !== 'Other — describe in your own words');
+    if (data.strengths_other) strengths.push(data.strengths_other);
+    if (strengths.length > 0) lines.push(`What sets them apart: ${strengths.join(', ')}.`);
   }
 
   if (data.languages.length > 0) {
@@ -124,7 +131,9 @@ function buildBioPrompt(data: BioQuestionnaireData): string {
   }
 
   if (data.personalTouch.length > 0) {
-    lines.push(`Personal style: ${data.personalTouch.join(', ')}.`);
+    const touches = data.personalTouch.filter(t => t !== 'Other — describe your style');
+    if (data.personal_touch_other) touches.push(data.personal_touch_other);
+    if (touches.length > 0) lines.push(`Personal style: ${touches.join(', ')}.`);
   }
 
   if (data.communityInvolvement.length > 0) {
