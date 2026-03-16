@@ -2,7 +2,7 @@
 
 import MyPropertiesTab from './components/MyPropertiesTab';
 import AgentDashboardWelcome from './components/AgentDashboardWelcome';
-import PropertyEngagementMetrics from './components/PropertyEngagementMetrics';
+import PortfolioSummary from './components/PortfolioSummary';
 import MyDraftsSection from './components/MyDraftsSection';
 import TrainingVideosCard from '@/components/TrainingVideosCard';
 import TrainingResourcesCard from '@/components/TrainingResourcesCard';
@@ -175,7 +175,7 @@ export default function AgentPage() {
               <AgentDashboardWelcome onNavigateTab={setActiveSection} />
             </div>
             {userId && (
-              <PropertyEngagementMetrics userId={userId} />
+              <PortfolioSummary userId={userId} />
             )}
             <TrainingVideosCard userType="agent" countryCode={countryCode} />
             <TrainingResourcesCard userType="agent" countryCode={countryCode} />

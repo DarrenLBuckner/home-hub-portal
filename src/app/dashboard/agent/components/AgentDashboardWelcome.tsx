@@ -183,14 +183,13 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
             </button>
           </Link>
 
-          <button
-            onClick={() => onNavigateTab?.('properties')}
-            className="w-full p-5 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex flex-col items-center space-y-2"
-          >
-            <span className="text-3xl">📊</span>
-            <span className="text-lg">Manage Listings</span>
-            <span className="text-xs opacity-75">Full Portfolio</span>
-          </button>
+          <Link href="/dashboard/agent/listings">
+            <button className="w-full p-5 rounded-xl bg-gradient-to-r from-indigo-500 to-indigo-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex flex-col items-center space-y-2">
+              <span className="text-3xl">📊</span>
+              <span className="text-lg">Manage Listings</span>
+              <span className="text-xs opacity-75">Full Portfolio</span>
+            </button>
+          </Link>
 
           <Link href="/dashboard/agent/bio-builder">
             <button className="w-full p-5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex flex-col items-center space-y-2">
