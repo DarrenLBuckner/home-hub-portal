@@ -20,6 +20,7 @@ interface BioQuestionnaireData {
   buyerTypes: string[];
   strengths: string[];
   strengths_other?: string;
+  licensed: string[];
   languages: string[];
   personalTouch: string[];
   personal_touch_other?: string;
@@ -124,6 +125,13 @@ function buildBioPrompt(data: BioQuestionnaireData): string {
     const strengths = data.strengths.filter(s => s !== 'Other — describe in your own words');
     if (data.strengths_other) strengths.push(data.strengths_other);
     if (strengths.length > 0) lines.push(`What sets them apart: ${strengths.join(', ')}.`);
+  }
+
+  if (data.licensed?.length > 0) {
+    const isLicensed = data.licensed[0]?.startsWith('Yes');
+    if (isLicensed) {
+      lines.push('They are a licensed real estate agent.');
+    }
   }
 
   if (data.languages.length > 0) {

@@ -20,7 +20,7 @@ const MOTIVATION_OPTIONS = [
 const PROPERTY_TYPE_OPTIONS = [
   'Residential homes',
   'Apartments & condos',
-  'Land & lots',
+  'Land',
   'Commercial properties',
   'Luxury properties',
   'New builds & developments',
@@ -30,15 +30,16 @@ const PROPERTY_TYPE_OPTIONS = [
 
 const NEIGHBORHOOD_OPTIONS = [
   'Georgetown',
-  'Greater Georgetown / Georgetown Outskirts',
   'East Coast Demerara (Lower)',
   'East Coast Demerara (Upper)',
   'East Bank Demerara (Lower)',
   'East Bank Demerara (Upper)',
   'West Bank Demerara',
   'West Coast Demerara',
+  'Berbice',
   'Essequibo',
   'Linden',
+  'Linden-Soesdyke Highway',
   'Outlying Areas',
 ];
 
@@ -86,6 +87,11 @@ const PERSONAL_TOUCH_OPTIONS = [
   'I\'m data-driven — I bring market knowledge to every deal',
   'I believe in building long-term relationships, not quick sales',
   'Other — describe your style',
+];
+
+const LICENSED_OPTIONS = [
+  'Yes — I am a licensed real estate agent',
+  'Not yet — currently working toward my license',
 ];
 
 const COMMUNITY_OPTIONS = [
@@ -136,6 +142,13 @@ const STEPS = [
     maxSelections: 6,
   },
   {
+    id: 'licensed',
+    title: 'Are you licensed?',
+    subtitle: 'This sets you apart from other agents.',
+    why: 'Clients feel more confident working with a licensed agent. If you have your license, this is a strong trust signal that belongs in your bio.',
+    maxSelections: 1,
+  },
+  {
     id: 'languages',
     title: 'Languages',
     subtitle: 'What languages do you speak? (up to 6)',
@@ -152,9 +165,9 @@ const STEPS = [
   {
     id: 'community',
     title: 'Community',
-    subtitle: 'Are you involved in the community? (up to 6)',
+    subtitle: 'Are you involved in the community? (up to 5)',
     why: 'Community involvement shows you\'re rooted and trusted locally. It\'s one more reason for a client to feel confident choosing you.',
-    maxSelections: 6,
+    maxSelections: 5,
   },
   {
     id: 'extraNote',
@@ -164,7 +177,7 @@ const STEPS = [
   },
 ];
 
-type StepId = 'motivation' | 'propertyTypes' | 'neighborhoods' | 'buyerTypes' | 'strengths' | 'languages' | 'personalTouch' | 'community' | 'extraNote';
+type StepId = 'motivation' | 'propertyTypes' | 'neighborhoods' | 'buyerTypes' | 'strengths' | 'licensed' | 'languages' | 'personalTouch' | 'community' | 'extraNote';
 
 const OPTIONS_MAP: Record<string, string[]> = {
   motivation: MOTIVATION_OPTIONS,
@@ -172,6 +185,7 @@ const OPTIONS_MAP: Record<string, string[]> = {
   neighborhoods: NEIGHBORHOOD_OPTIONS,
   buyerTypes: BUYER_TYPE_OPTIONS,
   strengths: STRENGTH_OPTIONS,
+  licensed: LICENSED_OPTIONS,
   languages: LANGUAGE_OPTIONS,
   personalTouch: PERSONAL_TOUCH_OPTIONS,
   community: COMMUNITY_OPTIONS,
@@ -185,6 +199,7 @@ interface Answers {
   buyerTypes: string[];
   strengths: string[];
   strengths_other: string;
+  licensed: string[];
   languages: string[];
   personalTouch: string[];
   personal_touch_other: string;
@@ -203,6 +218,7 @@ export default function BioBuilderPage() {
     buyerTypes: [],
     strengths: [],
     strengths_other: '',
+    licensed: [],
     languages: [],
     personalTouch: [],
     personal_touch_other: '',
