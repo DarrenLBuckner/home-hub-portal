@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import GlobalSouthLocationSelector from '@/components/GlobalSouthLocationSelector';
+import { detectNeighborhoods, type GuyanaNeighborhood } from '@/lib/guyana-neighborhoods';
 
 interface Step3LocationProps {
   formData: any;
@@ -49,10 +50,21 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
     }));
   };
 
+  // Neighborhood detection from title + description
+  const [suggestionDismissed, setSuggestionDismissed] = useState(false);
+  const detectedNeighborhoods = useMemo(() => {
+    const text = [formData.title, formData.description].filter(Boolean).join(' ');
+    return detectNeighborhoods(text);
+  }, [formData.title, formData.description]);
+
+  const topSuggestion = detectedNeighborhoods[0] || null;
+  const neighborhoodIsEmpty = !formData.neighborhood?.trim();
+  const showSuggestionBanner = topSuggestion && neighborhoodIsEmpty && !suggestionDismissed;
+
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold mb-4">Property Location</h2>
-      
+
       <GlobalSouthLocationSelector
         selectedCountry={selectedCountry}
         selectedRegion={selectedRegion}
@@ -82,6 +94,56 @@ export default function Step3Location({ formData, setFormData }: Step3LocationPr
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Neighborhood/Area <span className="text-red-500">*</span>
         </label>
+
+        {/* Neighborhood detection banner */}
+        {showSuggestionBanner && (
+          <div className="mb-3 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+            <p className="text-sm font-semibold text-emerald-900 mb-1">
+              We noticed &quot;{topSuggestion.name}&quot; in your listing
+            </p>
+            <p className="text-sm text-emerald-700 mb-3">
+              Is this property located in {topSuggestion.name}, {topSuggestion.area}?
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  handleChange('neighborhood', topSuggestion.name);
+                  setSuggestionDismissed(true);
+                }}
+                className="px-4 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+              >
+                Yes, use {topSuggestion.name}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestionDismissed(true)}
+                className="px-4 py-1.5 bg-white text-gray-700 text-sm font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+              >
+                No, let me enter it
+              </button>
+            </div>
+            {detectedNeighborhoods.length > 1 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <span className="text-xs text-emerald-600">Also detected:</span>
+                {detectedNeighborhoods.slice(1, 4).map(h => (
+                  <button
+                    key={h.name}
+                    type="button"
+                    onClick={() => {
+                      handleChange('neighborhood', h.name);
+                      setSuggestionDismissed(true);
+                    }}
+                    className="text-xs text-emerald-700 underline hover:text-emerald-900"
+                  >
+                    {h.name}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <input
           type="text"
           value={formData.neighborhood || ''}

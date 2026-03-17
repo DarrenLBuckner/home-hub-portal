@@ -133,7 +133,7 @@ export default function CreateFSBOProperty() {
           return false;
         }
         if (!formData.neighborhood || !formData.neighborhood.trim() || formData.neighborhood.trim().length < 2) {
-          setError('Neighborhood/Area is required (minimum 2 characters)');
+          setError('Neighborhood is required. Without it, Google Maps cannot show buyers nearby schools, groceries, or restaurants — and your property may appear in the wrong area on the map. This can cost you inquiries, especially from diaspora buyers researching from abroad.');
           return false;
         }
         if (!formData.address || !formData.address.trim()) {
