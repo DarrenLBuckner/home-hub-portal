@@ -74,6 +74,7 @@ export default function PropertyReviewPage() {
   const [hiddenReason, setHiddenReason] = useState("");
 
   // Filters
+  const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<PropertyFilters>({
     status: 'all',
     userType: 'all',
@@ -103,10 +104,10 @@ export default function PropertyReviewPage() {
     loadProperties();
   }, [adminLoading, adminError, isAdmin, router]);
 
-  // Apply filters whenever filters or properties change
+  // Apply filters whenever filters, search, or properties change
   useEffect(() => {
     applyFilters();
-  }, [properties, filters]);
+  }, [properties, filters, searchQuery]);
 
   const displayUserType = (dbValue: string) => {
     const map: { [key: string]: string } = {
@@ -181,7 +182,21 @@ export default function PropertyReviewPage() {
     if (filters.propertyType !== 'all') {
       filtered = filtered.filter(p => p.property_type === filters.propertyType);
     }
-    
+
+    // Search filter — matches agent email, name, phone, or property title
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(p => {
+        const ownerName = p.owner
+          ? `${p.owner.first_name || ''} ${p.owner.last_name || ''}`.toLowerCase()
+          : '';
+        const email = (p.owner_email || '').toLowerCase();
+        const phone = (p.owner_whatsapp || '').toLowerCase();
+        const title = (p.title || '').toLowerCase();
+        return ownerName.includes(q) || email.includes(q) || phone.includes(q) || title.includes(q);
+      });
+    }
+
     setFilteredProperties(filtered);
   }
 
@@ -385,6 +400,16 @@ export default function PropertyReviewPage() {
         {/* Filter Bar */}
         <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
           <h2 className="text-lg font-bold text-gray-900 mb-4">🔍 Filter Properties</h2>
+          {/* Search Bar */}
+          <div className="mb-4">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by agent name, email, phone, or property title..."
+              className="w-full text-sm border border-gray-300 rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {/* Status Filter */}
             <div>
@@ -473,13 +498,16 @@ export default function PropertyReviewPage() {
               Showing {filteredProperties.length} of {properties.length} properties
             </div>
             <button
-              onClick={() => setFilters({
-                status: 'all',
-                userType: 'all', 
-                priceRange: 'all',
-                region: 'all',
-                propertyType: 'all'
-              })}
+              onClick={() => {
+                setFilters({
+                  status: 'all',
+                  userType: 'all',
+                  priceRange: 'all',
+                  region: 'all',
+                  propertyType: 'all'
+                });
+                setSearchQuery('');
+              }}
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               Clear All Filters

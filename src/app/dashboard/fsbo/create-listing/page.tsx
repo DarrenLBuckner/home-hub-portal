@@ -11,6 +11,7 @@ import OwnershipAttestation from "@/components/OwnershipAttestation";
 // Simplified property types for FSBO (UI only - database still supports all types)
 const PROPERTY_TYPES = [
   { value: "House", label: "House" },
+  { value: "Townhouse", label: "Townhouse" },
   { value: "Apartment", label: "Apartment" },
   { value: "Condo", label: "Condo" },
   { value: "Land", label: "Land" },

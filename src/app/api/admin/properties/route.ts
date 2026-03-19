@@ -83,6 +83,11 @@ export async function GET(req: NextRequest) {
           first_name,
           last_name,
           user_type
+        ),
+        property_media (
+          media_url,
+          is_primary,
+          media_type
         )
       `)
       .order('created_at', { ascending: false });

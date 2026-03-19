@@ -5,6 +5,7 @@ import { useState } from 'react';
 // Simplified property types for FSBO owners
 const FSBO_PROPERTY_TYPES = [
   { value: 'House', label: 'House', icon: '🏠', enabled: true },
+  { value: 'Townhouse', label: 'Townhouse', icon: '🏘️', enabled: true },
   { value: 'Apartment', label: 'Apartment', icon: '🏢', enabled: true },
   { value: 'Condo', label: 'Condo', icon: '🏢', enabled: true },
   { value: 'Multi-family', label: 'Multi-family', icon: '🏘️', enabled: true },

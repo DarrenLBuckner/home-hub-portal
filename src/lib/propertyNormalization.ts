@@ -16,7 +16,7 @@ const PROPERTY_TYPE_MAP: Record<string, string> = {
   'Cottage': 'House',
   'Duplex': 'Multi-family',
   'Condo': 'Condo',
-  'Townhouse': 'House',
+  // 'Townhouse' is now a first-class property type — no longer mapped to House
 
   // Land types - normalize legacy values
   'Residential Farmland': 'Residential Land',

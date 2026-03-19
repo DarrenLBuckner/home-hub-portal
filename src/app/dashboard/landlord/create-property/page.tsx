@@ -10,6 +10,7 @@ import { OwnershipAttestationFull } from "@/components/OwnershipAttestation";
 // Simplified property types for Landlords - only 2 options
 const PROPERTY_TYPES = [
   { value: "House", label: "House", icon: "🏠" },
+  { value: "Townhouse", label: "Townhouse", icon: "🏘️" },
   { value: "Apartment", label: "Apartment", icon: "🏢" },
   { value: "Condo", label: "Condo", icon: "🏢" },
 ];

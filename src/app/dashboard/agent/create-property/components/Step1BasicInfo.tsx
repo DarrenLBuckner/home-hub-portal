@@ -11,6 +11,7 @@ interface Step1BasicInfoProps {
 // Merged: Villa/Bungalow/Cottage → House, Townhouse/Condo → Townhouse, Duplex/Multi-family → Multi-family
 const RESIDENTIAL_TYPES = [
   { value: 'House', label: 'House', icon: '🏠' },
+  { value: 'Townhouse', label: 'Townhouse', icon: '🏘️' },
   { value: 'Apartment', label: 'Apartment', icon: '🏢' },
   { value: 'Condo', label: 'Condo', icon: '🏢' },
   { value: 'Multi-family', label: 'Multi-family', icon: '🏘️' },

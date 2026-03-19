@@ -30,6 +30,11 @@ interface Property {
   listed_by_type: string;
   country_id?: string;
   owner_whatsapp?: string;
+  property_media?: Array<{
+    media_url: string;
+    is_primary: boolean;
+    media_type?: string;
+  }>;
   owner?: {
     id: string;
     email: string;
@@ -260,6 +265,11 @@ export default function UniversalPropertyManager({
               first_name,
               last_name,
               user_type
+            ),
+            property_media (
+              media_url,
+              is_primary,
+              media_type
             )
           `)
           .order('created_at', { ascending: false });
@@ -877,9 +887,12 @@ export default function UniversalPropertyManager({
               {filteredProperties.map((property) => {
                 const config = statusConfig[property.status as keyof typeof statusConfig] || statusConfig.pending;
                 const typeIcon = typeIcons[property.property_type?.toLowerCase()] || '🏠';
-                const imageUrl = property.images && property.images.length > 0 
-                  ? property.images[0] 
-                  : 'https://placehold.co/400x300?text=No+Image';
+                const primaryMedia = property.property_media?.find(m => m.is_primary);
+                const firstMedia = property.property_media?.[0];
+                const imageUrl = primaryMedia?.media_url
+                  || firstMedia?.media_url
+                  || (property.images && property.images.length > 0 ? property.images[0] : null)
+                  || 'https://placehold.co/400x300?text=No+Image';
 
                 return (
                   <div
