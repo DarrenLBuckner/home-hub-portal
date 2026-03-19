@@ -229,50 +229,51 @@ export default function UniversalPropertyManager({
     setLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
-
-      let query = supabase
-        .from('properties')
-        .select(`
-          *,
-          owner:profiles!user_id (
-            id,
-            email,
-            first_name,
-            last_name,
-            user_type
-          )
-        `)
-        .order('created_at', { ascending: false });
-
-      // Use passed permissions or fall back to state (state may be stale on first call)
-      const perms = permissionsOverride || adminPermissions;
-
-      // Apply filtering based on user type
       if (userType === 'admin') {
-        console.log('🔧 Admin mode: Loading properties with country filtering...');
+        // Admin: Use server-side API endpoint with service role (bypasses RLS)
+        // This ensures all statuses including off_market are returned
+        console.log('🔧 Admin mode: Loading properties via admin API...');
+        const response = await fetch('/api/admin/properties', {
+          cache: 'no-store',
+          credentials: 'include',
+        });
 
-        // Apply country filter for non-super admins
-        if (perms && !perms.canViewAllCountries && perms.countryFilter) {
-          console.log(`🌍 Filtering properties for country: ${perms.countryFilter}`);
-          query = query.eq('country_id', perms.countryFilter);
-        } else if (perms && perms.canViewAllCountries) {
-          console.log('🌍 Super Admin: Loading ALL properties from ALL countries');
-        } else {
-          console.log('⚠️ Admin permissions not loaded yet, loading all properties');
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `API error: ${response.status}`);
         }
+
+        const result = await response.json();
+        console.log(`✅ Loaded ${result.properties?.length || 0} properties for admin user`);
+        setProperties(result.properties || []);
       } else {
-        // Regular users (agent, landlord, fsbo) only see their own properties
+        // Non-admin: Use client-side Supabase (RLS allows own properties)
+        const supabase = createClient();
+
+        let query = supabase
+          .from('properties')
+          .select(`
+            *,
+            owner:profiles!user_id (
+              id,
+              email,
+              first_name,
+              last_name,
+              user_type
+            )
+          `)
+          .order('created_at', { ascending: false });
+
         console.log(`👤 Regular user mode (${userType}): Loading user's own properties only`);
         query = query.eq('user_id', userId);
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        console.log(`✅ Loaded ${data?.length || 0} properties for ${userType} user`);
+        setProperties(data || []);
       }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      
-      console.log(`✅ Loaded ${data?.length || 0} properties for ${userType} user`);
-      setProperties(data || []);
     } catch (err: any) {
       console.error('❌ Property fetch error:', err);
       setError(err.message);

@@ -401,6 +401,7 @@ export default function PropertyReviewPage() {
                 <option value="sold">Sold</option>
                 <option value="rented">Rented</option>
                 <option value="rejected">Rejected</option>
+                <option value="off_market">Off Market</option>
               </select>
             </div>
 
@@ -505,7 +506,8 @@ export default function PropertyReviewPage() {
                 'sold': 'bg-[#DC2626] text-white',
                 'rented': 'bg-[#2563EB] text-white',
                 'under_contract': 'bg-[#F97316] text-white',
-                'rejected': 'bg-red-100 text-red-800'
+                'rejected': 'bg-red-100 text-red-800',
+                'off_market': 'bg-gray-100 text-gray-700'
               }[property.status] || 'bg-gray-100 text-gray-800';
 
               const statusMessages: { [key: string]: string } = {
@@ -672,6 +674,39 @@ export default function PropertyReviewPage() {
                                 className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors"
                               >
                                 ✅ Unhide — Restore to Active
+                              </button>
+                            </>
+                          )}
+
+                          {property.status === 'off_market' && (
+                            <>
+                              <button
+                                onClick={() => requestStatusChange(property.id, 'hidden', property.title, 'Hide Listing')}
+                                className="px-4 py-2 bg-amber-600 text-white font-bold rounded-lg hover:bg-amber-700 transition-colors"
+                              >
+                                🚫 Hide Listing
+                              </button>
+                              {canManageStatus && (
+                                <>
+                                  <button
+                                    onClick={() => requestStatusChange(property.id, 'under_contract', property.title, 'Mark Under Contract')}
+                                    className="px-4 py-2 bg-[#F97316] text-white font-bold rounded-lg hover:bg-orange-600 transition-colors"
+                                  >
+                                    📝 Mark Under Contract
+                                  </button>
+                                  <button
+                                    onClick={() => requestStatusChange(property.id, property.listing_type === 'rental' ? 'rented' : 'sold', property.title, property.listing_type === 'rental' ? 'Mark Rented' : 'Mark Sold')}
+                                    className="px-4 py-2 bg-purple-600 text-white font-bold rounded-lg hover:bg-purple-700 transition-colors"
+                                  >
+                                    {property.listing_type === 'rental' ? '🏠 Mark Rented' : '🏆 Mark Sold'}
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                onClick={() => requestStatusChange(property.id, 'active', property.title, 'Put Back on Market')}
+                                className="px-4 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-colors"
+                              >
+                                ✅ Put Back on Market
                               </button>
                             </>
                           )}
