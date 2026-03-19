@@ -93,8 +93,8 @@ export default async function AgentProfilePage({ params }: AgentPageProps) {
 
   const { agent, listings, vetting } = result;
 
-  // Sort: active/under_contract/off_market first, sold/rented last
-  const demotedStatuses = new Set(['sold', 'rented']);
+  // Sort: active/under_contract first, sold/rented/off_market last
+  const demotedStatuses = new Set(['sold', 'rented', 'off_market']);
   const sortedListings = [...(listings || [])].sort((a: any, b: any) => {
     const aD = demotedStatuses.has(a.status) ? 1 : 0;
     const bD = demotedStatuses.has(b.status) ? 1 : 0;

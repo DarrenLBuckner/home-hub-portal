@@ -122,8 +122,8 @@ export async function GET(request: NextRequest) {
       console.error('Count error:', countError)
     }
     
-    // Sort: demote sold/rented AGENT listings to the bottom, preserve order within each group
-    const demotedStatuses = new Set(['sold', 'rented'])
+    // Sort: demote sold/rented/off_market AGENT listings to the bottom, preserve order within each group
+    const demotedStatuses = new Set(['sold', 'rented', 'off_market'])
     properties?.sort((a: any, b: any) => {
       const aIsAgentDemoted = a.profiles?.user_type === 'agent' && demotedStatuses.has(a.status)
       const bIsAgentDemoted = b.profiles?.user_type === 'agent' && demotedStatuses.has(b.status)
