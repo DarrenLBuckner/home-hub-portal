@@ -266,7 +266,7 @@ export default function UniversalPropertyManager({
               last_name,
               user_type
             ),
-            property_media (
+            property_media!property_media_property_id_fkey (
               media_url,
               is_primary,
               media_type

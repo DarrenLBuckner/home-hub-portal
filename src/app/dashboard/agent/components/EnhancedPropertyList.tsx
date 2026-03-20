@@ -140,7 +140,7 @@ export default function EnhancedPropertyList({ userId }: { userId: string }) {
       const supabase = createClient();
       const { data, error } = await supabase
         .from('properties')
-        .select(`*, property_media (media_url, is_primary, media_type)`)
+        .select(`*, property_media!property_media_property_id_fkey (media_url, is_primary, media_type)`)
         .eq('user_id', userId)
         .order('created_at', { ascending: false });
 
