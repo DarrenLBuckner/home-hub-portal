@@ -491,7 +491,7 @@ export default function EngagementReportPage() {
                   rows={report.trafficSources.map(s => [
                     s.source,
                     fmt(s.views),
-                    `${s.percentage}%`,
+                    `${Math.abs(s.percentage).toFixed(1)}%`,
                   ])}
                 />
               </SectionCard>
