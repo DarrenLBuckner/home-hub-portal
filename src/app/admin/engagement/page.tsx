@@ -54,12 +54,19 @@ interface ViewDay {
   count: number;
 }
 
+interface TrafficSource {
+  source: string;
+  views: number;
+  percentage: number;
+}
+
 interface ReportData {
   contactSummary: ContactSummary;
   totalViews: number;
   topContacted: TopContactedProperty[];
   topViewed: TopViewedProperty[];
   viewsOverTime: ViewDay[];
+  trafficSources: TrafficSource[];
 }
 
 // ── Helpers ────────────────────────────────────────────────
@@ -475,6 +482,18 @@ export default function EngagementReportPage() {
                 ) : (
                   <p className="text-gray-400 text-center py-8">No view data for this date range.</p>
                 )}
+              </SectionCard>
+
+              {/* Section E — Traffic Sources */}
+              <SectionCard title="E. Traffic Sources">
+                <DataTable
+                  headers={['Source', 'Views', '% of Total']}
+                  rows={report.trafficSources.map(s => [
+                    s.source,
+                    fmt(s.views),
+                    `${s.percentage}%`,
+                  ])}
+                />
               </SectionCard>
             </div>
           )}

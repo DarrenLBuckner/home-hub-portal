@@ -98,13 +98,13 @@ export async function GET(request: NextRequest) {
 
     // ── Section C: Top 10 Most Viewed Properties ─────────────
     // Supabase caps .select() at 1000 rows — paginate to get all
-    const views: { id: string; property_id: string; viewed_at: string }[] = []
+    const views: { id: string; property_id: string; viewed_at: string; referrer: string | null }[] = []
     const PAGE_SIZE = 1000
     let offset = 0
     while (true) {
       const { data: page } = await supabase
         .from('property_view_events')
-        .select('id, property_id, viewed_at')
+        .select('id, property_id, viewed_at, referrer')
         .gte('viewed_at', fromTs)
         .lte('viewed_at', toTs)
         .range(offset, offset + PAGE_SIZE - 1)
@@ -173,12 +173,42 @@ export async function GET(request: NextRequest) {
       .map(([date, count]) => ({ date, count }))
       .sort((a, b) => a.date.localeCompare(b.date))
 
+    // ── Section E: Traffic Sources ────────────────────────────
+    function classifyReferrer(ref: string | null): string {
+      if (!ref || ref.trim() === '') return 'Direct / Unknown'
+      const r = ref.toLowerCase()
+      if (r.includes('facebook.com')) return 'Facebook'
+      if (r.includes('instagram.com')) return 'Instagram'
+      if (r.includes('google.com')) return 'Google'
+      if (r.includes('bing.com')) return 'Bing'
+      if (r.includes('duckduckgo.com')) return 'DuckDuckGo'
+      if (r.startsWith('android-app://com.caribbeanhomehub')) return 'Android App'
+      if (r.includes('guyanahomehub.com')) return 'Internal (Site Navigation)'
+      return 'Other'
+    }
+
+    const sourceCounts: Record<string, number> = {}
+    views.forEach(v => {
+      const source = classifyReferrer(v.referrer)
+      sourceCounts[source] = (sourceCounts[source] || 0) + 1
+    })
+
+    const viewTotal = views.length || 1
+    const trafficSources = Object.entries(sourceCounts)
+      .map(([source, viewCount]) => ({
+        source,
+        views: viewCount,
+        percentage: Math.round((viewCount / viewTotal) * 1000) / 10,
+      }))
+      .sort((a, b) => b.views - a.views)
+
     return NextResponse.json({
       contactSummary,
       totalViews: totalViews ?? 0,
       topContacted,
       topViewed,
       viewsOverTime,
+      trafficSources,
     })
   } catch (error) {
     console.error('Error in engagement report:', error)
