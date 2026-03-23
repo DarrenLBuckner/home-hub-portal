@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/supabase';
 import { User } from '@supabase/supabase-js';
 import {
@@ -116,11 +116,46 @@ function triggerDownload(content: string, filename: string) {
 
 // ── Section Components ─────────────────────────────────────
 
+function printSection(title: string, contentEl: HTMLElement) {
+  const win = window.open('', '_blank', 'width=900,height=700');
+  if (!win) return;
+  win.document.write(`<!DOCTYPE html><html><head><title>${title} — GHH Report</title><style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 2rem; color: #111; }
+    .header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; border-bottom: 2px solid #e5e7eb; padding-bottom: 1rem; }
+    .header img { height: 36px; }
+    .header h1 { font-size: 1.1rem; font-weight: 600; margin: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th { text-align: left; padding: 6px 10px; border-bottom: 2px solid #d1d5db; font-weight: 600; color: #4b5563; }
+    td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; }
+    tr:nth-child(even) { background: #f9fafb; }
+  </style></head><body>
+    <div class="header">
+      <img src="/logo.png" alt="GHH" onerror="this.style.display='none'" />
+      <h1>${title}</h1>
+    </div>
+    ${contentEl.innerHTML}
+    <script>window.onload=function(){window.print()}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
   return (
     <section className="bg-white rounded-lg shadow p-5 print-section">
-      <h3 className="text-lg font-semibold text-gray-900 mb-3">{title}</h3>
-      {children}
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        <button
+          onClick={() => ref.current && printSection(title, ref.current)}
+          className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 no-print"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0110.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 01-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0021 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 00-1.913-.247M6.34 18H5.25A2.25 2.25 0 013 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 011.913-.247m10.5 0a48.536 48.536 0 00-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18.75 7.131H5.25" />
+          </svg>
+          Print Section
+        </button>
+      </div>
+      <div ref={ref}>{children}</div>
     </section>
   );
 }
