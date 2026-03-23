@@ -89,14 +89,30 @@ export async function GET(request: NextRequest) {
       }).sort((a, b) => b.total - a.total)
     }
 
-    // ── Section C: Top 10 Most Viewed Properties ─────────────
-    const { data: viewEvents } = await supabase
+    // ── Total Views (accurate count) ─────────────────────────
+    const { count: totalViews } = await supabase
       .from('property_view_events')
-      .select('id, property_id, viewed_at')
+      .select('id', { count: 'exact', head: true })
       .gte('viewed_at', fromTs)
       .lte('viewed_at', toTs)
 
-    const views = viewEvents || []
+    // ── Section C: Top 10 Most Viewed Properties ─────────────
+    // Supabase caps .select() at 1000 rows — paginate to get all
+    const views: { id: string; property_id: string; viewed_at: string }[] = []
+    const PAGE_SIZE = 1000
+    let offset = 0
+    while (true) {
+      const { data: page } = await supabase
+        .from('property_view_events')
+        .select('id, property_id, viewed_at')
+        .gte('viewed_at', fromTs)
+        .lte('viewed_at', toTs)
+        .range(offset, offset + PAGE_SIZE - 1)
+      if (!page || page.length === 0) break
+      views.push(...page)
+      if (page.length < PAGE_SIZE) break
+      offset += PAGE_SIZE
+    }
 
     // Count views per property
     const viewsByProperty: Record<string, { count: number; lastViewed: string }> = {}
@@ -159,6 +175,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       contactSummary,
+      totalViews: totalViews ?? 0,
       topContacted,
       topViewed,
       viewsOverTime,

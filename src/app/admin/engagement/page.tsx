@@ -56,6 +56,7 @@ interface ViewDay {
 
 interface ReportData {
   contactSummary: ContactSummary;
+  totalViews: number;
   topContacted: TopContactedProperty[];
   topViewed: TopViewedProperty[];
   viewsOverTime: ViewDay[];
@@ -307,7 +308,7 @@ export default function EngagementReportPage() {
     ? report.contactSummary.whatsapp + report.contactSummary.phone + report.contactSummary.email + report.contactSummary.request_viewing
     : 0;
   const hasContactData = contactTotal > 0;
-  const totalViews = report ? report.viewsOverTime.reduce((sum, d) => sum + d.count, 0) : 0;
+  const totalViews = report ? report.totalViews : 0;
 
   return (
     <>
