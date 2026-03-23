@@ -307,6 +307,7 @@ export default function EngagementReportPage() {
     ? report.contactSummary.whatsapp + report.contactSummary.phone + report.contactSummary.email + report.contactSummary.request_viewing
     : 0;
   const hasContactData = contactTotal > 0;
+  const totalViews = report ? report.viewsOverTime.reduce((sum, d) => sum + d.count, 0) : 0;
 
   return (
     <>
@@ -404,7 +405,8 @@ export default function EngagementReportPage() {
                     Contact tracking is now active. Data will appear as buyers interact with listings.
                   </div>
                 )}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                  <StatCard label="Total Property Views" value={totalViews > 0 ? fmt(totalViews) : '--'} />
                   <StatCard label="WhatsApp Clicks" value={hasContactData ? fmt(report.contactSummary.whatsapp) : '--'} />
                   <StatCard label="Viewing Requests" value={hasContactData ? fmt(report.contactSummary.request_viewing) : '--'} />
                   <StatCard label="Phone Clicks" value={hasContactData ? fmt(report.contactSummary.phone) : '--'} />
