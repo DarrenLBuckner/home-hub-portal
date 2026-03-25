@@ -26,6 +26,7 @@ const DIRECTORY_CATEGORIES = [
   { id: 'legal-financial', name: 'Legal & Financial' },
   { id: 'insurance', name: 'Insurance & Banking' },
   { id: 'inspection', name: 'Inspection Services' },
+  { id: 'photography-media', name: 'Photography & Media' },
 ];
 
 // Business directory response interface
@@ -110,12 +111,14 @@ async function handleDirectoryRequest(
   categoryFilter: string | null
 ) {
   try {
-    // Build query for businesses
+    // Build query for service providers
     let query = supabase
-      .from('businesses')
+      .from('service_providers')
       .select('*')
       .eq('site_id', countryCode)
-      .eq('status', 'active');
+      .eq('status', 'active')
+      .order('featured', { ascending: false })
+      .order('created_at', { ascending: false });
 
     // Filter by category if provided and not 'all'
     if (categoryFilter && categoryFilter !== 'all') {
@@ -132,9 +135,9 @@ async function handleDirectoryRequest(
       );
     }
 
-    // Get all businesses for category counts (unfiltered by category)
+    // Get all service providers for category counts (unfiltered by category)
     const { data: allBusinesses, error: countError } = await supabase
-      .from('businesses')
+      .from('service_providers')
       .select('category')
       .eq('site_id', countryCode)
       .eq('status', 'active');
