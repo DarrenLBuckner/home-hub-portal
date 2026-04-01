@@ -1481,7 +1481,7 @@ export default function UnifiedAdminDashboard() {
                       Manage Agents →
                     </button>
                   </Link>
-                  {(adminData?.admin_level === 'super' || adminData?.admin_level === 'owner') && (
+                  {(adminData?.admin_level === 'super' || adminData?.admin_level === 'owner' || adminData?.admin_level === 'basic') && (
                     <Link href="/admin/agents">
                       <button className="w-full mt-2 px-4 py-2 bg-emerald-100 text-emerald-800 font-semibold rounded-lg hover:bg-emerald-200 transition-colors text-sm">
                         Agent Review Queue →
