@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     let agentsQuery = adminSupabase
       .from('agent_vetting')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('submitted_at', { ascending: false });
 
     // Apply status filter if provided
     if (statusFilter) {
