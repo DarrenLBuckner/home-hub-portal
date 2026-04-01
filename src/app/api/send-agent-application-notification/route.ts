@@ -87,6 +87,27 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 2b. Get basic_admin(s) for the same territory
+    const recipients: string[] = [ownerAdmin.email];
+    try {
+      const { data: basicAdmins } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('user_type', 'admin')
+        .eq('admin_level', 'basic')
+        .eq('country_id', application.country);
+
+      if (basicAdmins && basicAdmins.length > 0) {
+        for (const ba of basicAdmins) {
+          if (ba.email && !recipients.includes(ba.email)) {
+            recipients.push(ba.email);
+          }
+        }
+      }
+    } catch (basicAdminErr) {
+      console.warn('Failed to fetch basic admins for notification - continuing with owner admin only:', basicAdminErr);
+    }
+
     // 3. Determine plan display name
     let planDisplay = 'Not specified';
     if (application.is_founding_member) {
@@ -134,16 +155,16 @@ export async function POST(request: NextRequest) {
     // 6. Send notification email
     await resend.emails.send({
       from: 'Portal HomeHub <notifications@portalhomehub.com>',
-      to: [ownerAdmin.email],
+      to: recipients,
       subject: `New Agent Application - ${application.first_name} ${application.last_name} - ${territory.country_name || countryName}`,
       html: emailHtml,
     });
 
-    console.log(`✅ Agent application notification sent to Owner Admin: ${ownerAdmin.email}`);
+    console.log(`✅ Agent application notification sent to: ${recipients.join(', ')}`);
 
     return NextResponse.json({
       success: true,
-      message: `Notification sent to ${ownerAdmin.email}`
+      message: `Notification sent to ${recipients.join(', ')}`
     });
 
   } catch (error: any) {
