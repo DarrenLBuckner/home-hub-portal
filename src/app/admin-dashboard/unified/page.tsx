@@ -334,78 +334,44 @@ export default function UnifiedAdminDashboard() {
   const loadAgents = async () => {
     if (!authReady) return;
     try {
-      console.log('🔄 Loading all agents (pending and approved)...');
+      console.log('🔄 Loading all agents (pending and approved) via server API...');
 
-      // Fetch pricing plans for plan name lookup
-      const { data: plans } = await supabase
-        .from('pricing_plans')
-        .select('id, plan_name');
+      // Use server-side API endpoint which uses service role key (bypasses RLS)
+      // This ensures all admin levels (super, owner, basic) can see agent applications
+      const response = await fetch('/api/admin/agents/vetting?status=pending_review,approved,denied', {
+        cache: 'no-store',
+        credentials: 'include',
+      });
 
-      if (plans) {
-        setPricingPlans(plans);
-      }
-
-      // Get ALL agent applications (not just pending) - this is the source of truth
-      let agentsQuery = supabase
-        .from('agent_vetting')
-        .select('*')
-        .in('status', ['pending_review', 'approved', 'denied']); // Include all statuses
-
-      // Apply country filter for non-super admins
-      if (permissions && !permissions.canViewAllCountries && permissions.countryFilter) {
-        agentsQuery = agentsQuery.eq('country', permissions.countryFilter);
-      }
-
-      const { data: agents, error: agentsError } = await agentsQuery;
-
-      if (agentsError) {
-        console.warn('⚠️ Agents table not available:', agentsError.message);
+      if (!response.ok) {
+        console.warn('⚠️ Agent vetting API error:', response.status);
         setPendingAgents([]);
         return;
       }
 
-      if (!agents || agents.length === 0) {
+      const data = await response.json();
+
+      if (data.pricingPlans) {
+        setPricingPlans(data.pricingPlans);
+      }
+
+      const enrichedAgents = data.agents || [];
+
+      if (enrichedAgents.length === 0) {
         setPendingAgents([]);
         console.log('✅ No agents found in system');
         return;
       }
 
-      // Get profile data for each agent manually
-      const enrichedAgents = await Promise.all(
-        agents.map(async (agent: AgentVetting) => {
-          // Pre-registration agents have no user_id yet — skip profile lookup
-          if (!agent.user_id) {
-            return {
-              ...agent,
-              profiles: null,
-              effective_user_type: 'agent'
-            };
-          }
-
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('email, first_name, last_name, user_type')
-            .eq('id', agent.user_id)
-            .single();
-
-          return {
-            ...agent,
-            profiles: profile || null,
-            // Override profile user_type with agent_vetting source of truth
-            effective_user_type: 'agent' // Since they're in agent_vetting table
-          };
-        })
-      );
-
       // Separate pending from approved/denied for display
-      const pendingAgents = enrichedAgents.filter(agent => agent.status === 'pending_review');
-      const approvedAgents = enrichedAgents.filter(agent => agent.status === 'approved');
-      const deniedAgents = enrichedAgents.filter(agent => agent.status === 'denied');
+      const pendingAgents = enrichedAgents.filter((agent: AgentVetting) => agent.status === 'pending_review');
+      const approvedAgents = enrichedAgents.filter((agent: AgentVetting) => agent.status === 'approved');
+      const deniedAgents = enrichedAgents.filter((agent: AgentVetting) => agent.status === 'denied');
 
       setPendingAgents(pendingAgents);
-      
+
       console.log(`✅ Loaded agents: ${pendingAgents.length} pending, ${approvedAgents.length} approved, ${deniedAgents.length} denied`);
-      console.log('📋 All agents:', enrichedAgents.map(a => `${a.profiles?.first_name} ${a.profiles?.last_name} (${a.status})`));
+      console.log('📋 All agents:', enrichedAgents.map((a: any) => `${a.profiles?.first_name} ${a.profiles?.last_name} (${a.status})`));
 
     } catch (error) {
       console.warn('⚠️ Error loading agents (non-critical):', error);
