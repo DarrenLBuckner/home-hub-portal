@@ -1272,6 +1272,9 @@ export default function EditAgentProperty() {
                       name="bathrooms"
                       type="number"
                       placeholder="0"
+                      min="0"
+                      max="20"
+                      step="0.5"
                       value={form.bathrooms}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border-2 border-gray-300 focus:border-blue-500 rounded-lg text-gray-900"

@@ -590,13 +590,15 @@ export default function EditFSBOProperty() {
               <input
                 name="bathrooms"
                 type="number"
-                inputMode="numeric"
+                inputMode="decimal"
                 placeholder="2"
+                min="0"
+                max="20"
+                step="0.5"
                 value={formData.bathrooms}
                 onChange={handleChange}
                 className="w-full border rounded-lg px-4 py-3 text-base"
                 required
-                min="0"
               />
             </div>
           </div>
