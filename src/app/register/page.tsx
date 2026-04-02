@@ -184,7 +184,7 @@ function RegistrationContent() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="max-w-md mx-auto lg:max-w-6xl px-4 lg:px-8 py-4">
@@ -197,13 +197,13 @@ function RegistrationContent() {
               />
               <h1 className="text-lg font-bold text-gray-900">Agent Registration</h1>
             </div>
-            <div className="text-sm text-gray-500 flex-shrink-0">Step {currentStep} of 4</div>
+            <div className="text-sm text-gray-500 flex-shrink-0">Step {currentStep} of 4 · Takes about 3 minutes</div>
           </div>
           
           {/* Progress Bar */}
           <div className="mt-3 bg-gray-200 rounded-full h-2">
             <div 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+              className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${(currentStep / 4) * 100}%` }}
             />
           </div>
@@ -217,8 +217,8 @@ function RegistrationContent() {
         {currentStep === 1 && (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-xl lg:text-3xl font-bold text-gray-900 mb-2">Choose Your Plan</h2>
-              <p className="text-gray-600 text-sm lg:text-lg">Select the plan that best fits your business needs</p>
+              <h2 className="text-xl lg:text-3xl font-bold text-gray-900 mb-2">Welcome to Guyana HomeHub</h2>
+              <p className="text-gray-600 text-sm lg:text-lg">Everything is free right now. Just pick a plan and let's get you set up.</p>
             </div>
 
             {/* Country Display (Read-only) */}
@@ -227,6 +227,14 @@ function RegistrationContent() {
                 <div className="text-sm text-gray-600 mb-1">📍 Location</div>
                 <div className="text-base font-medium text-gray-900">{selectedCountry.name}</div>
               </div>
+            </div>
+
+            {/* FREE Launch Banner */}
+            <div className="bg-emerald-600 text-white text-center py-3 px-4 rounded-xl mb-6">
+              <p className="font-bold text-lg">🎉 All plans are completely FREE during launch</p>
+              <p className="text-emerald-100 text-sm mt-1">
+                List your properties. Reach diaspora buyers in New York, Toronto & London. No cost.
+              </p>
             </div>
 
             {/* Plan Cards */}
@@ -294,15 +302,15 @@ function RegistrationContent() {
                       onClick={() => setForm({ ...form, selected_plan: plan.id })}
                       className={`relative flex flex-col h-full min-h-[280px] lg:min-h-[420px] p-4 lg:p-6 border-2 rounded-xl cursor-pointer transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] touch-manipulation ${
                         isSelected
-                          ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-300'
+                          ? 'border-emerald-600 bg-emerald-50 ring-2 ring-emerald-300'
                           : plan.is_popular
-                            ? 'border-blue-400 bg-white'
+                            ? 'border-emerald-400 bg-white'
                             : 'border-gray-200 bg-white'
                       }`}
                     >
                       {/* Popular/Recommended Badge */}
                       {plan.is_popular && (
-                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-xs font-bold px-4 py-1 rounded-full shadow-md">
+                        <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white text-xs font-bold px-4 py-1 rounded-full shadow-md">
                           ⭐ RECOMMENDED
                         </div>
                       )}
@@ -312,6 +320,9 @@ function RegistrationContent() {
                         <div className="text-3xl mb-2">{tierBenefits.icon}</div>
                         <h3 className="font-bold text-gray-900 text-lg lg:text-xl">{plan.plan_name}</h3>
                         <p className="text-xs lg:text-sm text-gray-500 mt-1">{tierBenefits.tagline}</p>
+                        {isProfessional && (
+                          <p className="text-xs text-emerald-600 italic mt-1">👉 Not sure which to pick? Start here.</p>
+                        )}
                       </div>
 
                       {/* Price Display - Temporarily showing FREE during launch */}
@@ -353,7 +364,7 @@ function RegistrationContent() {
                       {/* Selection Indicator */}
                       <div className={`mt-4 py-2 text-center rounded-lg font-medium text-sm transition-all ${
                         isSelected
-                          ? 'bg-blue-600 text-white'
+                          ? 'bg-emerald-600 text-white'
                           : 'bg-gray-100 text-gray-600'
                       }`}>
                         {isSelected ? '✓ Selected' : 'Click to Select'}
@@ -742,11 +753,11 @@ function RegistrationContent() {
               Back
             </button>
           )}
-          
+
           {currentStep < 4 ? (
             <button
               onClick={nextStep}
-              className="flex-1 py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors"
             >
               Continue
             </button>
@@ -760,6 +771,9 @@ function RegistrationContent() {
             </button>
           )}
         </div>
+        <p className="text-center text-xs text-gray-400 mt-3">
+          🔒 Your information is secure · No credit card required · Cancel anytime
+        </p>
 
       </div>
 
