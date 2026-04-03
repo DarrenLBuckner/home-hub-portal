@@ -312,15 +312,19 @@ export default function EditAgentProperty() {
             location: countryCode
           }));
 
-          // Set existing images (property_media is not normalized, use original)
-          const propertyImages = property.property_media
+          // Set existing images (property_media first, fallback to legacy images array)
+          const mediaImages = property.property_media
             ?.filter((media: any) => media.media_type === 'image')
             ?.sort((a: any, b: any) => {
               if (a.is_primary && !b.is_primary) return -1;
               if (!a.is_primary && b.is_primary) return 1;
-              return a.display_order - b.display_order;
+              return (a.display_order ?? 0) - (b.display_order ?? 0);
             })
             ?.map((media: any) => media.media_url) || [];
+
+          const propertyImages = mediaImages.length > 0
+            ? mediaImages
+            : (property.images || []);
 
           setExistingImages(propertyImages);
 

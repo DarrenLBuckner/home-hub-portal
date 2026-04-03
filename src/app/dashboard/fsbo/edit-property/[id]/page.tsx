@@ -182,17 +182,17 @@ export default function EditFSBOProperty() {
         setCurrencyCode(normalizedProperty.currency || 'GYD');
         setCurrencySymbol(getCurrencySymbol(normalizedProperty.currency || 'GYD'));
 
-        // Set existing images
-        const propertyImages = property.property_media
+        // Set existing images (property_media first, fallback to legacy images array)
+        const mediaImages = property.property_media
           ?.filter((media: any) => media.media_type === 'image')
           ?.sort((a: any, b: any) => {
             if (a.is_primary && !b.is_primary) return -1;
             if (!a.is_primary && b.is_primary) return 1;
-            return a.display_order - b.display_order;
+            return (a.display_order ?? 0) - (b.display_order ?? 0);
           })
           ?.map((media: any) => media.media_url) || [];
 
-        setExistingImages(propertyImages);
+        setExistingImages(mediaImages.length > 0 ? mediaImages : (property.images || []));
         setLoading(false);
 
       } catch (error) {
