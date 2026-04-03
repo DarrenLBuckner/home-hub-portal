@@ -87,7 +87,8 @@ export async function GET(req: NextRequest) {
         property_media!property_media_property_id_fkey (
           media_url,
           is_primary,
-          media_type
+          media_type,
+          display_order
         )
       `)
       .order('created_at', { ascending: false });

@@ -617,6 +617,52 @@ export default function PropertyReviewPage() {
                           </div>
                         </div>
 
+                        {/* Photo Gallery for Review */}
+                        {(() => {
+                          const images = property.property_media?.length > 0
+                            ? property.property_media
+                                .sort((a: any, b: any) => {
+                                  if (a.is_primary && !b.is_primary) return -1;
+                                  if (!a.is_primary && b.is_primary) return 1;
+                                  return (a.display_order ?? 0) - (b.display_order ?? 0);
+                                })
+                                .map((m: any) => m.media_url)
+                            : property.images?.length > 0
+                            ? property.images
+                            : [];
+
+                          if (images.length === 0) {
+                            return (
+                              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                                <p className="text-amber-800 text-sm font-medium">
+                                  ⚠️ No photos submitted — review carefully before approving
+                                </p>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="mb-3">
+                              <div className="flex gap-2 overflow-x-auto pb-1">
+                                {images.slice(0, 6).map((url: string, i: number) => (
+                                  <img
+                                    key={i}
+                                    src={url}
+                                    alt={`Property photo ${i + 1}`}
+                                    className="h-24 w-32 object-cover rounded-lg flex-shrink-0 border border-gray-200"
+                                  />
+                                ))}
+                                {images.length > 6 && (
+                                  <div className="h-24 w-32 flex-shrink-0 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
+                                    <span className="text-gray-500 text-sm font-medium">+{images.length - 6} more</span>
+                                  </div>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">{images.length} photo{images.length !== 1 ? 's' : ''}</p>
+                            </div>
+                          );
+                        })()}
+
                         {/* Action Buttons */}
                         <div className="flex flex-wrap gap-2">
                           {/* Price Management - Super/Owner only */}
