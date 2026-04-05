@@ -1,11 +1,14 @@
 "use client";
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { usePricing } from '@/hooks/usePricing';
+import { getCountryFromCookies, getSiteName } from '@/lib/country-detection';
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
+  { code: 'CO', name: 'Colombia', currency: 'COP', symbol: 'COL$' },
   { code: 'JM', name: 'Jamaica', currency: 'JMD', symbol: 'J$' },
   { code: 'TT', name: 'Trinidad & Tobago', currency: 'TTD', symbol: 'TT$' },
   { code: 'BB', name: 'Barbados', currency: 'BBD', symbol: 'Bds$' },
@@ -16,8 +19,14 @@ const countries = [
 
 function RegistrationContent() {
   const searchParams = useSearchParams();
+  const tReg = useTranslations('registration');
+  const tAuth = useTranslations('signup');
+  const tCommon = useTranslations('common');
+  const detectedCountry = getCountryFromCookies();
+  const siteName = getSiteName();
+  const defaultCountry = countries.find(c => c.code === detectedCountry) || countries[0];
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedCountry, setSelectedCountry] = useState(countries[0]);
+  const [selectedCountry, setSelectedCountry] = useState(defaultCountry);
   const [selectedPlan, setSelectedPlan] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,7 +41,7 @@ function RegistrationContent() {
   const [form, setForm] = useState({
     // Step 1: Plan Selection
     selected_plan: '',
-    country: 'GY',
+    country: detectedCountry as string || 'GY',
     
     // Step 2: Personal Info
     first_name: "",
@@ -195,7 +204,7 @@ function RegistrationContent() {
                 alt="Portal Home Hub Logo" 
                 className="w-8 h-8 sm:w-10 sm:h-10 object-contain flex-shrink-0" 
               />
-              <h1 className="text-lg font-bold text-gray-900">Agent Registration</h1>
+              <h1 className="text-lg font-bold text-gray-900">{tReg('title')}</h1>
             </div>
             <div className="text-sm text-gray-500 flex-shrink-0">Step {currentStep} of 4 · Takes about 3 minutes</div>
           </div>
@@ -217,8 +226,8 @@ function RegistrationContent() {
         {currentStep === 1 && (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-xl lg:text-3xl font-bold text-gray-900 mb-2">Welcome to Guyana HomeHub</h2>
-              <p className="text-gray-600 text-sm lg:text-lg">Everything is free right now. Just pick a plan and let's get you set up.</p>
+              <h2 className="text-xl lg:text-3xl font-bold text-gray-900 mb-2">{tReg('title')} — {siteName}</h2>
+              <p className="text-gray-600 text-sm lg:text-lg">{tReg('subtitle')}</p>
             </div>
 
             {/* Country Display (Read-only) */}
@@ -233,7 +242,7 @@ function RegistrationContent() {
             <div className="bg-emerald-600 text-white text-center py-3 px-4 rounded-xl mb-6">
               <p className="font-bold text-lg">🎉 All plans are completely FREE during launch</p>
               <p className="text-emerald-100 text-sm mt-1">
-                List your properties. Reach diaspora buyers in New York, Toronto & London. No cost.
+                {tReg('subtitle')}
               </p>
             </div>
 
@@ -378,7 +387,7 @@ function RegistrationContent() {
             {/* Bottom Banner */}
             <div className="bg-green-50 border border-green-200 rounded-lg p-3">
               <div className="text-sm text-green-800">
-                <strong>🎉 Register Free:</strong> List unlimited properties on Guyana's premier platform
+                <strong>🎉 {tReg('apply')}:</strong> {tReg('benefit1')}
               </div>
             </div>
           </div>
@@ -388,14 +397,14 @@ function RegistrationContent() {
         {currentStep === 2 && (
           <div className="space-y-6">
             <div className="text-center">
-              <h2 className="text-xl font-bold text-gray-900 mb-2">Personal Information</h2>
-              <p className="text-gray-600 text-sm">Tell us about yourself</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-2">{tAuth('title')}</h2>
+              <p className="text-gray-600 text-sm">{tAuth('subtitle')}</p>
             </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tAuth('firstName')} *</label>
                   <input
                     type="text"
                     name="first_name"
@@ -406,7 +415,7 @@ function RegistrationContent() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tAuth('lastName')} *</label>
                   <input
                     type="text"
                     name="last_name"
@@ -419,22 +428,22 @@ function RegistrationContent() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tAuth('phone')} *</label>
                 <input
                   type="tel"
                   name="phone"
                   value={form.phone}
                   onChange={handleChange}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-base"
-                  placeholder={selectedCountry.code === 'GY' ? '+592 123 4567' : selectedCountry.code === 'JM' ? '+1 876 123 4567' : '+1 555 123 4567'}
+                  placeholder={selectedCountry.code === 'GY' ? '+592 123 4567' : selectedCountry.code === 'CO' ? '+57 300 123 4567' : selectedCountry.code === 'JM' ? '+1 876 123 4567' : '+1 555 123 4567'}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  Include country code (e.g., {selectedCountry.code === 'GY' ? '+592 for Guyana' : selectedCountry.code === 'JM' ? '+1 876 for Jamaica' : `+1 for ${selectedCountry.name}`})
+                  Include country code (e.g., {selectedCountry.code === 'GY' ? '+592 for Guyana' : selectedCountry.code === 'CO' ? '+57 for Colombia' : selectedCountry.code === 'JM' ? '+1 876 for Jamaica' : `+1 for ${selectedCountry.name}`})
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">{tAuth('email')} *</label>
                 <input
                   type="email"
                   name="email"
@@ -447,7 +456,7 @@ function RegistrationContent() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tAuth('password')} *</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
@@ -487,7 +496,7 @@ function RegistrationContent() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tAuth('confirmPassword')} *</label>
                   <div className="relative">
                     <input
                       type={showConfirmPassword ? "text" : "password"}
@@ -750,7 +759,7 @@ function RegistrationContent() {
               onClick={prevStep}
               className="flex-1 py-3 px-4 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
             >
-              Back
+              {tCommon('back')}
             </button>
           )}
 
@@ -759,7 +768,7 @@ function RegistrationContent() {
               onClick={nextStep}
               className="flex-1 py-3 px-4 bg-emerald-600 text-white rounded-lg font-medium hover:bg-emerald-700 transition-colors"
             >
-              Continue
+              {tCommon('next')}
             </button>
           ) : (
             <button
@@ -767,7 +776,7 @@ function RegistrationContent() {
               disabled={loading}
               className="flex-1 py-3 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50"
             >
-              {loading ? "Submitting..." : "Complete Registration"}
+              {loading ? `${tCommon('submit')}...` : tReg('apply')}
             </button>
           )}
         </div>
@@ -779,7 +788,7 @@ function RegistrationContent() {
 
       {/* Footer */}
       <div className="text-center py-6 text-xs text-gray-500">
-        © 2025 Caribbean Home Hub
+        © 2025 {siteName}
       </div>
     </div>
   );

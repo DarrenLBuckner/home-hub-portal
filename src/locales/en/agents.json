@@ -35,7 +35,7 @@
   },
   "registration": {
     "title": "Become an Agent",
-    "subtitle": "Join our network of trusted real estate professionals",
+    "subtitle": "List unlimited properties. Reach diaspora buyers in New York, Toronto & London.",
     "benefits": "Benefits",
     "benefit1": "Access to premium listing features",
     "benefit2": "Connect with qualified buyers and sellers",
@@ -49,7 +49,7 @@
     "alreadyAgent": "Already registered? Sign in"
   },
   "dashboard": {
-    "overview": "Overview",
+    "overview": "Dashboard",
     "myListings": "My Listings",
     "inquiries": "Inquiries",
     "viewings": "Viewings",

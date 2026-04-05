@@ -1,9 +1,15 @@
 "use client";
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { supabase } from "@/supabase";
+import { getSiteName } from '@/lib/country-detection';
 
 function LoginContent() {
+  const t = useTranslations('login');
+  const tForgot = useTranslations('forgotPassword');
+  const tAccounts = useTranslations('accountTypes');
+  const siteName = getSiteName();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -130,9 +136,9 @@ function LoginContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <form onSubmit={handleLogin} className="bg-white p-8 rounded shadow-md w-full max-w-md">
-    <h2 className="text-3xl font-bold mb-6 text-center text-gray-900">Portal Home Hub Login</h2>
+    <h2 className="text-3xl font-bold mb-6 text-center text-gray-900">{siteName} {t('title')}</h2>
         <div className="mb-4">
-          <label className="block mb-2 text-gray-800 font-semibold">Email <span className="text-red-600">*</span></label>
+          <label className="block mb-2 text-gray-800 font-semibold">{t('email')} <span className="text-red-600">*</span></label>
           <input
             type="email"
             className="w-full p-3 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500"
@@ -144,7 +150,7 @@ function LoginContent() {
           />
         </div>
         <div className="mb-4 relative">
-          <label className="block mb-2 text-gray-800 font-semibold">Password <span className="text-red-600">*</span></label>
+          <label className="block mb-2 text-gray-800 font-semibold">{t('password')} <span className="text-red-600">*</span></label>
           <input
             type={showPassword ? 'text' : 'password'}
             className="w-full p-3 border-2 border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-500"
@@ -182,7 +188,7 @@ function LoginContent() {
           className="w-full bg-blue-600 text-white py-3 rounded font-semibold hover:bg-blue-700 transition"
           disabled={loading}
         >
-          {loading ? 'Logging in...' : 'Login'}
+          {loading ? `${t('submit')}...` : t('submit')}
         </button>
         <div className="mt-4 text-center flex flex-col gap-2">
           <button
@@ -190,7 +196,7 @@ function LoginContent() {
             className="text-blue-600 hover:underline text-sm"
             onClick={() => setShowReset(true)}
           >
-            Forgot your password?
+            {t('forgotPassword')}
           </button>
           <a
             href="https://www.portalhomehub.com/register/select-country"
@@ -198,16 +204,16 @@ function LoginContent() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Register as Agent
+            {tAccounts('agent')}
           </a>
            <div className="mt-2 text-center">
              <a href="https://www.portalhomehub.com/register/select-country" className="text-blue-700 hover:underline font-semibold">
-               Register as Landlord
+               {tAccounts('landlord')}
              </a>
            </div>
            <div className="mt-2 text-center">
              <a href="https://www.portalhomehub.com/register/select-country" className="text-orange-700 hover:underline font-semibold">
-               Register as For Sale By Owner
+               {tAccounts('fsbo')}
              </a>
            </div>
         </div>
@@ -216,7 +222,7 @@ function LoginContent() {
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-10">
           <form onSubmit={handleReset} className="bg-white p-6 rounded shadow-md w-full max-w-sm relative">
             <button type="button" className="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onClick={() => { setShowReset(false); setResetStatus(''); }}>&times;</button>
-            <h3 className="text-lg font-bold mb-4">Reset Password</h3>
+            <h3 className="text-lg font-bold mb-4">{tForgot('title')}</h3>
             <input
               type="email"
               className="w-full p-3 border rounded mb-3"
@@ -225,7 +231,7 @@ function LoginContent() {
               required
               placeholder="Enter your email"
             />
-            <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition mb-2">Send Reset Email</button>
+            <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded font-semibold hover:bg-blue-700 transition mb-2">{tForgot('submit')}</button>
             {resetStatus && <div className={`text-sm mt-2 ${resetStatus.includes('sent') ? 'text-green-600' : 'text-red-500'}`}>{resetStatus}</div>}
           </form>
         </div>

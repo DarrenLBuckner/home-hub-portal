@@ -1,3 +1,5 @@
+import { getSiteName } from '@/lib/country-detection';
+
 interface Step6ReviewProps {
   formData: any;
   images: File[];
@@ -5,6 +7,7 @@ interface Step6ReviewProps {
 }
 
 export default function Step6Review({ formData, images, existingImageUrls = [] }: Step6ReviewProps) {
+  const siteName = getSiteName();
   const formatPrice = (price: string) => {
     if (!price || isNaN(Number(price))) return 'Not specified';
     return `GYD ${Number(price).toLocaleString()}`;
@@ -187,7 +190,7 @@ export default function Step6Review({ formData, images, existingImageUrls = [] }
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Your listing will be reviewed by our team within 1-2 business days</li>
           <li>• You'll receive an email notification once it's approved and published</li>
-          <li>• Your property will appear on the Guyana Home Hub website</li>
+          <li>• Your property will appear on the {siteName} website</li>
           <li>• You can edit or manage your listing anytime from your dashboard</li>
           <li>• We'll notify you of any inquiries or interest from potential buyers</li>
         </ul>

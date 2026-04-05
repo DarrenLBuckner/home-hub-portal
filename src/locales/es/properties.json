@@ -4,10 +4,14 @@
     "featured": "Propiedades Destacadas",
     "recent": "Listados Recientes",
     "forSale": "En Venta",
-    "forRent": "En Alquiler",
+    "forRent": "Se Arrienda",
     "sold": "Vendido",
     "rented": "Alquilado",
-    "pending": "Pendiente"
+    "pending": "Pendiente",
+    "underContract": "Bajo Contrato",
+    "draft": "Borrador",
+    "addNew": "Agregar Propiedad",
+    "noListings": "No se encontraron listados en esta categoria."
   },
   "propertyTypes": {
     "all": "Todos los Tipos",
@@ -31,7 +35,7 @@
     "sqft": "pies cuadrados",
     "sqm": "metros cuadrados",
     "yearBuilt": "Ano de Construccion",
-    "parking": "Estacionamiento",
+    "parking": "Parqueadero",
     "garage": "Garaje",
     "pool": "Piscina",
     "garden": "Jardin",

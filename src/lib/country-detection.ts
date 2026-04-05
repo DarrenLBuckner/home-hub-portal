@@ -1,4 +1,4 @@
-import { CountryCode } from './country-theme';
+import { CountryCode, countryThemes } from './country-theme';
 
 export function getCountryFromDomain(hostname: string): CountryCode {
   if (hostname.includes('jamaica')) {
@@ -26,4 +26,10 @@ export function getCountryFromCookies(): CountryCode {
   
   // Fallback to hostname detection
   return getCountryFromDomain(window.location.hostname);
+}
+
+// Returns the territory display name. SSR-safe: returns neutral fallback on server.
+export function getSiteName(): string {
+  if (typeof window === 'undefined') return 'Portal Home Hub';
+  return countryThemes[getCountryFromCookies()]?.name || 'Portal Home Hub';
 }

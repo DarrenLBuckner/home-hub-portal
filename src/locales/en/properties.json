@@ -7,7 +7,11 @@
     "forRent": "For Rent",
     "sold": "Sold",
     "rented": "Rented",
-    "pending": "Pending"
+    "pending": "Pending",
+    "underContract": "Under Contract",
+    "draft": "Draft",
+    "addNew": "Add New Property",
+    "noListings": "No listings found in this category."
   },
   "propertyTypes": {
     "all": "All Types",

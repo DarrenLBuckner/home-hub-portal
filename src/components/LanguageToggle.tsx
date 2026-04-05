@@ -4,12 +4,21 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'es', label: 'Espanol', flag: '🇪🇸' },
-] as const;
+type LanguageCode = 'en' | 'es';
 
-type LanguageCode = (typeof SUPPORTED_LANGUAGES)[number]['code'];
+interface LanguageEntry {
+  code: LanguageCode;
+  label: string;
+  flag: string;
+}
+
+function buildLanguages(countryCode: string | undefined): LanguageEntry[] {
+  const spanishFlag = countryCode === 'CO' ? '🇨🇴' : '🇪🇸';
+  return [
+    { code: 'en', label: 'English', flag: '🇺🇸' },
+    { code: 'es', label: 'Espanol', flag: spanishFlag },
+  ];
+}
 
 interface LanguageToggleProps {
   className?: string;
@@ -21,8 +30,9 @@ export function LanguageToggle({ className = '', variant = 'button' }: LanguageT
   const [currentLang, setCurrentLang] = useState<LanguageCode>('en');
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [languages, setLanguages] = useState<LanguageEntry[]>(buildLanguages(undefined));
 
-  // Get current language from cookie on mount
+  // Get current language and country from cookies on mount
   useEffect(() => {
     setMounted(true);
     const preferredLocale = document.cookie
@@ -35,6 +45,12 @@ export function LanguageToggle({ className = '', variant = 'button' }: LanguageT
       .find(row => row.startsWith('territory-language='))
       ?.split('=')[1] as LanguageCode | undefined;
 
+    const countryCode = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('country-code='))
+      ?.split('=')[1];
+
+    setLanguages(buildLanguages(countryCode));
     setCurrentLang(preferredLocale || territoryLanguage || 'en');
   }, []);
 
@@ -53,8 +69,8 @@ export function LanguageToggle({ className = '', variant = 'button' }: LanguageT
     return null;
   }
 
-  const currentLanguage = SUPPORTED_LANGUAGES.find(l => l.code === currentLang) || SUPPORTED_LANGUAGES[0];
-  const otherLanguage = SUPPORTED_LANGUAGES.find(l => l.code !== currentLang) || SUPPORTED_LANGUAGES[1];
+  const currentLanguage = languages.find(l => l.code === currentLang) || languages[0];
+  const otherLanguage = languages.find(l => l.code !== currentLang) || languages[1];
 
   // Compact variant - just a simple toggle button
   if (variant === 'compact') {
@@ -115,7 +131,7 @@ export function LanguageToggle({ className = '', variant = 'button' }: LanguageT
             className="absolute right-0 mt-2 w-40 rounded-lg bg-white shadow-lg border border-gray-200 z-20"
             role="listbox"
           >
-            {SUPPORTED_LANGUAGES.map((lang) => (
+            {languages.map((lang) => (
               <button
                 key={lang.code}
                 onClick={() => toggleLanguage(lang.code)}

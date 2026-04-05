@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { createClient } from '@/supabase';
+import { getSiteName } from '@/lib/country-detection';
 import CompletionIncentive, { CompletionProgress } from "@/components/CompletionIncentive";
 import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUtils";
 import { normalizePropertyData, getPropertyTypeLabel, getAmenityLabels } from "@/lib/propertyNormalization";
@@ -64,6 +65,7 @@ interface FormData {
 }
 
 export default function EditAgentProperty() {
+  const siteName = getSiteName();
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -627,7 +629,7 @@ export default function EditAgentProperty() {
       
       // Enhanced success message with details
       const successMessage = result.status === 'active' 
-        ? '✅ Property updated successfully! Your listing remains live on Guyana Home Hub.'
+        ? `✅ Property updated successfully! Your listing remains live on ${siteName}.`
         : result.status === 'pending'
         ? '✅ Property updated successfully! Changes are pending admin approval.'
         : `✅ Property updated successfully! ${images.length > 0 ? `${images.length} new images uploaded.` : ''}`;

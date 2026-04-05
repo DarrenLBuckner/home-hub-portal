@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/supabase';
 import Link from 'next/link';
+import { getSiteName } from '@/lib/country-detection';
 
 // ── Question Options (all tap-based, no typing required) ──
 
@@ -208,6 +209,7 @@ interface Answers {
 }
 
 export default function BioBuilderPage() {
+  const siteName = getSiteName();
   const [showIntro, setShowIntro] = useState(true);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState<Answers>({
@@ -434,7 +436,7 @@ export default function BioBuilderPage() {
             Your professional bio is now visible on your public agent profile.
           </p>
           <p className="text-gray-500 text-sm mb-4">
-            Every client who visits your profile on Guyana HomeHub will now see a polished, professional bio that builds trust and shows them exactly why they should work with you.
+            Every client who visits your profile on {siteName} will now see a polished, professional bio that builds trust and shows them exactly why they should work with you.
           </p>
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 text-left">
             <p className="text-amber-800 text-sm">
@@ -598,7 +600,7 @@ export default function BioBuilderPage() {
             <div className="mb-8">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Here&apos;s what we&apos;re doing and why</h2>
               <p className="text-gray-600 leading-relaxed mb-4">
-                We&apos;re building you a professional bio that goes on your public profile — the page buyers see when they find you on Guyana HomeHub. Right now, clients who visit your profile see your name, your listings, and not much else. That&apos;s a missed opportunity.
+                We&apos;re building you a professional bio that goes on your public profile — the page buyers see when they find you on {siteName}. Right now, clients who visit your profile see your name, your listings, and not much else. That&apos;s a missed opportunity.
               </p>
               <p className="text-gray-600 leading-relaxed">
                 A strong bio tells your story, shows your expertise, and gives buyers a reason to choose <strong>you</strong> over every other agent on the platform. We&apos;re going to build that for you — all you have to do is tap a few answers.

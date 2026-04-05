@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/supabase";
+import { getSiteName } from '@/lib/country-detection';
 import { getActiveCountries } from "@/lib/countries";
 import UniversalPropertyManager from "@/components/UniversalPropertyManager";
 import FoundingAdvisorBadge from "@/components/FoundingAdvisorBadge";
@@ -11,6 +12,7 @@ import TrainingResourcesCard from "@/components/TrainingResourcesCard";
 import AccountStatusBanner from "@/components/AccountStatusBanner";
 
 export default function LandlordDashboard() {
+  const siteName = getSiteName();
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [subscription, setSubscription] = useState<{
@@ -244,7 +246,7 @@ export default function LandlordDashboard() {
         <div className="bg-white rounded-xl shadow-xl p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8">
           <div className="text-center mb-4 sm:mb-6">
             <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2">Rental Property Management</h2>
-            <p className="text-sm sm:text-base text-gray-600">Create and manage your rental listings on Guyana Home Hub</p>
+            <p className="text-sm sm:text-base text-gray-600">Create and manage your rental listings on {siteName}</p>
           </div>
           
           {subscription?.status === "active" ? (

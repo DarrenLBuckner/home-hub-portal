@@ -1,4 +1,5 @@
 import { OwnershipAttestationFull } from "@/components/OwnershipAttestation";
+import { getSiteName } from '@/lib/country-detection';
 
 interface Step6ReviewProps {
   formData: any;
@@ -7,6 +8,7 @@ interface Step6ReviewProps {
 }
 
 export default function Step6Review({ formData, images, countryCode = 'GY' }: Step6ReviewProps) {
+  const siteName = getSiteName();
   const handleOwnershipChange = (checked: boolean) => {
     formData.confirms_ownership = checked;
     // Trigger parent component state update
@@ -184,7 +186,7 @@ export default function Step6Review({ formData, images, countryCode = 'GY' }: St
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Your listing will be reviewed by our team within 1-2 business days</li>
           <li>• You'll receive an email notification once it's approved and published</li>
-          <li>• Your property will appear on the Guyana Home Hub website</li>
+          <li>• Your property will appear on the {siteName} website</li>
           <li>• You can edit or manage your listing anytime from your dashboard</li>
           <li>• We'll notify you of any inquiries or interest from potential buyers</li>
         </ul>

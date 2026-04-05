@@ -12,12 +12,15 @@ import BioCompletionBanner from '@/components/BioCompletionBanner';
 import { Inter } from 'next/font/google';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/supabase';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 export default function AgentPage() {
   const router = useRouter();
+  const t = useTranslations('dashboard');
+  const tProperties = useTranslations('properties');
   const [activeSection, setActiveSection] = useState('dashboard');
   const [userId, setUserId] = useState<string | null>(null);
   const [userType, setUserType] = useState<string | null>(null);
@@ -116,10 +119,10 @@ export default function AgentPage() {
                 </svg>
               </div>
               <div className="hidden sm:block">
-                <h1 className="text-xl font-semibold text-gray-900">Agent Dashboard</h1>
+                <h1 className="text-xl font-semibold text-gray-900">{t('overview')}</h1>
               </div>
               <div className="sm:hidden">
-                <h1 className="text-lg font-semibold text-gray-900">Agent</h1>
+                <h1 className="text-lg font-semibold text-gray-900">{t('overview')}</h1>
               </div>
             </div>
             {agentWhatsapp && (
@@ -139,9 +142,9 @@ export default function AgentPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex space-x-1 sm:space-x-2 py-3">
             {([
-              { id: 'dashboard', label: 'Dashboard', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" /></svg> },
-              { id: 'properties', label: 'Properties', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
-              { id: 'settings', label: 'Settings', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
+              { id: 'dashboard', label: t('overview'), icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" /></svg> },
+              { id: 'properties', label: t('myListings'), icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
+              { id: 'settings', label: t('settings'), icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
             ] as { id: string; label: string; icon: React.ReactNode }[]).map(section => (
               <button
                 key={section.id}
@@ -191,10 +194,10 @@ export default function AgentPage() {
               <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-4 sm:p-6">
                 <h2 className="text-xl sm:text-2xl font-semibold text-white flex items-center space-x-2">
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                  <span>My Properties</span>
+                  <span>{t('myListings')}</span>
                 </h2>
                 <p className="text-emerald-100 text-sm sm:text-base mt-1">
-                  Manage your agent property portfolio
+                  {tProperties('title')}
                 </p>
               </div>
               <div className="p-4 sm:p-6">
@@ -205,7 +208,7 @@ export default function AgentPage() {
             <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 lg:p-8">
               <div className="max-w-2xl mx-auto text-center">
                 <svg className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg>
-                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">Agent Feature</h2>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-4">{t('myListings')}</h2>
                 <p className="text-gray-600 mb-6 text-sm sm:text-base">
                   Property management is available for licensed real estate agents only.
                 </p>
