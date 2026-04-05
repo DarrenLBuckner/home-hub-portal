@@ -22,12 +22,6 @@ export default function PortalMarketingNav() {
             {/* Navigation Links */}
             <div className="hidden md:flex items-center space-x-6">
               <Link
-                href="/services"
-                className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Professional Services
-              </Link>
-              <Link
                 href="/franchise"
                 className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
