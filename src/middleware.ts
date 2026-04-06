@@ -231,13 +231,13 @@ export async function middleware(request: NextRequest) {
       return NextResponse.rewrite(maintenanceUrl);
     }
 
-    // Note: 'pending' territories can still be accessed for testing
-    // Uncomment the following to show coming soon page for pending territories:
-    // if (territory.status === 'pending') {
-    //   console.log(`⏳ MIDDLEWARE: Territory ${country} is pending, showing coming soon`);
-    //   const comingSoonUrl = new URL('/coming-soon', request.url);
-    //   return NextResponse.rewrite(comingSoonUrl);
-    // }
+    // Show coming-soon page for pending territories on the consumer site only.
+    // Portal users (portalhomehub.com) can still log in regardless of territory status.
+    if (siteType === 'public' && territory.status === 'pending') {
+      console.log(`⏳ MIDDLEWARE: Territory ${country} is pending, showing coming soon`);
+      const comingSoonUrl = new URL('/coming-soon', request.url);
+      return NextResponse.rewrite(comingSoonUrl);
+    }
   }
 
   let response = NextResponse.next({
