@@ -27,6 +27,12 @@ export default function PortalMarketingNav() {
               >
                 Partnership Opportunities
               </Link>
+              <Link
+                href="/founder"
+                className="text-slate-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Our Founder
+              </Link>
             </div>
           </div>
 
