@@ -262,7 +262,7 @@ export default function AgentProfileClient({ agent, listings, vetting, slug }: A
                     )}
                     <div className="absolute top-3 left-3">
                       <span className="bg-emerald-600 text-white px-2 py-1 rounded text-xs font-medium">
-                        {listing.listing_type === 'rent' ? 'For Rent' : 'For Sale'}
+                        {listing.listing_type === 'rent' ? 'For Rent' : listing.listing_type === 'lease' ? 'For Lease' : 'For Sale'}
                       </span>
                     </div>
                   </div>

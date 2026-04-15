@@ -73,7 +73,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
     };
   }
 
-  const listingTypeText = property.listing_type === 'rent' ? 'For Rent' : 'For Sale';
+  const listingTypeText = property.listing_type === 'rent' ? 'For Rent' : property.listing_type === 'lease' ? 'For Lease' : 'For Sale';
   const currencySymbol = property.currency === 'USD' ? '$' : property.currency === 'GYD' ? 'GY$' : property.currency;
   const priceText = property.price ? `${currencySymbol}${property.price.toLocaleString()}` : '';
   
