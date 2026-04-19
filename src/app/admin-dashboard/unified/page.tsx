@@ -1140,6 +1140,14 @@ export default function UnifiedAdminDashboard() {
             )}
           </button>
 
+          {/* Service Providers (Amber) — separate route */}
+          <Link
+            href="/admin-dashboard/service-providers"
+            className="px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors bg-amber-50 text-amber-700 hover:bg-amber-100"
+          >
+            🧰 Service Providers
+          </Link>
+
           {/* PRIORITY 4: User Management - Administrative Tasks */}
           {permissions?.canAccessUserManagement && (
             <button
