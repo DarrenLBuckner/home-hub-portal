@@ -10,6 +10,23 @@ import { normalizePhoneNumber } from '@/lib/phoneUtils';
 import { geocodeAddress } from '@/lib/geocoding';
 import { generateAltTextBatch } from '@/lib/ai/generateAltText';
 
+function sanitizeVideoUrl(url: string | undefined | null): string | null {
+  if (!url) return null;
+  const trimmed = String(url).trim();
+  if (!trimmed || trimmed.length < 10) return null;
+  if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) return null;
+  const lowerUrl = trimmed.toLowerCase();
+  if (lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be') || lowerUrl.includes('vimeo.com')) {
+    return trimmed;
+  }
+  try {
+    new URL(trimmed);
+    return trimmed;
+  } catch {
+    return null;
+  }
+}
+
 export async function PUT(
   request: Request,
   { params }: { params: { id: string } }
@@ -120,6 +137,7 @@ export async function PUT(
       utilities_included: body.utilities_included || null,
       pet_policy: body.pet_policy || null,
       available_from: body.available_from || null,
+      video_url: sanitizeVideoUrl(body.video_url),
     };
 
     // Auto-geocode if coordinates are missing
