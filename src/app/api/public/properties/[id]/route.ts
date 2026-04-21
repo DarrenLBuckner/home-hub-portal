@@ -11,24 +11,18 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = await params
-    
+    const { id: idOrSlug } = await params
+
     // Get site_id from headers (sent by Guyana proxy)
     const siteId = request.headers.get('x-site-id') || 'guyana'
 
-    // Validate UUID format
+    // Accept either a UUID or a slug. Branch the lookup column based on shape so
+    // Supabase column-types narrow correctly (a variable-column .eq() collapses
+    // the row type to `never`).
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
-      return NextResponse.json(
-        { error: 'Invalid property ID format' },
-        { status: 400 }
-      );
-    }
+    const isUuid = uuidRegex.test(idOrSlug);
 
-    // Step 1: Fetch the property (single row) - NO JOINS to avoid .single() issues
-    const { data: property, error: propertyError } = await supabase
-      .from('properties')
-      .select(`
+    const selectClause = `
         *,
         profiles!properties_user_id_fkey (
           id,
@@ -44,11 +38,13 @@ export async function GET(
           is_verified_agent,
           is_premium_agent
         )
-      `)
-      .eq('id', id)
-      .eq('site_id', siteId)
-      .in('status', ['active', 'under_contract', 'off_market', 'sold', 'rented'])
-      .single()
+      `;
+    const statuses = ['active', 'under_contract', 'off_market', 'sold', 'rented'];
+
+    // Step 1: Fetch the property (single row) - NO JOINS to avoid .single() issues
+    const { data: property, error: propertyError } = isUuid
+      ? await supabase.from('properties').select(selectClause).eq('id', idOrSlug).eq('site_id', siteId).in('status', statuses).single()
+      : await supabase.from('properties').select(selectClause).eq('slug', idOrSlug).eq('site_id', siteId).in('status', statuses).single();
 
     if (propertyError) {
       console.error('Property fetch error:', propertyError);
@@ -66,10 +62,11 @@ export async function GET(
     }
 
     // Step 2: Fetch property images separately (multiple rows)
+    // Use property.id (the real UUID) because idOrSlug above may be a slug.
     const { data: media, error: mediaError } = await supabase
       .from('property_media')
       .select('media_url, media_type, display_order, is_primary, alt_text')
-      .eq('property_id', id)
+      .eq('property_id', property.id)
       .order('display_order', { ascending: true })
 
     if (mediaError) {

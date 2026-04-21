@@ -67,6 +67,38 @@ function sanitizeEmail(email: string | undefined | null): string | null {
   return trimmed;
 }
 
+function slugify(s: string | undefined | null): string {
+  if (!s) return '';
+  return String(s)
+    .toLowerCase()
+    .replace(/&/g, 'and')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Build a property slug in the format:
+ *   [property-type]-for-[listing-type]-[neighborhood-city]-[uuid-suffix]
+ * Location uses neighborhood + city (region and address intentionally excluded —
+ * address is inconsistent across listings and produces messy slugs).
+ */
+function buildPropertySlug(opts: {
+  property_type?: string | null;
+  listing_type?: string | null;
+  neighborhood?: string | null;
+  city?: string | null;
+  id: string;
+  idSuffixLength?: number;
+}): string {
+  const type = slugify(opts.property_type) || 'property';
+  const listing = slugify(opts.listing_type) || 'sale';
+  const locRaw = [opts.neighborhood, opts.city].filter(Boolean).join(' ');
+  const loc = slugify(locRaw);
+  const suffixLen = opts.idSuffixLength ?? 8;
+  const shortId = opts.id.slice(0, suffixLen);
+  return [type, 'for', listing, loc, shortId].filter(Boolean).join('-');
+}
+
 export const runtime = 'nodejs'; // avoid Edge runtime issues
 export const maxDuration = 60; // Allow up to 60 seconds for image processing
 // Note: Vercel free tier has 4.5MB body limit, Pro has 4.5MB, Enterprise can go higher
@@ -913,6 +945,19 @@ export async function POST(req: NextRequest) {
       };
     }
 
+    // Pre-generate the property id so we can compute a deterministic slug before INSERT.
+    // Prior behavior relied on a DB trigger that was dropped in early March 2026; restoring
+    // in app code is more reliable than depending on DB state.
+    const propertyId = crypto.randomUUID();
+    propertyData.id = propertyId;
+    propertyData.slug = buildPropertySlug({
+      property_type: propertyData.property_type,
+      listing_type: propertyData.listing_type,
+      neighborhood: propertyData.neighborhood,
+      city: propertyData.city,
+      id: propertyId,
+    });
+
     // Auto-geocode if agent didn't provide coordinates
     if (!propertyData.latitude && !propertyData.longitude) {
       const coords = await geocodeAddress({
@@ -948,11 +993,33 @@ export async function POST(req: NextRequest) {
     // Use admin client when creating on behalf of another user to bypass RLS
     // (RLS checks auth.uid() = user_id, which fails when admin sets user_id to the target agent)
     const insertClient = isAdminCreatingForUser ? createAdminClient() : supabase;
-    const { data: propertyResult, error: dbError } = await insertClient
+    let insertResult = await insertClient
       .from("properties")
       .insert(propertyData)
       .select('id')
       .single();
+
+    // Retry once on slug unique-violation using the full UUID as suffix.
+    // Postgres unique_violation = '23505'. The 8-char prefix has ~2^32 space so
+    // collisions are vanishingly rare at current scale, but the brief requires
+    // fallback handling.
+    if (insertResult.error && insertResult.error.code === '23505' && /slug/i.test(insertResult.error.message || '')) {
+      propertyData.slug = buildPropertySlug({
+        property_type: propertyData.property_type,
+        listing_type: propertyData.listing_type,
+        neighborhood: propertyData.neighborhood,
+        city: propertyData.city,
+        id: propertyId,
+        idSuffixLength: 36, // full UUID
+      });
+      insertResult = await insertClient
+        .from("properties")
+        .insert(propertyData)
+        .select('id')
+        .single();
+    }
+
+    const { data: propertyResult, error: dbError } = insertResult;
       
     if (dbError) {
       console.error('💥💥💥 PROPERTY CREATION ERROR 💥💥💥');

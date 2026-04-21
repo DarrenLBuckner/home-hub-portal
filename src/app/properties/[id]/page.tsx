@@ -2,17 +2,17 @@ import { createAdminClient } from '@/supabase-admin';
 import { notFound } from 'next/navigation';
 import PropertyDetailClient from '@/components/PropertyDetailClient';
 
-export default async function PropertyDetailPage({ 
-  params 
-}: { 
-  params: { id: string } 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export default async function PropertyDetailPage({
+  params
+}: {
+  params: { id: string }
 }) {
   const supabase = createAdminClient();
-  
-  // Fetch property with owner information
-  const { data: property, error } = await supabase
-    .from('properties')
-    .select(`
+  const isUuid = UUID_REGEX.test(params.id);
+
+  const selectClause = `
       *,
       owner:profiles!properties_user_id_fkey (
         id,
@@ -28,10 +28,14 @@ export default async function PropertyDetailPage({
         display_order,
         is_primary
       )
-    `)
-    .eq('id', params.id)
-    .in('status', ['active', 'under_contract', 'off_market', 'sold', 'rented'])
-    .single();
+    `;
+  const statuses = ['active', 'under_contract', 'off_market', 'sold', 'rented'];
+
+  // Branch on shape so Supabase column-types narrow correctly (variable-column
+  // .eq() loses schema inference and collapses the row type to `never`).
+  const { data: property, error } = isUuid
+    ? await supabase.from('properties').select(selectClause).eq('id', params.id).in('status', statuses).single()
+    : await supabase.from('properties').select(selectClause).eq('slug', params.id).in('status', statuses).single();
 
   if (error || !property) {
     notFound();
@@ -60,12 +64,12 @@ export default async function PropertyDetailPage({
 // SEO metadata
 export async function generateMetadata({ params }: { params: { id: string } }) {
   const supabase = createAdminClient();
-  
-  const { data: property } = await supabase
-    .from('properties')
-    .select('title, description, price, city, listing_type, currency')
-    .eq('id', params.id)
-    .single();
+  const isUuid = UUID_REGEX.test(params.id);
+
+  const selectClause = 'title, description, price, city, listing_type, currency';
+  const { data: property } = isUuid
+    ? await supabase.from('properties').select(selectClause).eq('id', params.id).single()
+    : await supabase.from('properties').select(selectClause).eq('slug', params.id).single();
 
   if (!property) {
     return {
