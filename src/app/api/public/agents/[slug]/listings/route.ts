@@ -33,6 +33,7 @@ export async function GET(
         bathrooms,
         location,
         status,
+        images,
         property_media!property_media_property_id_fkey (
           media_url,
           media_type,
@@ -50,19 +51,22 @@ export async function GET(
     }
 
     const results = (listings ?? []).map((property: any) => {
-      const images = (property.property_media ?? [])
+      const mediaImages = (property.property_media ?? [])
         .filter((m: any) => m.media_type === 'image')
         .sort((a: any, b: any) => {
           if (a.is_primary && !b.is_primary) return -1
           if (!a.is_primary && b.is_primary) return 1
           return a.display_order - b.display_order
         })
+        .map((m: any) => m.media_url)
+      const legacyImages = Array.isArray(property.images) ? property.images : []
+      const thumbnail = legacyImages[0] ?? mediaImages[0] ?? null
       return {
         id: property.id,
         title: property.title,
         slug: property.slug,
         price: property.price,
-        thumbnail: images[0]?.media_url ?? null,
+        thumbnail,
         beds: property.bedrooms,
         baths: property.bathrooms,
         location: property.location,
