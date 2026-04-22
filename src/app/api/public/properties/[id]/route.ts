@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// TODO: rate limit 60/IP/min
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -37,6 +39,13 @@ export async function GET(
           is_founding_advisor,
           is_verified_agent,
           is_premium_agent
+        ),
+        property_media!property_media_property_id_fkey (
+          media_url,
+          media_type,
+          display_order,
+          is_primary,
+          alt_text
         )
       `;
     const statuses = ['active', 'under_contract', 'off_market', 'sold', 'rented'];
@@ -61,19 +70,8 @@ export async function GET(
       );
     }
 
-    // Step 2: Fetch property images separately (multiple rows)
-    // Use property.id (the real UUID) because idOrSlug above may be a slug.
-    const { data: media, error: mediaError } = await supabase
-      .from('property_media')
-      .select('media_url, media_type, display_order, is_primary, alt_text')
-      .eq('property_id', property.id)
-      .order('display_order', { ascending: true })
-
-    if (mediaError) {
-      console.error('Media fetch error:', mediaError);
-      // Don't fail the entire request if media fetch fails
-      // Return property with empty images array
-    }
+    // Step 2: extract embedded media from property row
+    const media = property.property_media ?? [];
 
     // Step 3: Transform and combine data
     // Prefer images from the property.images column if present
@@ -205,7 +203,7 @@ export async function GET(
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
       }
     });
   } catch (error) {
