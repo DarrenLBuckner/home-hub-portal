@@ -119,8 +119,8 @@ export async function PUT(
       neighborhood: body.neighborhood || null,
       address: body.address || null,
       show_address: body.show_address ?? false,
-      latitude: body.latitude ? parseFloat(body.latitude) : null,
-      longitude: body.longitude ? parseFloat(body.longitude) : null,
+      // latitude/longitude intentionally omitted here — set conditionally below
+      // so an edit that doesn't include coords doesn't blow away existing DB values.
       site_id: body.site_id || (body.country === 'JM' ? 'jamaica' : 'guyana'),
 
       // Step 4 - Currency
@@ -140,18 +140,45 @@ export async function PUT(
       video_url: sanitizeVideoUrl(body.video_url),
     };
 
-    // Auto-geocode if coordinates are missing
-    if (!updateData.latitude && !updateData.longitude) {
-      const coords = await geocodeAddress({
-        address: body.address,
-        neighborhood: body.neighborhood,
-        city: body.city || body.region,
-        region: body.region,
-        country: body.country,
-      });
-      if (coords) {
-        updateData.latitude = coords.lat;
-        updateData.longitude = coords.lng;
+    // Apply lat/lng from the request body only when explicitly provided.
+    // (Empty string and null mean "client didn't send coords" — leave DB alone.)
+    const bodyLat = parseFloat(body.latitude);
+    const bodyLng = parseFloat(body.longitude);
+    const bodyHasCoords = Number.isFinite(bodyLat) && Number.isFinite(bodyLng);
+    if (bodyHasCoords) {
+      updateData.latitude = bodyLat;
+      updateData.longitude = bodyLng;
+    }
+
+    // Auto-geocode only when:
+    //   1. The client didn't send coords, AND
+    //   2. The property doesn't already have coords in the DB, AND
+    //   3. We actually have address fields to work with.
+    // This prevents the previous behavior of re-geocoding on every save (which billed
+    // 1–3 Geocoding API calls per edit even when nothing about the address changed).
+    const hasAddressFields = !!(
+      body.address || body.neighborhood || body.city || body.region
+    );
+    if (!bodyHasCoords && hasAddressFields) {
+      const adminSupabase = createAdminClient();
+      const { data: existing } = await adminSupabase
+        .from('properties')
+        .select('latitude, longitude')
+        .eq('id', propertyId)
+        .single() as { data: { latitude: number | null; longitude: number | null } | null };
+
+      if (existing && existing.latitude == null && existing.longitude == null) {
+        const coords = await geocodeAddress({
+          address: body.address,
+          neighborhood: body.neighborhood,
+          city: body.city || body.region,
+          region: body.region,
+          country: body.country,
+        });
+        if (coords) {
+          updateData.latitude = coords.lat;
+          updateData.longitude = coords.lng;
+        }
       }
     }
 
