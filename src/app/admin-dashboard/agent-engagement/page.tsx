@@ -68,73 +68,68 @@ The {{site_name}} Team`,
   {
     id: 'inactive-15-days',
     name: '15 Day Check-in',
-    subject: 'Quick check-in - Your {{site_name}} Account',
+    subject: '{{first_name}} — you have 0 listings on {{site_name}}',
     body: `Hi {{first_name}},
 
-It's been {{days_inactive}} days since you joined {{site_name}}, and we wanted to check in!
+You registered {{days_inactive}} days ago and have not posted a single property yet.
 
-We noticed your account doesn't have any active listings yet. Your fellow agents are already getting leads and connecting with buyers - we'd love to see you get started too.
+One question: what is stopping you?
 
-Getting your first listing up is simple:
-- Log in at {{login_url}}
-- Click "Add New Property" from your dashboard
-- Add your property details and photos
-- Submit for review
+A) I do not have listings ready right now
+B) I need help with the upload process
+C) I forgot — I will log in now
+D) I am still using Facebook for now
 
-Properties typically go live within 24 hours of submission. The sooner you list, the sooner you start getting leads!
+Reply with A, B, C, or D. Takes 10 seconds. I will respond the same day.
 
-Need help? Reply to this email or contact our support team.
+Log in here: {{login_url}}
 
-Best regards,
-The {{site_name}} Team`,
+— Alphius Bookie
+Guyana HomeHub Operations
+bookie@guyanahomehub.com`,
   },
   {
     id: 'inactive-30-days',
     name: '30 Day Final Notice',
-    subject: 'Your {{site_name}} account - action needed',
+    subject: '{{first_name}} — your Guyana HomeHub account is at risk',
     body: `Hi {{first_name}},
 
-It's been {{days_inactive}} days since you signed up for {{site_name}}, and your account still has no active listings.
+It has been {{days_inactive}} days since you registered. Your account still has zero listings.
 
-We want to make sure you're getting the most out of your membership. If you're having trouble getting started, we're here to help!
+Agents on this platform are generating buyer inquiries right now. You are registered but invisible — no listings means no leads, no exposure, no business.
 
-Here's what you can do:
-- Log in now: {{login_url}}
-- Watch our quick tutorial on posting your first property
-- Contact our support team for one-on-one help
+You have 14 days to post at least one active listing before your account is moved to inactive status. Once inactive, your spot in the agent directory goes to someone ready to use it.
 
-Your account is still active, but we'd love to see you start listing properties and growing your business on {{site_name}}.
+If you want to stay active:
+→ Log in now: {{login_url}}
+→ Post your first listing — it takes less than 5 minutes
+→ Watch the tutorial if you need help: https://youtu.be/Q_GFflHQjE0
 
-Best regards,
-The {{site_name}} Team`,
+If something is blocking you, reply to this email. I will personally help you get your first listing live today.
+
+— Alphius Bookie
+Guyana HomeHub Operations
+bookie@guyanahomehub.com`,
   },
   {
     id: 'training-video',
     name: 'Training Video (Re-send)',
-    subject: 'Quick Tutorial: Post Your First Property in Minutes',
+    subject: '{{first_name}} — post your first listing in under 5 minutes',
     body: `Hi {{first_name}},
 
-We wanted to share our quick tutorial video that shows you exactly how to post your first property on {{site_name}} in just a few minutes.
+Some agents told us they were not sure where to start. So we recorded exactly how to post a listing from start to finish.
 
-The process is straightforward:
-1. Log in to your dashboard: {{login_url}}
-2. Click "Add New Property"
-3. Fill in the details - title, description, price, location
-4. Upload high-quality photos (at least 3-5 recommended)
-5. Submit for review
+Watch it here: https://youtu.be/Q_GFflHQjE0
 
-That's it! Our team will review your listing and have it live within 24 hours.
+It takes less than 5 minutes. Your listing goes live immediately after approval.
 
-Pro tips for a great listing:
-- Use clear, well-lit photos
-- Write a detailed description highlighting key features
-- Set a competitive price for your area
-- Include accurate location information
+Facebook is free to post — but not free to succeed. Your listings on Guyana HomeHub reach diaspora buyers in New York, Toronto, and London. Facebook does not.
 
-Ready to get started? Log in now: {{login_url}}
+Log in now and post your first property: {{login_url}}
 
-Best regards,
-The {{site_name}} Team`,
+Questions? Reply to this email.
+
+— The {{site_name}} Team`,
   },
 ];
 
