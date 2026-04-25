@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from 'next/headers';
 import "./globals.css";
 import AuthNavBar from '../components/AuthNavBar';
 import Link from 'next/link';
@@ -30,6 +31,22 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const country = await getCountryFromHeaders();
   const locale = await getLocale();
   const messages = await getMessages();
+  const headersList = await headers();
+  const pathname = headersList.get('x-pathname') || '';
+  const isMinimalChrome = pathname.startsWith('/ai-context/');
+
+  if (isMinimalChrome) {
+    return (
+      <html lang={locale}>
+        <head>
+          <meta name="robots" content="noindex, nofollow" />
+        </head>
+        <body className="antialiased" style={{ margin: 0, background: '#ffffff' }}>
+          {children}
+        </body>
+      </html>
+    );
+  }
 
   return (
     <html lang={locale}>
