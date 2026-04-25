@@ -79,3 +79,6 @@ test-*.ts
 
 # Talon voice commands
 *.talon
+
+# Claude Code per-user settings (permissions allowlist) — should not be shared
+.claude/settings.local.json
