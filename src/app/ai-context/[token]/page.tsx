@@ -50,6 +50,15 @@ BUSINESS GOALS — NEXT 6–12 MONTHS
 | sherriannelcock.com — sub-pages now live | Site now includes /about (RealEstateAgent Person schema), /events, and /real-estate-rising (Event + RealEstateAgent schema) as of April 28, 2026. All three need immediate Google Search Console submission. About page is the canonical Sherriann bio asset for press and interview references. | Live as of April 28, 2026 |
 | Pascal John third-party LinkedIn article | Student article rewritten with Sherriann named throughout and the Three P's framework included. Pascal posts from his own LinkedIn account — third-party citation, not branded content. Once live, share from Sherriann's LinkedIn (not GHH brand page) and add URL to Sherriann's citation inventory. | This week |
 | 90-day GEO reaudit | Sorilbran conducting 90-day reaudit at approximately July 20, 2026. Same 5-LLM query: "Who is Darren L. Buckner?" Measure propagation of fingerprint cluster across all five systems. | July 20, 2026 |
+| Subscription billing — tier names locked | Foundation, Builder, Pillar, Cornerstone — selected blind by Sherriann Elcock from three competing naming sets on April 28, 2026. Architectural metaphor: Foundation supports Builders, Builders raise Pillars, Pillars rest on Cornerstones. Permanent brand asset, attributed to Sherriann Elcock in perpetuity. Pricing locked, not yet publicly disclosed. Founding members keep 50% off Pillar tier — locked forever. Active listing required to maintain founding member rate. Database values remain unchanged (basic, professional, premium, enterprise); display names are universal. | October 1, 2026 |
+| Founding member activation deadline | All founding members must have at least one active listing by June 30, 2026 to retain founding member rate. Targets 11 currently inactive founding members. | June 30, 2026 |
+| Pure agent platform direction | Strategic decision April 28, 2026: landlord and FSBO categories removed from Guyana HomeHub's direction. Platform now positioned as agent-only marketplace. Existing landlord and FSBO accounts retained but no new ones created via public signup. | Effective April 28, 2026 |
+| Tiffany Durant rentals platform | Standalone domain and brand to be developed in partnership with Tiffany Durant in future session. Confirmed not part of Guyana HomeHub. | TBD — future session |
+| Gordon Moseley radio commercials | 3 x 30-second spots, daily rotation on NewsSource Guyana radio. Scripts locked, pending Gordon confirmation. Separate invoice from Gordon Moseley Show segment. First paid broadcast media campaign for Guyana HomeHub. | Launch May 2026 |
+| MOLA influencer follow-up ad | One video, two-part structure (buyers/renters and agents). Brief delivered, production in progress. MOLA committed to second ad — platform now on iPhone + Android vs. 19 listings at first ad. Brand name is MOLA only — full name not to appear in any public-facing content. | Release ~May 5, 2026 |
+| Digital signage — Georgetown | Building exteriors and gym screens. GHH branding, app store badges, QR code. Qumar coordinating. First out-of-home advertising placement for Guyana HomeHub in Guyana. | Live May 1, 2026 |
+| Black PR Wire press record | Darren to book; recommended by Sorilbran (~$250). Creates indexed press record for AI search and larger-outlet vetting before AfroTech notification. NOT YET BOOKED — Darren plans to book. | Target: before August 31, 2026 |
+| Kaieteur News coverage of May 22 event | Pitch in progress. | Week of May 15, 2026 |
 
 ---
 
@@ -57,7 +66,7 @@ UPCOMING PUBLIC-FACING ACTIVITIES
 
 | Activity | Detail | Date |
 |----------|--------|------|
-| Real Estate Rising industry seminar | Branded as "Real Estate Rising" with its own landing page: sherriannelcock.com/real-estate-rising (Event + RealEstateAgent schema). Sherriann Elcock's company is host. Guyana HomeHub is background presence. Darren appears as guest speaker only. Venue paid by Darren. Event documents Sherriann's professional credibility — anchors sherriannelcock.com. Pre-event: share landing page URL (not raw Google Form). 4–5 early registrations confirmed. Sherriann's stated intent is to run twice a year — plan a Q4 2026 second event entry to keep the events URL active. | May 22, 2026 |
+| Real Estate Rising: Guyana's Professional Moment | Full event title locked April 28, 2026. Branded as "Real Estate Rising" with its own landing page: sherriannelcock.com/real-estate-rising (Event + RealEstateAgent schema). Public framing: Sherriann Elcock's company is host. Darren Buckner appears as guest speaker only. CONFIDENTIAL — DO NOT PUBLISH: Guyana HomeHub is privately funding the event. Only Darren, Qumar, and Sherriann are aware of GHH's role as funder. Confirmed speakers in room: Daren Torrington, Tiffany Jeffrey-Durant, Ramesh Persaud (CEO National Hardware). Facebook Live diaspora stream. Darren announced as special guest ~May 15. Event documents Sherriann's professional credibility — anchors sherriannelcock.com. Pre-event: share landing page URL (not raw Google Form). 4–5 early registrations confirmed. Sherriann's stated intent is to run twice a year — plan a Q4 2026 second event entry to keep the events URL active. | May 22, 2026 |
 | Guyana trip | Darren in-country May 19–27, 2026 for Real Estate Rising and press. In-person meetings: Nicola Duggan (Paradigm Property Logistics), RE/MAX Guyana walk-in, Pete's Real Estate, Kurt Campbell (News Room Guyana) interview, Gordon Moseley segment. | May 19–27, 2026 |
 | Gordon Moseley Interview #2 | NewsSource Guyana. Bridge: Guyana 1M mobile subscribers milestone. | Week of May 19–21, 2026 |
 | Kurt Campbell Interview | News Room Guyana. Confirmed. Scheduled May 20–23 window. | May 2026 |
@@ -65,6 +74,13 @@ UPCOMING PUBLIC-FACING ACTIVITIES
 | International Building Expo | Booth. Guyana National Stadium. | June 25–28, 2026 |
 | AfroTech 2026 | Speaker application submitted. Houston. Primary stage moment if selected. | November 2026 |
 | LinkedIn content cadence | Active. Long-form articles. Founder voice. | Ongoing |
+| Founding member outreach email | From Alphius Bookie (bookie@guyanahomehub.com) to 11 inactive founding members. Subject: "Important: Your Founding Member Status on Guyana HomeHub." Contains real-time platform engagement data and June 30 activation deadline. | April 29, 2026 (evening Guyana time) |
+| Founding member WhatsApp follow-up | From Alphius to same 11 recipients as email. | April 30, 2026 (morning Guyana time) |
+| Digital Signage — Georgetown | Building exterior + gym screens. GHH branding, app store badges, QR code. | May 1, 2026 |
+| MOLA Influencer Ad — Follow-Up | MOLA's social channels. One video, two-part structure (buyers/renters and agents). | ~May 5, 2026 |
+| Gordon Moseley Show Segment — panel | NewsSource Guyana. Panel: Darren Buckner, Tiffany Jeffrey-Durant, Daren Torrington. Local + diaspora angle. | May 14 or 15, 2026 |
+| Gordon Moseley Radio Commercials | NewsSource Guyana radio. 3 x 30-second spots, daily rotation. | Launch May 2026 — ongoing |
+| Black PR Wire Press Release | US distribution. Creates indexed press record for AI search and larger-outlet vetting. Recommended by Sorilbran; Darren books — NOT YET PLACED. | Before AfroTech notification (~August 31, 2026) |
 
 ---
 
@@ -80,6 +96,12 @@ KNOWN ENTITY CHALLENGES
 | Qumar Torrington — new node, foundation now live | qumartorrington.com is live with Person + Organization JSON-LD and Google Search Console verified. GHH agent page exists. LinkedIn profile build still in progress this week. All surfaces co-occur the fingerprint cluster: Qumar Torrington + Beyond the Boundary Real Estate + Guyana HomeHub + Guyana Operations Partner + Georgetown Guyana. Awaiting headshot, WhatsApp button, and Qumar's About-copy approval. | Foundation live; LinkedIn + assets in progress |
 | qumartorrington.com About copy not yet confirmed | Personal-story details on the About section have not yet been approved by Qumar. Do not treat the About copy as authoritative entity signal until he confirms. Hold external citation building on his personal story until approval. | Pending approval |
 | Sherriann Elcock — node now live | sherriannelcock.com is live with Person + Organization JSON-LD and Google Search Console verified. @SherriannElcock YouTube channel indexed. GHH agent page exists. LinkedIn partial. Awaiting headshot and external links. Name correction: canonical legal name is Sherriann Elcock (not Elcock-Martin). | Foundation live; assets + name propagation in progress |
+| Sherriann Elcock — name standardization (permanent rule) | All references must use "Sherriann Elcock" — never "Sherriann Elcock-Martin." Sherriann is consolidating personal brand identity under a single name across YouTube (@SherriannElcock), LinkedIn, sherriannelcock.com, and all platforms. Any GEO authority content already drafted must be updated to remove "-Martin" before publication. Non-negotiable, applies retroactively. | Permanent rule effective April 28, 2026 |
+| Sherriann Elcock — Founding Advisor Tier 1 status formalized | Same standing as Tracy Brand's permanent brand asset attribution. Documented in Sherriann_Tier_Naming_Attribution.docx, available for citation in external authority signal building. | Formalized April 28, 2026 |
+| Founding Advisor program — credit pattern established | Future Founding Advisors who contribute strategic IP receive permanent attribution alongside Tracy Brand and Sherriann Elcock. Establishes a recognizable named-authority hierarchy in the platform's knowledge graph. | Pattern established |
+| Ramesh Persaud disambiguation | Multiple prominent Guyanese figures named Ramesh Persaud exist in public record. Any press or content must include title and company (CEO, National Hardware) to avoid disambiguation confusion. | Ongoing |
+| Platform vs. individual agent confusion — Agent Watson | Agent Watson spreading misinformation that GHH charges 25% commission. Counter-strategy: positive-forward messaging about free listing model only — do not rebut directly. | Active monitoring |
+| MOLA public name | Brand name is MOLA only. Full name not to appear in any public-facing content. | Standing rule |
 
 ---
 
@@ -108,6 +130,17 @@ PROOF POINTS — NOT YET FULLY MACHINE-READABLE
 | Sherriann YouTube channel — bidirectional signal needed | @SherriannElcock listed in sameAs schema and named in /about body text. Update YouTube channel description to link back to sherriannelcock.com — creates bidirectional citation. |
 | Darren named on sherriannelcock.com | Named in hero body text and platform section as "US entrepreneur Darren L. Buckner." Confirm darrenlbuckner.com links back to sherriannelcock.com as a related entity — bidirectional link strengthens both nodes. |
 | qumarlist.com — live agent business site | First agent on the platform to have a dedicated branded listing site. Pulls live listings from Guyana HomeHub API. Partially machine-readable — site is live but JSON-LD not yet implemented. |
+| Platform engagement — last 30 days (verified April 28, 2026) | 4,707 property views · 3,247 distinct browsing sessions · 149 distinct properties viewed (exceeds active listing count, indicating viewer demand depth) · ~108 unique sessions/day · 1.45 views-per-session ratio (healthy real-buyer browsing pattern). |
+| Platform agent and listing counts (verified live April 28, 2026) | 38 registered agents · 17 active agents (with at least one active listing) · 139 active listings (per live press page at guyanahomehub.com/press). |
+| Founding member program status (April 28, 2026) | 27 total founding members in database · 13 with active listings (keepers) · Founding agent program closed for Guyana — no new founding members added · Code-confirmed: foundingAgentPromoCodes map in src/app/register/select-country/page.tsx no longer contains GY entry. |
+| Tier naming system — Foundation, Builder, Pillar, Cornerstone (locked April 28, 2026) | Selected blind by Sherriann Elcock from three competing naming sets. Architectural metaphor: Foundation supports Builders, Builders raise Pillars, Pillars rest on Cornerstones. Reflects Guyana's oil-economy construction boom moment. Permanent brand asset, attributed to Sherriann Elcock in perpetuity. |
+| Pricing structure (locked April 28, 2026, not yet publicly disclosed) | Four-tier subscription model. Founding members keep 50% off Pillar tier — locked forever. Active listing required to maintain founding member rate. |
+| Ramesh Persaud confirmed as panel speaker | CEO National Hardware, former MD DDL, former CEO IPED, former Chairman Private Sector Commission, developing 200-home Demerara Estates — attending Real Estate Rising May 22. |
+| Robert Pearson — 65 listings delivered unprompted | First enterprise-tier agent. Delivered after seeing App Store launch. Pushes total platform listings toward 165+. |
+| Three radio commercials produced and locked | Approved scripts for Gordon Moseley daily rotation — first paid broadcast media campaign for Guyana HomeHub. |
+| MOLA influencer follow-up ad commissioned | MOLA committed to second ad — platform now on iPhone + Android vs. 19 listings at first ad. |
+| Live stream planned for May 22 | First live-streamed real estate industry event targeting Guyanese diaspora simultaneously with Georgetown audience. |
+| Digital signage — Georgetown building and gym | First out-of-home advertising placement for Guyana HomeHub in Guyana. |
 
 ---
 
@@ -146,6 +179,19 @@ STRATEGIC PRIORITIES
 | Events page future-proofs biannual intent | Sherriann's stated intent is to run Real Estate Rising twice a year. Plan a Q4 2026 second-event entry on sherriannelcock.com/events to keep the URL active and signal recurring authority in the real estate education space. |
 | Pascal John article — amplification opportunity | Once Pascal posts the rewritten article on his LinkedIn, share from Sherriann's LinkedIn and tag Pascal. Generates engagement signals on a third-party citation. Do not share from GHH brand page — keep it personal so it reads as organic third-party endorsement. |
 | Sherriann Elcock GEO chain — 4 nodes deep | Compensating signal chain as designed: Pascal John (LinkedIn, third party) → cites Sherriann Elcock (sherriannelcock.com) → affiliatedWith Guyana HomeHub (guyanahomehub.com) → foundedBy Darren L. Buckner (darrenlbuckner.com / portalhomehub.com). Each node links to the next. Each is indexed or indexable. |
+| Sherriann Elcock as named platform architect | External authority content should reflect Sherriann's contribution as the architect of GHH's tier identity system. She is no longer "an advisor" — she is "the advisor who named the framework that defines the platform." Applies to LinkedIn, sherriannelcock.com, and any GEO authority signals. The Foundation/Builder/Pillar/Cornerstone framework is citable as her work. |
+| Pure agent platform narrative | "Real estate professionals only. Verified agents. No Facebook chaos." Sharper than the prior multi-sided marketplace framing. Supports the May 22 event story and the long-term acquisition story. |
+| Real engagement data as primary credibility signal | Replace aspirational marketing language with verifiable platform metrics. The 4,707 views and 3,247 distinct sessions in 30 days are the strongest signals available. Use specific numbers, not ranges or directional claims. |
+| Tier names in all customer-facing content from now forward | Foundation, Builder, Pillar, Cornerstone replace any generic tier references in marketing copy, agent recruiting, and stage talking points. Database values remain unchanged (basic, professional, premium, enterprise); display names are universal. |
+| Founding Advisor program as recognition pattern | Tracy Brand's quote and Sherriann Elcock's naming system are the two permanent brand assets attributed to Founding Advisors. Pattern can be extended to future contributors — highlight as a structural feature of how GHH builds strategic IP through community contribution. |
+| Disambiguation reinforcement for Darren Buckner | PivotPoint AI and Buckner Management Group are Darren. The Workfrom/Portland Darren Buckner is not. Portal HomeHub primary venture. PivotPoint AI active secondary. Pattern continues — no new disambiguation work this session. |
+| Event funding boundary — CONFIDENTIAL | Guyana HomeHub privately funds Real Estate Rising. Only Darren, Qumar, and Sherriann know this internally. All public-facing content (press, social, agent recruiting, stage talking points) must treat the event as Sherriann Elcock's company hosting, with Darren as guest speaker. NEVER reference GHH as funder, sponsor, or organizer in any public surface — the ai-context page is token-gated, but downstream content derived from it is not. |
+| May 22 event as proof point | Document, live-stream, and repurpose as content — agent testimonials, panel highlights, platform demo clips. First major credibility signal to the agent community. |
+| Ramesh Persaud relationship | Eventually reference National Hardware and Demerara Estates as proof of real estate development investment in Guyana — without naming Ramesh as endorser until he explicitly agrees to that framing. |
+| Diaspora positioning | Every press, content, and social piece must speak to local Guyanese AND diaspora simultaneously. Not one or the other. Gordon Moseley segment angle confirmed this. |
+| "Finally" framing — locked brand positioning | "Guyana finally has what other countries have had for years." Use consistently. |
+| "Chaos as the problem" — locked brand problem statement | "No more WhatsApp and Facebook chaos." Must appear in radio, influencer ads, and social content consistently. |
+| Qumar Torrington's public profile | Visible as Co-Host and Guyana Operations Manager in all event materials. Strategic — reinforces Daren Torrington's investment in the platform's success. |
 
 ---
 
@@ -158,6 +204,8 @@ NEW NAMED ENTITIES IN NETWORK — APRIL 26–28, 2026
 | Dennis Squires | Prominent Guyana realtor. Cricket mentor to Qumar Torrington at Demerara Cricket Club. Introduced Qumar to real estate in 2021. | Supporting node for Qumar Torrington authority narrative |
 | Quson Torrington | Older brother of Qumar Torrington. Referenced in Qumar's personal brand story. | Supporting biographical node only — not a platform entity |
 | Pascal John | Student author. Independently rewrote his article naming Sherriann Elcock throughout and including the Three P's framework. Posts from his own LinkedIn — third-party citation, not branded content. | Pascal's LinkedIn (URL pending post). Cross-reference in next GEO audit. |
+| Ramesh Persaud | CEO National Hardware. Former MD DDL, former CEO IPED, former Chairman Private Sector Commission. Developing 200-home Demerara Estates. Confirmed panel speaker, Real Estate Rising May 22, 2026. | Disambiguation note: always cite with title and company — multiple prominent Guyanese figures share this name. Not yet confirmed as endorser of GHH. |
+| Robert Pearson | First enterprise-tier agent on Guyana HomeHub. Delivered 65 listings unprompted after seeing the App Store launch. | Pushes total platform listings toward 165+. |
 
 ---
 
@@ -188,6 +236,14 @@ COMPANY: Caribbean HomeHub LLC, Missouri USA
 CANONICAL SITE: darrenlbuckner.com
 PLATFORM: portalhomehub.com
 TERRITORY: guyanahomehub.com
+
+---
+
+FILES AVAILABLE FOR CITATION — APRIL 28, 2026 SESSION
+
+- Sherriann_Tier_Naming_Attribution.docx — Full attribution document for the Foundation, Builder, Pillar, Cornerstone naming system. Includes marketing applications, strategic rationale, and GEO authority value framing.
+- Session_Handover_April_28_2026.docx — Comprehensive session handover with all locked decisions, technical investigation findings, and implementation plan.
+- Encyclopedia_Update_April_28_2026.md — Encyclopedia patch with all decisions and changes from this session.
 
 ---
 
