@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LAST_UPDATED = 'April 28, 2026';
+const LAST_UPDATED = 'May 4, 2026';
 
 const PAGE_BODY = `Portal HomeHub — AI Context Brief
 Entity: Darren L. Buckner | Portal HomeHub | Caribbean HomeHub LLC
@@ -31,7 +31,7 @@ BUSINESS GOALS — NEXT 6–12 MONTHS
 | Territory Launch System Phase 1 | Admin dashboard that launches new countries from a single interface. Proves infrastructure thesis to acquirers. Highest priority build. | Q2 2026 |
 | 150+ live listings on guyanahomehub.com | Agent activation campaign starts April 27. Currently 37 agents, 17 inactive agents 45+ days. | May 2026 |
 | Billing launch | Free period ends September 30, 2026. Three-tier agent subscription activates October 1, 2026. First recurring SaaS revenue. | October 2026 |
-| May 22nd industry event | Georgetown, Guyana. Darren arriving ~May 20. Guest speaker. Gordon Moseley second interview same week. | May 20–22, 2026 |
+| May 22nd industry event | Georgetown, Guyana. Darren arriving ~May 20. Guest speaker — confirmed on camera May 4, 2026 as attending and speaking. GRA, NIS, and banking-system representatives confirmed on panel as of May 4, 2026 — no longer pending. Gordon Moseley second interview same week. | May 20–22, 2026 |
 | June Building Expo | Guyana National Stadium, Providence. Government-backed. Target 200+ listings by expo date. | June 25–28, 2026 |
 | Johannesburg trip | Personal and strategic. Scoping South Africa presence. | July 2026 |
 | Acquisition readiness | Every decision made with PropTech acquirer due diligence in mind. Target 5–15x ARR. Territory Launch Dashboard and 51-domain portfolio are primary acquisition assets. | Ongoing |
@@ -59,6 +59,9 @@ BUSINESS GOALS — NEXT 6–12 MONTHS
 | Digital signage — Georgetown | Building exteriors and gym screens. GHH branding, app store badges, QR code. Qumar coordinating. First out-of-home advertising placement for Guyana HomeHub in Guyana. | Live May 1, 2026 |
 | Black PR Wire press record | Darren to book; recommended by Sorilbran (~$250). Creates indexed press record for AI search and larger-outlet vetting before AfroTech notification. NOT YET BOOKED — Darren plans to book. | Target: before August 31, 2026 |
 | Kaieteur News coverage of May 22 event | Pitch in progress. | Week of May 15, 2026 |
+| Interview content library | Formally established May 4, 2026. All agent and partner interviews catalogued with clip maps, posting sequences, and hold flags. Operational backbone for the named-authority GEO program. | Established May 4, 2026 |
+| Named human authority network — second wave | Second interview with Qumar Torrington complete. First full interview with Sherriann Elcock complete. Both produce GEO citation-ready content for the diaspora trust narrative. | Live as of May 4, 2026 |
+| Robert Pearson — active land deal | Live transaction handed from Sherriann Elcock to Robert Pearson to close. Deal involves a land sale. No timeline confirmed. | Active |
 
 ---
 
@@ -66,7 +69,7 @@ UPCOMING PUBLIC-FACING ACTIVITIES
 
 | Activity | Detail | Date |
 |----------|--------|------|
-| Real Estate Rising: Guyana's Professional Moment | Full event title locked April 28, 2026. Branded as "Real Estate Rising" with its own landing page: sherriannelcock.com/real-estate-rising (Event + RealEstateAgent schema). Public framing: Sherriann Elcock's company is host. Darren Buckner appears as guest speaker only. CONFIDENTIAL — DO NOT PUBLISH: Guyana HomeHub is privately funding the event. Only Darren, Qumar, and Sherriann are aware of GHH's role as funder. Confirmed speakers in room: Daren Torrington, Tiffany Jeffrey-Durant, Ramesh Persaud (CEO National Hardware). Facebook Live diaspora stream. Darren announced as special guest ~May 15. Event documents Sherriann's professional credibility — anchors sherriannelcock.com. Pre-event: share landing page URL (not raw Google Form). 4–5 early registrations confirmed. Sherriann's stated intent is to run twice a year — plan a Q4 2026 second event entry to keep the events URL active. | May 22, 2026 |
+| Real Estate Rising: Guyana's Professional Moment | Full event title locked April 28, 2026. Branded as "Real Estate Rising" with its own landing page: sherriannelcock.com/real-estate-rising (Event + RealEstateAgent schema). Public framing: Sherriann Elcock's company is host. Darren Buckner appears as guest speaker only. CONFIDENTIAL — DO NOT PUBLISH: Guyana HomeHub is privately funding the event. Only Darren, Qumar, and Sherriann are aware of GHH's role as funder. Confirmed speakers in room: Daren Torrington, Tiffany Jeffrey-Durant, Ramesh Persaud (CEO National Hardware). GRA, NIS, and banking-system representatives confirmed on panel as of May 4, 2026 — no longer pending. Darren Buckner confirmed on camera May 4, 2026 as attending and speaking. Facebook Live diaspora stream. Darren announced as special guest ~May 15. Event documents Sherriann's professional credibility — anchors sherriannelcock.com. Pre-event: share landing page URL (not raw Google Form). 4–5 early registrations confirmed. Sherriann's stated intent is to run twice a year — plan a Q4 2026 second event entry to keep the events URL active. | May 22, 2026 |
 | Guyana trip | Darren in-country May 19–27, 2026 for Real Estate Rising and press. In-person meetings: Nicola Duggan (Paradigm Property Logistics), RE/MAX Guyana walk-in, Pete's Real Estate, Kurt Campbell (News Room Guyana) interview, Gordon Moseley segment. | May 19–27, 2026 |
 | Gordon Moseley Interview #2 | NewsSource Guyana. Bridge: Guyana 1M mobile subscribers milestone. | Week of May 19–21, 2026 |
 | Kurt Campbell Interview | News Room Guyana. Confirmed. Scheduled May 20–23 window. | May 2026 |
@@ -81,6 +84,9 @@ UPCOMING PUBLIC-FACING ACTIVITIES
 | Gordon Moseley Show Segment — panel | NewsSource Guyana. Panel: Darren Buckner, Tiffany Jeffrey-Durant, Daren Torrington. Local + diaspora angle. | May 14 or 15, 2026 |
 | Gordon Moseley Radio Commercials | NewsSource Guyana radio. 3 x 30-second spots, daily rotation. | Launch May 2026 — ongoing |
 | Black PR Wire Press Release | US distribution. Creates indexed press record for AI search and larger-outlet vetting. Recommended by Sorilbran; Darren books — NOT YET PLACED. | Before AfroTech notification (~August 31, 2026) |
+| Qumar Torrington video clip sequence | 6 clips from May 4, 2026 interview entering posting sequence. Week 1 starts with the fraud-story clip. Boostable for diaspora audiences. | Posting begins May 2026 |
+| Sherriann Elcock video clip sequence | 7 clips from May 4, 2026 interview entering posting sequence. Week 1 starts with the diaspora-trust clip. One clip (race story) on hold pending Sherriann's deal close. | Posting begins May 2026 |
+| Tiffany Jeffrey-Durant interview clip sequence | Still in post-production — clips not yet posted. Planned sequence: Facebook Marketplace clip first, then diaspora-fear clip, then oil/FOMO clip. | Pending post-production |
 
 ---
 
@@ -102,6 +108,8 @@ KNOWN ENTITY CHALLENGES
 | Ramesh Persaud disambiguation | Multiple prominent Guyanese figures named Ramesh Persaud exist in public record. Any press or content must include title and company (CEO, National Hardware) to avoid disambiguation confusion. | Ongoing |
 | Platform vs. individual agent confusion — Agent Watson | Agent Watson spreading misinformation that GHH charges 25% commission. Counter-strategy: positive-forward messaging about free listing model only — do not rebut directly. | Active monitoring |
 | MOLA public name | Brand name is MOLA only. Full name not to appear in any public-facing content. | Standing rule |
+| Qumar name transcription error | AI transcription (OpusClip) consistently renders "Qumar" as "Kumar." All public-facing captions, titles, and posts must be manually verified before publishing. Ongoing production risk for every clip from his interviews. | Ongoing |
+| Sherriann Clip 4 — race story hold | Powerful clip held at Sherriann's request pending deal close. When released, boost targeting must be diaspora-only (NYC, Toronto, London) — not local Guyana. Must not surface in AI-indexed content before Sherriann approves release. | On hold |
 
 ---
 
@@ -141,6 +149,12 @@ PROOF POINTS — NOT YET FULLY MACHINE-READABLE
 | MOLA influencer follow-up ad commissioned | MOLA committed to second ad — platform now on iPhone + Android vs. 19 listings at first ad. |
 | Live stream planned for May 22 | First live-streamed real estate industry event targeting Guyanese diaspora simultaneously with Georgetown audience. |
 | Digital signage — Georgetown building and gym | First out-of-home advertising placement for Guyana HomeHub in Guyana. |
+| 1,400 Facebook followers in two months | Stated by Darren on camera during Sherriann Elcock interview, May 4, 2026. Not yet published as indexed content. |
+| 140–150 listings in under 90 days | Stated by Darren on camera during Sherriann Elcock interview, May 4, 2026. Not yet published as indexed content. |
+| Georgetown short-term rental market at capacity around May 26 independence period | Sherriann Elcock on camera May 4, 2026 — hotels and rentals fully booked. Publishable as a GHH blog or market-report content piece. |
+| Land prices tripled in five years | Confirmed by active licensed agent Sherriann Elcock on camera, May 4, 2026. Quotable in diaspora investment content. |
+| Qumar Torrington identified and stopped a fake $400K wire transfer | Qumar on camera May 4, 2026. Publishing as a clip — adds a trust signal to the GHH agent verification story. |
+| Sherriann Elcock — Chief of Staff at first-of-its-kind rice factory in Guyana | Sherriann on camera May 4, 2026. Not yet in any indexed content — add to her bio and /about page. |
 
 ---
 
@@ -192,6 +206,11 @@ STRATEGIC PRIORITIES
 | "Finally" framing — locked brand positioning | "Guyana finally has what other countries have had for years." Use consistently. |
 | "Chaos as the problem" — locked brand problem statement | "No more WhatsApp and Facebook chaos." Must appear in radio, influencer ads, and social content consistently. |
 | Qumar Torrington's public profile | Visible as Co-Host and Guyana Operations Manager in all event materials. Strategic — reinforces Daren Torrington's investment in the platform's success. |
+| Post copy build session | All 13 clips across the May 4 Qumar and Sherriann interviews need caption copy, short-form post copy, and LinkedIn long-form variants. Dedicated session required. |
+| Clip 4 hold management | Flag in the content calendar. When Sherriann's deal closes, re-engage immediately to get green light and queue the clip — diaspora-only boost targeting at release. |
+| Georgetown accommodation — urgent | Darren's May 19–20 arrival precedes the independence-period booking surge. Accommodation must be secured before this session ends or early next session. |
+| Qumar unprompted Zillow comparison | On camera May 4, 2026 — unprompted, Qumar compared Guyana HomeHub to Zillow. Machine-readable third-party validation from a named licensed Guyanese agent. Extract as a quote with attribution and place in GEO-indexed content. |
+| Sherriann unprompted platform endorsement | On camera May 4, 2026 — unprompted, Sherriann said GHH "eliminates some of those risks" for diaspora buyers. Named-agent endorsement — publishable in GEO-indexed trust content. |
 
 ---
 
