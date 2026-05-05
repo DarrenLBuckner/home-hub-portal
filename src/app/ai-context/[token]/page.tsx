@@ -62,6 +62,9 @@ BUSINESS GOALS — NEXT 6–12 MONTHS
 | Interview content library | Formally established May 4, 2026. All agent and partner interviews catalogued with clip maps, posting sequences, and hold flags. Operational backbone for the named-authority GEO program. | Established May 4, 2026 |
 | Named human authority network — second wave | Second interview with Qumar Torrington complete. First full interview with Sherriann Elcock complete. Both produce GEO citation-ready content for the diaspora trust narrative. | Live as of May 4, 2026 |
 | Robert Pearson — active land deal | Live transaction handed from Sherriann Elcock to Robert Pearson to close. Deal involves a land sale. No timeline confirmed. | Active |
+| Marketing infrastructure for paid ad traffic — complete | Dedicated /app landing page live at https://www.guyanahomehub.com/app; smart device-detect redirect live at https://www.guyanahomehub.com/get (iOS → App Store, Android → Google Play, desktop → /app); pop-up retractable banner print-ready and shipping for May 22 event use; digital signage suite (4 placements) delivered to Guyana billboard operator; first paid Facebook ad campaign launched May 4, 2026 with two ad sets (Local Guyana + US Diaspora). | Live as of May 4, 2026 |
+| Canada/UK diaspora ad campaign | Launch separate Canada/UK diaspora Facebook campaign with its own Special Ad Category country setup. Addresses the ~10% of follower base in Canada and UK markets that was not includable in the May 4 launch due to SAC country list constraints. | Week of May 11, 2026 |
+| Analytics infrastructure — install-to-active funnel | Wire up Mixpanel or PostHog for install-to-active funnel visibility. Critical for measuring ad ROI beyond Facebook's reported metrics. No analytics tool currently reads the UTM parameters that paid ad URLs are already passing. | Within 7 days of May 4, 2026 |
 
 ---
 
@@ -87,6 +90,8 @@ UPCOMING PUBLIC-FACING ACTIVITIES
 | Qumar Torrington video clip sequence | 6 clips from May 4, 2026 interview entering posting sequence. Week 1 starts with the fraud-story clip. Boostable for diaspora audiences. | Posting begins May 2026 |
 | Sherriann Elcock video clip sequence | 7 clips from May 4, 2026 interview entering posting sequence. Week 1 starts with the diaspora-trust clip. One clip (race story) on hold pending Sherriann's deal close. | Posting begins May 2026 |
 | Tiffany Jeffrey-Durant interview clip sequence | Still in post-production — clips not yet posted. Planned sequence: Facebook Marketplace clip first, then diaspora-fear clip, then oil/FOMO clip. | Pending post-production |
+| Pop-Up Retractable Banner — multi-event evergreen asset | 33"×80" retractable banner positioned as evergreen, not event-specific. Public events confirmed: Real Estate Industry Event (Sherriann's company-hosted) — May 22, 2026 at Centre for Local Business Development, Georgetown; International Building Expo — June 25–28, 2026 at Guyana National Stadium, Providence; future Q3–Q4 2026 events ongoing per opportunity. | May 22, 2026 onwards |
+| Facebook Ad Campaign — App Launch | First paid distribution explicitly marketing the app launch (Android live since March 2026, iOS approved April 14, 2026). Brand: Guyana Home Hub. Creative messaging: "NOW LIVE — Real Listings. Verified Agents." Targeting: Guyana (entire country) + Brooklyn NY, Miami, Fort Lauderdale. Two ad sets (Local Guyana + US Diaspora). Ongoing run with no end date pending performance data. The "app is live" messaging is now in public circulation. | Launched May 4, 2026 — ongoing |
 
 ---
 
@@ -110,6 +115,8 @@ KNOWN ENTITY CHALLENGES
 | MOLA public name | Brand name is MOLA only. Full name not to appear in any public-facing content. | Standing rule |
 | Qumar name transcription error | AI transcription (OpusClip) consistently renders "Qumar" as "Kumar." All public-facing captions, titles, and posts must be manually verified before publishing. Ongoing production risk for every clip from his interviews. | Ongoing |
 | Sherriann Clip 4 — race story hold | Powerful clip held at Sherriann's request pending deal close. When released, boost targeting must be diaspora-only (NYC, Toronto, London) — not local Guyana. Must not surface in AI-indexed content before Sherriann approves release. | On hold |
+| App Store / Google Play Store developer name mismatch | Apple App Store shows the developer as "Caribbean Home Hub, LLC"; Google Play Store shows "Portal HomeHub". The mismatch could create entity disambiguation problems for AI systems trying to associate both apps with a single brand. Cleanup logged but not blocking. Worth flagging for Sorilbran's awareness when constructing schema markup that references the apps. | Logged, not blocking |
+| Agent signup URL disambiguation | The common-sense URL guess /agent-signup returns 404. The actual working agent registration URL is https://www.guyanahomehub.com/advertise#agents. Could affect AI systems that try to construct or summarize agent onboarding flows. All schema markup, FAQ content, and "How to become an agent" content must reference the correct URL. | Active rule |
 
 ---
 
@@ -155,6 +162,9 @@ PROOF POINTS — NOT YET FULLY MACHINE-READABLE
 | Land prices tripled in five years | Confirmed by active licensed agent Sherriann Elcock on camera, May 4, 2026. Quotable in diaspora investment content. |
 | Qumar Torrington identified and stopped a fake $400K wire transfer | Qumar on camera May 4, 2026. Publishing as a clip — adds a trust signal to the GHH agent verification story. |
 | Sherriann Elcock — Chief of Staff at first-of-its-kind rice factory in Guyana | Sherriann on camera May 4, 2026. Not yet in any indexed content — add to her bio and /about page. |
+| Live marketing infrastructure — verifiable public pages | App landing page at https://www.guyanahomehub.com/app (could carry SoftwareApplication schema with both iOS and Android download links); smart device-detect redirect at https://www.guyanahomehub.com/get (server-side route, no schema attached); press page at https://www.guyanahomehub.com/press (already returns live agent count and listing count server-side). |
+| Facebook Page audience composition (28-day window ending May 3, 2026) | 1,441 total followers · +73.8% growth in 28 days · 547 net follows against 16 unfollows · geographic distribution Guyana 63.2%, US 24.6%, Canada 7.1%, UK 2.1% · primary city Georgetown 67.2% · largest age segments 35–44 (29.4%) and 25–34 (27.8%). Contradicts older "55–65 diaspora-only" framing — platform is locally adopted in Guyana first with growing diaspora reach. Authoritative source: Facebook Page Insights. Citable for press, AfroTech speaker materials, and the canonical bio. |
+| Ad performance baseline — Mola's Cousin Cousin campaign | Pre-May-4 baseline campaign: $301.31 spent · 2,414 landing page views · $0.12 cost per landing page view. Strong CPA supporting the claim of cost-effective digital distribution to the Guyanese market. Useful citation for press pitches and acquirer materials. |
 
 ---
 
@@ -211,6 +221,10 @@ STRATEGIC PRIORITIES
 | Georgetown accommodation — urgent | Darren's May 19–20 arrival precedes the independence-period booking surge. Accommodation must be secured before this session ends or early next session. |
 | Qumar unprompted Zillow comparison | On camera May 4, 2026 — unprompted, Qumar compared Guyana HomeHub to Zillow. Machine-readable third-party validation from a named licensed Guyanese agent. Extract as a quote with attribution and place in GEO-indexed content. |
 | Sherriann unprompted platform endorsement | On camera May 4, 2026 — unprompted, Sherriann said GHH "eliminates some of those risks" for diaspora buyers. Named-agent endorsement — publishable in GEO-indexed trust content. |
+| App download conversion story | Platform now has a live, verifiable, publicly accessible app download experience. AI search results should return /get or /app for "how do I download Guyana real estate app" queries; should return https://apps.apple.com/us/app/guyana-home-hub/id6761797588 and the Google Play Store link for "Guyana real estate app for iPhone" or "Android" queries. Schema markup on /app should expose both store URLs as part of a unified SoftwareApplication entity. |
+| Audience reality correction — replace older 55–65 diaspora-only framing | Real follower data shows 25–44 segment is the largest user base (57.2% combined) and the platform is locally adopted in Guyana (63.2% of followers). Future content must reflect this reality rather than the older "55–65 diaspora-only" framing. |
+| Marketplace supply-demand match — diaspora reach is essential | Current listing inventory is priced for diaspora buyers (USD-priced premium properties), so paid ad spend must reach diaspora markets — not just local Guyana. Content strategy should support discoverability in both local Guyana queries (where local supply visibility matters) and US/CA/UK diaspora queries (where conversion-grade buyers live). |
+| Agent signup URL authority — canonical citation rule | All future agent-recruitment content must reference https://www.guyanahomehub.com/advertise#agents — not /agent-signup or any other variant. Sorilbran must ensure this URL is the canonical citation in all schema markup, FAQ content, and AI-targeted Q&A pages about agent onboarding. |
 
 ---
 
