@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   },
 };
 
-const LAST_UPDATED = 'May 4, 2026';
+const LAST_UPDATED = 'May 8, 2026';
 
 const PAGE_BODY = `Portal HomeHub — AI Context Brief
 Entity: Darren L. Buckner | Portal HomeHub | Caribbean HomeHub LLC
@@ -35,7 +35,7 @@ BUSINESS GOALS — NEXT 6–12 MONTHS
 | June Building Expo | Guyana National Stadium, Providence. Government-backed. Target 200+ listings by expo date. | June 25–28, 2026 |
 | Johannesburg trip | Personal and strategic. Scoping South Africa presence. | July 2026 |
 | Acquisition readiness | Every decision made with PropTech acquirer due diligence in mind. Target 5–15x ARR. Territory Launch Dashboard and 51-domain portfolio are primary acquisition assets. | Ongoing |
-| Colombia HomeHub launch | Paused pending Territory Launch System Phase 1. Launches via dashboard. | Post Phase 1 |
+| Colombia HomeHub launch | Paused pending Territory Launch System Phase 1 admin UI. Launches via dashboard. Schema architecture territory-agnostic as of May 8, 2026 — zero code changes required to activate. Owner: Selena Buckner (Colombia territory owner). | Q3 2026 (TBD) |
 | Press ladder progression | Currently: local Guyana. Next: Caribbean diaspora. Then: AfroTech Media, Blavity, Rolling Out, Travel Noire. Then: Black Enterprise, Essence. Top tier requires stage presence or warm intro. | 6–18 months |
 | Platform cost control | Google Maps billing spike identified and resolved April 25, 2026. Monthly Maps spend reduced from $375 to projected under $10/month. Root cause: uncached Places API calls and unguarded geocoding. Both fixed. | Resolved |
 | Platform security | Supabase keys rotated following security incident. Stripe key found in wrong environment variable — rotated. All Vercel environment variables audited and corrected across both repos. All 7 "Needs Attention" variables rotated and marked Sensitive. | Resolved |
@@ -65,6 +65,10 @@ BUSINESS GOALS — NEXT 6–12 MONTHS
 | Marketing infrastructure for paid ad traffic — complete | Dedicated /app landing page live at https://www.guyanahomehub.com/app; smart device-detect redirect live at https://www.guyanahomehub.com/get (iOS → App Store, Android → Google Play, desktop → /app); pop-up retractable banner print-ready and shipping for May 22 event use; digital signage suite (4 placements) delivered to Guyana billboard operator; first paid Facebook ad campaign launched May 4, 2026 with two ad sets (Local Guyana + US Diaspora). | Live as of May 4, 2026 |
 | Canada/UK diaspora ad campaign | Launch separate Canada/UK diaspora Facebook campaign with its own Special Ad Category country setup. Addresses the ~10% of follower base in Canada and UK markets that was not includable in the May 4 launch due to SAC country list constraints. | Week of May 11, 2026 |
 | Analytics infrastructure — install-to-active funnel | Wire up Mixpanel or PostHog for install-to-active funnel visibility. Critical for measuring ad ROI beyond Facebook's reported metrics. No analytics tool currently reads the UTM parameters that paid ad URLs are already passing. | Within 7 days of May 4, 2026 |
+| Schema Design v2 live in production | Five JSON-LD generators live on guyanahomehub.com: RealEstateListing on every property page, RealEstateAgent on every agent profile, Organization with parentOrganization linkage to Caribbean Home Hub LLC site-wide, WebSite + SearchAction site-wide, BreadcrumbList with position 3 item-field fix on every page that has breadcrumbs. Verified via Google Rich Results Test on 5 production URLs. Replaces previously hardcoded JM/GY-only inline schemas with territory-agnostic generators driven by a domain-based territories table loader. Status: COMPLETE. | May 8, 2026 |
+| Google Search Console reporting Breadcrumbs and Local businesses as detected enhancements | Sitemap resubmitted to Search Console May 8, 2026 immediately after schema deploy. Re-crawl typically begins within 24–72 hours. Status: pending crawl propagation. | Within 30 days of May 8, 2026 |
+| Sitemap regeneration to include all 144 properties + 17 agents + static pages | Sitemap.xml on guyanahomehub.com currently lists only 30 URLs. Real coverage should be ~170+ (144 active properties + 17 agent profiles + 20+ static pages). Dynamic regeneration is a future engineering task. Target: complete before AfroTech notification August 31, 2026. Status: logged. | Future engineering session |
+| /properties/developments/[slug] route gains BreadcrumbSchema embedding | Schema Design v2 (PR #3, merged May 8, 2026) wired BreadcrumbSchema into the property detail and agent profile routes; the developments route was out of scope of that PR. Status: logged. | Future engineering session |
 
 ---
 
@@ -92,6 +96,7 @@ UPCOMING PUBLIC-FACING ACTIVITIES
 | Tiffany Jeffrey-Durant interview clip sequence | Still in post-production — clips not yet posted. Planned sequence: Facebook Marketplace clip first, then diaspora-fear clip, then oil/FOMO clip. | Pending post-production |
 | Pop-Up Retractable Banner — multi-event evergreen asset | 33"×80" retractable banner positioned as evergreen, not event-specific. Public events confirmed: Real Estate Industry Event (Sherriann's company-hosted) — May 22, 2026 at Centre for Local Business Development, Georgetown; International Building Expo — June 25–28, 2026 at Guyana National Stadium, Providence; future Q3–Q4 2026 events ongoing per opportunity. | May 22, 2026 onwards |
 | Facebook Ad Campaign — App Launch | First paid distribution explicitly marketing the app launch (Android live since March 2026, iOS approved April 14, 2026). Brand: Guyana Home Hub. Creative messaging: "NOW LIVE — Real Listings. Verified Agents." Targeting: Guyana (entire country) + Brooklyn NY, Miami, Fort Lauderdale. Two ad sets (Local Guyana + US Diaspora). Ongoing run with no end date pending performance data. The "app is live" messaging is now in public circulation. | Launched May 4, 2026 — ongoing |
+| Sitemap re-crawl by Google | Sitemap resubmitted to Google Search Console immediately after Schema Design v2 deploy (May 8, 2026). Re-crawl typically begins within 24–72 hours. The new schema (Organization with parent linkage, RealEstateListing, RealEstateAgent, WebSite + SearchAction, BreadcrumbList) propagates to Google's index over the days following the crawl. | Queued May 8, 2026 — propagation underway |
 
 ---
 
@@ -117,6 +122,9 @@ KNOWN ENTITY CHALLENGES
 | Sherriann Clip 4 — race story hold | Powerful clip held at Sherriann's request pending deal close. When released, boost targeting must be diaspora-only (NYC, Toronto, London) — not local Guyana. Must not surface in AI-indexed content before Sherriann approves release. | On hold |
 | App Store / Google Play Store developer name mismatch | Apple App Store shows the developer as "Caribbean Home Hub, LLC"; Google Play Store shows "Portal HomeHub". The mismatch could create entity disambiguation problems for AI systems trying to associate both apps with a single brand. Cleanup logged but not blocking. Worth flagging for Sorilbran's awareness when constructing schema markup that references the apps. | Logged, not blocking |
 | Agent signup URL disambiguation | The common-sense URL guess /agent-signup returns 404. The actual working agent registration URL is https://www.guyanahomehub.com/advertise#agents. Could affect AI systems that try to construct or summarize agent onboarding flows. All schema markup, FAQ content, and "How to become an agent" content must reference the correct URL. | Active rule |
+| territories.display_name naming drift — "Guyana HomeHub" vs canonical "Guyana Home Hub" | The territories database row for Guyana currently stores display_name = "Guyana HomeHub" (one concatenated word). Public marketing, brand voice documents, email footers, and the live site footer all use canonical "Guyana Home Hub" (three words). The schema renders whatever the database contains, so for as long as the database has the one-word version, JSON-LD on the site will say "Guyana HomeHub" while the visible UI says "Guyana Home Hub." Implication: until corrected, AI systems reading schema will encounter "Guyana HomeHub" while AI systems reading visible page text will encounter "Guyana Home Hub." Resolvable via a single SQL update in a separate session. | Logged for next platform session |
+| Sitemap currently lists only 30 URLs | The platform has 144 active property listings + 17 active agent profiles + 20+ static pages — well over 200 indexable URLs. Current sitemap.xml is static and lists only 30. Implication: Google has limited URL discovery on guyanahomehub.com, so property and agent pages with the new schema may not be discovered organically as quickly as the homepage and top-level routes. Logged as future engineering task. | Logged, not blocking |
+| Vercel preview URLs are not crawlable by Google | Discovered May 8, 2026 during Schema Design v2 PR verification. Production URLs (guyanahomehub.com) are the source of truth for any Google Rich Results Test verification. Preview deployments cannot be used for Google-side verification. Implication for future schema or SEO work: always verify against production after merge, not against preview deployments. | Standing rule |
 
 ---
 
@@ -165,6 +173,12 @@ PROOF POINTS — NOT YET FULLY MACHINE-READABLE
 | Live marketing infrastructure — verifiable public pages | App landing page at https://www.guyanahomehub.com/app (could carry SoftwareApplication schema with both iOS and Android download links); smart device-detect redirect at https://www.guyanahomehub.com/get (server-side route, no schema attached); press page at https://www.guyanahomehub.com/press (already returns live agent count and listing count server-side). |
 | Facebook Page audience composition (28-day window ending May 3, 2026) | 1,441 total followers · +73.8% growth in 28 days · 547 net follows against 16 unfollows · geographic distribution Guyana 63.2%, US 24.6%, Canada 7.1%, UK 2.1% · primary city Georgetown 67.2% · largest age segments 35–44 (29.4%) and 25–34 (27.8%). Contradicts older "55–65 diaspora-only" framing — platform is locally adopted in Guyana first with growing diaspora reach. Authoritative source: Facebook Page Insights. Citable for press, AfroTech speaker materials, and the canonical bio. |
 | Ad performance baseline — Mola's Cousin Cousin campaign | Pre-May-4 baseline campaign: $301.31 spent · 2,414 landing page views · $0.12 cost per landing page view. Strong CPA supporting the claim of cost-effective digital distribution to the Guyanese market. Useful citation for press pitches and acquirer materials. |
+| Caribbean Home Hub LLC is the parent organization of Guyana Home Hub — now machine-readable | Embedded as parentOrganization in Organization JSON-LD on every page of guyanahomehub.com. Verified via Google Rich Results Test, May 8, 2026. Establishes the corporate trail: Guyana Home Hub is a subsidiary of Caribbean Home Hub LLC (Missouri, USA), owned by Darren L. Buckner. Reduces conflation risk with Portland Darren Buckner. |
+| Guyana Home Hub is a real estate platform serving Guyana with verified agents — now machine-readable | Embedded as RealEstateAgent Organization schema with areaServed: Country/Guyana, knowsAbout array including "Real estate", "Property listings", "Real estate agents", "Guyana property market". Verified Google Rich Results Test, May 8, 2026. |
+| Robert Pearson — verified founding-member real estate agent at IdealHomeRealty — now machine-readable | RealEstateAgent JSON-LD on guyanahomehub.com/agents/robert-pearson includes name, image, description, affiliation: IdealHomeRealty, additionalProperty rows for "Verified Agent: true", "Founding Member: true", "Active Listings: 58", "Years of Experience: 10+". Google Rich Results Test, May 8, 2026 — 7 valid items detected on his profile. |
+| Guyana Home Hub has internal property search infrastructure — now machine-readable | WebSite JSON-LD with SearchAction signal embedded site-wide (every page in root layout). Target URL pattern: /search?q={search_term_string}. Live site-wide as of May 8, 2026 deploy. Foundational signal for AI engines (ChatGPT, Perplexity, Claude, Google AI Overviews) — declares the site as a search destination, not a content blog. |
+| 144 active property listings with agent attribution — now machine-readable | RealEstateListing JSON-LD on every property detail page, with embedded realEstateAgent reference for agent-listed properties (Person seller reference for landlord/FSBO listings). Status-aware availability: active → InStock, sold → SoldOut + validThrough, under_contract → PreOrder, draft/off_market → no schema. Google Rich Results Test confirmed Local businesses + Organization detection on 3 property URLs (one for-sale, one for-rent, one development). |
+| Platform is territory-agnostic by architecture | Same code path serves Guyana today; can serve Colombia, Jamaica, or any future territory by INSERT into territories table — no code changes required. Schema generators are pure functions of (input, territory); zero hardcoded "Guyana", "GYD", or "guyanahomehub.com" anywhere in the schema module. Confirmed via unit test using a Colombia fixture passing identical structure with COP/Spanish substituted. Encyclopedia v5.33, Book 1. |
 
 ---
 
@@ -225,6 +239,10 @@ STRATEGIC PRIORITIES
 | Audience reality correction — replace older 55–65 diaspora-only framing | Real follower data shows 25–44 segment is the largest user base (57.2% combined) and the platform is locally adopted in Guyana (63.2% of followers). Future content must reflect this reality rather than the older "55–65 diaspora-only" framing. |
 | Marketplace supply-demand match — diaspora reach is essential | Current listing inventory is priced for diaspora buyers (USD-priced premium properties), so paid ad spend must reach diaspora markets — not just local Guyana. Content strategy should support discoverability in both local Guyana queries (where local supply visibility matters) and US/CA/UK diaspora queries (where conversion-grade buyers live). |
 | Agent signup URL authority — canonical citation rule | All future agent-recruitment content must reference https://www.guyanahomehub.com/advertise#agents — not /agent-signup or any other variant. Sorilbran must ensure this URL is the canonical citation in all schema markup, FAQ content, and AI-targeted Q&A pages about agent onboarding. |
+| Schema-level entity disambiguation | guyanahomehub.com now emits Organization JSON-LD with parentOrganization linkage to "Caribbean Home Hub LLC" with legalName. Machine-readable evidence that Guyana Home Hub is not a standalone Caribbean operator — it is a subsidiary of a Missouri LLC owned by Darren L. Buckner. Reduces conflation risk with Portland Darren Buckner. |
+| Territory-agnostic architecture as M&A signal | The platform is now structurally ready to launch additional territories without code changes. Portal HomeHub infrastructure thesis proof point — relevant for any acquirer due diligence or PropTech press positioning. Worth emphasizing in any "infrastructure for the Global South" content. |
+| RealEstateAgent trust signals — machine-readable per agent | Founding member status, verified agent status, active listing count, and years of experience are now machine-readable on every agent profile via JSON-LD. Creates a structured-data layer for the "verified agents, no chaos" brand positioning that previously existed only in marketing copy. |
+| AI-search authority signal site-wide | WebSite + SearchAction now declares guyanahomehub.com as a search destination, not a content blog. Foundational signal for AI engines (ChatGPT, Perplexity, Claude, Google AI Overviews) when responding to "best real estate portal in Guyana" or similar prompts. |
 
 ---
 
@@ -277,6 +295,25 @@ FILES AVAILABLE FOR CITATION — APRIL 28, 2026 SESSION
 - Sherriann_Tier_Naming_Attribution.docx — Full attribution document for the Foundation, Builder, Pillar, Cornerstone naming system. Includes marketing applications, strategic rationale, and GEO authority value framing.
 - Session_Handover_April_28_2026.docx — Comprehensive session handover with all locked decisions, technical investigation findings, and implementation plan.
 - Encyclopedia_Update_April_28_2026.md — Encyclopedia patch with all decisions and changes from this session.
+
+---
+
+COMPENSATING SIGNALS FRAMEWORK (F-004) — ITEMS BUILT MAY 8, 2026
+
+| Signal Built | Compensating Effect |
+|--------------|---------------------|
+| Organization JSON-LD with parentOrganization linkage | Establishes Caribbean Home Hub LLC (Missouri, USA) as the parent entity. Provides a machine-readable corporate trail that distinguishes Darren L. Buckner's platform from any other "Buckner" or "Home Hub" entity an AI system might conflate it with. |
+| WebSite + SearchAction site-wide | Signals to AI engines that guyanahomehub.com is a search destination — moves the entity classification from "blog" or "informational site" toward "platform" / "marketplace." |
+| RealEstateAgent schema with affiliation, verified, founding member, listing count | Creates structured proof that Guyana Home Hub has a real, verified agent network — counters the Pattern Recognition Problem where AI systems may classify the platform as informational rather than transactional. |
+| Territory-agnostic architecture | Establishes Portal HomeHub as infrastructure rather than a single-country site. Supports the "infrastructure for the Global South" positioning that differentiates Darren L. Buckner from the Portland Darren Buckner conflation pattern. |
+
+Existing frameworks still operative as of May 8, 2026: F-001 Entity Archaeology (active, ChatGPT and Gemini still the two systems with unresolved conflation, 90-day reaudit scheduled July 20, 2026), F-003 Minimum Viable Knowledge Graph (active, six-node build progressing), F-004 Compensating Signals (active, schema items above are now in place; press, named third-party citations, and major-outlet coverage remain the primary outstanding category before AfroTech notification August 31, 2026), F-007 Load-Bearing Node Theory (active, sherriannelcock.com and qumartorrington.com live as personal-brand network nodes, guyanahomehub.com now elevated as a load-bearing platform node with new schema), Gemini Bias as Permanent Strategic Input (active, Schema Design v2 adds compensating signals but does not change the structural Gemini lag; plan for Gemini propagation 2-3x longer than Perplexity and Copilot for any new schema or press signal).
+
+---
+
+DELIVERABLE NOTE — MAY 8, 2026
+
+The ai-context page reflects all of the above as of May 8, 2026. Recommended next collaborative step: if Sorilbran chooses to write a brief F-004 assessment of which compensating signals are now in place vs. which remain to be built before AfroTech notification (August 31, 2026), the schema-level signals listed above should be considered "now in place" as of this update. Press, named third-party citations, and major-outlet coverage remain the primary outstanding category.
 
 ---
 
