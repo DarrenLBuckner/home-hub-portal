@@ -84,10 +84,14 @@ export async function GET(request: NextRequest) {
       return qb
     }
 
-    // Data query
+    // Single combined query: returns both data (page slice) and total count of matching rows.
+    // Replaces the previous separate head:true count query which crashed when .or() was applied
+    // (search filter). { count: 'exact' } on the main select gets total count alongside data
+    // in one round trip and is compatible with .or() filters.
     let query = supabase
       .from('properties')
-      .select(`
+      .select(
+        `
         *,
         profiles!properties_user_id_fkey (
           user_type
@@ -98,26 +102,18 @@ export async function GET(request: NextRequest) {
           display_order,
           is_primary
         )
-      `)
+      `,
+        { count: 'exact' }
+      )
     query = applyFilters(query)
     query = query
       .order(sortConfig.column, { ascending: sortConfig.ascending })
       .range(offset, offset + limit - 1)
 
-    const { data: properties, error } = await query
+    const { data: properties, count, error } = await query
     if (error) {
       console.error('Properties fetch error:', error)
       throw error
-    }
-
-    // Count query — same filters as data query for correct pagination totals.
-    let countQuery = supabase
-      .from('properties')
-      .select('*', { count: 'exact', head: true })
-    countQuery = applyFilters(countQuery)
-    const { count, error: countError } = await countQuery
-    if (countError) {
-      console.error('Count error:', countError)
     }
 
     // Stable secondary sort: cluster sold/rented/off_market AGENT listings at the bottom of the
