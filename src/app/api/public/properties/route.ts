@@ -61,6 +61,25 @@ export async function GET(request: NextRequest) {
 
     // Apply identical filters to both data and count queries so paginated totals always match
     // the rendered set (closes pre-existing count-query filter discrepancy).
+    //
+    // Note: properties.location is a jsonb column, so ILIKE on it crashes with
+    // `operator does not exist: jsonb ~~* unknown`. Search uses the indexable text columns
+    // (title/description/city/neighborhood/region/address) instead. The ?location= and
+    // ?location_exact= URL params now match the same text-column set as ?search= so the
+    // jsonb crash is eliminated for any existing caller passing those params.
+    const escapeLikeValue = (v: string) => v.replace(/,/g, ' ')
+    const buildSearchOr = (term: string) => {
+      const t = escapeLikeValue(term)
+      return [
+        `title.ilike.%${t}%`,
+        `description.ilike.%${t}%`,
+        `city.ilike.%${t}%`,
+        `neighborhood.ilike.%${t}%`,
+        `region.ilike.%${t}%`,
+        `address.ilike.%${t}%`,
+      ].join(',')
+    }
+
     const applyFilters = (qb: any) => {
       qb = qb.in('status', statusValues)
       if (site) qb = qb.eq('site_id', site)
@@ -70,24 +89,26 @@ export async function GET(request: NextRequest) {
         qb = qb.eq('listing_type', listing_type)
       }
       if (searchQuery) {
-        qb = qb.or(
-          `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,location.ilike.%${searchQuery}%`
-        )
+        qb = qb.or(buildSearchOr(searchQuery))
       }
       if (locationExact) {
-        qb = qb.ilike('location', `%${locationExact}%`)
+        qb = qb.or(buildSearchOr(locationExact))
       } else if (locationQuery && !searchQuery) {
-        qb = qb.ilike('location', `%${locationQuery}%`)
+        qb = qb.or(buildSearchOr(locationQuery))
       }
       if (propertyType) qb = qb.eq('property_type', propertyType)
       if (propertyCategory) qb = qb.eq('property_category', propertyCategory)
       return qb
     }
 
-    // Data query
+    // Single combined query: returns both data (page slice) and total count of matching rows.
+    // Replaces the previous separate head:true count query which crashed when .or() was applied
+    // (search filter). { count: 'exact' } on the main select gets total count alongside data
+    // in one round trip and is compatible with .or() filters.
     let query = supabase
       .from('properties')
-      .select(`
+      .select(
+        `
         *,
         profiles!properties_user_id_fkey (
           user_type
@@ -98,26 +119,18 @@ export async function GET(request: NextRequest) {
           display_order,
           is_primary
         )
-      `)
+      `,
+        { count: 'exact' }
+      )
     query = applyFilters(query)
     query = query
       .order(sortConfig.column, { ascending: sortConfig.ascending })
       .range(offset, offset + limit - 1)
 
-    const { data: properties, error } = await query
+    const { data: properties, count, error } = await query
     if (error) {
       console.error('Properties fetch error:', error)
       throw error
-    }
-
-    // Count query — same filters as data query for correct pagination totals.
-    let countQuery = supabase
-      .from('properties')
-      .select('*', { count: 'exact', head: true })
-    countQuery = applyFilters(countQuery)
-    const { count, error: countError } = await countQuery
-    if (countError) {
-      console.error('Count error:', countError)
     }
 
     // Stable secondary sort: cluster sold/rented/off_market AGENT listings at the bottom of the
