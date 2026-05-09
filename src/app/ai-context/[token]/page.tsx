@@ -317,6 +317,39 @@ The ai-context page reflects all of the above as of May 8, 2026. Recommended nex
 
 ---
 
+LISTINGS PAGINATION + STATUS FILTER FIX — MAY 8, 2026 EVENING SESSION
+
+| Change | Detail |
+|--------|--------|
+| /properties/rent, /properties/buy, /properties/commercial — server-rendered numbered pagination | 24 cards per page, ?page=N URL-driven, default sort created_at_desc with ?sort= override (newest, oldest, price-high, price-low). Replaces the previously-hidden behavior where Portal's default LIMIT 50 capped results. Surfaces 28 previously-invisible active rentals on /properties/rent alone — and equivalent counts on the buy and commercial pages. |
+| Status filter active-only on consumer list pages | Closes a status leak that was rendering rented and under_contract listings on the active rent/buy/commercial pages. Sold/rented agent listings still visible on agent profile pages (correct social-proof behavior) but no longer on the public list pages. |
+| Portal /api/public/properties — new ?status, ?sort, ?search, ?location query params | Backward compatible. ?status accepts active|sold|rented|under_contract|off_market|all (default all = the prior 5-status behavior, draft never exposed). Search now matches across title, description, city, neighborhood, region, address text columns — replaces a latent jsonb ILIKE crash on the location column. |
+| Mckenzie Property Solutions listing now publicly visible | "Stylish 3-Bed Apartment in Richmondville Providence with AC and Generator" (properties.id 4cbb52a7-b241-4a8f-b8b0-3fb2f0a3e837) was at row 53 of 70 active rentals — invisible to public for weeks under the LIMIT 50 cap. Now visible at /properties/rent?page=3 and findable via /properties/rent?q=providence. First time live in production. Screenshot sent to Mckenzie. |
+| Filter composition with pagination | ?q=providence and ?type=Apartment compose correctly with ?page=N and ?sort=. Search, type, sort URL params all preserved across pagination links. |
+| Three PRs shipped tonight — May 8, 2026 | Portal #3 (status/sort params + count-query filter parity), Portal #4 (jsonb ILIKE crash fix on search/location), homehub-consumer #4 (server-rendered pagination on rent/buy/commercial). All three merged and production-verified before this update. |
+
+---
+
+OUTSTANDING ITEMS — POST MAY 8, 2026 EVENING SESSION
+
+Nine items remain on the engineering backlog after tonight's session. Listed in descending priority:
+
+| # | Item | Priority | Detail |
+|---|------|----------|--------|
+| 1 | Branch protection on main — both repos | HIGHEST | GitHub warning currently active. Direct push to main is permitted on both home-hub-portal and homehub-consumer with no PR review requirement, no required status checks, no force-push prevention. Acquirer diligence risk: a security/operational maturity signal that any reviewer will flag immediately. One-session task per repo: require PR + 1 reviewer + Vercel preview status check + linear history + disable force push + disable deletions. |
+| 2 | ?minPrice / ?maxPrice / ?beds / ?baths filters not applied server-side | HIGH | URL params preserved across pagination links (so PropertySearchTabs UI doesn't break) but the filters are not applied to the Portal API fetch on the new server-rendered list pages. Pre-PR these filtered client-side within the LIMIT 50 cap; post-PR they're effectively no-ops on /properties/rent, /buy, /commercial. Future Portal PR needed to add ?minPrice, ?maxPrice, ?beds, ?baths support to /api/public/properties. Bedrooms/bathrooms are simple .gte() filters; price needs both .gte() and .lte(). |
+| 3 | CORS header parity audit across Portal /api/public/* routes | Medium | One route had GET advertising x-site-id but OPTIONS preflight only listing Content-Type. Caught by Vercel Copilot Autofix during PR #3 review and patched. Other public routes may have the same mismatch — silently breaks credentialed CORS preflights with no server-side error log. ~30 minute audit of all OPTIONS handlers under /api/public/. |
+| 4 | Trailing whitespace audit on properties text columns | Low | Sherriann Elcock's "Wonderful 4 Bedroom home " has a trailing space in title. Likely a wider data-hygiene pattern across title, description, address, neighborhood, city. One-time SQL audit and bulk trim. Cosmetic; not blocking any feature. |
+| 5 | /properties/developments/[slug] BreadcrumbSchema embedding | Medium | Out of scope from Schema Design v2 PR (#3 in homehub-consumer, merged earlier May 8). Same pattern already applied to /properties/[id] and /agents/[slug] — needs replication to the developments route. Affects Google rich-results coverage. |
+| 6 | Dynamic sitemap regeneration | Medium | sitemap.xml on guyanahomehub.com lists only 30 URLs. Real coverage should be ~170+ (144 active properties + 17 agent profiles + ~20 static). Affects Google URL discovery — property and agent pages with the new schema may not be indexed quickly. Target: complete before AfroTech notification August 31, 2026. |
+| 7 | territories.display_name "Guyana HomeHub" → canonical "Guyana Home Hub" | Low | Database stores "Guyana HomeHub" (single concatenated word) for the GY territory. Public marketing, brand voice, footer all use canonical "Guyana Home Hub" (three words). Schema renders the DB value, so JSON-LD says "Guyana HomeHub" while visible UI says "Guyana Home Hub." 30-second SQL update. |
+| 8 | PropertiesListingFixed.tsx + AgentProfileClient.tsx pagination refactor | Low | New shared Pagination component lives at src/components/Pagination.tsx (URL-driven). PropertiesListingFixed (used by /properties index, /properties/commercial/lease, /properties/commercial/sale) and AgentProfileClient (state-only pagination at lines 131-449) could both adopt it for consistency. Quality-of-life refactor, not user-facing. |
+| 9 | Portal post-fetch agent-demotion sort cleanup | Low | When consumer passes status=active (now the case on /properties/rent /buy /commercial), the demotion-of-sold/rented-agent-listings-to-bottom logic in Portal becomes a no-op. Flagged in code comment for cleanup once all consumers are confirmed on status=active. Dead code, but harmless. |
+
+Items 1 and 2 are the highest-priority outstanding work. Item 1 is an acquirer-diligence signal independent of any product feature. Item 2 is a user-facing functional gap — a buyer who filters /properties/rent by 3+ bedrooms today will see all 70 active rentals paginated rather than only the matching ones.
+
+---
+
 INFRASTRUCTURE NOTE — PERMANENT
 The ai-context page at portalhomehub.com/ai-context/[token] is the live canonical context source for this collaboration. After each Encyclopedia session a patch file is generated. Darren reviews and merges updates into page.tsx, commits, and deploys. No database. No CMS. Edit the PAGE_BODY and LAST_UPDATED constants at the top of the file.
 `;
