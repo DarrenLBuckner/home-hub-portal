@@ -82,3 +82,9 @@ test-*.ts
 
 # Claude Code per-user settings (permissions allowlist) — should not be shared
 .claude/settings.local.json
+
+# Claude Code transient state
+.claude/scheduled_tasks.lock
+
+# VS Code workspace files (personal/per-machine)
+*.code-workspace
