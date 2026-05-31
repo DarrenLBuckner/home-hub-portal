@@ -30,6 +30,16 @@ function resolveSort(sortParam: string | null): SortConfig {
   }
 }
 
+// Coerce a numeric filter param. Returns null for empty / missing / non-numeric /
+// zero / negative values so a bad input silently drops the filter instead of
+// throwing a 500. A null result means "no constraint" — never coalesced to 0.
+function parseNumericParam(raw: string | null): number | null {
+  if (!raw) return null
+  const n = Number(raw)
+  if (!Number.isFinite(n) || n <= 0) return null
+  return n
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = createAdminClient()
@@ -52,11 +62,22 @@ export async function GET(request: NextRequest) {
     const statusParam = searchParams.get('status')
     const sortParam = searchParams.get('sort')
 
+    // Numeric filters. Beds/baths are scale-independent and always applied.
+    // Price is meaningful only within a single listing_type scope (rent and sale
+    // share one `price` column on completely different scales), so price predicates
+    // are gated on a single listing_type being present — ignored for unscoped or
+    // multi-type calls rather than applied across mixed scales.
+    const beds = parseNumericParam(searchParams.get('beds'))
+    const baths = parseNumericParam(searchParams.get('baths'))
+    const minPrice = parseNumericParam(searchParams.get('minPrice'))
+    const maxPrice = parseNumericParam(searchParams.get('maxPrice'))
+    const hasSingleListingScope = !!listing_type && !listing_type_multiple
+
     const statusValues = resolveStatusValues(statusParam)
     const sortConfig = resolveSort(sortParam)
 
     console.log(
-      `🔍 Fetching properties - site: ${site}, listing_type: ${listing_type}, status: ${statusParam || 'all (default)'}, sort: ${sortParam || 'created_at_desc (default)'}, search: "${searchQuery}", location: "${locationQuery}"`
+      `🔍 Fetching properties - site: ${site}, listing_type: ${listing_type}, status: ${statusParam || 'all (default)'}, sort: ${sortParam || 'created_at_desc (default)'}, search: "${searchQuery}", location: "${locationQuery}", beds: ${beds ?? '-'}, baths: ${baths ?? '-'}, price: ${hasSingleListingScope ? `${minPrice ?? '-'}..${maxPrice ?? '-'}` : 'ignored (no single scope)'}`
     )
 
     // Apply identical filters to both data and count queries so paginated totals always match
@@ -98,6 +119,15 @@ export async function GET(request: NextRequest) {
       }
       if (propertyType) qb = qb.eq('property_type', propertyType)
       if (propertyCategory) qb = qb.eq('property_category', propertyCategory)
+      // Beds/baths: a null bedroom/bathroom value fails the >= test, which correctly
+      // drops land and commercial listings from bedroom-filtered results.
+      if (beds !== null) qb = qb.gte('bedrooms', beds)
+      if (baths !== null) qb = qb.gte('bathrooms', baths)
+      // Price (GYD): only inside a single listing_type scope (see parse block above).
+      if (hasSingleListingScope) {
+        if (minPrice !== null) qb = qb.gte('price', minPrice)
+        if (maxPrice !== null) qb = qb.lte('price', maxPrice)
+      }
       return qb
     }
 
