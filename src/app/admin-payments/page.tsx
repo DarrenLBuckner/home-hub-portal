@@ -57,7 +57,7 @@ export default function AdminPayments() {
         
         // Hardcoded admin permissions for known users
         const adminConfig: { [email: string]: { level: string, country?: number, displayName?: string } } = {
-          'mrdarrenbuckner@gmail.com': { level: 'super', displayName: 'Darren Buckner' },
+          'mrdarrenbuckner@gmail.com': { level: 'super', displayName: 'Darren L. Buckner' },
           'qumar@guyanahomehub.com': { level: 'owner', country: 1, displayName: 'Qumar Torrington' }
         };
         
