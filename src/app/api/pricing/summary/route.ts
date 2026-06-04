@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextRequest, NextResponse } from 'next/server';
+import { isCustomPricePlan } from '@/lib/pricing-display';
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,15 +49,22 @@ export async function GET(request: NextRequest) {
     };
 
     const getRange = (planList: any[]) => {
-      if (planList.length === 0) return null;
-      const min = Math.min(...planList.map(p => p.price));
-      const max = Math.max(...planList.map(p => p.price));
+      // Exclude custom-priced (price=0 / custom_pricing) plans so a range never
+      // shows "GY$0-...".
+      const priced = planList.filter(p => !isCustomPricePlan(p));
+      if (priced.length === 0) return null;
+      const min = Math.min(...priced.map(p => p.price));
+      const max = Math.max(...priced.map(p => p.price));
       if (min === max) return formatPrice(min);
       return `${formatPrice(min)}-${formatPrice(max)}`;
     };
 
-    // Get the starting price for agents (monthly subscription)
-    const agentStarting = agentPlans.length > 0 ? formatPrice(agentPlans[0].price) : null;
+    // Get the starting price for agents (monthly subscription). Exclude
+    // custom-priced plans (e.g. Cornerstone, price=0) so "starting from" never
+    // resolves to GY$0 — it should be the lowest REAL price (e.g. Foundation).
+    // plans are ordered price-ASC, so the first non-custom agent plan is the min.
+    const agentPricedPlans = agentPlans.filter(p => !isCustomPricePlan(p));
+    const agentStarting = agentPricedPlans.length > 0 ? formatPrice(agentPricedPlans[0].price) : null;
 
     return NextResponse.json({
       success: true,

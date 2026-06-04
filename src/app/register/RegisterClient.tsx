@@ -5,6 +5,12 @@ import { useTranslations } from 'next-intl';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { usePricing } from '@/hooks/usePricing';
 import { getCountryFromCookies } from '@/lib/country-detection';
+import { isCustomPricePlan } from '@/lib/pricing-display';
+
+// Launch state: agent cards show "FREE" until pricing goes public. PR-2 flips
+// this single constant to false to reveal live prices — at which point the
+// Custom branch below automatically renders for Cornerstone (price=0).
+const SHOW_LAUNCH_FREE = true;
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -266,44 +272,51 @@ function RegistrationContent({ initialSiteName }: { initialSiteName: string }) {
                   const isSelected = form.selected_plan === plan.id;
                   const features = plan.features || {};
 
-                  // Determine tier-specific benefits based on plan name
-                  const planNameLower = plan.plan_name.toLowerCase();
-                  const isBasic = planNameLower.includes('basic');
-                  const isProfessional = planNameLower.includes('professional');
-                  const isPremium = planNameLower.includes('premium') || planNameLower.includes('platinum');
-
-                  // Tier-specific benefits (enhance database data)
-                  const tierBenefits = isBasic ? {
-                    icon: '🏠',
-                    tagline: 'Perfect for new agents',
-                    benefits: [
-                      { icon: '📋', text: `Up to ${plan.max_properties || 'unlimited'} property listings` },
-                      { icon: '🔍', text: 'Standard search placement' },
-                      { icon: '📧', text: features.support || 'Email support' },
-                      { icon: '♾️', text: 'Listings never expire' },
-                    ]
-                  } : isProfessional ? {
-                    icon: '⭐',
-                    tagline: 'Best for active agents',
-                    benefits: [
-                      { icon: '📋', text: `Up to ${plan.max_properties || 'unlimited'} property listings` },
-                      { icon: '🚀', text: 'Priority search placement' },
-                      { icon: '📞', text: features.support || 'Phone & email support' },
-                      { icon: '✓', text: 'Verified Agent badge' },
-                      { icon: '♾️', text: 'Listings never expire' },
-                    ]
-                  } : {
-                    icon: '👑',
-                    tagline: 'For top performers & agencies',
-                    benefits: [
-                      { icon: '📋', text: `Up to ${plan.max_properties || 'unlimited'} property listings` },
-                      { icon: '🔝', text: 'Top search placement' },
-                      { icon: '🎧', text: 'Dedicated account manager' },
-                      { icon: '🌟', text: 'Featured Agent spotlight' },
-                      { icon: '📊', text: 'Premium analytics' },
-                      { icon: '♾️', text: 'Listings never expire' },
-                    ]
+                  // Tier-specific card benefits, keyed off the neutral tier value
+                  // (basic/professional/premium/enterprise) — not plan_name. A
+                  // missing/unknown tier (transitional rows) defaults to the basic
+                  // block. enterprise (Cornerstone) shares the top-tier block.
+                  const benefitsByTier = {
+                    basic: {
+                      icon: '🏠',
+                      tagline: 'Perfect for new agents',
+                      benefits: [
+                        { icon: '📋', text: `Up to ${plan.max_properties || 'unlimited'} property listings` },
+                        { icon: '🔍', text: 'Standard search placement' },
+                        { icon: '📧', text: features.support || 'Email support' },
+                        { icon: '♾️', text: 'Listings never expire' },
+                      ]
+                    },
+                    professional: {
+                      icon: '⭐',
+                      tagline: 'Best for active agents',
+                      benefits: [
+                        { icon: '📋', text: `Up to ${plan.max_properties || 'unlimited'} property listings` },
+                        { icon: '🚀', text: 'Priority search placement' },
+                        { icon: '📞', text: features.support || 'Phone & email support' },
+                        { icon: '✓', text: 'Verified Agent badge' },
+                        { icon: '♾️', text: 'Listings never expire' },
+                      ]
+                    },
+                    premium: {
+                      icon: '👑',
+                      tagline: 'For top performers & agencies',
+                      benefits: [
+                        { icon: '📋', text: `Up to ${plan.max_properties || 'unlimited'} property listings` },
+                        { icon: '🔝', text: 'Top search placement' },
+                        { icon: '🎧', text: 'Dedicated account manager' },
+                        { icon: '🌟', text: 'Featured Agent spotlight' },
+                        { icon: '📊', text: 'Premium analytics' },
+                        { icon: '♾️', text: 'Listings never expire' },
+                      ]
+                    },
                   };
+                  const tierKey =
+                    plan.tier === 'professional' ? 'professional' :
+                    plan.tier === 'premium' || plan.tier === 'enterprise' ? 'premium' :
+                    'basic';
+                  const isProfessional = tierKey === 'professional';
+                  const tierBenefits = benefitsByTier[tierKey];
 
                   return (
                     <div
@@ -334,12 +347,32 @@ function RegistrationContent({ initialSiteName }: { initialSiteName: string }) {
                         )}
                       </div>
 
-                      {/* Price Display - Temporarily showing FREE during launch */}
+                      {/* Price Display - shows FREE during launch (SHOW_LAUNCH_FREE).
+                          When PR-2 flips that flag, Cornerstone (custom/price=0)
+                          renders "Custom"; all others show their live price. */}
                       <div className="text-center mb-4 pb-4 border-b border-gray-200">
-                        <div className="text-2xl lg:text-3xl font-bold text-green-600">
-                          FREE
-                        </div>
-                        <div className="text-xs lg:text-sm text-gray-500">Limited time offer</div>
+                        {SHOW_LAUNCH_FREE ? (
+                          <>
+                            <div className="text-2xl lg:text-3xl font-bold text-green-600">
+                              FREE
+                            </div>
+                            <div className="text-xs lg:text-sm text-gray-500">Limited time offer</div>
+                          </>
+                        ) : isCustomPricePlan(plan) ? (
+                          <>
+                            <div className="text-2xl lg:text-3xl font-bold text-gray-900">
+                              Custom
+                            </div>
+                            <div className="text-xs lg:text-sm text-gray-500">Contact us</div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="text-2xl lg:text-3xl font-bold text-gray-900">
+                              {plan.price_formatted}
+                            </div>
+                            <div className="text-xs lg:text-sm text-gray-500">per month</div>
+                          </>
+                        )}
                       </div>
 
                       {/* Benefits List */}
