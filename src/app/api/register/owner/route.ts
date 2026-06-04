@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
+import { getTerritorySignupFlags } from '@/lib/territory-signup-flags';
 
 export async function POST(request: Request) {
   try {
@@ -8,6 +9,16 @@ export async function POST(request: Request) {
     const { first_name, last_name, email, phone, password } = body;
     if (!first_name || !last_name || !email || !phone || !password) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Territory gate: block owner (FSBO) signups where the territory disables them.
+    // This route has no UI caller but is live; it is guarded like the rest. Fails closed.
+    const flags = await getTerritorySignupFlags(body.country_id || body.country);
+    if (!flags.fsboSignupEnabled) {
+      return NextResponse.json(
+        { error: 'For Sale By Owner registration is not available in this territory.' },
+        { status: 403 },
+      );
     }
 
     // Normalize phone number
