@@ -121,14 +121,27 @@ export async function POST(request: NextRequest) {
       // Look up the selected plan from pricing_plans table
       const { data: selectedPlan, error: planError } = await supabaseAdmin
         .from('pricing_plans')
-        .select('plan_name, max_properties')
+        .select('plan_name, max_properties, tier')
         .eq('id', agent.selected_plan)
         .single();
 
       if (planError || !selectedPlan) {
         console.warn('⚠️ Could not find selected plan, using basic defaults:', planError);
+      } else if (selectedPlan.tier) {
+        // Preferred path: the plan carries an explicit neutral tier value
+        // (basic/professional/premium/enterprise). Read it directly — no
+        // plan_name substring inference.
+        subscriptionTier = selectedPlan.tier;
+        const TIER_FALLBACK_LIMIT: Record<string, number> = {
+          basic: 10, professional: 25, premium: 50, enterprise: 100,
+        };
+        propertyLimit = selectedPlan.max_properties ?? TIER_FALLBACK_LIMIT[subscriptionTier] ?? 10;
+        console.log(`📋 Selected plan: ${selectedPlan.plan_name} → tier: ${subscriptionTier} (from pricing_plans.tier), property_limit: ${propertyLimit}`);
       } else {
-        // Derive tier from plan_name
+        // TRANSITIONAL FALLBACK: row has no explicit tier yet (e.g. Admin Special,
+        // or a not-yet-migrated territory). Derive from plan_name as before.
+        // TODO(backlog): delete this ladder once every territory's rows carry tier.
+        console.warn(`⚠️ pricing_plans row ${agent.selected_plan} has no tier — falling back to plan_name inference`);
         const planNameLower = selectedPlan.plan_name.toLowerCase();
         if (planNameLower.includes('platinum')) {
           subscriptionTier = 'platinum';
@@ -143,7 +156,7 @@ export async function POST(request: NextRequest) {
           subscriptionTier = 'basic';
           propertyLimit = selectedPlan.max_properties || 10;
         }
-        console.log(`📋 Selected plan: ${selectedPlan.plan_name} → tier: ${subscriptionTier}, property_limit: ${propertyLimit}`);
+        console.log(`📋 Selected plan: ${selectedPlan.plan_name} → tier: ${subscriptionTier} (plan_name fallback), property_limit: ${propertyLimit}`);
       }
     }
 
