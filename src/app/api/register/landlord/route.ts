@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
+import { getTerritorySignupFlags } from '@/lib/territory-signup-flags';
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,16 @@ export async function POST(request: Request) {
     if (!first_name || !last_name || !email || !phone || !password) {
       console.log('Missing fields:', { first_name: !!first_name, last_name: !!last_name, email: !!email, phone: !!phone, password: !!password });
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    }
+
+    // Territory gate: block landlord signups where the territory disables them.
+    // Runs before any auth user or profile is created. Fails closed.
+    const flags = await getTerritorySignupFlags(body.country_id || body.country);
+    if (!flags.landlordSignupEnabled) {
+      return NextResponse.json(
+        { error: 'Landlord registration is not available in this territory.' },
+        { status: 403 },
+      );
     }
 
     // Normalize phone number

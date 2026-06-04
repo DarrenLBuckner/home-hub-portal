@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
+import { getTerritorySignupFlags } from '@/lib/territory-signup-flags';
 
 export async function POST(request: Request) {
   try {
@@ -42,6 +43,16 @@ export async function POST(request: Request) {
     // Validate password requirements
     if (password.length < 8 || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
       return NextResponse.json({ error: 'Password must be at least 8 characters with at least one special character' }, { status: 400 });
+    }
+
+    // Territory gate: block agent signups where the territory disables them.
+    // Runs before the agent_vetting row is written. Fails closed.
+    const flags = await getTerritorySignupFlags(body.country || body.country_id);
+    if (!flags.agentSignupEnabled) {
+      return NextResponse.json(
+        { error: 'Agent registration is not available in this territory.' },
+        { status: 403 },
+      );
     }
 
     // DO NOT create user yet - just validate and prepare data
