@@ -8,6 +8,11 @@
 // has a zero price (the convention for Cornerstone = contact-sales). Keeping
 // this in one place means PR-2 (FREE -> live prices) inherits it automatically.
 
+// Launch state: pricing surfaces (register cards + select-country summary) show
+// "FREE during launch" instead of live prices. Flip this ONE constant to false
+// at the Oct 1 billing launch to reveal real prices on every surface at once.
+export const SHOW_LAUNCH_FREE = true;
+
 export function isCustomPricePlan(plan: {
   price?: number | null;
   features?: { custom_pricing?: boolean } | null | any;
