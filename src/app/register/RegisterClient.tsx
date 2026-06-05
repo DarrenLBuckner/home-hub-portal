@@ -5,12 +5,8 @@ import { useTranslations } from 'next-intl';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { usePricing } from '@/hooks/usePricing';
 import { getCountryFromCookies } from '@/lib/country-detection';
-import { isCustomPricePlan } from '@/lib/pricing-display';
-
-// Launch state: agent cards show "FREE" until pricing goes public. PR-2 flips
-// this single constant to false to reveal live prices — at which point the
-// Custom branch below automatically renders for Cornerstone (price=0).
-const SHOW_LAUNCH_FREE = true;
+import { isCustomPricePlan, SHOW_LAUNCH_FREE } from '@/lib/pricing-display';
+import { getTierBenefits } from '@/lib/subscription-utils';
 
 const countries = [
   { code: 'GY', name: 'Guyana', currency: 'GYD', symbol: 'G$' },
@@ -270,53 +266,40 @@ function RegistrationContent({ initialSiteName }: { initialSiteName: string }) {
               ) : (
                 agentPlans.map(plan => {
                   const isSelected = form.selected_plan === plan.id;
-                  const features = plan.features || {};
 
-                  // Tier-specific card benefits, keyed off the neutral tier value
-                  // (basic/professional/premium/enterprise) — not plan_name. A
-                  // missing/unknown tier (transitional rows) defaults to the basic
-                  // block. enterprise (Cornerstone) shares the top-tier block.
-                  const benefitsByTier = {
-                    basic: {
-                      icon: '🏠',
-                      tagline: 'Perfect for new agents',
-                      benefits: [
-                        { icon: '📋', text: `Up to ${plan.max_properties || 'unlimited'} property listings` },
-                        { icon: '🔍', text: 'Standard search placement' },
-                        { icon: '📧', text: features.support || 'Email support' },
-                        { icon: '♾️', text: 'Listings never expire' },
-                      ]
-                    },
-                    professional: {
-                      icon: '⭐',
-                      tagline: 'Best for active agents',
-                      benefits: [
-                        { icon: '📋', text: `Up to ${plan.max_properties || 'unlimited'} property listings` },
-                        { icon: '🚀', text: 'Priority search placement' },
-                        { icon: '📞', text: features.support || 'Phone & email support' },
-                        { icon: '✓', text: 'Verified Agent badge' },
-                        { icon: '♾️', text: 'Listings never expire' },
-                      ]
-                    },
-                    premium: {
-                      icon: '👑',
-                      tagline: 'For top performers & agencies',
-                      benefits: [
-                        { icon: '📋', text: `Up to ${plan.max_properties || 'unlimited'} property listings` },
-                        { icon: '🔝', text: 'Top search placement' },
-                        { icon: '🎧', text: 'Dedicated account manager' },
-                        { icon: '🌟', text: 'Featured Agent spotlight' },
-                        { icon: '📊', text: 'Premium analytics' },
-                        { icon: '♾️', text: 'Listings never expire' },
-                      ]
-                    },
-                  };
-                  const tierKey =
-                    plan.tier === 'professional' ? 'professional' :
-                    plan.tier === 'premium' || plan.tier === 'enterprise' ? 'premium' :
-                    'basic';
-                  const isProfessional = tierKey === 'professional';
-                  const tierBenefits = benefitsByTier[tierKey];
+                  // Tier identity (basic/professional/premium/enterprise). Unknown
+                  // tiers fall back to basic. Header copy is per-tier.
+                  const tier = (['basic', 'professional', 'premium', 'enterprise'] as const).includes(plan.tier as any)
+                    ? (plan.tier as 'basic' | 'professional' | 'premium' | 'enterprise')
+                    : 'basic';
+                  const header = {
+                    basic:        { icon: '🏠', tagline: 'Perfect for new agents' },
+                    professional: { icon: '⭐', tagline: 'Best for active agents' },
+                    premium:      { icon: '👑', tagline: 'For top performers & agencies' },
+                    enterprise:   { icon: '🏛️', tagline: 'For brokerages & teams' },
+                  }[tier];
+                  const isProfessional = tier === 'professional';
+
+                  // Verified feature matrix. Caps + AI/YouTube come from
+                  // getTierBenefits (the same source the create route enforces), so
+                  // the card can't drift from what's actually allowed. The four
+                  // roadmap features render "Coming soon" only on the tiers they
+                  // belong to. Excluded (locked) = built-but-gated; soon = not built.
+                  const caps = getTierBenefits('agent', tier);
+                  const featureRows: { text: string; state: 'included' | 'locked' | 'soon' }[] = [
+                    { text: `${caps.maxListings} property listings`, state: 'included' },
+                    { text: caps.maxPhotos >= 999 ? 'Unlimited photos per listing' : `${caps.maxPhotos} photos per listing`, state: 'included' },
+                    { text: 'AI description writer', state: caps.canUseAI ? 'included' : 'locked' },
+                    { text: 'YouTube video tour', state: caps.canUploadVideo ? 'included' : 'locked' },
+                    { text: 'Verified Agent badge', state: 'included' },
+                    { text: 'Listings never expire', state: 'included' },
+                  ];
+                  if (tier !== 'basic') featureRows.push({ text: 'Featured listings', state: 'soon' });
+                  if (tier === 'premium' || tier === 'enterprise') featureRows.push({ text: 'Custom agent website', state: 'soon' });
+                  if (tier === 'enterprise') {
+                    featureRows.push({ text: 'API access', state: 'soon' });
+                    featureRows.push({ text: 'Concierge listing service', state: 'soon' });
+                  }
 
                   return (
                     <div
@@ -339,31 +322,35 @@ function RegistrationContent({ initialSiteName }: { initialSiteName: string }) {
 
                       {/* Plan Header */}
                       <div className="text-center mb-4 pt-2">
-                        <div className="text-3xl mb-2">{tierBenefits.icon}</div>
+                        <div className="text-3xl mb-2">{header.icon}</div>
                         <h3 className="font-bold text-gray-900 text-lg lg:text-xl">{plan.plan_name}</h3>
-                        <p className="text-xs lg:text-sm text-gray-500 mt-1">{tierBenefits.tagline}</p>
+                        <p className="text-xs lg:text-sm text-gray-500 mt-1">{header.tagline}</p>
                         {isProfessional && (
                           <p className="text-xs text-emerald-600 italic mt-1">👉 Not sure which to pick? Start here.</p>
                         )}
                       </div>
 
-                      {/* Price Display - shows FREE during launch (SHOW_LAUNCH_FREE).
-                          When PR-2 flips that flag, Cornerstone (custom/price=0)
-                          renders "Custom"; all others show their live price. */}
+                      {/* Price Display. Custom (Cornerstone) is checked first so it
+                          never shows "FREE". During launch (SHOW_LAUNCH_FREE) the
+                          real GYD price is struck through with "FREE during launch".
+                          When the flag flips (Oct 1) non-custom plans show the live price. */}
                       <div className="text-center mb-4 pb-4 border-b border-gray-200">
-                        {SHOW_LAUNCH_FREE ? (
-                          <>
-                            <div className="text-2xl lg:text-3xl font-bold text-green-600">
-                              FREE
-                            </div>
-                            <div className="text-xs lg:text-sm text-gray-500">Limited time offer</div>
-                          </>
-                        ) : isCustomPricePlan(plan) ? (
+                        {isCustomPricePlan(plan) ? (
                           <>
                             <div className="text-2xl lg:text-3xl font-bold text-gray-900">
                               Custom
                             </div>
                             <div className="text-xs lg:text-sm text-gray-500">Contact us</div>
+                          </>
+                        ) : SHOW_LAUNCH_FREE ? (
+                          <>
+                            <div className="text-2xl lg:text-3xl font-bold text-green-600">
+                              FREE
+                            </div>
+                            <div className="text-xs lg:text-sm text-gray-500">
+                              <span className="line-through text-gray-400">{plan.price_formatted}</span>
+                              <span className="ml-1 font-medium text-emerald-700">FREE during launch</span>
+                            </div>
                           </>
                         ) : (
                           <>
@@ -375,32 +362,36 @@ function RegistrationContent({ initialSiteName }: { initialSiteName: string }) {
                         )}
                       </div>
 
-                      {/* Benefits List */}
-                      <div className="space-y-2 lg:space-y-3 text-sm lg:text-base text-gray-700 flex-grow">
-                        {tierBenefits.benefits.map((benefit, idx) => (
-                          <div key={idx} className="flex items-start">
-                            <span className="mr-2 flex-shrink-0">{benefit.icon}</span>
-                            <span>{benefit.text}</span>
-                          </div>
-                        ))}
-                        {plan.featured_listings_included > 0 && (
-                          <div className="flex items-start">
-                            <span className="mr-2 flex-shrink-0">🌟</span>
-                            <span>{plan.featured_listings_included} featured listings/month</span>
-                          </div>
-                        )}
-                        {features.photos && (
-                          <div className="flex items-start">
-                            <span className="mr-2 flex-shrink-0">📸</span>
-                            <span>{features.photos} photos per property</span>
-                          </div>
-                        )}
-                        {features.videos && (
-                          <div className="flex items-start">
-                            <span className="mr-2 flex-shrink-0">🎥</span>
-                            <span>Video uploads included</span>
-                          </div>
-                        )}
+                      {/* Feature list — included (✓) / excluded (gray + 🔒 lock) /
+                          coming-soon (roadmap pill). */}
+                      <div className="space-y-2 lg:space-y-3 text-sm lg:text-base flex-grow">
+                        {featureRows.map((row, idx) => {
+                          if (row.state === 'locked') {
+                            return (
+                              <div key={idx} className="flex items-start text-gray-400">
+                                <span className="mr-2 flex-shrink-0">🔒</span>
+                                <span>{row.text}</span>
+                              </div>
+                            );
+                          }
+                          if (row.state === 'soon') {
+                            return (
+                              <div key={idx} className="flex items-start text-gray-600">
+                                <span className="mr-2 flex-shrink-0">✨</span>
+                                <span>{row.text}</span>
+                                <span className="ml-2 mt-0.5 text-[10px] font-semibold uppercase tracking-wide bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                  Coming soon
+                                </span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div key={idx} className="flex items-start text-gray-700">
+                              <span className="mr-2 flex-shrink-0 text-emerald-600">✓</span>
+                              <span>{row.text}</span>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       {/* Selection Indicator */}

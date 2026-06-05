@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getCountryFromDomain } from '@/lib/country-detection';
 import { usePricingSummary } from '@/hooks/usePricing';
+import { SHOW_LAUNCH_FREE } from '@/lib/pricing-display';
 import type { TerritorySignupFlags } from '@/lib/territory-signup-flags';
 
 // Hook to fetch founding agent spots for a country
@@ -243,6 +244,13 @@ function PricingDisplay({ countryCode, foundingAgentSpots, foundingProgramActive
             <div className="text-right">
               <span className="text-green-600 font-bold">FREE* for Founding Agents</span>
               <p className="text-xs text-gray-500">*Regular: {summary.agent.starting ? `${summary.agent.starting}${summary.agent.suffix}` : 'N/A'}</p>
+            </div>
+          ) : SHOW_LAUNCH_FREE ? (
+            <div className="text-right">
+              {summary.agent.starting && (
+                <span className="line-through text-gray-400 mr-1">{summary.agent.starting}{summary.agent.suffix}</span>
+              )}
+              <span className="font-bold text-emerald-700">FREE during launch</span>
             </div>
           ) : (
             <span className="font-medium text-gray-900">
