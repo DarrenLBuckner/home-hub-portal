@@ -8,6 +8,7 @@ import { calculateCompletionScore, getUserMotivation } from "@/lib/completionUti
 import PropertySuccessScreen from "@/components/PropertySuccessScreen";
 import { saveDraft, deleteDraft } from '@/lib/draftManager';
 import { uploadImagesToSupabaseWithStatus } from '@/lib/supabaseImageUpload';
+import { getTierBenefits } from '@/lib/subscription-utils';
 
 // Step components
 import Step1BasicInfo from './components/Step1BasicInfo';
@@ -172,6 +173,15 @@ function CreateAgentPropertyContent() {
 
   // Auto-populate agent contact info on form load (not just Step 5)
   // This ensures drafts saved before reaching Step 5 include contact info
+  // Agent tier capabilities (AI / video / photo cap). Permissive defaults so
+  // admin-on-behalf and pre-load states aren't wrongly locked; the server
+  // routes are the real enforcement. Loaded for the agent in the effect below.
+  const [agentCaps, setAgentCaps] = useState<{ canUseAI: boolean; canUploadVideo: boolean; maxPhotos: number }>({
+    canUseAI: true,
+    canUploadVideo: true,
+    maxPhotos: 999,
+  });
+
   useEffect(() => {
     if (isCreatingForUser) return; // Admin-on-behalf-of has its own logic
 
@@ -186,15 +196,24 @@ function CreateAgentPropertyContent() {
           setFormData((prev: any) => prev.owner_email ? prev : { ...prev, owner_email: user.email });
         }
 
-        // Auto-populate WhatsApp from profile phone if empty
+        // Auto-populate WhatsApp from profile phone if empty + load tier caps
         const { data: profile } = await supabase
           .from('profiles')
-          .select('phone')
+          .select('phone, user_type, subscription_tier')
           .eq('id', user.id)
           .single();
 
         if (profile?.phone) {
           setFormData((prev: any) => prev.owner_whatsapp ? prev : { ...prev, owner_whatsapp: profile.phone });
+        }
+
+        if (profile) {
+          const caps = getTierBenefits(profile.user_type || 'agent', profile.subscription_tier || 'basic');
+          setAgentCaps({
+            canUseAI: caps.canUseAI,
+            canUploadVideo: caps.canUploadVideo,
+            maxPhotos: caps.maxPhotos,
+          });
         }
       } catch (error) {
         console.warn('Could not auto-populate agent contact:', error);
@@ -1008,7 +1027,7 @@ function CreateAgentPropertyContent() {
         {/* Form steps - Enhanced styling */}
         <div className="min-h-[500px] bg-gray-50 p-8 rounded-xl border border-gray-200">
           {currentStep === 1 && <Step1BasicInfo formData={formData} setFormData={setFormData} />}
-          {currentStep === 2 && <Step2Details formData={formData} setFormData={setFormData} />}
+          {currentStep === 2 && <Step2Details formData={formData} setFormData={setFormData} canUseAI={agentCaps.canUseAI} />}
           {currentStep === 3 && <Step3Location formData={formData} setFormData={setFormData} />}
           {currentStep === 4 && (
             <Step4Photos
@@ -1018,6 +1037,8 @@ function CreateAgentPropertyContent() {
               setExistingImages={setExistingImageUrls}
               videoUrl={formData.video_url}
               onVideoUrlChange={(url) => setFormData(prev => ({ ...prev, video_url: url }))}
+              canUploadVideo={agentCaps.canUploadVideo}
+              maxPhotos={agentCaps.maxPhotos}
             />
           )}
           {currentStep === 5 && (

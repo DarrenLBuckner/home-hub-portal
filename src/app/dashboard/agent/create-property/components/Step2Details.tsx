@@ -8,6 +8,7 @@ import AIDescriptionAssistant from '@/components/AIDescriptionAssistant';
 interface Step2DetailsProps {
   formData: any;
   setFormData: (data: any) => void;
+  canUseAI?: boolean;
 }
 
 // Value/label pairs for consistent data storage and display
@@ -47,7 +48,7 @@ const COMMERCIAL_AMENITIES = [
   { value: 'Elevator', label: 'Elevator Access' },
 ];
 
-export default function Step2Details({ formData, setFormData }: Step2DetailsProps) {
+export default function Step2Details({ formData, setFormData, canUseAI = true }: Step2DetailsProps) {
   const handleChange = (field: string, value: any) => {
     setFormData((prev: any) => ({
       ...prev,
@@ -612,6 +613,7 @@ export default function Step2Details({ formData, setFormData }: Step2DetailsProp
           }}
           currentDescription={formData.description || ''}
           onDescriptionGenerated={(description) => handleChange('description', description)}
+          canUseAI={canUseAI}
         />
       </div>
     </div>

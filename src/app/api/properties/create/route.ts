@@ -469,6 +469,13 @@ export async function POST(req: NextRequest) {
 
     // Remove old conflicting admin detection code
 
+    // Agent photo cap (tier-driven, defense in depth). Set in the limits branch
+    // below for agents only; null = use the default 15/20 cap. 999 = unlimited.
+    let agentPhotoCap: number | null = null;
+    // Agent video gate (YouTube = Builder+). Defaults true so non-agents/admins
+    // are unaffected; set to the tier value for agents in the limits branch.
+    let agentCanUploadVideo = true;
+
     if (isEligibleAdmin && !isAdminCreatingForUser) {
       // CASE 1: Admin creating property for THEMSELVES
       // Admin users have no app-level limits, but the DB trigger may still check property_limit.
@@ -592,6 +599,12 @@ export async function POST(req: NextRequest) {
       const tierBenefits = getTierBenefits(userProfile.user_type, profile?.subscription_tier || 'basic');
       const maxAllowed = tierBenefits.maxListings;
 
+      // Agent-only: carry the tier photo cap + video permission to the sections below.
+      if (userProfile.user_type === 'agent') {
+        agentPhotoCap = tierBenefits.maxPhotos;
+        agentCanUploadVideo = tierBenefits.canUploadVideo;
+      }
+
       console.log('🔍 Property limits check:', {
         userType: userProfile.user_type,
         subscriptionTier: profile?.subscription_tier || 'basic',
@@ -666,7 +679,9 @@ export async function POST(req: NextRequest) {
       
       // Enforce image limits
       if (!isDraftSave) {
-        const maxImages = isRental ? 15 : 20;
+        const maxImages = agentPhotoCap !== null
+          ? (agentPhotoCap >= 999 ? Number.MAX_SAFE_INTEGER : agentPhotoCap)
+          : (isRental ? 15 : 20);
         if (imageUrls.length > maxImages) {
           return NextResponse.json({ error: `Image limit exceeded (${maxImages} allowed)` }, { status: 400 });
         }
@@ -680,7 +695,9 @@ export async function POST(req: NextRequest) {
       
       // Enforce image limits
       if (!isDraftSave) {
-        const maxImages = isRental ? 15 : 20;
+        const maxImages = agentPhotoCap !== null
+          ? (agentPhotoCap >= 999 ? Number.MAX_SAFE_INTEGER : agentPhotoCap)
+          : (isRental ? 15 : 20);
         if (body.images.length > maxImages) {
           return NextResponse.json({ error: `Image limit exceeded (${maxImages} allowed)` }, { status: 400 });
         }
@@ -792,7 +809,7 @@ export async function POST(req: NextRequest) {
         listed_by_type: listedByType,
         
         // Video URL (for Pro/Elite tier agents) - sanitized to prevent pattern errors
-        video_url: sanitizeVideoUrl(body.video_url),
+        video_url: agentCanUploadVideo ? sanitizeVideoUrl(body.video_url) : null,
 
         // Commercial Property Fields
         property_category: propertyCategory,
@@ -866,7 +883,7 @@ export async function POST(req: NextRequest) {
         currency: body.currency || 'GYD',
 
         // Video URL (for Pro/Elite tier landlords) - sanitized to prevent pattern errors
-        video_url: sanitizeVideoUrl(body.video_url),
+        video_url: agentCanUploadVideo ? sanitizeVideoUrl(body.video_url) : null,
 
         // Contact fields (sanitized to prevent pattern validation errors)
         owner_email: sanitizeEmail(body.owner_email),
@@ -925,7 +942,7 @@ export async function POST(req: NextRequest) {
         owner_whatsapp: normalizePhoneNumber(body.owner_whatsapp),
         
         // Video URL (for Pro/Elite tier FSBO) - sanitized to prevent pattern errors
-        video_url: sanitizeVideoUrl(body.video_url),
+        video_url: agentCanUploadVideo ? sanitizeVideoUrl(body.video_url) : null,
 
         // System fields (auto-populated)
         user_id: effectiveUserId,                    // Property owner (target user if admin-created)
