@@ -3,6 +3,8 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { createClient } from '@/lib/supabase/server';
+import { getTierBenefits } from '@/lib/subscription-utils';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -30,6 +32,38 @@ export async function POST(request: Request) {
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json({ error: 'OpenAI API key not configured' }, { status: 500 });
+    }
+
+    // Tier gate (agent-only, Decision C): AI descriptions are a Builder+ feature.
+    // This is the real lock AND a billing control — it runs BEFORE any OpenAI
+    // call, so a blocked request incurs no model spend. Non-agents (owner/FSBO/
+    // landlord) and Builder+ agents pass through unchanged.
+    try {
+      const supabase = await createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: gateProfile } = await supabase
+          .from('profiles')
+          .select('user_type, subscription_tier')
+          .eq('id', user.id)
+          .single();
+        if (
+          gateProfile?.user_type === 'agent' &&
+          !getTierBenefits('agent', gateProfile.subscription_tier || 'basic').canUseAI
+        ) {
+          return NextResponse.json(
+            {
+              error: 'upgrade_required',
+              message: 'AI descriptions are a Builder feature. Upgrade to Builder to write listings with AI.',
+            },
+            { status: 403 },
+          );
+        }
+      }
+    } catch (gateErr) {
+      // Fail open on a gate-lookup error: don't block legitimate users on a
+      // transient auth/DB hiccup. The cost exposure of a rare miss is minimal.
+      console.warn('AI description tier gate lookup failed; allowing request:', gateErr);
     }
 
     const propertyData: PropertyData = await request.json();
