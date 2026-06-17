@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { getClientIp, checkRateLimit } from '@/lib/rate-limit'
 
 // Public seller/referral lead capture for the Premier Agent Sites Platform.
 // Called server-to-server from [firstname]list.com/list (with the www host).
@@ -11,6 +12,17 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    // Rate limit FIRST — one cheap check before any body parse / honeypot /
+    // validation / agent resolve. Fails open inside checkRateLimit.
+    const ip = getClientIp(request)
+    const { allowed, retryAfter } = await checkRateLimit(`inquiries:${ip}`, 60, 60)
+    if (!allowed) {
+      return NextResponse.json(
+        { ok: false, error: 'rate_limited' },
+        { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+      )
+    }
+
     const { slug } = await params
 
     let body: any
