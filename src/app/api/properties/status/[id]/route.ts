@@ -14,7 +14,7 @@ interface ProfileType {
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies();
@@ -43,7 +43,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const propertyId = params.id;
+    const propertyId = (await params).id;
     const body = await request.json();
     
     // Validate status field

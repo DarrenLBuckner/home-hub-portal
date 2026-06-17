@@ -3,11 +3,11 @@ import { createAdminClient } from '@/supabase-admin'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createAdminClient()
-    const propertyId = params.id
+    const propertyId = (await params).id
 
     // Get total likes count for this property
     const { data: likes, error } = await supabase
@@ -57,11 +57,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const supabase = createAdminClient()
-    const propertyId = params.id
+    const propertyId = (await params).id
 
     // Get IP address
     const forwarded = request.headers.get('x-forwarded-for')

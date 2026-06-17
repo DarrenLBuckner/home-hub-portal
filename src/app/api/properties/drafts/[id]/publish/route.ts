@@ -8,9 +8,9 @@ import { geocodeAddress } from '@/lib/geocoding';
 
 export const runtime = 'nodejs';
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const draftId = params.id;
+    const draftId = (await params).id;
     
     // Create supabase server client
     const cookieStore = await cookies();
