@@ -30,7 +30,8 @@ export default function AgentPage() {
   const [agentVettingStatus, setAgentVettingStatus] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
   const [userName, setUserName] = useState<string>('');
-  
+  const [newLeadsCount, setNewLeadsCount] = useState(0);
+
   useEffect(() => {
     const fetchUser = async () => {
       const supabase = createClient();
@@ -92,6 +93,15 @@ export default function AgentPage() {
                 setUserName(vetting.first_name);
               }
             }
+
+            // New (unactioned) listing-inquiry leads for the Leads nav badge.
+            // RLS (listing_inquiries_agent_select = agent_id = auth.uid())
+            // scopes this count to the logged-in agent's own leads.
+            const { count: newLeads } = await supabase
+              .from('listing_inquiries')
+              .select('id', { count: 'exact', head: true })
+              .eq('status', 'new');
+            setNewLeadsCount(newLeads || 0);
           }
         }
       }
@@ -103,6 +113,9 @@ export default function AgentPage() {
   useEffect(() => {
     if (activeSection === 'settings') {
       router.push('/dashboard/agent/settings');
+    }
+    if (activeSection === 'leads') {
+      router.push('/dashboard/agent/leads');
     }
   }, [activeSection, router]);
 
@@ -144,8 +157,9 @@ export default function AgentPage() {
             {([
               { id: 'dashboard', label: t('overview'), icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h4" /></svg> },
               { id: 'properties', label: t('myListings'), icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" /></svg> },
+              ...(userType === 'agent' ? [{ id: 'leads', label: 'Leads', icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" /></svg>, badge: newLeadsCount }] : []),
               { id: 'settings', label: t('settings'), icon: <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg> },
-            ] as { id: string; label: string; icon: React.ReactNode }[]).map(section => (
+            ] as { id: string; label: string; icon: React.ReactNode; badge?: number }[]).map(section => (
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
@@ -157,6 +171,11 @@ export default function AgentPage() {
               >
                 {section.icon}
                 <span>{section.label}</span>
+                {section.badge ? (
+                  <span className="ml-1 px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full font-semibold">
+                    {section.badge}
+                  </span>
+                ) : null}
               </button>
             ))}
           </div>
