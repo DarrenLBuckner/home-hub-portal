@@ -3,15 +3,15 @@
 
 import { notFound } from 'next/navigation';
 
-// @ts-ignore Next.js App Router type inference bug workaround
-export default function DiagnosticPage({ params }: { params: { slug?: string[] } }) {
-  // Next.js App Router expects params as an object with optional slug array
-  console.log('Diagnostic page params:', params);
+export default async function DiagnosticPage({ params }: { params: Promise<{ slug?: string[] }> }) {
+  // Next.js App Router (v15+) provides params as a promise
+  const { slug } = await params;
+  console.log('Diagnostic page params:', { slug });
   return (
     <div className="p-8 bg-red-100">
       <h1>Route Diagnostic</h1>
-      <p>Params: {JSON.stringify(params)}</p>
-      <p>Slug: {params.slug?.join('/') || 'none'}</p>
+      <p>Params: {JSON.stringify({ slug })}</p>
+      <p>Slug: {slug?.join('/') || 'none'}</p>
       <div className="mt-4">
         <h2>Test these routes:</h2>
         <ul className="list-disc ml-4">

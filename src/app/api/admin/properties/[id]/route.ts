@@ -9,12 +9,12 @@ export const runtime = 'nodejs';
 // GET /api/admin/properties/[id] - Get property details with admin access
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     console.log('📂 Loading property details for admin...');
     
-    const propertyId = params.id;
+    const propertyId = (await params).id;
     
     if (!propertyId) {
       return NextResponse.json({ error: 'Property ID required' }, { status: 400 });

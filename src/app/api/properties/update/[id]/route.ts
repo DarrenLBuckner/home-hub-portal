@@ -30,7 +30,7 @@ function sanitizeVideoUrl(url: string | undefined | null): string | null {
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies();
@@ -80,7 +80,7 @@ export async function PUT(
       ? getTierBenefits('agent', (userProfile as any).subscription_tier || 'basic').canUploadVideo
       : true;
 
-    const propertyId = params.id;
+    const propertyId = (await params).id;
     const body = await request.json();
     
     // Validate only essential required fields for updates (much more lenient than create)
@@ -481,7 +481,7 @@ export async function PUT(
 // POST /api/properties/update/[id] - Admin property status update
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Use the same auth pattern as the working create property API
@@ -504,7 +504,7 @@ export async function POST(
       }
     );
     const adminSupabase = createAdminClient();
-    const propertyId = params.id;
+    const propertyId = (await params).id;
     const body = await request.json();
     
     // Property approval request
@@ -698,7 +698,7 @@ export async function POST(
 // PATCH /api/properties/update/[id] - Admin property reassignment (change user_id only)
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const cookieStore = await cookies();
@@ -737,7 +737,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Admin privileges required' }, { status: 403 });
     }
 
-    const propertyId = params.id;
+    const propertyId = (await params).id;
     const body = await request.json();
     const { reassign_to_user_id } = body;
 

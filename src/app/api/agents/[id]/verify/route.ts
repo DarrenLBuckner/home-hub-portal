@@ -20,10 +20,10 @@ export const runtime = 'nodejs';
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const agentId = params.id;
+    const agentId = (await params).id;
 
     if (!agentId) {
       return NextResponse.json({ error: 'Agent ID is required' }, { status: 400 });
@@ -250,10 +250,10 @@ export async function PATCH(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const agentId = params.id;
+    const agentId = (await params).id;
 
     if (!agentId) {
       return NextResponse.json({ error: 'Agent ID is required' }, { status: 400 });

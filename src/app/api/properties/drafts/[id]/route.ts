@@ -7,9 +7,9 @@ import { cookies } from 'next/headers';
 
 export const runtime = 'nodejs';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const draftId = params.id;
+    const draftId = (await params).id;
     console.log('📄 Loading draft:', draftId);
     
     // Create supabase server client
@@ -92,9 +92,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // PUT /api/properties/drafts/[id] - Update specific draft (for autosave)
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const draftId = params.id;
+    const draftId = (await params).id;
     console.log('💾 Auto-saving draft:', draftId);
     
     // Create supabase server client
@@ -172,9 +172,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const draftId = params.id;
+    const draftId = (await params).id;
     console.log('🗑️ Deleting draft:', draftId);
     
     // Create supabase server client

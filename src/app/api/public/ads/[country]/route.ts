@@ -113,10 +113,10 @@ async function trackImpression(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { country: string } }
+  { params }: { params: Promise<{ country: string }> }
 ) {
   try {
-    const countryCode = params.country.toUpperCase();
+    const countryCode = (await params).country.toUpperCase();
     const { searchParams } = new URL(request.url);
     
     // Extract targeting parameters

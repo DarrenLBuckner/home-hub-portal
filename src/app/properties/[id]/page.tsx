@@ -7,10 +7,11 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 export default async function PropertyDetailPage({
   params
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params;
   const supabase = createAdminClient();
-  const isUuid = UUID_REGEX.test(params.id);
+  const isUuid = UUID_REGEX.test(id);
 
   const selectClause = `
       *,
@@ -34,8 +35,8 @@ export default async function PropertyDetailPage({
   // Branch on shape so Supabase column-types narrow correctly (variable-column
   // .eq() loses schema inference and collapses the row type to `never`).
   const { data: property, error } = isUuid
-    ? await supabase.from('properties').select(selectClause).eq('id', params.id).in('status', statuses).single()
-    : await supabase.from('properties').select(selectClause).eq('slug', params.id).in('status', statuses).single();
+    ? await supabase.from('properties').select(selectClause).eq('id', id).in('status', statuses).single()
+    : await supabase.from('properties').select(selectClause).eq('slug', id).in('status', statuses).single();
 
   if (error || !property) {
     notFound();
@@ -62,14 +63,15 @@ export default async function PropertyDetailPage({
 }
 
 // SEO metadata
-export async function generateMetadata({ params }: { params: { id: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const supabase = createAdminClient();
-  const isUuid = UUID_REGEX.test(params.id);
+  const isUuid = UUID_REGEX.test(id);
 
   const selectClause = 'title, description, price, city, listing_type, currency';
   const { data: property } = isUuid
-    ? await supabase.from('properties').select(selectClause).eq('id', params.id).single()
-    : await supabase.from('properties').select(selectClause).eq('slug', params.id).single();
+    ? await supabase.from('properties').select(selectClause).eq('id', id).single()
+    : await supabase.from('properties').select(selectClause).eq('slug', id).single();
 
   if (!property) {
     return {
