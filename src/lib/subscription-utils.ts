@@ -118,46 +118,52 @@ export async function getUserProfile(user: User): Promise<UserProfile | null> {
  * Global tier benefits lookup
  */
 export function getTierBenefits(userType: string, tier: string) {
-  if (!userType) return { canUploadVideo: false, maxPhotos: 0, maxListings: 0 }
-  
+  if (!userType) return { canUploadVideo: false, maxPhotos: 0, maxListings: 0, canUseAI: false }
+
   // Admin/Superadmin always gets full access
   // Note: 'owner' user_type is FSBO, not admin. Owner admins have user_type='admin' + admin_level='owner'
   if (userType === 'admin' || userType === 'superadmin') {
-    return { canUploadVideo: true, maxPhotos: 50, maxListings: 999 }
+    return { canUploadVideo: true, maxPhotos: 50, maxListings: 999, canUseAI: true }
   }
 
+  // maxPhotos / maxListings of 999 is the "unlimited" sentinel (the create
+  // route treats >= 999 as no cap).
   const benefits = {
     agent: {
-      basic: { canUploadVideo: false, maxPhotos: 8, maxListings: 10 },        // Maps to "Agent Basic" pricing plan
-      professional: { canUploadVideo: true, maxPhotos: 15, maxListings: 25 }, // Founding agents (professional tier, 25 properties)
-      premium: { canUploadVideo: true, maxPhotos: 15, maxListings: 30 },      // Legacy premium tier
-      platinum: { canUploadVideo: true, maxPhotos: 20, maxListings: 75 },     // Maps to "Agent Premium" pricing plan
-      elite: { canUploadVideo: true, maxPhotos: 25, maxListings: 999 }        // Elite/unlimited tier
+      // Locked tier matrix. DB tier value -> Foundation / Builder / Pillar / Cornerstone.
+      basic:        { canUploadVideo: false, maxPhotos: 10,  maxListings: 3,   canUseAI: false }, // Foundation
+      professional: { canUploadVideo: true,  maxPhotos: 25,  maxListings: 12,  canUseAI: true },  // Builder
+      premium:      { canUploadVideo: true,  maxPhotos: 60,  maxListings: 30,  canUseAI: true },  // Pillar
+      enterprise:   { canUploadVideo: true,  maxPhotos: 999, maxListings: 100, canUseAI: true },  // Cornerstone (photos unlimited)
+      // Legacy keys: platinum mapped to Cornerstone-level (internal/free agents); elite unlimited.
+      platinum:     { canUploadVideo: true,  maxPhotos: 999, maxListings: 100, canUseAI: true },
+      elite:        { canUploadVideo: true,  maxPhotos: 999, maxListings: 999, canUseAI: true }
     },
     landlord: {
-      basic: { canUploadVideo: false, maxPhotos: 8, maxListings: 1 },
-      plus: { canUploadVideo: false, maxPhotos: 20, maxListings: 1 },
-      portfolio: { canUploadVideo: true, maxPhotos: 50, maxListings: 3 },
-      premium: { canUploadVideo: true, maxPhotos: 50, maxListings: 1 }
+      basic: { canUploadVideo: false, maxPhotos: 8, maxListings: 1, canUseAI: true },
+      plus: { canUploadVideo: false, maxPhotos: 20, maxListings: 1, canUseAI: true },
+      portfolio: { canUploadVideo: true, maxPhotos: 50, maxListings: 3, canUseAI: true },
+      premium: { canUploadVideo: true, maxPhotos: 50, maxListings: 1, canUseAI: true }
     },
     fsbo: {
-      basic: { canUploadVideo: false, maxPhotos: 10, maxListings: 1 },
-      plus: { canUploadVideo: false, maxPhotos: 15, maxListings: 1 },
-      portfolio: { canUploadVideo: true, maxPhotos: 25, maxListings: 2 },
-      premium: { canUploadVideo: true, maxPhotos: 30, maxListings: 1 }
+      basic: { canUploadVideo: false, maxPhotos: 10, maxListings: 1, canUseAI: true },
+      plus: { canUploadVideo: false, maxPhotos: 15, maxListings: 1, canUseAI: true },
+      portfolio: { canUploadVideo: true, maxPhotos: 25, maxListings: 2, canUseAI: true },
+      premium: { canUploadVideo: true, maxPhotos: 30, maxListings: 1, canUseAI: true }
     },
     // 'owner' is the DB user_type for FSBO users - same limits as fsbo
     owner: {
-      basic: { canUploadVideo: false, maxPhotos: 10, maxListings: 1 },
-      plus: { canUploadVideo: false, maxPhotos: 15, maxListings: 1 },
-      portfolio: { canUploadVideo: true, maxPhotos: 25, maxListings: 2 },
-      premium: { canUploadVideo: true, maxPhotos: 30, maxListings: 1 }
+      basic: { canUploadVideo: false, maxPhotos: 10, maxListings: 1, canUseAI: true },
+      plus: { canUploadVideo: false, maxPhotos: 15, maxListings: 1, canUseAI: true },
+      portfolio: { canUploadVideo: true, maxPhotos: 25, maxListings: 2, canUseAI: true },
+      premium: { canUploadVideo: true, maxPhotos: 30, maxListings: 1, canUseAI: true }
     }
   }
 
   const userBenefits = benefits[userType.toLowerCase() as keyof typeof benefits]
-  if (!userBenefits) return { canUploadVideo: false, maxPhotos: 5, maxListings: 1 }
-  
+  // Safe conservative fallback (basic/Foundation-level) — never the old 1-listing trap.
+  if (!userBenefits) return { canUploadVideo: false, maxPhotos: 10, maxListings: 3, canUseAI: false }
+
   const tierBenefits = userBenefits[tier.toLowerCase() as keyof typeof userBenefits]
-  return tierBenefits || { canUploadVideo: false, maxPhotos: 5, maxListings: 1 }
+  return tierBenefits || { canUploadVideo: false, maxPhotos: 10, maxListings: 3, canUseAI: false }
 }

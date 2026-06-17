@@ -49,7 +49,7 @@ export default async function FounderPage() {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: 'Darren L. Buckner',
-    alternateName: 'Darren Buckner',
+    alternateName: 'Darren L. Buckner',
     jobTitle: 'Founder & CEO',
     url: 'https://darrenlbuckner.com',
     sameAs: [

@@ -7,6 +7,7 @@ export interface PricingPlan {
   plan_name: string;
   user_type: string;
   plan_type: string;
+  tier: string | null;
   price: number;
   price_display: number;
   price_formatted: string;

@@ -11,9 +11,15 @@ interface Step4PhotosProps {
   videoUrl?: string;
   onVideoUrlChange?: (url: string) => void;
   propertyId?: string;
+  // Tier gates (agent-only). Permissive defaults so non-gated flows aren't
+  // regressed. maxPhotos >= 999 means unlimited.
+  canUploadVideo?: boolean;
+  maxPhotos?: number;
 }
 
-export default function Step4Photos({ images, setImages, existingImages = [], setExistingImages, videoUrl, onVideoUrlChange, propertyId }: Step4PhotosProps) {
+export default function Step4Photos({ images, setImages, existingImages = [], setExistingImages, videoUrl, onVideoUrlChange, propertyId, canUploadVideo = true, maxPhotos = 10 }: Step4PhotosProps) {
+  const photosUnlimited = maxPhotos >= 999;
+  const photoCountLabel = photosUnlimited ? '' : `/${maxPhotos}`;
   const [dragActive, setDragActive] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isConverting, setIsConverting] = useState(false);
@@ -33,8 +39,8 @@ export default function Step4Photos({ images, setImages, existingImages = [], se
     });
 
     const totalCount = existingImages.length + images.length;
-    if (validFiles.length + totalCount > 10) {
-      alert('Maximum 10 images allowed');
+    if (!photosUnlimited && validFiles.length + totalCount > maxPhotos) {
+      alert(`Maximum ${maxPhotos} images allowed`);
       return;
     }
 
@@ -196,7 +202,9 @@ export default function Step4Photos({ images, setImages, existingImages = [], se
               Drop photos here, or click to select
             </p>
             <p className="text-sm text-gray-500">
-              Upload up to 10 high-quality photos (JPG, PNG, HEIC, max 10MB each)
+              {photosUnlimited
+                ? 'Upload high-quality photos (JPG, PNG, HEIC, max 10MB each)'
+                : `Upload up to ${maxPhotos} high-quality photos (JPG, PNG, HEIC, max 10MB each)`}
             </p>
           </div>
 
@@ -224,7 +232,7 @@ export default function Step4Photos({ images, setImages, existingImages = [], se
       {(existingImages.length + images.length) > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Photos ({existingImages.length + images.length}/10)</h3>
+            <h3 className="text-lg font-medium">Photos ({existingImages.length + images.length}{photoCountLabel})</h3>
             <p className="text-sm text-gray-500">First photo will be the main image</p>
           </div>
 
@@ -339,8 +347,21 @@ export default function Step4Photos({ images, setImages, existingImages = [], se
         </ul>
       </div>
 
+      {/* Video Tour — locked below Builder tier */}
+      {onVideoUrlChange && !canUploadVideo && (
+        <div className="border border-amber-200 bg-amber-50 rounded-lg p-4 flex items-center gap-2">
+          <span>🔒</span>
+          <div>
+            <label className="block text-sm font-medium text-amber-800">Video Tour</label>
+            <p className="text-sm text-amber-700">
+              Add a YouTube video tour with Builder. Upgrade to unlock video on your listings.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Video Tour (Optional) */}
-      {onVideoUrlChange && (
+      {onVideoUrlChange && canUploadVideo && (
         <div className="border border-gray-200 rounded-lg p-4">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Video Tour (Optional)

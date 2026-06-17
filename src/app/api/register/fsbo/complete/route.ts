@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/supabase-admin';
 import { sendWelcomeEmail, sendFSBOFoundingMemberEmail } from '@/lib/email.js';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
+import { getTerritorySignupFlags } from '@/lib/territory-signup-flags';
 
 export async function POST(request: Request) {
   try {
@@ -16,6 +17,18 @@ export async function POST(request: Request) {
     
     const { first_name, last_name, email, phone, password, promo_code, promo_benefits, promo_spot_number, is_founding_member } = registrationData;
     const normalizedPhone = normalizePhoneNumber(phone);
+
+    // Territory gate: block FSBO/owner signups where the territory disables them.
+    // Runs before the auth user or profile is created. Fails closed.
+    const flags = await getTerritorySignupFlags(
+      registrationData.country_id || registrationData.country,
+    );
+    if (!flags.fsboSignupEnabled) {
+      return NextResponse.json(
+        { error: 'For Sale By Owner registration is not available in this territory.' },
+        { status: 403 },
+      );
+    }
 
     // For promo/founding member registrations, verify promo code was valid
     // For paid registrations, verify payment was completed

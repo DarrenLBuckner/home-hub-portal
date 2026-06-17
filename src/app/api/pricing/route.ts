@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
         user_type,
         plan_type,
         price,
+        tier,
         max_properties,
         listing_duration_days,
         featured_listings_included,

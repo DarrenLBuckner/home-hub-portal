@@ -22,12 +22,16 @@ interface AIDescriptionAssistantProps {
   propertyData: PropertyData;
   onDescriptionGenerated: (description: string) => void;
   currentDescription: string;
+  // Tier gate (agent-only). Defaults to true so non-gated flows (owner/FSBO)
+  // are not regressed. When false, the AI button is locked + grayed.
+  canUseAI?: boolean;
 }
 
 const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
   propertyData,
   onDescriptionGenerated,
-  currentDescription
+  currentDescription,
+  canUseAI = true
 }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -42,6 +46,11 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
   };
 
   const generateDescription = async () => {
+    if (!canUseAI) {
+      // Defense in depth — the button is disabled, but never call the (paid) API if locked.
+      setError('AI descriptions are a Builder feature. Upgrade to Builder to unlock AI descriptions.');
+      return;
+    }
     // Smart validation based on property category
     const isCommercial = propertyData.propertyCategory === 'commercial';
     
@@ -81,7 +90,9 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate description');
+        // Surface the server's upgrade message verbatim — a 403 must read as
+        // "upgrade to unlock," never as a generic failure.
+        throw new Error(errorData.message || errorData.error || 'Failed to generate description');
       }
 
       const data = await response.json();
@@ -195,12 +206,22 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
         </div>
       )}
 
+      {!canUseAI && (
+        <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-2">
+          <span>🔒</span>
+          <p className="text-amber-800 text-sm font-medium">
+            AI descriptions are a Builder feature. Upgrade to Builder to unlock AI descriptions.
+          </p>
+        </div>
+      )}
+
       <div className="flex gap-2">
         <button
           onClick={generateDescription}
-          disabled={isLoading || !hasRequiredFields}
+          disabled={isLoading || !hasRequiredFields || !canUseAI}
+          title={!canUseAI ? 'Upgrade to Builder to unlock AI descriptions' : undefined}
           className={`flex-1 px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-            isLoading || !hasRequiredFields
+            isLoading || !hasRequiredFields || !canUseAI
               ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
               : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-md hover:shadow-lg'
           }`}
@@ -209,6 +230,10 @@ const AIDescriptionAssistant: React.FC<AIDescriptionAssistantProps> = ({
             <div className="flex items-center justify-center gap-2">
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               Generating...
+            </div>
+          ) : !canUseAI ? (
+            <div className="flex items-center justify-center gap-2">
+              🔒 AI Descriptions (Builder)
             </div>
           ) : (
             <div className="flex items-center justify-center gap-2">

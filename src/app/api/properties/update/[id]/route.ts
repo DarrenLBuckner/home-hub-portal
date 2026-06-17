@@ -8,6 +8,7 @@ import { createAdminClient } from '@/supabase-admin';
 import { getCountryAwareAdminPermissions } from '@/lib/auth/adminPermissions';
 import { normalizePhoneNumber } from '@/lib/phoneUtils';
 import { geocodeAddress } from '@/lib/geocoding';
+import { getTierBenefits } from '@/lib/subscription-utils';
 import { generateAltTextBatch } from '@/lib/ai/generateAltText';
 
 function sanitizeVideoUrl(url: string | undefined | null): string | null {
@@ -61,7 +62,7 @@ export async function PUT(
     // Get user profile for admin status
     const { data: userProfile, error: profileError } = await supabase
       .from('profiles')
-      .select('admin_level, country_id, user_type')
+      .select('admin_level, country_id, user_type, subscription_tier')
       .eq('id', user.id)
       .single();
 
@@ -72,6 +73,12 @@ export async function PUT(
     const userAdminLevel = userProfile?.admin_level;
     const isUserAdmin = userAdminLevel && ['super', 'owner', 'basic'].includes(userAdminLevel);
     const userCountryId = userProfile?.country_id;
+
+    // YouTube gate (agent-only, Builder+). Mirrors the create route so the video
+    // gate holds on edit too. Non-agents/admins unaffected (default allow).
+    const agentCanUploadVideo = userProfile?.user_type === 'agent'
+      ? getTierBenefits('agent', (userProfile as any).subscription_tier || 'basic').canUploadVideo
+      : true;
 
     const propertyId = params.id;
     const body = await request.json();
@@ -137,7 +144,7 @@ export async function PUT(
       utilities_included: body.utilities_included || null,
       pet_policy: body.pet_policy || null,
       available_from: body.available_from || null,
-      video_url: sanitizeVideoUrl(body.video_url),
+      video_url: agentCanUploadVideo ? sanitizeVideoUrl(body.video_url) : null,
     };
 
     // Apply lat/lng from the request body only when explicitly provided.
