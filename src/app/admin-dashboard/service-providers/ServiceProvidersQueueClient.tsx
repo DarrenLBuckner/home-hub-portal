@@ -25,7 +25,6 @@ interface ServiceProvider {
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
-  'real-estate-agents': 'Real Estate Agents',
   'renovations': 'Renovations & Repairs',
   'electrical': 'Electrical & Plumbing',
   'interior': 'Interior & Furniture',
@@ -34,11 +33,13 @@ const CATEGORY_LABELS: Record<string, string> = {
   'moving-storage': 'Moving & Storage',
   'cleaning': 'Cleaning Services',
   'security': 'Security & Safety',
-  'legal-financial': 'Legal & Financial',
+  'legal-financial': 'Real Estate Attorneys & Financial Advisors',
   'insurance': 'Insurance & Banking',
   'inspection': 'Inspection Services',
   'photography-media': 'Photography & Media',
   'general-contractors': 'General Contractors',
+  'architecture-design': 'Architecture & Design',
+  'smart-home-tech': 'Smart Home & Technology',
 };
 
 const TABS: { key: TabKey; label: string }[] = [

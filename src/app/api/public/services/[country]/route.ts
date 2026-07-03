@@ -13,7 +13,6 @@ const corsHeaders = {
 
 // Business directory categories
 const DIRECTORY_CATEGORIES = [
-  { id: 'real-estate-agents', name: 'Real Estate Agents' },
   { id: 'general-contractors', name: 'General Contractors' },
   { id: 'renovations', name: 'Renovations & Repairs' },
   { id: 'electrical', name: 'Electrical & Plumbing' },
@@ -23,7 +22,7 @@ const DIRECTORY_CATEGORIES = [
   { id: 'moving-storage', name: 'Moving & Storage' },
   { id: 'cleaning', name: 'Cleaning Services' },
   { id: 'security', name: 'Security & Safety' },
-  { id: 'legal-financial', name: 'Legal & Financial' },
+  { id: 'legal-financial', name: 'Real Estate Attorneys & Financial Advisors' },
   { id: 'insurance', name: 'Insurance & Banking' },
   { id: 'inspection', name: 'Inspection Services' },
   { id: 'photography-media', name: 'Photography & Media' },
