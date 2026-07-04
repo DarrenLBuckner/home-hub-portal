@@ -40,6 +40,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   'general-contractors': 'General Contractors',
   'architecture-design': 'Architecture & Design',
   'smart-home-tech': 'Smart Home & Technology',
+  'government': 'Government & Public Services',
 };
 
 const TABS: { key: TabKey; label: string }[] = [

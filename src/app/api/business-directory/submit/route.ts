@@ -26,6 +26,7 @@ const ALLOWED_CATEGORIES = new Set([
   'general-contractors',
   'architecture-design',
   'smart-home-tech',
+  'government',
 ])
 
 // Display names kept for email readability only — never stored.
@@ -45,6 +46,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   'general-contractors': 'General Contractors',
   'architecture-design': 'Architecture & Design',
   'smart-home-tech': 'Smart Home & Technology',
+  'government': 'Government & Public Services',
 }
 
 // In-memory rate limiter: 3 submissions / hour / IP.

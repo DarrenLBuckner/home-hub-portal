@@ -28,6 +28,7 @@ const DIRECTORY_CATEGORIES = [
   { id: 'photography-media', name: 'Photography & Media' },
   { id: 'architecture-design', name: 'Architecture & Design' },
   { id: 'smart-home-tech', name: 'Smart Home & Technology' },
+  { id: 'government', name: 'Government & Public Services' },
 ];
 
 // Business directory response interface
