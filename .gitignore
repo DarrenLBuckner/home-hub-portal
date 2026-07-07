@@ -74,6 +74,7 @@ supabase/.temp
 debug-*.js
 debug-*.ts
 *.sql
+!supabase/migrations/*.sql
 test-*.js
 test-*.ts
 
