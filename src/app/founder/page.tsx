@@ -107,7 +107,7 @@ export default async function FounderPage() {
           <p className="text-xl md:text-2xl text-slate-300 mb-8 max-w-3xl mx-auto">
             U.S. Army veteran, self-taught technologist, and founder of Portal
             HomeHub, Guyana HomeHub, and PivotPoint AI — building the Zillow of
-            the Global South from St. Louis, Missouri.
+            the Global South.
           </p>
           <a
             href="https://darrenlbuckner.com"
