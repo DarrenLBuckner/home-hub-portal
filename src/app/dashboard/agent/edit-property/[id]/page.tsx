@@ -18,6 +18,15 @@ import AITitleSuggester from "@/components/AITitleSuggester";
 import LotDimensions from "@/components/LotDimensions";
 import { DimensionUnit } from "@/lib/lotCalculations";
 
+// A saved photo as rendered in the editor. `id` is the property_media row id (null for legacy
+// listings whose photos live only in properties.images). H5 reorder/set-primary controls require id.
+type SavedMedia = {
+  id: string | null;
+  media_url: string;
+  is_primary: boolean;
+  display_order: number;
+};
+
 interface FormData {
   location: string;
   title: string;
@@ -128,7 +137,11 @@ export default function EditAgentProperty() {
   });
 
   const [images, setImages] = useState<File[]>([]);
-  const [existingImages, setExistingImages] = useState<string[]>([]);
+  // Saved photos carry their property_media row id so the H5 reorder/set-primary controls can
+  // reference rows by id (Amendment C). Legacy listings with no property_media rows fall back to
+  // properties.images with id=null — reorder controls stay hidden for those (nothing to reorder).
+  const [existingImages, setExistingImages] = useState<SavedMedia[]>([]);
+  const [savingOrder, setSavingOrder] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState<string>("GY");
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [currencyCode, setCurrencyCode] = useState<string>("GYD");
@@ -184,6 +197,7 @@ export default function EditAgentProperty() {
           .select(`
             *,
             property_media!property_media_property_id_fkey (
+              id,
               media_url,
               media_type,
               display_order,
@@ -314,21 +328,32 @@ export default function EditAgentProperty() {
             location: countryCode
           }));
 
-          // Set existing images (property_media first, fallback to legacy images array)
-          const mediaImages = property.property_media
-            ?.filter((media: any) => media.media_type === 'image')
-            ?.sort((a: any, b: any) => {
+          // Set existing images (property_media first, fallback to legacy images array).
+          // Carry the property_media row id so the H5 reorder/set-primary controls can address rows.
+          const imageMedia = (property.property_media || [])
+            .filter((media: any) => media.media_type === 'image')
+            .sort((a: any, b: any) => {
               if (a.is_primary && !b.is_primary) return -1;
               if (!a.is_primary && b.is_primary) return 1;
               return (a.display_order ?? 0) - (b.display_order ?? 0);
-            })
-            ?.map((media: any) => media.media_url) || [];
+            });
 
-          const propertyImages = mediaImages.length > 0
-            ? mediaImages
-            : (property.images || []);
+          const savedMedia: SavedMedia[] = imageMedia.length > 0
+            ? imageMedia.map((media: any) => ({
+                id: media.id as string,
+                media_url: media.media_url as string,
+                is_primary: !!media.is_primary,
+                display_order: media.display_order ?? 0,
+              }))
+            // Legacy fallback: no property_media rows — no ids, so reorder controls stay hidden.
+            : (property.images || []).map((url: string, i: number) => ({
+                id: null,
+                media_url: url,
+                is_primary: i === 0,
+                display_order: i,
+              }));
 
-          setExistingImages(propertyImages);
+          setExistingImages(savedMedia);
 
           // Capture metadata for view mode
           setPropertyCreatedAt(property.created_at || '');
@@ -529,7 +554,16 @@ export default function EditAgentProperty() {
         alert(data.error || 'Failed to delete image');
         return;
       }
-      setExistingImages(data.images);
+      // delete-image returns properties.images (string[]). Re-match each URL against prior state so
+      // surviving photos keep their property_media row id — otherwise the reorder controls break.
+      // (delete-image's primary handling is left as-is here — that's H6, not H5.)
+      setExistingImages((prev) => {
+        const byUrl = new Map(prev.map((m) => [m.media_url, m]));
+        return ((data.images as string[]) || []).map((u, i) => {
+          const kept = byUrl.get(u);
+          return kept ?? { id: null, media_url: u, is_primary: i === 0, display_order: i };
+        });
+      });
       if (isCoverPhoto && data.images.length > 0) {
         setImageToast('Cover photo updated to next available photo.');
         setTimeout(() => setImageToast(null), 3000);
@@ -539,6 +573,86 @@ export default function EditAgentProperty() {
     } finally {
       setIsImageDeleting(false);
       setDeleteConfirm(null);
+    }
+  };
+
+  // ---- H5: set-as-primary + reorder of already-saved photos ----
+  // These call the new, independent PATCH endpoint directly. They NEVER route through the PUT save
+  // flow. Client sends media ROW IDS only (Amendment C) — never URLs. Optimistic, server-confirmed.
+
+  const reconcileSavedMedia = (media: Array<{ id: string; media_url: string; is_primary: boolean; display_order: number }>) => {
+    setExistingImages(
+      (media || []).map((m) => ({
+        id: m.id,
+        media_url: m.media_url,
+        is_primary: !!m.is_primary,
+        display_order: m.display_order ?? 0,
+      }))
+    );
+  };
+
+  const patchMediaOrder = async (payload: { primaryMediaId?: string; orderedMediaIds?: string[] }) => {
+    const res = await fetch(`/api/properties/${propertyId}/media/reorder`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!res.ok || !data?.success) {
+      throw new Error(data?.error || 'Failed to update photos');
+    }
+    return data as { media: Array<{ id: string; media_url: string; is_primary: boolean; display_order: number }>; primaryMediaId: string | null };
+  };
+
+  // True only when every saved photo has a property_media id (i.e. not the legacy images-only fallback).
+  const savedHasIds = existingImages.length > 0 && existingImages.every((m) => !!m.id);
+
+  const handleSetPrimary = async (index: number) => {
+    const target = existingImages[index];
+    if (savingOrder || !target?.id || target.is_primary || !savedHasIds) return;
+
+    const prev = existingImages;
+    // Optimistic: flag target primary and float it to the front (matches server canonical order).
+    const optimistic = [
+      { ...target, is_primary: true },
+      ...existingImages.filter((_, i) => i !== index).map((m) => ({ ...m, is_primary: false })),
+    ];
+    setExistingImages(optimistic);
+    setSavingOrder(true);
+    try {
+      const data = await patchMediaOrder({
+        primaryMediaId: target.id,
+        orderedMediaIds: optimistic.map((m) => m.id as string),
+      });
+      reconcileSavedMedia(data.media);
+    } catch {
+      setExistingImages(prev);
+      setImageToast('Could not set the primary photo. Please try again.');
+      setTimeout(() => setImageToast(null), 3000);
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  const handleMoveSaved = async (fromIndex: number, toIndex: number) => {
+    if (savingOrder || !savedHasIds) return;
+    if (toIndex < 0 || toIndex >= existingImages.length) return;
+
+    const prev = existingImages;
+    const optimistic = [...existingImages];
+    const [moved] = optimistic.splice(fromIndex, 1);
+    optimistic.splice(toIndex, 0, moved);
+    setExistingImages(optimistic);
+    setSavingOrder(true);
+    try {
+      const data = await patchMediaOrder({ orderedMediaIds: optimistic.map((m) => m.id as string) });
+      reconcileSavedMedia(data.media);
+    } catch {
+      setExistingImages(prev);
+      setImageToast('Could not reorder photos. Please try again.');
+      setTimeout(() => setImageToast(null), 3000);
+    } finally {
+      setSavingOrder(false);
     }
   };
 
@@ -846,10 +960,10 @@ export default function EditAgentProperty() {
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6 view-section">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">📸 Photos ({existingImages.length})</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 print-images">
-                  {existingImages.map((url, i) => (
-                    <div key={i} className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
-                      <img src={url} alt={`Property photo ${i + 1}`} className="w-full h-full object-cover" />
-                      {i === 0 && (
+                  {existingImages.map((m, i) => (
+                    <div key={m.id ?? m.media_url ?? i} className="relative aspect-video rounded-lg overflow-hidden border border-gray-200">
+                      <img src={m.media_url} alt={`Property photo ${i + 1}`} className="w-full h-full object-cover" />
+                      {m.is_primary && (
                         <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded">Primary</span>
                       )}
                     </div>
@@ -1761,21 +1875,21 @@ export default function EditAgentProperty() {
                   Current Photos ({existingImages.length})
                 </h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {existingImages.map((url, index) => (
-                    <div key={index} className="relative aspect-video rounded-lg overflow-hidden border border-gray-200 group">
+                  {existingImages.map((m, index) => (
+                    <div key={m.id ?? m.media_url ?? index} className="relative aspect-video rounded-lg overflow-hidden border border-gray-200 group">
                       <img
-                        src={url}
+                        src={m.media_url}
                         alt={`Property image ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
-                      {index === 0 && (
+                      {m.is_primary && (
                         <span className="absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded">
                           Primary
                         </span>
                       )}
-                      {/* Delete button */}
+                      {/* Delete button (unchanged — X remove is out of scope for H5) */}
                       <button
-                        onClick={() => setDeleteConfirm({ index, url })}
+                        onClick={() => setDeleteConfirm({ index, url: m.media_url })}
                         className="absolute top-1 right-1 w-7 h-7 bg-red-600 text-white rounded-full flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-red-700 shadow-md"
                         title="Remove photo"
                       >
@@ -1783,11 +1897,57 @@ export default function EditAgentProperty() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                       </button>
+
+                      {/* H5: set-as-primary + reorder controls. Hidden for legacy listings whose
+                          photos have no property_media id (nothing to reorder there). */}
+                      {savedHasIds && (
+                        <div className="absolute bottom-0 inset-x-0 flex items-center justify-between gap-1 px-1.5 py-1 bg-black/55">
+                          {m.is_primary ? (
+                            <span className="text-[11px] font-semibold text-white px-1">★ Primary</span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleSetPrimary(index)}
+                              disabled={savingOrder}
+                              className="text-[11px] font-medium text-white bg-blue-600 hover:bg-blue-700 px-2 py-1 rounded disabled:opacity-50 touch-manipulation"
+                              title="Make this the main photo"
+                            >
+                              Set as Primary
+                            </button>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleMoveSaved(index, index - 1)}
+                              disabled={savingOrder || index === 0}
+                              className="w-7 h-7 flex items-center justify-center bg-white/90 text-gray-800 rounded hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+                              title="Move earlier"
+                              aria-label="Move photo earlier"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                              </svg>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveSaved(index, index + 1)}
+                              disabled={savingOrder || index === existingImages.length - 1}
+                              className="w-7 h-7 flex items-center justify-center bg-white/90 text-gray-800 rounded hover:bg-white disabled:opacity-30 disabled:cursor-not-allowed touch-manipulation"
+                              title="Move later"
+                              aria-label="Move photo later"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
-                  These images are already saved. Click the X on any photo to remove it.
+                  These photos are already saved. Use <strong>Set as Primary</strong> to choose the main photo, the arrows to reorder, or the X to remove one.{savingOrder ? ' Saving…' : ''}
                 </p>
               </div>
             )}
