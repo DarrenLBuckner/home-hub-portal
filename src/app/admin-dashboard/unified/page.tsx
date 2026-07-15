@@ -554,22 +554,9 @@ export default function UnifiedAdminDashboard() {
       }
 
       console.log('✅ Agent approved successfully:', result);
-      
-      // Send approval email notification
-      try {
-        await fetch('/api/send-agent-approval-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            agentEmail: result.email,
-            agentName: result.name,
-            country: agent?.country || 'GY'
-          })
-        });
-        console.log('✅ Agent approval email sent successfully');
-      } catch (emailError) {
-        console.warn('⚠️ Failed to send approval email:', emailError);
-      }
+
+      // Welcome email is sent server-side inside /api/admin/agents/approve.
+      // Do NOT send it again here — a duplicate send hurts deliverability.
 
       alert(`✅ Agent "${agentName}" has been approved! They can log in with their registration email and password.`);
       await loadAgents();

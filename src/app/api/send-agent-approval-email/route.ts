@@ -15,134 +15,98 @@ export async function POST(request: NextRequest) {
     }
 
     const emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #10b981;">🎉 Welcome to the Portal Home Hub Agent Network!</h2>
-        
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #111827;">
+
+        <div style="text-align: center; margin-bottom: 24px;">
+          <img src="https://www.guyanahomehub.com/icons/icon-512x512.png" alt="Guyana Home Hub" width="72" height="72" style="border-radius: 12px;">
+        </div>
+
+        <h2 style="color: #047857;">You're approved.</h2>
+
         <p>Hello ${agentName},</p>
-        
-        <p>Congratulations! Your agent application has been <strong>approved</strong> and you are now part of the Portal Home Hub agent network.</p>
-        
+
+        <p>Your agent application is approved. Your account is live and ready. Here's how to get in — read this part carefully.</p>
+
         <div style="background: #f0fdf4; border-left: 4px solid #10b981; padding: 20px; margin: 20px 0;">
-          <h3 style="color: #047857; margin-top: 0;">Your Agent Benefits:</h3>
-          <ul>
-            <li>✅ Access to exclusive agent dashboard and tools</li>
-            <li>🏠 Help clients buy, sell, and rent properties</li>
-            <li>💼 Professional agent profile on our platform</li>
-            <li>📊 Property management and client tools</li>
-            <li>🌟 Marketing support and lead generation</li>
-            <li>📱 Mobile-friendly agent tools</li>
-          </ul>
+          <p style="margin: 0 0 8px;"><strong>Your account was created under this email:</strong></p>
+          <p style="margin: 0; font-size: 18px; color: #047857;"><strong>${agentEmail}</strong></p>
+          <p style="margin: 8px 0 0; font-size: 14px; color: #374151;">Use this exact email to log in — even if you're reading this message somewhere else.</p>
         </div>
 
-        ${isFoundingMember ? `
-        <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; padding: 20px; border-radius: 12px; margin: 20px 0;">
-          <h3 style="color: #92400e; margin-top: 0;">🏆 Founding Member #${spotNumber || ''} Benefits:</h3>
-          <ul style="margin: 0;">
-            <li>✅ <strong>100 days FREE</strong> - No charges during your trial period</li>
-            <li>✅ <strong>50% off for life</strong> - Lifetime discount when you continue after trial</li>
-            <li>✅ <strong>25 property listings</strong> - Professional tier access</li>
-            <li>✅ <strong>Verified Agent badge</strong> - Stand out from the competition</li>
-            <li>✅ <strong>Priority support</strong> - Get help faster as a founding member</li>
-          </ul>
-        </div>
-        ` : ''}
-        
-        <div style="background: #f0f9ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="color: #0ea5e9; margin-top: 0;">Next Steps:</h3>
-          <ol>
-            <li>📝 <strong>Complete your agent profile</strong> - Add your photo, bio, and specialties</li>
-            <li>🏢 <strong>Set up your office details</strong> - Add your company information</li>
-            <li>🎯 <strong>Start helping clients</strong> - Begin listing and managing properties</li>
-            <li>🎬 <strong>Watch the tutorial below</strong> - Learn how to post your first listing</li>
-          </ol>
-        </div>
-
-        <div style="background: #fef3c7; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
-          <h3 style="color: #92400e; margin-top: 0;">🎬 Getting Started</h3>
-          <p style="color: #78350f; margin-bottom: 15px;">Watch this quick tutorial to learn how to post your first property listing:</p>
-          <a href="https://youtu.be/Q_GFflHQjE0"
-             style="background: #dc2626; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
-            ▶️ Watch Tutorial Video
+        <div style="text-align: center; margin: 28px 0;">
+          <a href="https://www.portalhomehub.com/dashboard/agent"
+             style="background: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
+            Log in to your dashboard
           </a>
         </div>
 
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="https://portalhomehub.com/dashboard/agent" 
-             style="background: #3b82f6; color: white; padding: 14px 28px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold;">
-            🚀 Access Agent Dashboard
-          </a>
+        <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0;">
+          <p style="margin: 0 0 6px;"><strong>Forgot the password you chose when you registered?</strong></p>
+          <p style="margin: 0;">That's normal — it was weeks ago. Here's how to fix it:</p>
+          <p style="margin: 8px 0 0;">Go to <a href="https://www.portalhomehub.com/login" style="color: #047857; font-weight: bold;">www.portalhomehub.com/login</a> → click <strong>"Forgot Password"</strong> → put in your email <strong>${agentEmail}</strong>. We'll send you a link to set a new password. Do that and you're in.</p>
         </div>
-        
-        <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
-          <p style="margin: 0;"><strong>Important:</strong> Use the same email (${agentEmail}) to log in to your agent dashboard.</p>
+
+        <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Check your spam folder.</strong> If this email landed in spam or junk, mark it <strong>"Not Spam"</strong>. It's a small thing, but it helps our emails reach the next agent.</p>
         </div>
-        
-        <p>If you have any questions about using the platform or need assistance, our support team is here to help.</p>
-        
-        <p>Welcome to the Portal Home Hub family!</p>
-        
+
+        <p style="margin: 20px 0;">New to the dashboard? Here's a short video on posting your first listing: <a href="https://youtu.be/Q_GFflHQjE0" style="color: #047857; font-weight: bold;">watch the tutorial</a>.</p>
+
+        <div style="background: #ecfdf5; padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Stuck? Message us on WhatsApp:</strong> <a href="https://wa.me/5927629797" style="color: #047857; font-weight: bold;">+592 762 9797</a>. We'll get you sorted.</p>
+        </div>
+
+        <p>Welcome in.</p>
+
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
         <p style="color: #6b7280; font-size: 14px;">
-          <strong>Portal Home Hub Agent Success Team</strong><br>
+          <strong>Portal Home Hub Agent Team</strong><br>
           Email: agents@portalhomehub.com<br>
-          Website: <a href="https://portalhomehub.com">portalhomehub.com</a><br>
-          ${country === 'GY' ? 'Guyana Office: +592-762-9797' : 'Main Office: +592-762-9797'}
+          Website: <a href="https://www.portalhomehub.com" style="color: #047857;">www.portalhomehub.com</a><br>
+          WhatsApp: +592 762 9797
         </p>
       </div>
     `;
 
     const emailText = `
-Welcome to the Portal Home Hub Agent Network!
+You're approved.
 
 Hello ${agentName},
 
-Congratulations! Your agent application has been approved and you are now part of the Portal Home Hub agent network.
+Your agent application is approved. Your account is live and ready. Here's how to get in — read this part carefully.
 
-YOUR AGENT BENEFITS:
-- Access to exclusive agent dashboard and tools
-- Help clients buy, sell, and rent properties
-- Professional agent profile on our platform
-- Property management and client tools
-- Marketing support and lead generation
-- Mobile-friendly agent tools
+YOUR ACCOUNT WAS CREATED UNDER THIS EMAIL:
+${agentEmail}
+Use this exact email to log in — even if you're reading this message somewhere else.
 
-${isFoundingMember ? `
-🏆 FOUNDING MEMBER #${spotNumber || ''} BENEFITS:
-- 100 days FREE - No charges during your trial period
-- 50% off for life - Lifetime discount when you continue after trial
-- 25 property listings - Professional tier access
-- Verified Agent badge - Stand out from the competition
-- Priority support - Get help faster as a founding member
-` : ''}
-NEXT STEPS:
-1. Complete your agent profile - Add your photo, bio, and specialties
-2. Set up your office details - Add your company information
-3. Start helping clients - Begin listing and managing properties
-4. Watch the tutorial below - Learn how to post your first listing
+LOG IN:
+https://www.portalhomehub.com/dashboard/agent
 
-🎬 GETTING STARTED:
-Watch this quick tutorial to learn how to post your first property listing:
+FORGOT THE PASSWORD YOU CHOSE WHEN YOU REGISTERED?
+That's normal — it was weeks ago. Here's how to fix it:
+Go to www.portalhomehub.com/login -> click "Forgot Password" -> put in your email ${agentEmail}. We'll send you a link to set a new password. Do that and you're in.
+
+CHECK YOUR SPAM FOLDER:
+If this email landed in spam or junk, mark it "Not Spam". It's a small thing, but it helps our emails reach the next agent.
+
+New to the dashboard? Watch a short video on posting your first listing:
 https://youtu.be/Q_GFflHQjE0
 
-Access your agent dashboard at: https://portalhomehub.com/dashboard/agent
+STUCK? Message us on WhatsApp: +592 762 9797. We'll get you sorted.
 
-IMPORTANT: Use the same email (${agentEmail}) to log in to your agent dashboard.
-
-If you have any questions about using the platform or need assistance, our support team is here to help.
-
-Welcome to the Portal Home Hub family!
+Welcome in.
 
 ---
-Portal Home Hub Agent Success Team
+Portal Home Hub Agent Team
 Email: agents@portalhomehub.com
-Website: portalhomehub.com
-${country === 'GY' ? 'Guyana Office: +592-762-9797' : 'Main Office: +592-762-9797'}
+Website: www.portalhomehub.com
+WhatsApp: +592 762 9797
     `;
 
     await resend.emails.send({
       from: 'Portal Home Hub <agents@portalhomehub.com>',
       to: [agentEmail],
-      subject: `🎉 Welcome to Portal Home Hub - Agent Application Approved!`,
+      subject: `You're approved — here's how to get into Portal Home Hub`,
       html: emailHtml,
       text: emailText,
     });
