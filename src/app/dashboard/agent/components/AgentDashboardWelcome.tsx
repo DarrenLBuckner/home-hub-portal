@@ -15,6 +15,7 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
   const [agentName, setAgentName] = useState('');
   const [accountCode, setAccountCode] = useState('');
   const [subscriptionTier, setSubscriptionTier] = useState<string | undefined>();
+  const [isFoundingMember, setIsFoundingMember] = useState(false);
   const [isFoundingAdvisor, setIsFoundingAdvisor] = useState(false);
   const [stats, setStats] = useState({
     active: 0,
@@ -38,7 +39,7 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
         // Fetch user profile with account code, approval status, and tracking flag
         const { data: profile } = await supabase
           .from('profiles')
-          .select('first_name, last_name, account_code, display_name, user_type, approval_status, registration_tracked, country_id, subscription_tier, is_founding_advisor')
+          .select('first_name, last_name, account_code, display_name, user_type, approval_status, registration_tracked, country_id, subscription_tier, is_founding_member, is_founding_advisor')
           .eq('id', userData.user.id)
           .single();
 
@@ -47,6 +48,7 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
           setAgentName(fullName || 'Agent');
           setAccountCode(profile.account_code || '');
           setSubscriptionTier(profile.subscription_tier);
+          setIsFoundingMember(profile.is_founding_member || false);
           setIsFoundingAdvisor(profile.is_founding_advisor || false);
 
           // Track CompleteRegistration for newly approved agents (only once)
@@ -101,7 +103,7 @@ export default function AgentDashboardWelcome({ userType, isAgent, onNavigateTab
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-lg font-semibold text-gray-900">{agentName || 'Agent'}</h1>
-              <FoundingAgentBadge subscriptionTier={subscriptionTier} />
+              <FoundingAgentBadge isFoundingMember={isFoundingMember} />
               <FoundingAdvisorBadge isFoundingAdvisor={isFoundingAdvisor} />
             </div>
             {accountCode && (

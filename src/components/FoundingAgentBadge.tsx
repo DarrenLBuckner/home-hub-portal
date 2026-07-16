@@ -3,16 +3,15 @@
 import React from 'react';
 
 interface FoundingAgentBadgeProps {
-  subscriptionTier?: string;
+  isFoundingMember?: boolean;
   className?: string;
 }
 
-export default function FoundingAgentBadge({ 
-  subscriptionTier, 
-  className = "" 
+export default function FoundingAgentBadge({
+  isFoundingMember,
+  className = ""
 }: FoundingAgentBadgeProps) {
-  // Show badge for founding members (professional tier from founding agent program)
-  if (subscriptionTier !== 'professional' && subscriptionTier !== 'founding_member') {
+  if (!isFoundingMember) {
     return null;
   }
 
